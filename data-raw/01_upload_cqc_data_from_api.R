@@ -1,3 +1,4 @@
+# Install and load packages
 source("R/analysis_packages.R")
 
 # Connections and Existing Table check
