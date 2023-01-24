@@ -6,16 +6,23 @@ source("R/analysis_packages.R")
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+# Get current year_month
+year_month = as.integer(substr(gsub('-', '', Sys.Date()), 1, 6))
+
+# Create table name
+table_name = paste0("INT646_CQC_", year_month)
+
 # Check if the table exists
-exists <- DBI::dbExistsTable(conn = con, name = "INT646_CQC")
+exists <- DBI::dbExistsTable(conn = con, name = table_name)
 
 # Drop any existing table beforehand
-if (exists) DBI::dbRemoveTable(conn = con, name = "INT646_CQC")
+if (exists) DBI::dbRemoveTable(conn = con, name = table_name)
 
 # Pull CQC data
 
 # Set a partner code (if we don't set this then we struggle to throttle calls)
-cqcr::cqc_partner_code() # NHSBSA
+Sys.setenv(CQC_PARTNER_CODE = "NHSBSA")
+cqcr::cqc_partner_code(check_env = TRUE)
 
 # When we use the CQC API we need to be careful not to exceed 600 requests per
 # minute (10 per second)
@@ -23,22 +30,83 @@ cqcr::cqc_partner_code() # NHSBSA
 # Pull the CQC ID name and postcode for every care home (~ 60 requests)
 cqc_locations_df <- cqcr::cqc_locations_search(care_home = TRUE)
 
-# Now we need to get the details for these care homes. So we batch up our ~ 30k
-# care homes into bundles of 10 and ensure we wait just over a second before
-# starting the next batch
-cqc_locations_dfs <- split(cqc_locations_df, seq(nrow(cqc_locations_df)) %/% 10)
-cqc_batch_details <- list()
-for (batch in cqc_locations_dfs) {
+# Vector of locations
+location_vec = cqc_locations_df %>% 
+  select(location_id) %>% 
+  pull()
 
+# List for results
+location_list = list()
+
+# Loop through location_ids
+for (i in 1:length(location_vec)) {
+  
   # Record the start time
   start <- Sys.time()
+  print(i)
+  
+  # Get the batch results and append them to the existing ones
+  location_list[[i]] = cqcr::cqc_location(location_vec[i]) %>% 
+    unlist() %>% 
+    bind_rows()
+  
+  # Pause for the remainder of just over a second
+  Sys.sleep(max(0, 0.1 - as.numeric(Sys.time() - start)))
+}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+cqc_locations_dfs <- split(cqc_locations_df, seq(nrow(cqc_locations_df)) %/% 10)
+cqc_batch_details <- list()
+
+for (batch in cqc_locations_dfs) {
+  
+  # Record the start time
+  start <- Sys.time()
+  
   # Get the batch results and append them to the existing ones
   cqc_batch_details <- c(cqc_batch_details, cqcr::cqc_location_details(batch))
-
+  
   # Pause for the remainder of just over a second
   Sys.sleep(max(0, 1.1 - as.numeric(Sys.time() - start)))
 }
+
+cqc_batch_details <- list()
+
+a=cqc_locations_dfs[[1]]
+
+cqcr::cqc_location(a)
+cqcr::cqc_location_inspection_area(a)
+cqcr::cqc_locations_search(a)
+
+A = cqcr::cqc_location('1-10000302982') 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Process CQC data and write to DB
 
