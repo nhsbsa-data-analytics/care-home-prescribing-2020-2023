@@ -1,31 +1,12 @@
 # Install and load packages
 source("R/analysis_packages.R")
 
-# Connections and Existing Table check
-
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
-
-# Get current year_month
-year_month = as.integer(substr(gsub('-', '', Sys.Date()), 1, 6))
-
-# Create table name
-table_name = paste0("INT646_CQC_", year_month)
-
-# Check if the table exists
-exists <- DBI::dbExistsTable(conn = con, name = table_name)
-
-# Drop any existing table beforehand
-if (exists) DBI::dbRemoveTable(conn = con, name = table_name)
-
-# Pull CQC data
 
 # Set a partner code (if we don't set this then we struggle to throttle calls)
 Sys.setenv(CQC_PARTNER_CODE = "NHSBSA")
 cqcr::cqc_partner_code(check_env = TRUE)
-
-# When we use the CQC API we need to be careful not to exceed 600 requests per
-# minute (10 per second)
 
 # Pull the CQC ID name and postcode for every care home (~ 60 requests)
 cqc_locations_df <- cqcr::cqc_locations_search(care_home = TRUE)
@@ -53,7 +34,7 @@ get_cqc_api_location_data = function(loc_num){
   return(data)
 }
 
-# Get maximum chunk num
+# Generate appropriate number o cores
 n_cores = parallel::detectCores() - 2
 
 # Set up parallel
@@ -79,34 +60,17 @@ parallel::clusterExport(
   envir = environment()
 )
 
-Sys.time()
-tic()
-
-# Generate word output
+# Generate cqc details
 cqc_details = parallel::parLapply(
-  clust, 
-  1:length(location_vec), 
-  get_cqc_api_location_data
+  cl = clust, 
+  X = 1:length(location_vec), 
+  fun = get_cqc_api_location_data
   )
-
-Sys.time()
-toc()
-
-Sys.time()
-tic()
-# Loop through vector of locations_ids
-cqc_details = lapply(1:length(location_vec), get_cqc_api_location_data)
-Sys.time()
-toc()
-
-
-
 
 # Stop Cluster
 parallel::stopCluster(clust)
 
-# For care homes project we are only interested in a subset of columns, so lets
-# extract them
+# Select care homes project columns of interest
 cqc_details_df <- cqc_details %>%
   bind_rows() %>% 
   janitor::clean_names() %>% 
@@ -141,6 +105,7 @@ cqc_details_df <- cqc_details %>%
     deregistration_date,
     dormancy,
     name,
+    # Change in postal_line_address formatting
     postal_address_line1,
     postal_address_line2,
     postal_address_town_city,
@@ -153,13 +118,22 @@ cqc_details_df <- cqc_details %>%
   ) %>%
   rename_with(toupper); gc()
 
-gc()
+# Get current year_month
+year_month = as.integer(substr(gsub('-', '', Sys.Date()), 1, 6))
+
+# Create table name
+table_name = paste0("INT646_CQC_", year_month)
+
+# Check if the table exists and drop any existing table beforehand
+if(DBI::dbExistsTable(conn = con, name = table_name) == T){
+  DBI::dbRemoveTable(conn = con, name = table_name)
+}
 
 # Upload to DB with indexes
 con %>%
   copy_to(
     df = cqc_details_df,
-    name = "INT646_CQC",
+    name = table_name,
     indexes = list(c("LOCATION_ID"), c("UPRN"), c("POSTAL_CODE")),
     temporary = FALSE
   )
@@ -167,11 +141,5 @@ con %>%
 # Disconnect connection to database
 DBI::dbDisconnect(con)
 
-
-
-# results = list()
-# 
-# for(i in 1:length(location_vec)){
-#   print(i)
-#   results[[i]] = get_cqc_api_location_data(i)
-# }
+# Clear environment and clean
+rm(list = ls()); gc()

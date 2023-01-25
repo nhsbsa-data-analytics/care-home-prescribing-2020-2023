@@ -13,12 +13,13 @@ pacman::p_load(
   'dbplyr',
   'DBI',
   'tictoc',
+  'parallel',
+  'janitor',
   
   # CQC API data 
   'cqcr',
   'httr',
-  'jsonlite',
-  'janitor'
+  'jsonlite'
 )
 
 # Libraries from github
