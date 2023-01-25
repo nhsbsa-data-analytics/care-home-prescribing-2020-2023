@@ -35,90 +35,81 @@ location_vec = cqc_locations_df %>%
   select(location_id) %>% 
   pull()
 
-# List for results
-location_list = list()
-
-# Loop through location_ids
-for (i in 1:length(location_vec)) {
+# Function to query cqc api
+get_cqc_api_location_data = function(loc_num){
   
-  # Record the start time
-  start <- Sys.time()
-  print(i)
+  # Paste location url with location_id
+  url = paste0("https://api.cqc.org.uk/public/v1/locations/", location_vec[loc_num])
   
-  # Get the batch results and append them to the existing ones
-  location_list[[i]] = cqcr::cqc_location(location_vec[i]) %>% 
+  # Get data
+  data = httr::GET(url)
+  
+  # Convert binary to character and convert json into df
+  data = jsonlite::fromJSON(rawToChar(data$content)) %>% 
     unlist() %>% 
     bind_rows()
   
-  # Pause for the remainder of just over a second
-  Sys.sleep(max(0, 0.1 - as.numeric(Sys.time() - start)))
+  # Return data
+  return(data)
 }
 
+# Get maximum chunk num
+n_cores = parallel::detectCores() - 2
 
+# Set up parallel
+clust = parallel::makeCluster(n_cores)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-cqc_locations_dfs <- split(cqc_locations_df, seq(nrow(cqc_locations_df)) %/% 10)
-cqc_batch_details <- list()
-
-for (batch in cqc_locations_dfs) {
-  
-  # Record the start time
-  start <- Sys.time()
-  
-  # Get the batch results and append them to the existing ones
-  cqc_batch_details <- c(cqc_batch_details, cqcr::cqc_location_details(batch))
-  
-  # Pause for the remainder of just over a second
-  Sys.sleep(max(0, 1.1 - as.numeric(Sys.time() - start)))
-}
-
-cqc_batch_details <- list()
-
-a=cqc_locations_dfs[[1]]
-
-cqcr::cqc_location(a)
-cqcr::cqc_location_inspection_area(a)
-cqcr::cqc_locations_search(a)
-
-A = cqcr::cqc_location('1-10000302982') 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# Process CQC data and write to DB
-
-# Convert the batch results into a dataframe
-cqc_details_df <- purrr::map_df(
-  .x = cqc_batch_details,
-  .f = ~ bind_rows(unlist(x = .x))
+# Export libraries to cluster
+parallel::clusterEvalQ(
+  cl = clust,
+  {
+    library(dplyr); 
+    library(httr);
+    library(jsonlite)
+  }
 )
+
+# Export required objects to cluster
+parallel::clusterExport(
+  cl = clust,
+  varlist = c(
+    "get_cqc_api_location_data",
+    "location_vec"
+  ),
+  envir = environment()
+)
+
+Sys.time()
+tic()
+
+# Generate word output
+cqc_details = parallel::parLapply(
+  clust, 
+  1:length(location_vec), 
+  get_cqc_api_location_data
+  )
+
+Sys.time()
+toc()
+
+Sys.time()
+tic()
+# Loop through vector of locations_ids
+cqc_details = lapply(1:length(location_vec), get_cqc_api_location_data)
+Sys.time()
+toc()
+
+
+
+
+# Stop Cluster
+parallel::stopCluster(clust)
 
 # For care homes project we are only interested in a subset of columns, so lets
 # extract them
-cqc_details_df <- cqc_details_df %>%
+cqc_details_df <- cqc_details %>%
+  bind_rows() %>% 
+  janitor::clean_names() %>% 
   # Filter to the period of interest
   mutate(
     # Add the nursing home / residential home flag
@@ -150,8 +141,8 @@ cqc_details_df <- cqc_details_df %>%
     deregistration_date,
     dormancy,
     name,
-    postal_address_line_1,
-    postal_address_line_2,
+    postal_address_line1,
+    postal_address_line2,
     postal_address_town_city,
     postal_address_county,
     postal_code,
@@ -160,7 +151,9 @@ cqc_details_df <- cqc_details_df %>%
     type,
     number_of_beds
   ) %>%
-  rename_with(toupper)
+  rename_with(toupper); gc()
+
+gc()
 
 # Upload to DB with indexes
 con %>%
@@ -173,3 +166,12 @@ con %>%
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
+
+
+
+# results = list()
+# 
+# for(i in 1:length(location_vec)){
+#   print(i)
+#   results[[i]] = get_cqc_api_location_data(i)
+# }
