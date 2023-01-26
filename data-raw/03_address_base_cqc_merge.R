@@ -2,57 +2,13 @@ library(dplyr)
 library(dbplyr)
 
 # Set up connection to the DB
-con_dalp <- nhsbsaR::con_nhsbsa(database = "DALP")
-con_dwcp <- nhsbsaR::con_nhsbsa(database = "DWCP")
-
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
-
-address_base_db <- con_dalp %>%
-  tbl(from = in_schema("SCD2", sql("SCD2_ETP_DY_PAYLOAD_MSG_DATA@DWCP.WORLD")))
 
 # Part One: process cqc data ---------------------------------------------------
 
 # Create a lazy table from the CQC care home table
-cqc_db <- con_dalp %>%
+cqc_db <- con %>%
   tbl(from = "INT646_CQC_202301")
-
-
-select uprn from SCD2.scd2_os_address_base_data@DWCP.WORLD where dw_end_date is not null;
-
-
-
-# Filter AddressBase Plus to English properties in at the end of 2021 FY with ch flag
-addressbase_plus_db <- addressbase_plus_db %>%
-  filter(
-    !is.na(DW_END_DATE),
-    COUNTRY == "E",
-    substr(CLASS, 1, 1) != "L", # Land
-    substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
-    substr(CLASS, 1, 2) != "PS", # Street Record
-    substr(CLASS, 1, 2) != "RC", # Car Park Space
-    substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
-    substr(CLASS, 1, 1) != "Z", # Object of interest
-  ) %>%
-  mutate(CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)) %>%
-  # Take POSTCODE_LOCATOR as the postcode as it is equal to POSTCODE (whenever
-  # one exists) but more complete and tidy it
-  mutate(POSTCODE = POSTCODE_LOCATOR) %>%
-  addressMatchR::tidy_postcode(col = POSTCODE)
-
-# Get postcodes where there is a care home present (including CQC data)
-care_home_postcodes_db <-
-  union_all(
-    x = addressbase_plus_db %>%
-      filter(CH_FLAG == 1L) %>%
-      select(POSTCODE),
-    y = cqc_uprn_postcode_address_db %>%
-      select(POSTCODE),
-    # Due to differing data sources
-    copy = TRUE,
-    overwrite = TRUE
-  )
-
-
 
 # Convert registration and deregistration columns to dates and filter to 2020/21
 cqc_db <- cqc_db %>%
@@ -74,9 +30,7 @@ cqc_db <- cqc_db %>%
       DEREGISTRATION_DATE >= TO_DATE("2021-04-01", "YYYY-MM-DD"),
     !is.na(UPRN)
   ) %>% 
-  addressMatchR::tidy_postcode(col = POSTAL_CODE) %>%
-  select(POSTAL_CODE) %>% 
-  distinct()
+  addressMatchR::tidy_postcode(col = POSTAL_CODE)
 
 # Create a tidy single line address and postcode
 cqc_db <- cqc_db %>%
@@ -107,22 +61,11 @@ cqc_uprn_postcode_address_db <- cqc_db %>%
   ungroup() %>%
   relocate(UPRN, LOCATION_ID)
 
-cqc_uprn_postcode_address_db %>% 
-  select(POSTCODE) %>% 
-  distinct() %>% 
-  tally()
-
 # Part Two: process Addressbase data -------------------------------------------
 
 # Create a lazy table from the AddressBase Plus table
-addressbase_plus_db <- con_dwcp %>%
-  tbl(from = in_schema("SCD2", "SCD2_OS_ADDRESS_BASE_DATA"))
-
-
-
-# Filter AddressBase Plus to postcodes where there is a care home present
-addressbase_plus_db <- addressbase_plus_db %>%
-  semi_join(y = care_home_postcodes_db)
+addressbase_plus_db <- con %>% 
+  tbl(from = "INT646_ADDRESSBASE")
 
 # Create and tidy the DPA and GEO single line addresses
 addressbase_plus_db <- addressbase_plus_db %>%
@@ -164,7 +107,8 @@ addressbase_plus_db <-
         second_col = "GEO_SINGLE_LINE_ADDRESS",
         merge_col = "CORE_SINGLE_LINE_ADDRESS"
       )
-  )
+  ) %>% 
+  mutate(UPRN = as.double(UPRN))
 
 # Part three: Combine AddressBase Plus (care home postcodes) and CQC -----------
 
@@ -178,8 +122,7 @@ addressbase_plus_cqc_db <- addressbase_plus_db %>%
         NURSING_HOME_FLAG = max(NURSING_HOME_FLAG, na.rm = TRUE),
         RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE)
       ) %>%
-      ungroup(),
-    copy = TRUE
+      ungroup()
   )
 
 # Convert to a long table of distinct stacked single line addresses
@@ -193,22 +136,22 @@ addressbase_plus_cqc_db <- addressbase_plus_cqc_db %>%
   select(-ADDRESS_TYPE) %>%
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE)
 
+addressbase_plus_cqc_db %>% tally()
+
 # Stack the CQC data and make distinct (take max row)
 addressbase_plus_cqc_db <- addressbase_plus_cqc_db %>%
-  union_all(
-    y = cqc_uprn_postcode_address_db %>% 
-      mutate(CH_FLAG = 1L),
-    copy = TRUE
-    ) %>%
+  union_all(y = cqc_uprn_postcode_address_db %>% mutate(CH_FLAG = 1L)) %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>%
   ungroup()
 
+addressbase_plus_cqc_db %>% tally()
+
 # Part Four: Save as table in dw -----------------------------------------------
 
 # Drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con_dalp, name = "INT646_ADDRESSBASE_PLUS_CQC") == T){
-  DBI::dbRemoveTable(conn = con_dalp, name = "INT646_ADDRESSBASE_PLUS_CQC")
+if(DBI::dbExistsTable(conn = con, name = "INT646_ADDRESSBASE_PLUS_CQC") == T){
+  DBI::dbRemoveTable(conn = con, name = "INT646_ADDRESSBASE_PLUS_CQC")
 }
 tictoc::tic()
 # Write the table back to the DB with indexes
@@ -218,8 +161,13 @@ addressbase_plus_cqc_db %>%
     indexes = list(c("UPRN", c("POSTCODE"))), # single line address too long
     temporary = FALSE
   )
+
+addressbase_plus_cqc_db
+
 tictoc::toc()
 
 # Disconnect from database
 DBI::dbDisconnect(con)
-DBI::dbDisconnect(con_dwcp)
+
+# Remove objects and clean environment
+rm(list = ls()); gc()

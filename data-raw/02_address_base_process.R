@@ -31,7 +31,7 @@ cqc_db <- cqc_db %>%
     !is.na(UPRN)
   ) %>% 
   addressMatchR::tidy_postcode(col = POSTAL_CODE) %>%
-  select(POSTAL_CODE) %>% 
+  select(POSTCODE = POSTAL_CODE) %>% 
   distinct()
 
 # Part Two: Filter addressbase data --------------------------------------------
@@ -65,15 +65,14 @@ care_home_postcodes_db <-
       filter(CH_FLAG == 1L) %>%
       select(POSTCODE),
     y = cqc_db %>%
-      select(POSTCODE),
-    # Due to differing data sources
-    copy = TRUE,
-    overwrite = TRUE
+      select(POSTCODE)
   )
 
 # Filter AddressBase Plus to postcodes where there is a care home present
-addressbase_plus_db <- addressbase_plus_db %>%
-  semi_join(y = care_home_postcodes_db)
+addressbase_plus_df <- addressbase_plus_db %>%
+  semi_join(y = care_home_postcodes_db) %>% 
+  collect()
+  
 
 # Part Three: Save as table in dw ----------------------------------------------
 
@@ -81,15 +80,15 @@ addressbase_plus_db <- addressbase_plus_db %>%
 if(DBI::dbExistsTable(conn = con, name = "INT646_ADDRESSBASE") == T){
   DBI::dbRemoveTable(conn = con, name = "INT646_ADDRESSBASE")
 }
-tictoc::tic()
+
 # Write the table back to the DB with indexes
 addressbase_plus_db %>%
   compute(
     name = "INT646_ADDRESSBASE",
-    indexes = list(c("UPRN", c("POSTCODE"))), # single line address too long
+    indexes = "POSTCODE",
     temporary = FALSE
   )
-tictoc::toc()
+
 # Disconnect from database
 DBI::dbDisconnect(con)
 
