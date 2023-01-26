@@ -23,3 +23,4 @@ pacman::p_load(
 
 # Libraries from github
 pacman::p_load_gh("nhsbsa-data-analytics/nhsbsaR")
+pacman::p_load_gh("nhsbsa-data-analytics/addressMatchR")
