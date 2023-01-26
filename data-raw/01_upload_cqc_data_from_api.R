@@ -1,19 +1,41 @@
 # Install and load packages
 source("R/analysis_packages.R")
 
-# Set up connection to the DB
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
+# Determine number of cqc care home records
+care_home_total = httr::GET("https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=1&perPage=1")
+
+# Convert binary to character
+no_of_pages = jsonlite::fromJSON(rawToChar(care_home_total$content))
+
+# Get number of 10k blocks required
+no_of_pages = ceiling(no_of_pages$total / 10000)
 
 # Set a partner code (if we don't set this then we struggle to throttle calls)
-Sys.setenv(CQC_PARTNER_CODE = "NHSBSA")
-cqcr::cqc_partner_code(check_env = TRUE)
+get_cqc_locations_details = function(page_num){
+  
+  # Url with page number pasted inside
+  url = paste0("https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=", page_num, "&perPage=10000")
+  
+  # Get api data
+  data = httr::GET(url)
+  
+  # Convert binary to character
+  data = jsonlite::fromJSON(rawToChar(data$content))
+  
+  # Get location ino as df within list
+  locations = data$locations
+  
+  # Return location info df
+  return(locations)
+}
 
-# Pull the CQC ID name and postcode for every care home (~ 60 requests)
-cqc_locations_df <- cqcr::cqc_locations_search(care_home = TRUE)
+# Get all location info, with 10k records per age retrieved
+cqc_locations = lapply(1:no_of_pages, get_cqc_locations_details) %>% 
+  bind_rows()
 
 # Vector of locations
-location_vec = cqc_locations_df %>% 
-  select(location_id) %>% 
+location_vec = cqc_locations %>%
+  select(locationId) %>%
   pull()
 
 # Function to query cqc api
@@ -124,6 +146,9 @@ year_month = as.integer(substr(gsub('-', '', Sys.Date()), 1, 6))
 # Create table name
 table_name = paste0("INT646_CQC_", year_month)
 
+# Set up connection to the DB
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
 # Check if the table exists and drop any existing table beforehand
 if(DBI::dbExistsTable(conn = con, name = table_name) == T){
   DBI::dbRemoveTable(conn = con, name = table_name)
@@ -143,3 +168,13 @@ DBI::dbDisconnect(con)
 
 # Clear environment and clean
 rm(list = ls()); gc()
+
+#-------------------------------------------------------------------------------
+
+# # Enter NHSBSA credentials
+# Sys.setenv(CQC_PARTNER_CODE = "NHSBSA")
+# cqcr::cqc_partner_code(check_env = TRUE)
+# 
+# # Pull the CQC ID name and postcode for every care home (~ 60 requests)
+# cqc_locations_df <- cqcr::cqc_locations_search(care_home = TRUE)
+# 

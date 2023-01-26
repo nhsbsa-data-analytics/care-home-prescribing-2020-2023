@@ -17,7 +17,6 @@ pacman::p_load(
   'janitor',
   
   # CQC API data 
-  'cqcr',
   'httr',
   'jsonlite'
 )
