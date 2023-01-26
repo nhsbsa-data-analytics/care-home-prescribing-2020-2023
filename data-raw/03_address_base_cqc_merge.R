@@ -26,11 +26,14 @@ cqc_db <- cqc_db %>%
     )
   ) %>%
   filter(
-    REGISTRATION_DATE <= TO_DATE("2021-03-31", "YYYY-MM-DD"),
+    REGISTRATION_DATE <= TO_DATE("2022-03-31", "YYYY-MM-DD"),
     is.na(DEREGISTRATION_DATE) |
-      DEREGISTRATION_DATE >= TO_DATE("2020-04-01", "YYYY-MM-DD"),
+      DEREGISTRATION_DATE >= TO_DATE("2021-04-01", "YYYY-MM-DD"),
     !is.na(UPRN)
-  )
+  ) %>% 
+  addressMatchR::tidy_postcode(col = POSTAL_CODE) %>%
+  select(POSTAL_CODE) %>% 
+  distinct()
 
 # Create a tidy single line address and postcode
 cqc_db <- cqc_db %>%
@@ -60,6 +63,11 @@ cqc_uprn_postcode_address_db <- cqc_db %>%
   ) %>%
   ungroup() %>%
   relocate(UPRN, LOCATION_ID)
+
+cqc_uprn_postcode_address_db %>% 
+  select(POSTCODE) %>% 
+  distinct() %>% 
+  tally()
 
 # Part Two: process Addressbase data -------------------------------------------
 
@@ -185,10 +193,10 @@ addressbase_plus_cqc_db <- addressbase_plus_cqc_db %>%
 # Part Four: Save as table in dw -----------------------------------------------
 
 # Drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con, name = "INT646_ADDRESSBASE_PLUS_CQC") == T){
-  DBI::dbRemoveTable(conn = con, name = "INT646_ADDRESSBASE_PLUS_CQC")
+if(DBI::dbExistsTable(conn = con_dalp, name = "INT646_ADDRESSBASE_PLUS_CQC") == T){
+  DBI::dbRemoveTable(conn = con_dalp, name = "INT646_ADDRESSBASE_PLUS_CQC")
 }
-
+tictoc::tic()
 # Write the table back to the DB with indexes
 addressbase_plus_cqc_db %>%
   compute(
@@ -196,6 +204,7 @@ addressbase_plus_cqc_db %>%
     indexes = list(c("UPRN", c("POSTCODE"))), # single line address too long
     temporary = FALSE
   )
+tictoc::toc()
 
 # Disconnect from database
 DBI::dbDisconnect(con)
