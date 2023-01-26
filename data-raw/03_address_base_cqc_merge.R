@@ -136,8 +136,6 @@ addressbase_plus_cqc_db <- addressbase_plus_cqc_db %>%
   select(-ADDRESS_TYPE) %>%
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE)
 
-addressbase_plus_cqc_db %>% tally()
-
 # Stack the CQC data and make distinct (take max row)
 addressbase_plus_cqc_db <- addressbase_plus_cqc_db %>%
   union_all(y = cqc_uprn_postcode_address_db %>% mutate(CH_FLAG = 1L)) %>%
@@ -145,15 +143,13 @@ addressbase_plus_cqc_db <- addressbase_plus_cqc_db %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>%
   ungroup()
 
-addressbase_plus_cqc_db %>% tally()
-
 # Part Four: Save as table in dw -----------------------------------------------
 
 # Drop any existing table beforehand
 if(DBI::dbExistsTable(conn = con, name = "INT646_ADDRESSBASE_PLUS_CQC") == T){
   DBI::dbRemoveTable(conn = con, name = "INT646_ADDRESSBASE_PLUS_CQC")
 }
-tictoc::tic()
+
 # Write the table back to the DB with indexes
 addressbase_plus_cqc_db %>%
   compute(
@@ -161,10 +157,6 @@ addressbase_plus_cqc_db %>%
     indexes = list(c("UPRN", c("POSTCODE"))), # single line address too long
     temporary = FALSE
   )
-
-addressbase_plus_cqc_db
-
-tictoc::toc()
 
 # Disconnect from database
 DBI::dbDisconnect(con)
