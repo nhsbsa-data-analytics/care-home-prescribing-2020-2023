@@ -5,11 +5,54 @@ library(dbplyr)
 con_dalp <- nhsbsaR::con_nhsbsa(database = "DALP")
 con_dwcp <- nhsbsaR::con_nhsbsa(database = "DWCP")
 
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+address_base_db <- con_dalp %>%
+  tbl(from = in_schema("SCD2", sql("SCD2_ETP_DY_PAYLOAD_MSG_DATA@DWCP.WORLD")))
+
 # Part One: process cqc data ---------------------------------------------------
 
 # Create a lazy table from the CQC care home table
 cqc_db <- con_dalp %>%
   tbl(from = "INT646_CQC_202301")
+
+
+select uprn from SCD2.scd2_os_address_base_data@DWCP.WORLD where dw_end_date is not null;
+
+
+
+# Filter AddressBase Plus to English properties in at the end of 2021 FY with ch flag
+addressbase_plus_db <- addressbase_plus_db %>%
+  filter(
+    !is.na(DW_END_DATE),
+    COUNTRY == "E",
+    substr(CLASS, 1, 1) != "L", # Land
+    substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
+    substr(CLASS, 1, 2) != "PS", # Street Record
+    substr(CLASS, 1, 2) != "RC", # Car Park Space
+    substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
+    substr(CLASS, 1, 1) != "Z", # Object of interest
+  ) %>%
+  mutate(CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)) %>%
+  # Take POSTCODE_LOCATOR as the postcode as it is equal to POSTCODE (whenever
+  # one exists) but more complete and tidy it
+  mutate(POSTCODE = POSTCODE_LOCATOR) %>%
+  addressMatchR::tidy_postcode(col = POSTCODE)
+
+# Get postcodes where there is a care home present (including CQC data)
+care_home_postcodes_db <-
+  union_all(
+    x = addressbase_plus_db %>%
+      filter(CH_FLAG == 1L) %>%
+      select(POSTCODE),
+    y = cqc_uprn_postcode_address_db %>%
+      select(POSTCODE),
+    # Due to differing data sources
+    copy = TRUE,
+    overwrite = TRUE
+  )
+
+
 
 # Convert registration and deregistration columns to dates and filter to 2020/21
 cqc_db <- cqc_db %>%
@@ -75,36 +118,7 @@ cqc_uprn_postcode_address_db %>%
 addressbase_plus_db <- con_dwcp %>%
   tbl(from = in_schema("SCD2", "SCD2_OS_ADDRESS_BASE_DATA"))
 
-# Filter AddressBase Plus to English properties in at the end of 2021 FY with ch flag
-addressbase_plus_db <- addressbase_plus_db %>%
-  filter(
-    !is.na(DW_END_DATE),
-    COUNTRY == "E",
-    substr(CLASS, 1, 1) != "L", # Land
-    substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
-    substr(CLASS, 1, 2) != "PS", # Street Record
-    substr(CLASS, 1, 2) != "RC", # Car Park Space
-    substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
-    substr(CLASS, 1, 1) != "Z", # Object of interest
-  ) %>%
-  mutate(CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)) %>%
-  # Take POSTCODE_LOCATOR as the postcode as it is equal to POSTCODE (whenever
-  # one exists) but more complete and tidy it
-  mutate(POSTCODE = POSTCODE_LOCATOR) %>%
-  addressMatchR::tidy_postcode(col = POSTCODE)
 
-# Get postcodes where there is a care home present (including CQC data)
-care_home_postcodes_db <-
-  union_all(
-    x = addressbase_plus_db %>%
-      filter(CH_FLAG == 1L) %>%
-      select(POSTCODE),
-    y = cqc_uprn_postcode_address_db %>%
-      select(POSTCODE),
-    # Due to differing data sources
-    copy = TRUE,
-    overwrite = TRUE
-  )
 
 # Filter AddressBase Plus to postcodes where there is a care home present
 addressbase_plus_db <- addressbase_plus_db %>%

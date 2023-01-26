@@ -2,13 +2,12 @@ library(dplyr)
 library(dbplyr)
 
 # Set up connection to the DB
-con_dalp <- nhsbsaR::con_nhsbsa(database = "DALP")
-con_dwcp <- nhsbsaR::con_nhsbsa(database = "DWCP")
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Part One: Create postcodes --------------------------------------------------
+# Part One: Get cqc postcodes --------------------------------------------------
 
 # Create a lazy table from the CQC care home table
-cqc_db <- con_dalp %>%
+cqc_db <- con %>%
   tbl(from = "INT646_CQC_202301")
 
 # Convert registration and deregistration columns within 2021/22
@@ -35,11 +34,11 @@ cqc_db <- cqc_db %>%
   select(POSTAL_CODE) %>% 
   distinct()
 
-# Part Two: process Addressbase data -------------------------------------------
+# Part Two: Filter addressbase data --------------------------------------------
 
-# Create a lazy table from the AddressBase Plus table
-addressbase_plus_db <- con_dwcp %>%
-  tbl(from = in_schema("SCD2", "SCD2_OS_ADDRESS_BASE_DATA"))
+# Create a lazy table addressbase data in scd2
+addressbase_plus_db <- con %>%
+  tbl(from = in_schema("SCD2", sql("SCD2_OS_ADDRESS_BASE_DATA@DWCP.WORLD")))
 
 # Filter AddressBase Plus to English properties in at the end of 2021 FY with ch flag
 addressbase_plus_db <- addressbase_plus_db %>%
@@ -65,7 +64,7 @@ care_home_postcodes_db <-
     x = addressbase_plus_db %>%
       filter(CH_FLAG == 1L) %>%
       select(POSTCODE),
-    y = cqc_uprn_postcode_address_db %>%
+    y = cqc_db %>%
       select(POSTCODE),
     # Due to differing data sources
     copy = TRUE,
@@ -76,55 +75,13 @@ care_home_postcodes_db <-
 addressbase_plus_db <- addressbase_plus_db %>%
   semi_join(y = care_home_postcodes_db)
 
-# Create and tidy the DPA and GEO single line addresses
-addressbase_plus_db <- addressbase_plus_db %>%
-  # Rename required as OS table names have changed
-  rename(
-    DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
-    DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
-    DEP_LOCALITY = DEPENDENT_LOCALITY
-  ) %>% 
-  addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
-  addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
-  addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
-  addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>%
-  select(
-    UPRN,
-    POSTCODE,
-    DPA_SINGLE_LINE_ADDRESS,
-    GEO_SINGLE_LINE_ADDRESS,
-    CH_FLAG
-  )
-
-# When DPA != GEO then add a CORE single line address
-addressbase_plus_db <-
-  union_all(
-    x = addressbase_plus_db %>%
-      filter(
-        is.na(DPA_SINGLE_LINE_ADDRESS) |
-          is.na(GEO_SINGLE_LINE_ADDRESS) |
-          DPA_SINGLE_LINE_ADDRESS == GEO_SINGLE_LINE_ADDRESS
-      ),
-    y = addressbase_plus_db %>%
-      filter(
-        !is.na(DPA_SINGLE_LINE_ADDRESS),
-        !is.na(GEO_SINGLE_LINE_ADDRESS),
-        DPA_SINGLE_LINE_ADDRESS != GEO_SINGLE_LINE_ADDRESS
-      ) %>%
-      nhsbsaR::oracle_merge_strings(
-        first_col = "DPA_SINGLE_LINE_ADDRESS",
-        second_col = "GEO_SINGLE_LINE_ADDRESS",
-        merge_col = "CORE_SINGLE_LINE_ADDRESS"
-      )
-  )
-
 # Part Three: Save as table in dw ----------------------------------------------
 
 # Drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con_dalp, name = "INT646_ADDRESSBASE") == T){
-  DBI::dbRemoveTable(conn = con_dalp, name = "INT646_ADDRESSBASE")
+if(DBI::dbExistsTable(conn = con, name = "INT646_ADDRESSBASE") == T){
+  DBI::dbRemoveTable(conn = con, name = "INT646_ADDRESSBASE")
 }
-
+tictoc::tic()
 # Write the table back to the DB with indexes
 addressbase_plus_db %>%
   compute(
@@ -132,7 +89,9 @@ addressbase_plus_db %>%
     indexes = list(c("UPRN", c("POSTCODE"))), # single line address too long
     temporary = FALSE
   )
-
+tictoc::toc()
 # Disconnect from database
-DBI::dbDisconnect(con_dalp)
-DBI::dbDisconnect(con_dwcp)
+DBI::dbDisconnect(con)
+
+# Remove and clean environment
+rm(list = ls()); gc()
