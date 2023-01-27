@@ -67,15 +67,12 @@ care_home_postcodes_db <-
     x = addressbase_plus_db %>%
       filter(CH_FLAG == 1L) %>%
       select(POSTCODE),
-    y = cqc_db %>%
-      select(POSTCODE)
+    y = cqc_postcodes_db
   )
 
 # Filter AddressBase Plus to postcodes where there is a care home present
 addressbase_plus_df <- addressbase_plus_db %>%
-  semi_join(y = care_home_postcodes_db) %>% 
-  collect()
-  
+  semi_join(y = care_home_postcodes_db) 
 
 # Part Three: Save as table in dw ----------------------------------------------
 
