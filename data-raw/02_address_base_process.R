@@ -4,14 +4,18 @@ library(dbplyr)
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+# Manually specify start date and end date
+start_date = '2021-04-01'
+end_date = '2022-03-31'
+
 # Part One: Get cqc postcodes --------------------------------------------------
 
 # Create a lazy table from the CQC care home table
 cqc_db <- con %>%
   tbl(from = "INT646_CQC_202301")
 
-# Convert registration and deregistration columns within 2021/22
-cqc_db <- cqc_db %>%
+# Remove na uprn, filter by relevant date
+cqc_postcodes_db = cqc_db %>%   
   mutate(
     REGISTRATION_DATE = ifelse(
       test = is.na(REGISTRATION_DATE),
@@ -25,13 +29,12 @@ cqc_db <- cqc_db %>%
     )
   ) %>%
   filter(
-    REGISTRATION_DATE <= TO_DATE("2022-03-31", "YYYY-MM-DD"),
+    REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
     is.na(DEREGISTRATION_DATE) |
-      DEREGISTRATION_DATE >= TO_DATE("2021-04-01", "YYYY-MM-DD"),
+      DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD"),
     !is.na(UPRN)
   ) %>% 
-  addressMatchR::tidy_postcode(col = POSTAL_CODE) %>%
-  select(POSTCODE = POSTAL_CODE) %>% 
+  select(POSTCODE) %>% 
   distinct()
 
 # Part Two: Filter addressbase data --------------------------------------------

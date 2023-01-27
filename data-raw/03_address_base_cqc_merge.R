@@ -55,6 +55,7 @@ cqc_uprn_postcode_address_db <- cqc_db %>%
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     # Change UPRN to numeric and loose 2 doing max
     UPRN = max(as.integer(UPRN), na.rm = TRUE),
+    UPRN = ifelse(is.infinite(UPRN), NA, UPRN),
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME), na.rm = TRUE)
   ) %>%

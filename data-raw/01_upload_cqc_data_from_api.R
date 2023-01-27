@@ -15,7 +15,9 @@ get_api_content = function(url){
 }
 
 # Get number of cqc pages for main api query
-no_of_pages = get_api_content("https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=1&perPage=1")
+no_of_pages = get_api_content(
+  "https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=1&perPage=1"
+  )
 
 # Get number of 10k blocks required
 no_of_pages = ceiling(no_of_pages$total / 10000)
@@ -24,7 +26,11 @@ no_of_pages = ceiling(no_of_pages$total / 10000)
 get_cqc_locations_details = function(page_num){
   
   # Url with page number pasted inside
-  url = paste0("https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=", page_num, "&perPage=10000")
+  url = paste0(
+    "https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=", 
+    page_num, 
+    "&perPage=10000"
+    )
   
   # Get api data
   data = get_api_content(url)
@@ -49,7 +55,10 @@ location_vec = cqc_locations %>%
 get_cqc_api_location_data = function(loc_num){
   
   # Paste location url with location_id
-  url = paste0("https://api.cqc.org.uk/public/v1/locations/", location_vec[loc_num])
+  url = paste0(
+    "https://api.cqc.org.uk/public/v1/locations/", 
+    location_vec[loc_num]
+    )
   
   # Get data
   data = get_api_content(url) %>% 
@@ -127,12 +136,9 @@ cqc_details_df <- cqc_details %>%
   select(
     location_id,
     uprn,
-    registration_status,
     registration_date,
     deregistration_date,
-    dormancy,
     name,
-    # Change in postal_line_address formatting
     postal_address_line1,
     postal_address_line2,
     postal_address_town_city,
@@ -142,45 +148,47 @@ cqc_details_df <- cqc_details %>%
     residential_home,
     type,
     number_of_beds
-  ) %>%
-  rename_with(toupper); gc()
+  ) ; gc()
 
 # Process the cqc df output, in preparation for matching
 cqc_process_df = cqc_details_df %>% 
-  rename(POSTCODE = POSTAL_CODE) %>% 
+  rename(postcode = postal_code) %>% 
   mutate(
-    REGISTRATION_DATE = as.Date(REGISTRATION_DATE),
-    DEREGISTRATION_DATE = as.Date(DEREGISTRATION_DATE),
-    SINGLE_LINE_ADDRESS = toupper(paste(
-      ifelse(is.na(NAME), "", NAME),
-      ifelse(is.na(POSTAL_ADDRESS_LINE1), "", POSTAL_ADDRESS_LINE1),
-      ifelse(is.na(POSTAL_ADDRESS_LINE2), "", POSTAL_ADDRESS_LINE2),
-      ifelse(is.na(POSTAL_ADDRESS_TOWN_CITY), "", POSTAL_ADDRESS_TOWN_CITY),
-      ifelse(is.na(POSTAL_ADDRESS_COUNTY), "", POSTAL_ADDRESS_COUNTY)
+    # Paste fields together to create single line address
+    single_line_address = toupper(paste(
+      ifelse(is.na(name), "", name),
+      ifelse(is.na(postal_address_line1), "", postal_address_line1),
+      ifelse(is.na(postal_address_line2), "", postal_address_line2),
+      ifelse(is.na(postal_address_town_city), "", postal_address_town_city),
+      ifelse(is.na(postal_address_county), "", postal_address_county)
     )),
-    POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)),
-    SINGLE_LINE_ADDRESS = gsub(" & ", "and", SINGLE_LINE_ADDRESS),
-    SINGLE_LINE_ADDRESS = gsub("(\\D)(\\d)", "\\1 \\2", SINGLE_LINE_ADDRESS),
-    SINGLE_LINE_ADDRESS = gsub("(\\d)(\\D)", "\\1 \\2", SINGLE_LINE_ADDRESS),
-    SINGLE_LINE_ADDRESS = ifelse(
-      grepl("[0-9] - [0-9]", SINGLE_LINE_ADDRESS) == T,
-      gsub(" - ", "-", SINGLE_LINE_ADDRESS),
-      SINGLE_LINE_ADDRESS
-    ),
-    SINGLE_LINE_ADDRESS = gsub("[,.();:#'']", " ", SINGLE_LINE_ADDRESS),
-    SINGLE_LINE_ADDRESS = stringr::str_squish(SINGLE_LINE_ADDRESS),
-    UPRN = as.numeric(UPRN)
+    # Postcode Cleaning
+    postcode = toupper(gsub("[^[:alnum:]]", "", postcode)),
+    # Address cleaning
+    single_line_address = gsub(" & ", "and", single_line_address),
+    single_line_address = gsub("(\\D)(\\d)", "\\1 \\2", single_line_address),
+    single_line_address = gsub("(\\d)(\\D)", "\\1 \\2", single_line_address),
+    single_line_address = gsub("[,.();:#'']", " ", single_line_address),
+    single_line_address = stringr::str_squish(single_line_address),
+    single_line_address = ifelse(
+      grepl("[0-9] - [0-9]", single_line_address) == T,
+      gsub(" - ", "-", single_line_address),
+      single_line_address
+    )
   ) %>% 
-  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-  summarise(
-    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
-    UPRN = max(UPRN, na.rm = TRUE),
-    UPRN = ifelse(is.infinite(UPRN), NA, UPRN),
-    NURSING_HOME_FLAG = max(as.integer(NURSING_HOME), na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME), na.rm = TRUE)
-  ) %>%
-  ungroup() %>%
-  relocate(UPRN, LOCATION_ID)
+  select(
+    uprn,
+    location_id,
+    registration_date,
+    deregistration_date,
+    single_line_address,
+    postcode,
+    nursing_home_flag = nursing_home,
+    residential_home_flag = residential_home,
+    type,
+    number_of_beds
+  ) %>% 
+  rename_with(toupper)
 
 # Get current year_month
 year_month = as.integer(substr(gsub('-', '', Sys.Date()), 1, 6))
@@ -199,9 +207,9 @@ if(DBI::dbExistsTable(conn = con, name = table_name) == T){
 # Upload to DB with indexes
 con %>%
   copy_to(
-    df = cqc_details_df,
+    df = cqc_process_df,
     name = table_name,
-    indexes = list(c("LOCATION_ID"), c("UPRN"), c("POSTAL_CODE")),
+    indexes = list(c("LOCATION_ID"), c("UPRN"), c("POSTCODE")),
     temporary = FALSE
   )
 
@@ -210,13 +218,3 @@ DBI::dbDisconnect(con)
 
 # Clear environment and clean
 rm(list = ls()); gc()
-
-#-------------------------------------------------------------------------------
-
-# # Enter NHSBSA credentials
-# Sys.setenv(CQC_PARTNER_CODE = "NHSBSA")
-# cqcr::cqc_partner_code(check_env = TRUE)
-# 
-# # Pull the CQC ID name and postcode for every care home (~ 60 requests)
-# cqc_locations_df <- cqcr::cqc_locations_search(care_home = TRUE)
-# 
