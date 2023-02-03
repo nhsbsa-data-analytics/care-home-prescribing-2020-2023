@@ -180,27 +180,29 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Define table name
 table_name = paste0(
   "INT646_AB_PLUS_", 
-  substr(gsub("-", "", ab_plus_epoch_date),1,6)
+  substr(gsub("-", "", ab_plus_epoch_date), 1, 6)
   )
 
 # Check if the table exists and drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con, name = table_name) == T){
-  DBI::dbRemoveTable(conn = con, name = table_name)
+if(DBI::dbExistsTable(conn = con, name = "INT646_TEMP") == T){
+  DBI::dbRemoveTable(conn = con, name = "INT646_TEMP")
 }
 
 # Upload to DB with indexes
 con %>%
   copy_to(
     df = results_df,
-    name = table_name,
+    name = "INT646_TEMP",
     indexes = list(c("UPRN"), c("POSTCODE")),
     temporary = FALSE
   )
 
+# Connect to temp table
 ab_plus_db = con %>%
-  tbl(from = table_name)
+  tbl(from = "INT646_TEMP")
 
-ab_plus_db %>% 
+# Generate multiple SLA
+ab_plus_db = ab_plus_db %>% 
   # Rename required as OS table names have changed
   rename(
     DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
@@ -212,36 +214,25 @@ ab_plus_db %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
   addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
   addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>% 
+  nhsbsaR::oracle_merge_strings(
+    first_col = "DPA_SINGLE_LINE_ADDRESS",
+    second_col = "GEO_SINGLE_LINE_ADDRESS",
+    merge_col = "CORE_SINGLE_LINE_ADDRESS"
+  ) %>% 
   select(
     UPRN,
     POSTCODE,
     DPA_SINGLE_LINE_ADDRESS,
     GEO_SINGLE_LINE_ADDRESS,
-    CH_FLAG
+    CORE_SINGLE_LINE_ADDRESS,
+    CH_FLAG,
+    EPOCH
   )
 
-# When DPA != GEO then add a CORE single line address
-ab_plus_db <-
-  union_all(
-    x = ab_plus_db %>%
-      filter(
-        is.na(DPA_SINGLE_LINE_ADDRESS) |
-          is.na(GEO_SINGLE_LINE_ADDRESS) |
-          DPA_SINGLE_LINE_ADDRESS == GEO_SINGLE_LINE_ADDRESS
-      ),
-    y = ab_plus_db %>%
-      filter(
-        !is.na(DPA_SINGLE_LINE_ADDRESS),
-        !is.na(GEO_SINGLE_LINE_ADDRESS),
-        DPA_SINGLE_LINE_ADDRESS != GEO_SINGLE_LINE_ADDRESS
-      ) %>%
-      nhsbsaR::oracle_merge_strings(
-        first_col = "DPA_SINGLE_LINE_ADDRESS",
-        second_col = "GEO_SINGLE_LINE_ADDRESS",
-        merge_col = "CORE_SINGLE_LINE_ADDRESS"
-      )
-  ) %>% 
-  mutate(UPRN = as.double(UPRN))
+# Check if the table exists and drop any existing table beforehand
+if(DBI::dbExistsTable(conn = con, name = table_name) == T){
+  DBI::dbRemoveTable(conn = con, name = table_name)
+}
 
 # Write the table back to the DB with indexes
 ab_plus_db %>%
@@ -250,6 +241,11 @@ ab_plus_db %>%
     indexes = list(c("UPRN", c("POSTCODE"))),
     temporary = FALSE
   )
+
+# Check if the table exists and drop any existing table beforehand
+if(DBI::dbExistsTable(conn = con, name = "INT646_TEMP") == T){
+  DBI::dbRemoveTable(conn = con, name = "INT646_TEMP")
+}
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

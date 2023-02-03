@@ -37,61 +37,29 @@ cqc_db = cqc_db %>%
 
 # Part Two: Process ab plus data -----------------------------------------------
 
-# Filter irrelevant building classes
-ab_plus_db = ab_plus_db %>%
-  filter(
-    substr(CLASS, 1, 1) != "L", # Land
-    substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
-    substr(CLASS, 1, 2) != "PS", # Street Record
-    substr(CLASS, 1, 2) != "RC", # Car Park Space
-    substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
-    substr(CLASS, 1, 1) != "Z", # Object of interest
-  ) %>%
-  mutate(CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)) %>%
-  # Take POSTCODE_LOCATOR as more complete then tidy
-  select(-POSTCODE) %>% 
-  mutate(POSTCODE = POSTCODE_LOCATOR) %>% 
-  # Rename required as OS table names have changed
-  rename(
-    DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
-    DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
-    DEP_LOCALITY = DEPENDENT_LOCALITY
-  ) %>% 
-  # Generate and clean SLA
-  addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
-  addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
-  addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
-  addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>% 
-  select(
-    UPRN,
-    POSTCODE,
-    DPA_SINGLE_LINE_ADDRESS,
-    GEO_SINGLE_LINE_ADDRESS,
-    CH_FLAG
-  )
-
 # When DPA != GEO then add a CORE single line address
-ab_plus_db <-
-  union_all(
-    x = ab_plus_db %>%
-      filter(
-        is.na(DPA_SINGLE_LINE_ADDRESS) |
-          is.na(GEO_SINGLE_LINE_ADDRESS) |
-          DPA_SINGLE_LINE_ADDRESS == GEO_SINGLE_LINE_ADDRESS
-      ),
-    y = ab_plus_db %>%
-      filter(
-        !is.na(DPA_SINGLE_LINE_ADDRESS),
-        !is.na(GEO_SINGLE_LINE_ADDRESS),
-        DPA_SINGLE_LINE_ADDRESS != GEO_SINGLE_LINE_ADDRESS
-      ) %>%
-      nhsbsaR::oracle_merge_strings(
-        first_col = "DPA_SINGLE_LINE_ADDRESS",
-        second_col = "GEO_SINGLE_LINE_ADDRESS",
-        merge_col = "CORE_SINGLE_LINE_ADDRESS"
-      )
-  ) %>% 
-  mutate(UPRN = as.double(UPRN))
+# NOTE: REQUIRES EDITING!
+# ab_plus_db <-
+#   union_all(
+#     x = ab_plus_db %>%
+#       filter(
+#         is.na(DPA_SINGLE_LINE_ADDRESS) |
+#           is.na(GEO_SINGLE_LINE_ADDRESS) |
+#           DPA_SINGLE_LINE_ADDRESS == GEO_SINGLE_LINE_ADDRESS
+#       ),
+#     y = ab_plus_db %>%
+#       filter(
+#         !is.na(DPA_SINGLE_LINE_ADDRESS),
+#         !is.na(GEO_SINGLE_LINE_ADDRESS),
+#         DPA_SINGLE_LINE_ADDRESS != GEO_SINGLE_LINE_ADDRESS
+#       ) %>%
+#       nhsbsaR::oracle_merge_strings(
+#         first_col = "DPA_SINGLE_LINE_ADDRESS",
+#         second_col = "GEO_SINGLE_LINE_ADDRESS",
+#         merge_col = "CORE_SINGLE_LINE_ADDRESS"
+#       )
+#   ) %>% 
+#   mutate(UPRN = as.double(UPRN))
 
 # Part three: Combine AddressBase Plus (care home postcodes) and CQC -----------
 

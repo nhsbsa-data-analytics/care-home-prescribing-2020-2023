@@ -40,9 +40,6 @@ api_bin = parallel::parLapply(clust, 1:length(file_name_urls), get_api_info)
 # Stop cluster
 parallel::stopCluster(clust)
 
-# Save data
-saveRDS(api_bin, "API_BIN.Rds")
-
 # Function to wriet then read csv file
 write_read_csv = function(index){
   
