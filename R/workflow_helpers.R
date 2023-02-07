@@ -26,3 +26,6 @@ get_year_month_from_date = function(date_field){
   return(output)
 }
 
+#' @param date_field: string in the form 'YYYY-MM-DD'
+#' @description gets date as 8 digit integer
+get_integer_from_date = function(x) as.integer(gsub("-", "", x))
