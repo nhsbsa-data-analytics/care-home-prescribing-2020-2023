@@ -193,8 +193,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Define table name
 table_name = paste0(
   "INT646_AB_PLUS_", 
-  lubridate::year(ab_plus_epoch_date),
-  min_two_digits(lubridate::month(ab_plus_epoch_date))
+  get_year_month_from_date(ab_plus_epoch_date)
   )
 
 # Define temp table name
