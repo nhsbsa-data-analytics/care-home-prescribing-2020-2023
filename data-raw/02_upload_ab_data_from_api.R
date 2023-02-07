@@ -1,6 +1,7 @@
 
 # Load packages and global variables
 source("R/analysis_packages.R")
+source("R/workflow_helpers.R")
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -8,6 +9,12 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Create a lazy table from the CQC care home table
 cqc_db <- con %>%
   tbl(from = "INT646_CQC_202301")
+
+# Define start and end dates
+start_date = "2021-04-01"
+end_date = "2022-03-31"
+
+# Part One: get cqc postcoddes to include within ab plus join ------------------
 
 # Get cqc postcodes
 cqc_postcodes = cqc_db %>% 
@@ -27,6 +34,8 @@ cqc_postcodes = cqc_db %>%
 
 # Disconnect now, in case the function crashes due to memory restriction
 DBI::dbDisconnect(con)
+
+# Part Two: get ab plus package info and data downoad url ----------------------
 
 # Identify available data packages
 url <- "https://api.os.uk/downloads/v1/dataPackages?key="
@@ -80,6 +89,8 @@ data_url = ab_info %>%
 data_file_name = ab_info %>% 
   select(fileName) %>% 
   pull()
+
+# Part Three: get raw data, write as binary, then read and process -------------
 
 # Get content from url: 3 mins
 data = httr::GET(data_url)$content
@@ -174,32 +185,36 @@ results_df = results %>%
   select(-POSTCODE) %>% 
   mutate(POSTCODE = POSTCODE_LOCATOR)
 
+# Part four: save as db table in order to apply db functions -------------------
+
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Define table name
 table_name = paste0(
   "INT646_AB_PLUS_", 
-  substr(gsub("-", "", ab_plus_epoch_date), 1, 6)
+  lubridate::year(ab_plus_epoch_date),
+  min_two_digits(lubridate::month(ab_plus_epoch_date))
   )
 
-# Check if the table exists and drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con, name = "INT646_TEMP") == T){
-  DBI::dbRemoveTable(conn = con, name = "INT646_TEMP")
-}
+# Define temp table name
+table_name_temp = paste0(table_name, "_TEMP")
+
+# Drop table if it exists already
+drop_table_if_exists_db(table_name_temp)
 
 # Upload to DB with indexes
 con %>%
   copy_to(
     df = results_df,
-    name = "INT646_TEMP",
+    name = table_name_temp,
     indexes = list(c("UPRN"), c("POSTCODE")),
     temporary = FALSE
   )
 
 # Connect to temp table
 ab_plus_db = con %>%
-  tbl(from = "INT646_TEMP")
+  tbl(from = table_name_temp)
 
 # Generate multiple SLA
 ab_plus_db = ab_plus_db %>% 
@@ -229,10 +244,8 @@ ab_plus_db = ab_plus_db %>%
     EPOCH
   )
 
-# Check if the table exists and drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con, name = table_name) == T){
-  DBI::dbRemoveTable(conn = con, name = table_name)
-}
+# Drop table if it exists already
+drop_table_if_exists_db(table_name)
 
 # Write the table back to the DB with indexes
 ab_plus_db %>%
@@ -242,10 +255,8 @@ ab_plus_db %>%
     temporary = FALSE
   )
 
-# Check if the table exists and drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con, name = "INT646_TEMP") == T){
-  DBI::dbRemoveTable(conn = con, name = "INT646_TEMP")
-}
+# Drop table if it exists already
+drop_table_if_exists_db(table_name_temp)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
