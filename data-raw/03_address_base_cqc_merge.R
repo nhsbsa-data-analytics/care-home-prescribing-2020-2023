@@ -55,6 +55,7 @@ cqc_attributes_db = cqc_db %>%
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
+# Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
   select(-EPOCH) %>% 
   left_join(cqc_attributes_db) %>% 
@@ -73,7 +74,7 @@ ab_plus_cqc_db = ab_plus_db %>%
 # Part Three: Save as table in dw -----------------------------------------------
 
 # Specify db table name
-table_name = "INT646_AB_PLUS_CQC"
+table_name = "INT646_AB_PLUS_CQC_STACK"
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)

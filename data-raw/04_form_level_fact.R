@@ -8,14 +8,14 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table addressbase data
 ab_plus_cqc_db <- con %>%
-  tbl(from = "INT646_AB_PLUS_CQC")
+  tbl(from = "INT646_AB_PLUS_CQC_STACK")
 
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
 
 # Lazy table for paper info
-paper_db <- con %>%
+forms_db <- con %>%
   tbl(from = in_schema("DALL_REF", "PX_PAPER_PFID_ADDRESS"))
 
 # Lazy table for fact table
@@ -38,12 +38,7 @@ end_year_month = get_year_month_from_date(end_date)
 start_int = get_integer_from_date(start_date)
 end_int = get_integer_from_date(end_date)
 
-# Part one: get paper address information --------------------------------------
-
-# Get ab plus and cqc postcodes
-ab_cqc_postcodes_db = ab_plus_cqc_db %>% 
-  select(POSTCODE) %>% 
-  distinct()
+# Part one: filter two fact table cuts for eps and paper info ------------------
 
 # Get appropriate year month fields as a table
 year_month_db = year_month_db %>% 
@@ -53,12 +48,11 @@ year_month_db = year_month_db %>%
     YEAR_MONTH <= end_year_month
   )
 
-# Get relevant fact table pf_ids
-fact_paper_db = fact_db %>% 
+# Initial fact table filter
+fact_db = fact_db %>% 
   inner_join(year_month_db) %>% 
   filter(
     CALC_AGE >= 65L,
-    EPS_FLAG == "N",
     PAY_DA_END == "N", # excludes disallowed items
     PAY_ND_END == "N", # excludes not dispensed items
     PAY_RB_END == "N", # excludes referred back items
@@ -68,18 +62,44 @@ fact_paper_db = fact_db %>%
     IGNORE_FLAG == "N" # excludes LDP dummy forms
     ) %>%
   select(
+    YEAR_MONTH,
+    PF_ID,
+    EPS_FLAG,
+    PART_DATE = EPS_PART_DATE,
+    EPM_ID,
+    PDS_GENDER,
+    CALC_AGE,
+    NHS_NO,
+    ITEM_COUNT
+  )
+
+# Fact table eps info
+fact_eps_db = fact_db %>% 
+  filter(EPS_FLAG == "Y")
+
+# Fact table paper info
+fact_paper_db = fact_db %>% 
+  filter(EPS_FLAG == "N") %>% 
+  select(
     PF_ID, 
     CALC_AGE, 
     ITEM_COUNT, 
     PDS_GENDER
     )
 
+# Part two: process paper info -------------------------------------------------
+
+# Get ab plus and cqc postcodes
+ab_cqc_postcodes_db = ab_plus_cqc_db %>% 
+  select(POSTCODE) %>% 
+  distinct()
+
 # Process paper info
-paper_info_db = paper_db %>% 
+forms_info_db = forms_db %>% 
   inner_join(year_month_db) %>% 
   addressMatchR::tidy_postcode(col = POSTCODE) %>% 
   inner_join(ab_cqc_postcodes_db) %>% 
-  inner_join(fact_paper_db) %>% 
+  inner_join(fact_paper_db, by = "PF_ID") %>% 
   addressMatchR::tidy_postcode(col = ADDRESS) 
   select(
     YEAR_MONTH,
@@ -91,7 +111,7 @@ paper_info_db = paper_db %>%
     ITEM_COUNT, 
     PDS_GENDER
     )
-
+forms_info_db
 # Part two: get electronic address information --------------------------------
 
 # Create the single line address and subset columns
