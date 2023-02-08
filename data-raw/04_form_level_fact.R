@@ -34,9 +34,13 @@ end_date = "2022-03-31"
 start_year_month = get_year_month_from_date(start_date)
 end_year_month = get_year_month_from_date(end_date)
 
+# Define 'buffered' eps date range
+eps_start_date = as.Date(start_date) %m-% months(2)
+eps_end_date = (as.Date(end_date)+10) %m+% months(2)
+
 # Start and end date as integers
-start_int = get_integer_from_date(start_date)
-end_int = get_integer_from_date(end_date)
+eps_start_int = get_integer_from_date(eps_start_date)
+eps_end_int = get_integer_from_date(eps_end_date)
 
 # Part one: filter two fact table cuts for eps and paper info ------------------
 
@@ -46,7 +50,7 @@ year_month_db = year_month_db %>%
   filter(
     YEAR_MONTH >= start_year_month,
     YEAR_MONTH <= end_year_month
-  )
+    )
 
 # Initial fact table filter
 fact_db = fact_db %>% 
@@ -60,7 +64,11 @@ fact_db = fact_db %>%
     OOHC_IND == 0L, # excludes out of hours dispensing
     PRIVATE_IND == 0L, # excludes private dispensers
     IGNORE_FLAG == "N" # excludes LDP dummy forms
-    ) %>%
+    )
+
+# Fact table eps info
+fact_eps_db = fact_db %>% 
+  filter(EPS_FLAG == "Y") %>% 
   select(
     YEAR_MONTH,
     PF_ID,
@@ -71,11 +79,7 @@ fact_db = fact_db %>%
     CALC_AGE,
     NHS_NO,
     ITEM_COUNT
-  )
-
-# Fact table eps info
-fact_eps_db = fact_db %>% 
-  filter(EPS_FLAG == "Y")
+    )
 
 # Fact table paper info
 fact_paper_db = fact_db %>% 
@@ -90,7 +94,7 @@ fact_paper_db = fact_db %>%
 # Part two: process paper info -------------------------------------------------
 
 # Get ab plus and cqc postcodes
-ab_cqc_postcodes_db = ab_plus_cqc_db %>% 
+ab_plus_cqc_db = ab_plus_cqc_db %>% 
   select(POSTCODE) %>% 
   distinct()
 
@@ -98,9 +102,9 @@ ab_cqc_postcodes_db = ab_plus_cqc_db %>%
 forms_info_db = forms_db %>% 
   inner_join(year_month_db) %>% 
   addressMatchR::tidy_postcode(col = POSTCODE) %>% 
-  inner_join(ab_cqc_postcodes_db) %>% 
-  inner_join(fact_paper_db, by = "PF_ID") %>% 
-  addressMatchR::tidy_postcode(col = ADDRESS) 
+  inner_join(ab_plus_cqc_db) %>%  
+  inner_join(fact_paper_db, by = "PF_ID") %>%  
+  addressMatchR::tidy_postcode(col = ADDRESS) %>% 
   select(
     YEAR_MONTH,
     PF_ID,
@@ -111,15 +115,15 @@ forms_info_db = forms_db %>%
     ITEM_COUNT, 
     PDS_GENDER
     )
-forms_info_db
-# Part two: get electronic address information --------------------------------
+  
+# Part three: process electronic info ------------------------------------------
 
 # Create the single line address and subset columns
-eps_db = eps_db %>%
+eps_info_db = eps_db %>%
   # Bring back ETP data from the month previous until 2 months after
   filter(
-    PART_DATE >= start_int,
-    PART_DATE <= end_int
+    PART_DATE >= eps_start_int,
+    PART_DATE <= eps_end_int
   ) %>% 
   # Concatenate fields together by a single space for the single line address
   mutate(
@@ -130,49 +134,17 @@ eps_db = eps_db %>%
       PAT_ADDRESS_LINE4
     )
   ) %>%
-  select(
-    PART_DATE,
-    EPM_ID,
-    POSTCODE = PAT_ADDRESS_POSTCODE,
-    SINGLE_LINE_ADDRESS
-  ) %>% 
   # Tidy postcode and format single line addresses
-  addressMatchR::tidy_postcode(col = POSTCODE) %>%
-  inner_join(ab_cqc_postcodes_db) %>% 
-  addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS)
-
-# Get relevant fact table pf_ids
-eps_info_db = fact_db %>% 
-  inner_join(year_month_db) %>% 
-  filter(
-    CALC_AGE >= 65L,
-    EPS_FLAG == "Y",
-    PAY_DA_END == "N", # excludes disallowed items
-    PAY_ND_END == "N", # excludes not dispensed items
-    PAY_RB_END == "N", # excludes referred back items
-    CD_REQ == "N", # excludes controlled drug requisitions
-    OOHC_IND == 0L, # excludes out of hours dispensing
-    PRIVATE_IND == 0L, # excludes private dispensers
-    IGNORE_FLAG == "N" # excludes LDP dummy forms
-  ) %>%
-  select(
-    YEAR_MONTH,
-    PF_ID,
-    EPS_FLAG,
-    PART_DATE = EPS_PART_DATE,
-    EPM_ID,
-    PDS_GENDER,
-    CALC_AGE,
-    NHS_NO,
-    ITEM_COUNT
-    ) %>% 
-  inner_join(y = eps_db) %>% 
+  addressMatchR::tidy_postcode(col = PAT_ADDRESS_POSTCODE) %>%
+  inner_join(ab_plus_cqc_db, by = c("PAT_ADDRESS_POSTCODE" = "POSTCODE")) %>% 
+  inner_join(fact_eps_db, by = c("EPM_ID", "PART_DATE")) %>% 
+  addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>% 
   select(
     YEAR_MONTH,
     PF_ID,
     NHS_NO,
     SINGLE_LINE_ADDRESS,
-    POSTCODE,
+    POSTCODE = PAT_ADDRESS_POSTCODE,
     CALC_AGE, 
     ITEM_COUNT, 
     PDS_GENDER
@@ -182,14 +154,14 @@ eps_info_db = fact_db %>%
 
 # Stack info
 total_db = eps_info_db %>% 
-  dplyr::union(paper_info_db)
+  dplyr::union(forms_info_db)
 
 # Define output table name
 table_name = "INT646_FORM_LEVEL_FACT"
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
-
+Sys.time()
 tic()
 # Write the table back to DALP with indexes
 total_db %>%
