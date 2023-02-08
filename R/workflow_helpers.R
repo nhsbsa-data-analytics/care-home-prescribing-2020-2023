@@ -4,8 +4,8 @@
 drop_table_if_exists_db = function(table_name_db){
   
   # Drop any existing table beforehand
-  if(DBI::dbExistsTable(conn = con, name = "INT646_AB_PLUS_CQC") == T){
-    DBI::dbRemoveTable(conn = con, name = "INT646_AB_PLUS_CQC")
+  if(DBI::dbExistsTable(conn = con, name = table_name_db) == T){
+    DBI::dbRemoveTable(conn = con, name = table_name_db)
   }
 }
 
