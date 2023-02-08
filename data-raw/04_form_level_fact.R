@@ -94,7 +94,7 @@ paper_info_db = paper_db %>%
   inner_join(year_month_db) %>% 
   addressMatchR::tidy_postcode(col = POSTCODE) %>% 
   inner_join(ab_plus_cqc_db) %>%  
-  inner_join(fact_paper_db, by = "PF_ID") %>%  
+  inner_join(fact_paper_db) %>%  
   addressMatchR::tidy_single_line_address(col = ADDRESS) %>% 
   select(
     PF_ID,
@@ -147,7 +147,7 @@ drop_table_if_exists_db(table_name)
 total_db %>%
   compute(
     name = table_name,
-    indexes = list(c("YEAR_MONTH", "PF_ID"), c("POSTCODE")),
+    indexes = list(c("PF_ID"), c("POSTCODE")),
     temporary = FALSE
   )
 

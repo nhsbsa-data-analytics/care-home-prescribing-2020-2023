@@ -14,10 +14,6 @@ year_month_db <- con %>%
 fact_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
-# Create a lazy table from the item level FACT table
-form_db <- con %>%
-  tbl(from = "INT646_FORM_LEVEL_FACT")
-
 # Create a lazy table from the matched patient address care home table
 match_db <- con %>%
   tbl(from = "INT646_UPRN_MATCH")
@@ -36,10 +32,6 @@ end_year_month = get_year_month_from_date(end_date)
 
 # Create item level FACT table -------------------------------------------------
 
-# Get relevant pf ids
-form_db = form_db %>% 
-  select(PF_ID)
-
 # Get appropriate year month fields as a table
 year_month_db = year_month_db %>% 
   select(YEAR_MONTH) %>% 
@@ -50,7 +42,7 @@ year_month_db = year_month_db %>%
 
 # Get drug info
 drug_db = drug_db %>% 
-  inner_join(year_month_db) %>% 
+  inner_join(year_month_db, by = "YEAR_MONTH") %>% 
   select(
     YEAR_MONTH,
     CALC_PREC_DRUG_RECORD_ID = RECORD_ID,
@@ -64,7 +56,7 @@ drug_db = drug_db %>%
 # Filter to elderly patients in 2020/2021 and required columns
 fact_item_db <- fact_db %>%
   inner_join(year_month_db) %>% 
-  inner_join(form_db) %>% 
+  inner_join(match_db %>% select(PF_ID)) %>% 
   select(
     YEAR_MONTH,
     PF_ID,
@@ -133,20 +125,20 @@ patient_db <- fact_item_db %>%
   )
 
 # Join fact data to patient level dimension
-fact_item_db <- fact_item_db %>%
+fact_item_db = fact_item_db %>%
   left_join(y = patient_db) %>%
   relocate(GENDER, .after = PDS_GENDER) %>%
   relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%
   select(-c(PDS_GENDER, CALC_AGE))
 
 # Define table name
-table_name = name = "INT646_ITEM_LEVEL_BASE"
+table_name = name = "INT646_UPRN_BASE_TABLE"
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)
 
 # Write the table back to DALP
-item_fact_db %>%
+fact_item_db %>%
   compute(
     name = table_name,
     temporary = FALSE
