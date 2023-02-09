@@ -72,7 +72,9 @@ fact_db = fact_db %>%
 fact_eps_db = fact_db %>% 
   filter(EPS_FLAG == "Y") %>% 
   select(
+    YEAR_MONTH,
     PF_ID,
+    NHS_NO,
     PART_DATE = EPS_PART_DATE,
     EPM_ID
     )
@@ -97,6 +99,8 @@ paper_info_db = paper_db %>%
   inner_join(fact_paper_db) %>%  
   addressMatchR::tidy_single_line_address(col = ADDRESS) %>% 
   select(
+    YEAR_MONTH,
+    NHS_NO,
     PF_ID,
     SINGLE_LINE_ADDRESS = ADDRESS,
     POSTCODE
@@ -126,6 +130,8 @@ eps_info_db = eps_db %>%
   inner_join(fact_eps_db, by = c("EPM_ID", "PART_DATE")) %>% 
   addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>% 
   select(
+    YEAR_MONTH,
+    NHS_NO,
     PF_ID,
     SINGLE_LINE_ADDRESS,
     POSTCODE = PAT_ADDRESS_POSTCODE
@@ -150,6 +156,9 @@ total_db %>%
     indexes = list(c("PF_ID"), c("POSTCODE")),
     temporary = FALSE
   )
+
+# Grant access
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
 
 # Disconnect from database
 DBI::dbDisconnect(con)
