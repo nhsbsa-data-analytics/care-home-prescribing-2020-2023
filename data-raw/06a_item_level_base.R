@@ -230,14 +230,11 @@ patient_db <- fact_join_db %>%
 # Join fact data to patient level dimension
 fact_join_db = fact_join_db %>%
   left_join(y = patient_db) %>%
+  # Reorder drug information
   relocate(GENDER, .after = PDS_GENDER) %>%
   relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%
   select(-c(PDS_GENDER, CALC_AGE)) %>% 
-  # Reorder drug information
-  relocate(
-    CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE,
-    .before = CALC_PREC_DRUG_RECORD_ID
-  ) %>%
+  relocate(CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE, .before = CALC_PREC_DRUG_RECORD_ID) %>%
   select(-CALC_PREC_DRUG_RECORD_ID)
 
 # Part four: save output -------------------------------------------------------
@@ -249,6 +246,7 @@ table_name = name = "INT646_BASE_TABLE"
 drop_table_if_exists_db(table_name)
 
 # Write the table back to DALP
+Sys.time()
 tic()
 fact_join_db %>%
   compute(
