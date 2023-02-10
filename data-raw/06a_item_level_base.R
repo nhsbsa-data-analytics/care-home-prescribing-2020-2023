@@ -6,10 +6,6 @@ source("R/workflow_helpers.R")
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Create a lazy table addressbase data
-ab_plus_cqc_db <- con %>%
-  tbl(from = "INT646_AB_PLUS_CQC_STACK")
-
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
@@ -55,7 +51,7 @@ care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL 
 global_exclusion_keywords = "ABOVE|CARAVAN|CHILDREN|HOLIDAY|MOBILE|NO FIXED ABODE|RESORT"
 extra_exclusion_keywords = "CONVENT|HOSPITAL|MARINA|MONASTERY|RECOVERY"
 
-# Part one: non ch postcodes, paper addresses ----------------------------------
+# Part one: prepare tables prior to left join onto fact ------------------------
 
 # Get appropriate year month fields as a table
 year_month_db = year_month_db %>% 
@@ -65,9 +61,17 @@ year_month_db = year_month_db %>%
     YEAR_MONTH <= end_year_month
   )
 
+# Match info minus nhs no
+match_db = match_db %>% 
+  select(-NHS_NO) %>% 
+  rename(
+    MATCH_POSTCODE = POSTCODE,
+    MATCH_SINGLE_LINE_ADDRESS = SINGLE_LINE_ADDRESS
+  )
+
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
-  inner_join(year_month_db) %>% 
+  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
   filter(
     CALC_AGE >= 65L,
     PATIENT_IDENTIFIED == "Y",
@@ -79,7 +83,7 @@ fact_db = fact_db %>%
     PRIVATE_IND == 0L, # excludes private dispensers
     IGNORE_FLAG == "N", # remove dummy ldp forms
     ITEM_COUNT >= 1 # remove element-level rows
-  ) %>% 
+  ) %>%
   select(
     YEAR_MONTH,
     PF_ID,
@@ -110,48 +114,16 @@ drug_db = drug_db %>%
   )
 
 # Process paper info
-paper_plus_match_db = paper_db %>% 
-  inner_join(year_month_db) %>% 
-  anti_join(match_db %>% select(YEAR_MONTH, PF_ID)) %>% 
+paper_db = paper_db %>% 
+  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
   addressMatchR::tidy_postcode(col = POSTCODE) %>% 
   addressMatchR::tidy_single_line_address(col = ADDRESS) %>% 
   select(
     YEAR_MONTH,
     PF_ID,
-    SINGLE_LINE_ADDRESS = ADDRESS,
-    POSTCODE
-  ) %>% 
-  mutate(
-    AB_FLAG = 0,
-    UPRN_FLAG = 0,
-    CH_FLAG = case_when(
-        REGEXP_INSTR(SINGLE_LINE_ADDRESS, care_home_keywords) > 0L &
-        REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) == 0L &
-        REGEXP_INSTR(SINGLE_LINE_ADDRESS, extra_exclusion_keywords) == 0L ~ 1,
-        TRUE ~ 0
-    ),
-    MATCH_TYPE = ifelse(CH_FLAG == 1, "SINGLE_KEYWORD", "NO MATCH")
-  ) %>% 
-  union_all(match_db) %>% 
-  inner_join(fact_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
-  # Replace nas
-  tidyr::replace_na(
-    list(
-      AB_FLAG = 0L,
-      UPRN_FLAG = 0L,
-      CH_FLAG = 0L, 
-      MATCH_TYPE = "NO MATCH"
-    )
-  ) %>% 
-  # Reorder drug information
-  relocate(
-    CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE,
-    .before = CALC_PREC_DRUG_RECORD_ID
-  ) %>%
-  select(-CALC_PREC_DRUG_RECORD_ID)
-
-# Part two: non ch postcodes eps addresses -------------------------------------
+    PAPER_SINGLE_LINE_ADDRESS = ADDRESS,
+    PAPER_POSTCODE = POSTCODE
+  )
 
 # Proces eps info
 eps_db = eps_db %>%
@@ -162,7 +134,7 @@ eps_db = eps_db %>%
   ) %>% 
   # Concatenate fields together by a single space for the single line address
   mutate(
-    SINGLE_LINE_ADDRESS = paste(
+    EPS_SINGLE_LINE_ADDRESS = paste(
       PAT_ADDRESS_LINE1,
       PAT_ADDRESS_LINE2,
       PAT_ADDRESS_LINE3,
@@ -171,56 +143,52 @@ eps_db = eps_db %>%
   ) %>%
   # Tidy postcode and format single line addresses
   addressMatchR::tidy_postcode(col = PAT_ADDRESS_POSTCODE) %>%
-  addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>% 
+  addressMatchR::tidy_single_line_address(col = EPS_SINGLE_LINE_ADDRESS) %>% 
   select(
-    YEAR_MONTH,
-    NHS_NO,
-    PF_ID,
-    SINGLE_LINE_ADDRESS,
-    POSTCODE = PAT_ADDRESS_POSTCODE
-  ) %>% 
+    EPM_ID,
+    PART_DATE,
+    EPS_SINGLE_LINE_ADDRESS,
+    EPS_POSTCODE = PAT_ADDRESS_POSTCODE
+  )
+
+# Part two: multiple left joins, coalesce and identify new keyword matches -----
+
+# Join all tables onto fact then process
+fact_join_db = fact_db %>% 
+  left_join(match_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+  left_join(paper_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+  left_join(eps_db, by = c("EPM_ID", "PART_DATE")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
   mutate(
-    AB_FLAG = 0,
-    UPRN_FLAG = 0,
+    POSTCODE = coalesce(
+      MATCH_POSTCODE, 
+      EPS_POSTCODE, 
+      PAPER_POSTCODE
+      ),
+    SINGLE_LINE_ADDRESS = coalesce(
+      MATCH_SINGLE_LINE_ADDRESS,
+      EPS_SINGLE_LINE_ADDRESS,
+      PAPER_SINGLE_LINE_ADDRESS
+      ),
     CH_FLAG = case_when(
+      is.na(AB_FLAG) &
       REGEXP_INSTR(SINGLE_LINE_ADDRESS, care_home_keywords) > 0L &
         REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) == 0L &
         REGEXP_INSTR(SINGLE_LINE_ADDRESS, extra_exclusion_keywords) == 0L ~ 1,
-      TRUE ~ 0
-    ),
-    MATCH_TYPE = ifelse(CH_FLAG == 1, "SINGLE_KEYWORD", "NO MATCH")
-  )
-
-fact_eps_db = fact_item_db %>% 
-  filter(EPS_FLAG == "YES") %>% 
-  anti_join(match_db %>% select(YEAR_MONTH, PF_ID)) %>% 
-  inner_join(eps_info_db, by = c("EPM_ID", "PART_DATE")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
-  # Replace nas
-  tidyr::replace_na(
-    list(
-      AB_FLAG = 0L,
-      UPRN_FLAG = 0L,
-      CH_FLAG = 0L, 
-      MATCH_TYPE = "NO MATCH"
+      TRUE ~ 0L
+      ),
+    MATCH_TYPE = case_when(
+      is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
+      TRUE ~ "NO MATCH"
+      ),
+    AB_FLAG = ifelse(is.na(AB_FLAG), 0, AB_FLAG),
+    UPRN_FLAG = ifelse(is.na(UPRN_FLAG), 0, UPRN_FLAG)
     )
-  ) %>% 
-  # Reorder drug information
-  relocate(
-    CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE,
-    .before = CALC_PREC_DRUG_RECORD_ID
-  ) %>%
-  select(-CALC_PREC_DRUG_RECORD_ID)
   
-
-# Part three: stack data and generate consistent info --------------------------
-
-# Union paper and eps info
-fact_stack_db = fact_eps_db %>% 
-  union_all(paper_plus_match_db)
+# Part three: generate consistent patient info ---------------------------------
 
 # Get a single gender and age for the period
-patient_db <- fact_stack_db %>%
+patient_db <- fact_join_db %>%
   group_by(NHS_NO) %>%
   summarise(
     # Gender
@@ -260,23 +228,29 @@ patient_db <- fact_stack_db %>%
   )
 
 # Join fact data to patient level dimension
-fact_stack_db = fact_stack_db %>%
+fact_join_db = fact_join_db %>%
   left_join(y = patient_db) %>%
   relocate(GENDER, .after = PDS_GENDER) %>%
   relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%
-  select(-c(PDS_GENDER, CALC_AGE))
+  select(-c(PDS_GENDER, CALC_AGE)) %>% 
+  # Reorder drug information
+  relocate(
+    CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE,
+    .before = CALC_PREC_DRUG_RECORD_ID
+  ) %>%
+  select(-CALC_PREC_DRUG_RECORD_ID)
 
-# Part three: save output ------------------------------------------------------
+# Part four: save output -------------------------------------------------------
 
 # Define table name
-#table_name = name = "INT646_UPRN_BASE_TABLE"
+table_name = name = "INT646_BASE_TABLE"
 
 # Remove table if exists
-#drop_table_if_exists_db(table_name)
+drop_table_if_exists_db(table_name)
 
 # Write the table back to DALP
 tic()
-fact_item_db %>%
+fact_join_db %>%
   compute(
     name = table_name,
     temporary = FALSE
