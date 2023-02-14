@@ -96,6 +96,9 @@ parallel::clusterExport(
   envir = environment()
 )
 
+# Print script update
+print("Now downloading CQC API data ...")
+
 # Generate cqc details
 cqc_details = parallel::parLapply(
   cl = clust, 
@@ -215,6 +218,9 @@ con %>%
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
+
+# Print that table has been created
+print(paste0("This script has created table: ", table_name))
 
 # Clear environment and clean
 rm(list = ls()); gc()

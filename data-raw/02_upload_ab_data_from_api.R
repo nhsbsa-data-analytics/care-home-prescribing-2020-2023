@@ -3,37 +3,9 @@
 source("R/analysis_packages.R")
 source("R/workflow_helpers.R")
 
-# Set up connection to the DB
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
+# Part One: get cqc postcodes to include within ab plus join -------------------
 
-# Create a lazy table from the CQC care home table
-cqc_db <- con %>%
-  tbl(from = "INT646_CQC_202301")
-
-# Define start and end dates
-start_date = "2021-04-01"
-end_date = "2022-03-31"
-
-# Part One: get cqc postcoddes to include within ab plus join ------------------
-
-# Get cqc postcodes
-cqc_postcodes = cqc_db %>% 
-  mutate(
-    REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
-    DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD")
-    ) %>% 
-  filter(
-    !is.na(UPRN),
-    REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
-    is.na(DEREGISTRATION_DATE) | 
-      DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
-    ) %>% 
-  select(POSTCODE_LOCATOR = POSTCODE) %>% 
-  distinct() %>% 
-  collect()
-
-# Disconnect now, in case the function crashes due to memory restriction
-DBI::dbDisconnect(con)
+get_cqc_postcodes(cqc_data, start_date, end_date)
 
 # Part Two: get ab plus package info and data downoad url ----------------------
 
@@ -69,6 +41,9 @@ ab_plus_epoch_date = package_info %>%
   mutate(createdOn = as.character(createdOn)) %>% 
   pull()
 
+# Print epoch data
+print(paste0("This script will AB Plus epoch: ", ab_plus_epoch_date))
+
 # Get ab plus epoch version api url
 url = package_info %>% 
   select(url) %>% 
@@ -101,6 +76,9 @@ output_dir = tempdir()
 # Define output file path
 output_filepath = file.path(output_dir, data_file_name)
 
+# Update message
+print("Writing raw data from raw as binary")
+
 # Write binary content to temp file path
 writeBin(data, output_filepath)
 
@@ -118,6 +96,9 @@ temp_dir_files = archive(data_file_name) %>%
   select(path) %>% 
   filter(grepl("AddressBasePlus_FULL", path)) %>% 
   pull()
+
+# Update message
+print("Reading and processing binary")
 
 # Extract ab plus column names
 abp_col_names = names(readr::read_csv(
@@ -259,6 +240,9 @@ drop_table_if_exists_db(table_name_temp)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
+
+# Print that table has been created
+print(paste0("This script has created table: ", table_name))
 
 # Return to project directory
 setwd(project_dir)
