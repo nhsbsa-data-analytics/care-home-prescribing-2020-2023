@@ -1,18 +1,14 @@
 
-# Load packages and global variables
-source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
-
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level FACT table
 patient_db <- con %>%
-  tbl(from = "INT646_FORM_LEVEL_FACT")
+  tbl(from = patient_address_data)
 
 # Create a lazy table from the AddressBase Plus and CQC care home table
 address_db <- con %>%
-  tbl(from = "INT646_AB_PLUS_CQC_STACK") %>% 
+  tbl(from = lookup_address_data) %>% 
   rename(AB_FLAG = CH_FLAG)
 
 # Get distinct patient-level address-postcode information
@@ -110,7 +106,8 @@ patient_match_db <- patient_db %>%
   relocate(CH_FLAG, .after = UPRN_FLAG) 
 
 # Define table name
-table_name = "INT646_UPRN_MATCH"
+year_month = get_year_month_form_date(end_date)
+table_name = paste0("INT646_MATCH_", year_month)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)

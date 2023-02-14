@@ -1,5 +1,3 @@
-# Install and load packages
-source("R/analysis_packages.R")
 
 # Function to get api content from url
 get_api_content = function(url){
@@ -202,10 +200,8 @@ table_name = paste0("INT646_CQC_", year_month)
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Check if the table exists and drop any existing table beforehand
-if(DBI::dbExistsTable(conn = con, name = table_name) == T){
-  DBI::dbRemoveTable(conn = con, name = table_name)
-}
+# Drop table if it exists already
+drop_table_if_exists_db(table_name)
 
 # Upload to DB with indexes
 con %>%

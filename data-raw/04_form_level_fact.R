@@ -1,14 +1,10 @@
 
-# Load packages and global variables
-source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
-
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table addressbase data
 ab_plus_cqc_db <- con %>%
-  tbl(from = "INT646_AB_PLUS_CQC_STACK")
+  tbl(from = address_data)
 
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
@@ -25,10 +21,6 @@ fact_db <- con %>%
 # Lazy table for fact table
 eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
-
-# Define start and end dates
-start_date = "2021-04-01"
-end_date = "2022-03-31"
 
 # Derive start and end year months
 start_year_month = get_year_month_from_date(start_date)
@@ -144,7 +136,7 @@ total_db = eps_info_db %>%
   dplyr::union(paper_info_db)
 
 # Define output table name
-table_name = "INT646_FORM_LEVEL_FACT"
+table_name = paste0("INT646_FORM_LEVEL_FACT", end_year_month)
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)

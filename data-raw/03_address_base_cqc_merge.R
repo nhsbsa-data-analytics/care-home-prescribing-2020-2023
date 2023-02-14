@@ -63,10 +63,10 @@ ab_plus_cqc_db = ab_plus_db %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>%
   ungroup()
 
-# Part Three: Save as table in dw -----------------------------------------------
+# Part Three: Save as table in dw ----------------------------------------------
 
 # Specify db table name
-year_month = substr(gsub("-", "", end_date), 1, 6)
+year_month = get_year_month_from_date(end_date)
 table_name = paste0("INT646_AB_PLUS_CQC_", year_month)
 
 # Drop table if it exists already

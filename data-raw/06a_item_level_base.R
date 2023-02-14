@@ -1,8 +1,4 @@
 
-# Load packages and global variables
-source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
-
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
@@ -16,7 +12,7 @@ fact_db <- con %>%
 
 # Create a lazy table from the matched patient address care home table
 match_db <- con %>%
-  tbl(from = "INT646_UPRN_MATCH")
+  tbl(from = match_table)
 
 # Create a lazy table from the drug DIM table
 drug_db <- con %>%
@@ -29,10 +25,6 @@ paper_db <- con %>%
 # Lazy table for fact table
 eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
-
-# Define start and end dates
-start_date = "2021-04-01"
-end_date = "2022-03-31"
 
 # Derive start and end year months
 start_year_month = get_year_month_from_date(start_date)
@@ -240,7 +232,7 @@ fact_join_db = fact_join_db %>%
 # Part four: save output -------------------------------------------------------
 
 # Define table name
-table_name = name = "INT646_BASE_TABLE"
+table_name = paste0("INT646_BASE_TABLE_", year_month)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)
