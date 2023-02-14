@@ -1,11 +1,11 @@
 
-# Load packages and global variables
-source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
-
 # Part One: get cqc postcodes to include within ab plus join -------------------
 
-get_cqc_postcodes(cqc_data, start_date, end_date)
+get_cqc_postcodes(
+  cqc_data = cqc_data, 
+  start_date = start_date, 
+  end_date = end_date
+  )
 
 # Part Two: get ab plus package info and data downoad url ----------------------
 
@@ -42,7 +42,7 @@ ab_plus_epoch_date = package_info %>%
   pull()
 
 # Print epoch data
-print(paste0("This script will AB Plus epoch: ", ab_plus_epoch_date))
+print(paste0("This script will use AB Plus epoch: ", ab_plus_epoch_date))
 
 # Get ab plus epoch version api url
 url = package_info %>% 

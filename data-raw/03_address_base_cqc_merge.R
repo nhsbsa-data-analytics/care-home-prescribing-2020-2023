@@ -1,22 +1,14 @@
 
-# Load packages and global variables
-source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
-
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the CQC care home table
 cqc_db <- con %>%
-  tbl(from = "INT646_CQC_202301")
+  tbl(from = cqc_data)
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
-  tbl(from = "INT646_AB_PLUS_202204")
-
-# Define start and end dates
-start_date = "2021-04-01"
-end_date = "2022-03-31"
+  tbl(from = ab_plus_data)
 
 # Part one: Process cqc data ---------------------------------------------------
 
@@ -35,8 +27,8 @@ cqc_db = cqc_db %>%
   ) %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   summarise(
-    CH_FLAG = max(CH_FLAG),
-    LOCATION_ID = max(LOCATION_ID),
+    CH_FLAG = max(CH_FLAG, na.rm = TRUE),
+    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     UPRN = max(as.integer(UPRN), na.rm = TRUE),
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE)
@@ -47,7 +39,7 @@ cqc_db = cqc_db %>%
 cqc_attributes_db = cqc_db %>%
   group_by(UPRN) %>%
   summarise(
-    LOCATION_ID = max(LOCATION_ID),
+    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     NURSING_HOME_FLAG = max(NURSING_HOME_FLAG, na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE)
   ) %>%
@@ -74,10 +66,14 @@ ab_plus_cqc_db = ab_plus_db %>%
 # Part Three: Save as table in dw -----------------------------------------------
 
 # Specify db table name
-table_name = "INT646_AB_PLUS_CQC_STACK"
+year_month = substr(gsub("-", "", end_date), 1, 6)
+table_name = paste0("INT646_AB_PLUS_CQC_", year_month)
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
+
+# Print that table has been created
+print("Output being computed to be written back ot the db ...")
 
 # Write the table back to the DB with indexes
 ab_plus_cqc_db %>%
@@ -89,6 +85,9 @@ ab_plus_cqc_db %>%
 
 # Disconnect from database
 DBI::dbDisconnect(con)
+
+# Print that table has been created
+print(paste0("This script has created table: ", table_name))
 
 # Remove objects and clean environment
 rm(list = ls()); gc()
