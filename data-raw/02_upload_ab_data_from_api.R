@@ -172,10 +172,7 @@ results_df = results %>%
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Define table name
-table_name = paste0(
-  "INT646_AB_PLUS_", 
-  get_year_month_from_date(ab_plus_epoch_date)
-  )
+table_name = paste0("INT646_AB_PLUS_", get_year_month_from_date(end_date))
 
 # Define temp table name
 table_name_temp = paste0(table_name, "_TEMP")
@@ -222,6 +219,10 @@ ab_plus_db = ab_plus_db %>%
     CORE_SINGLE_LINE_ADDRESS,
     CH_FLAG,
     EPOCH
+  ) %>% 
+  mutate(
+    START_DATE = start_date,
+    END_DATE = end_date
   )
 
 # Drop table if it exists already

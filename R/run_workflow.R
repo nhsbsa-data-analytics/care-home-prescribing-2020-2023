@@ -11,8 +11,8 @@ get_latest_cqc_data()
 get_ab_plus_supplemented_with_cqc(
   cqc_data = "INT646_CQC_202302", 
   start_date = "2021-04-01",
-  end_date =   "2022-06-01"
-  )
+  end_date =   "2022-03-01"
+)
 
 # 3. Merge and process cqc and ab plus
 create_ab_plus_cqc_data(
