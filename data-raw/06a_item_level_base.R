@@ -238,7 +238,6 @@ table_name = paste0("INT646_BASE_TABLE_", year_month)
 drop_table_if_exists_db(table_name)
 
 # Write the table back to DALP
-Sys.time()
 tic()
 fact_join_db %>%
   compute(
@@ -255,5 +254,3 @@ DBI::dbDisconnect(con)
 
 # Remove objects and clean environment
 rm(list = ls()); gc()
-
-#-------------------------------------------------------------------------------

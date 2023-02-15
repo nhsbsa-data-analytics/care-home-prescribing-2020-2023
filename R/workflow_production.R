@@ -82,6 +82,6 @@ create_matched_prescription_base_table = function(match_data, start_date, end_da
   assign("end_date", end_date, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-  source("data-raw/06a_item_level_base_table.R)
+  source("data-raw/06a_item_level_base_table.R")
 
 }
