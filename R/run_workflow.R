@@ -22,7 +22,7 @@ create_ab_plus_cqc_data(
   end_date =   "2022-06-01"
 )
 
-# 4. Create frm level fact for records with a ch-postcode
+# 4. Create form level fact for records with a ch-postcode
 create_form_level_patient_addresses(
   address_data = "INT646_AB_PLUS_CQC_202206",
   start_date = "2021-04-01",
@@ -37,9 +37,8 @@ create_care_home_address_match(
 )
 
 # 6. Join to fact table and get non ch-postcode records within time frame
-create_matched_prescription_base_table = function(
+create_matched_prescription_base_table(
   match_table = "INT646_UPRN_MATCH_202203",
   start_date = "2021-04-01",
   end_date = "2022-06-01"
 )
-
