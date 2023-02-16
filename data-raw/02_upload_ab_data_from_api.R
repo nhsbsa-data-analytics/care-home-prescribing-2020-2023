@@ -156,6 +156,8 @@ read_temp_dir_csv = function(index){
 results = lapply(1:length(temp_dir_files), read_temp_dir_csv)
 
 # Bind into df then additional processing
+# The AB extract below will contain all AB addresses (CH and non-CH),
+# but only from postcodes that have a CH (in the current AB epoch) or ever had a CH (in the CQC extract)
 results_df = results %>% 
   bind_rows() %>% 
   mutate(
