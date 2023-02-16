@@ -142,7 +142,7 @@ read_temp_dir_csv = function(index){
     distinct()
   
   # The AB extract will contain all AB addresses (CH and non-CH),
-  # but only from postcodes that have a CH (in the current AB epoch) or ever had a CH (in the CQC extract)
+  # but only from postcodes that have a CH (in the current AB epoch or the corresponding period in CQC extract)
   output = data %>% 
     inner_join(ch_postcodes, by = "POSTCODE_LOCATOR")
   
