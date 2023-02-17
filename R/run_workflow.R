@@ -22,6 +22,14 @@ create_ab_plus_cqc_data(
   end_date =   "2022-06-01"
 )
 
+# Optionally record the number of CQC carehomes excluded due to missing UPRNs
+# for inclusion in caveats
+count_cqc_chs_excluded(
+  cqc_data = "INT646_CQC_202302", 
+  start_date = "2021-04-01",
+  end_date =   "2022-06-01"
+)
+
 # 4. Create form level fact for records with a ch-postcode
 create_form_level_patient_addresses(
   address_data = "INT646_AB_PLUS_CQC_202206",

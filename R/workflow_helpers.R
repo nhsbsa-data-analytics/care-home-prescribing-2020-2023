@@ -68,3 +68,45 @@ get_cqc_postcodes = function(cqc_data, start_date, end_date){
   # Assign postcodes to globel env for ab plus script to use
   assign("cqc_postcodes", cqc_postcodes, envir = globalenv())
 }
+
+
+#' @description calculate the number and proportion of CQC CHs excluded due to null UPRNs for inclusion in caveats
+#' @param  cqc_data: the name of the cqc db table
+#' @param start_date: start date as a char in format 'YYYY-MM-DD'
+#' @param end_date: end date as a char in format 'YYYY-MM-DD'
+count_cqc_chs_excluded = function(cqc_data, start_date, end_date){
+  
+  con <- nhsbsaR::con_nhsbsa(database = "DALP")
+  
+  cqc_db <- tbl(con, cqc_data)
+  
+  s <- cqc_db |>
+    mutate(
+      REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
+      DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
+      CH_FLAG = 1L,
+      NULL_UPRN = ifelse(is.na(UPRN), 1L, 0L)
+    ) |>
+    filter(
+      REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
+      is.na(DEREGISTRATION_DATE) | 
+        DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
+    ) |>
+    group_by(NULL_UPRN) |>
+    summarise(N = n())
+  
+  N <- s |> filter(NULL_UPRN==1) |> pull(N)
+  P <- N / (s |> summarise(TOTAL = sum(N)) |> pull(TOTAL))
+  
+  return(
+    paste0(format(N, big.mark = ",", scientific = F),
+           " (",
+           round(P*100,1),"%",
+           ") ",
+           "excluded from CQC data for the period due to missing UPRNs")
+  )
+  
+  # Disconnect now, in case the function crashes due to memory restriction
+  DBI::dbDisconnect(con)
+  
+}
