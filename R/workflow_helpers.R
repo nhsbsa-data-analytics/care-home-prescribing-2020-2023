@@ -95,10 +95,8 @@ count_cqc_chs_excluded = function(cqc_data, start_date, end_date){
         DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
     )
   
-  s1 <- s |> group_by(NULL_UPRN) |> summarise(N = n())
-  
-  N_null <- s1 |> filter(NULL_UPRN==1) |> pull(N)
-  TOTAL <- s1 |> summarise(TOTAL = sum(N)) |> pull(TOTAL)
+  N_null <- s |> filter(NULL_UPRN==1) |> summarise(n = n_distinct(paste(POSTCODE, SINGLE_LINE_ADDRESS))) |> pull()
+  TOTAL <- s |>  summarise(n = n_distinct(paste(POSTCODE, SINGLE_LINE_ADDRESS))) |> pull()
   P_null <- N_null / TOTAL
   
   # CQC records excluded due to being associated with >1 UPRN
@@ -116,8 +114,8 @@ count_cqc_chs_excluded = function(cqc_data, start_date, end_date){
            " (",
            round(P_null*100,1),"%",
            ") ",
-           "records were excluded from CQC data due to missing UPRNs; ",
-           "and ",N_dupl," records due to being associated with >1 UPRN")
+           "distinct address+postcode records were excluded from CQC data due to missing UPRNs; ",
+           "and ",N_dupl," due to being associated with >1 UPRN")
   )
   
   # Disconnect now, in case the function crashes due to memory restriction
