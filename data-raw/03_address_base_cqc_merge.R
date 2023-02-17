@@ -59,6 +59,10 @@ ab_plus_cqc_db = ab_plus_db %>%
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
   union_all(cqc_db) %>% 
+  # Get unique SLAs from among AB & CQC tables
+  # (individual SLAs may come from either/all of: up to 3 variants in AB table and 1 variant in CQC table;
+  #  label not included due to potential for overlap)
+  # Keep one UPRN per unique SLA (in case any SLAs have 2+ UPRNs)
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>%
   ungroup()
