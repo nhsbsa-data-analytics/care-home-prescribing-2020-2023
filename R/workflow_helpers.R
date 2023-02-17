@@ -80,6 +80,8 @@ count_cqc_chs_excluded = function(cqc_data, start_date, end_date){
   
   cqc_db <- tbl(con, cqc_data)
   
+  # CQC records excluded due to missing UPRNS
+  
   s <- cqc_db |>
     mutate(
       REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
@@ -91,19 +93,30 @@ count_cqc_chs_excluded = function(cqc_data, start_date, end_date){
       REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
       is.na(DEREGISTRATION_DATE) | 
         DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
-    ) |>
-    group_by(NULL_UPRN) |>
-    summarise(N = n())
+    )
   
-  N <- s |> filter(NULL_UPRN==1) |> pull(N)
-  P <- N / (s |> summarise(TOTAL = sum(N)) |> pull(TOTAL))
+  s1 <- s |> group_by(NULL_UPRN) |> summarise(N = n())
   
+  N_null <- s1 |> filter(NULL_UPRN==1) |> pull(N)
+  TOTAL <- s1 |> summarise(TOTAL = sum(N)) |> pull(TOTAL)
+  P_null <- N_null / TOTAL
+  
+  # CQC records excluded due to being associated with >1 UPRN
+  
+  s2 <- s|> group_by(POSTCODE, SINGLE_LINE_ADDRESS) |>
+    mutate(N_DISTINCT_UPRN = n_distinct(UPRN)) |>
+    ungroup() |>
+    filter(N_DISTINCT_UPRN > 1)
+  
+  N_dupl <- tally(s2) |> pull()
+
   return(
-    paste0(format(N, big.mark = ",", scientific = F),
+    paste0(format(N_null, big.mark = ",", scientific = F),
            " (",
-           round(P*100,1),"%",
+           round(P_null*100,1),"%",
            ") ",
-           "excluded from CQC data for the period due to missing UPRNs")
+           "records excluded from CQC data for the period due to missing UPRNs; ",
+           "and ",N_dupl," records due to being associated with >1 UPRN")
   )
   
   # Disconnect now, in case the function crashes due to memory restriction

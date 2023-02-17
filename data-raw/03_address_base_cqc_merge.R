@@ -30,10 +30,12 @@ cqc_db = cqc_db %>%
     CH_FLAG = max(CH_FLAG, na.rm = TRUE),
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     UPRN = max(as.integer(UPRN), na.rm = TRUE),
+    N_DISTINCT_UPRN = n_distinct(UPRN),
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE)
   ) %>%
-  ungroup()
+  ungroup() %>%
+  filter(N_DISTINCT_UPRN == 1)
 
 # From above processed data add residential and nursing home flag where possible
 cqc_attributes_db = cqc_db %>%
@@ -62,7 +64,7 @@ ab_plus_cqc_db = ab_plus_db %>%
   # Get unique SLAs from among AB & CQC tables
   # (individual SLAs may come from either/all of: up to 3 variants in AB table and 1 variant in CQC table;
   #  label not included due to potential for overlap)
-  # Keep one UPRN per unique SLA (in case any SLAs have 2+ UPRNs)
+  # ...and keep one UPRN per unique SLA (in case any SLAs have 2+ UPRNs)
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>%
   ungroup()
