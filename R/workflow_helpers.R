@@ -111,11 +111,12 @@ count_cqc_chs_excluded = function(cqc_data, start_date, end_date){
   N_dupl <- tally(s2) |> pull()
 
   return(
-    paste0(format(N_null, big.mark = ",", scientific = F),
+    paste0("In this period ",
+           format(N_null, big.mark = ",", scientific = F),
            " (",
            round(P_null*100,1),"%",
            ") ",
-           "records excluded from CQC data for the period due to missing UPRNs; ",
+           "records were excluded from CQC data due to missing UPRNs; ",
            "and ",N_dupl," records due to being associated with >1 UPRN")
   )
   

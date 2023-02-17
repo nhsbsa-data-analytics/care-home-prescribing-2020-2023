@@ -35,7 +35,8 @@ cqc_db = cqc_db %>%
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE)
   ) %>%
   ungroup() %>%
-  filter(N_DISTINCT_UPRN == 1)
+  filter(N_DISTINCT_UPRN == 1) |>
+  select(-N_DISTINCT_UPRN)
 
 # From above processed data add residential and nursing home flag where possible
 cqc_attributes_db = cqc_db %>%
