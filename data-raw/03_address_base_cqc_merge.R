@@ -20,7 +20,7 @@ cqc_db = cqc_db %>%
     CH_FLAG = 1L
   ) %>% 
   filter(
-    !is.na(UPRN),
+    #!is.na(UPRN),  # Do not exclude records with null UPRNs, as these will be used for CH/non-CH level analysis
     REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
@@ -32,11 +32,17 @@ cqc_db = cqc_db %>%
     UPRN = max(as.integer(UPRN), na.rm = TRUE),
     N_DISTINCT_UPRN = n_distinct(UPRN),
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE)
+    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
+    .groups = "drop"
   ) %>%
-  ungroup() %>%
   filter(N_DISTINCT_UPRN == 1) |>
-  select(-N_DISTINCT_UPRN)
+  select(-N_DISTINCT_UPRN) |>
+  mutate(CQC_NULL_UPRN = 
+           # Note, this is done after summarise(), so we'd later exclude only SLAs that have null UPRNs in all rows, not just one row
+           case_when(
+             is.na(UPRN) ~ 1,
+             T ~ 0)
+  )
 
 # From above processed data add residential and nursing home flag where possible
 cqc_attributes_db = cqc_db %>%
