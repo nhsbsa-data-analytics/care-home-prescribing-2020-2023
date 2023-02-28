@@ -29,7 +29,7 @@ cqc_db = cqc_db %>%
     CH_FLAG = 1L
   ) %>% 
   filter(
-    !is.na(UPRN),
+    #!is.na(UPRN),  # Do not exclude records with null UPRNs, as these will be used for CH/non-CH level analysis
     REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
@@ -38,11 +38,19 @@ cqc_db = cqc_db %>%
   summarise(
     CH_FLAG = max(CH_FLAG, na.rm = TRUE),
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
-    UPRN = max(as.integer(UPRN), na.rm = TRUE),
+    N_DISTINCT_UPRN = n_distinct(UPRN),
+    UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE)
-  ) %>%
-  ungroup()
+    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(EXCLUDE_FOR_CH_LEVEL_ANALYSIS = 
+           # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
+           case_when(
+             is.na(UPRN) ~ "CQC SLA with a null UPRN",
+             N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
+             T ~ NULL)
+  )
 
 # From above processed data add residential and nursing home flag where possible
 cqc_attributes_db = cqc_db %>%
@@ -58,7 +66,8 @@ cqc_attributes_db = cqc_db %>%
 
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
-  left_join(cqc_attributes_db) %>% 
+  select(-EPOCH) %>% 
+  left_join(cqc_attributes_db, by = "UPRN") %>% 
   tidyr::pivot_longer(
     cols = ends_with("SINGLE_LINE_ADDRESS"),
     names_to = "ADDRESS_TYPE",
@@ -67,6 +76,10 @@ ab_plus_cqc_db = ab_plus_db %>%
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
   union_all(cqc_db) %>% 
+  # Get unique SLAs from among AB & CQC tables
+  # (individual SLAs may come from either/all of: up to 3 variants in AB table and 1 variant in CQC table;
+  #  label not included due to potential for overlap)
+  # ...and keep one UPRN per unique SLA (in case any SLAs have 2+ UPRNs)
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>% 
   ungroup() %>% 

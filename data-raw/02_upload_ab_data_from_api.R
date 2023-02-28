@@ -148,7 +148,8 @@ read_temp_dir_csv = function(index){
     rbind(cqc_postcodes) %>% 
     distinct()
   
-  # Only uprn with a postcode where there's a ch
+  # The AB extract will contain all AB addresses (CH and non-CH),
+  # but only from postcodes that have a CH (in the current AB epoch or the corresponding period in CQC extract)
   output = data %>% 
     inner_join(ch_postcodes, by = "POSTCODE_LOCATOR")
   
@@ -162,7 +163,11 @@ read_temp_dir_csv = function(index){
 # Process each ab plus file, each of which contain 1m records: 25 mins
 results = lapply(1:length(temp_dir_files), read_temp_dir_csv)
 
+# Clean up temp files
+file.remove(list.files(getwd()))
+
 # Bind into df then additional processing
+
 results_df = results %>% 
   bind_rows() %>% 
   mutate(
