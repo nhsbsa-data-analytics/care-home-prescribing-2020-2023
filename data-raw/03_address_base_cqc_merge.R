@@ -29,19 +29,18 @@ cqc_db = cqc_db %>%
   summarise(
     CH_FLAG = max(CH_FLAG, na.rm = TRUE),
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
-    UPRN = max(as.integer(UPRN), na.rm = TRUE),
     N_DISTINCT_UPRN = n_distinct(UPRN),
+    UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
     .groups = "drop"
-  ) %>%
-  filter(N_DISTINCT_UPRN == 1) |>
-  select(-N_DISTINCT_UPRN) |>
-  mutate(CQC_NULL_UPRN = 
-           # Note, this is done after summarise(), so we'd later exclude only SLAs that have null UPRNs in all rows, not just one row
+  ) |>
+  mutate(EXCLUDE_FOR_CH_LEVEL_ANALYSIS = 
+           # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
            case_when(
-             is.na(UPRN) ~ 1,
-             T ~ 0)
+             is.na(UPRN) ~ "CQC SLA with a null UPRN",
+             N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
+             T ~ NULL)
   )
 
 # From above processed data add residential and nursing home flag where possible
@@ -59,7 +58,7 @@ cqc_attributes_db = cqc_db %>%
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
   select(-EPOCH) %>% 
-  left_join(cqc_attributes_db) %>% 
+  left_join(cqc_attributes_db, by = "UPRN") %>% 
   tidyr::pivot_longer(
     cols = ends_with("SINGLE_LINE_ADDRESS"),
     names_to = "ADDRESS_TYPE",
