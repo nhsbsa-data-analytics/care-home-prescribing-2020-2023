@@ -2,6 +2,24 @@
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+address_data = "INT646_ABP_CQC_20210401_20220331"
+
+# Get start dates
+start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
+end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]
+
+# Convert to year_months
+start_year_month = as.integer(substr(start_date, 1, 6))
+end_year_month = as.integer(substr(end_date, 1, 6))
+
+# Modify dates for eps buffer
+eps_start_date = as.Date(start_date, "%Y%m%d") %m-% months(2)
+eps_end_date = (as.Date(end_date, "%Y%m%d")+10) %m+% months(2)
+
+# Change dates back to integers
+eps_start_date = as.integer(gsub("-", "", eps_start_date))
+eps_end_date = as.integer(gsub("-", "", eps_end_date))
+
 # Create a lazy table addressbase data
 ab_plus_cqc_db <- con %>%
   tbl(from = address_data)
@@ -21,18 +39,6 @@ fact_db <- con %>%
 # Lazy table for fact table
 eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
-
-# Derive start and end year months
-start_year_month = get_year_month_from_date(start_date)
-end_year_month = get_year_month_from_date(end_date)
-
-# Define 'buffered' eps date range: for query efficiency
-eps_start_date = as.Date(start_date) %m-% months(2)
-eps_end_date = (as.Date(end_date)+10) %m+% months(2)
-
-# Start and end date as integers
-eps_start_int = get_integer_from_date(eps_start_date)
-eps_end_int = get_integer_from_date(eps_end_date)
 
 # Part one: filter two fact table cuts for eps and paper info ------------------
 
@@ -80,7 +86,7 @@ fact_paper_db = fact_db %>%
 
 # Get ab plus and cqc postcodes
 ab_plus_cqc_db = ab_plus_cqc_db %>% 
-  select(POSTCODE) %>% 
+  select(POSTCODE, START_DATE, END_DATE, AB_DATE, CQC_DATE) %>% 
   distinct()
 
 # Process paper info
@@ -95,7 +101,11 @@ paper_info_db = paper_db %>%
     NHS_NO,
     PF_ID,
     SINGLE_LINE_ADDRESS = ADDRESS,
-    POSTCODE
+    POSTCODE,
+    START_DATE,
+    END_DATE,
+    AB_DATE,
+    CQC_DATE
     )
 
 # Part three: process electronic info ------------------------------------------
@@ -104,8 +114,8 @@ paper_info_db = paper_db %>%
 eps_info_db = eps_db %>%
   # Bring back ETP data
   filter(
-    PART_DATE >= eps_start_int,
-    PART_DATE <= eps_end_int
+    PART_DATE >= eps_start_date,
+    PART_DATE <= eps_end_date
   ) %>% 
   # Concatenate fields together by a single space for the single line address
   mutate(
@@ -126,29 +136,38 @@ eps_info_db = eps_db %>%
     NHS_NO,
     PF_ID,
     SINGLE_LINE_ADDRESS,
-    POSTCODE = PAT_ADDRESS_POSTCODE
+    POSTCODE = PAT_ADDRESS_POSTCODE,
+    START_DATE,
+    END_DATE,
+    AB_DATE,
+    CQC_DATE
   )
 
 # Part three: stack paper and eps info and save --------------------------------
 
 # Stack info
 total_db = eps_info_db %>% 
-  dplyr::union(paper_info_db)
+  dplyr::union(paper_info_db) 
 
 # Define output table name
-table_name = paste0("INT646_FORM_LEVEL_FACT", end_year_month)
+table_name = paste0("INT646_PFID_", start_date, "_", end_date)
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
 
+# Print that table has been created
+print("Output being computed to be written back to the db ...")
+
 # Write the table back to DALP with indexes
+Sys.time()
+tic()
 total_db %>%
   compute(
     name = table_name,
     indexes = list(c("PF_ID"), c("POSTCODE")),
     temporary = FALSE
   )
-
+toc()
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
 

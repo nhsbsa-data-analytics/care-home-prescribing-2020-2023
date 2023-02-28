@@ -10,7 +10,7 @@ patient_db <- con %>%
 address_db <- con %>%
   tbl(from = lookup_address_data) %>% 
   rename(AB_FLAG = CH_FLAG)
-
+  
 # Get distinct patient-level address-postcode information
 patient_address_db = patient_db %>% 
   # If the address is NA we don't want to consider it
@@ -105,12 +105,21 @@ patient_match_db <- patient_db %>%
   relocate(UPRN_FLAG, .after = AB_FLAG) %>% 
   relocate(CH_FLAG, .after = UPRN_FLAG) 
 
+# Get end date
+end_date = address_db %>% 
+  select(END_DATE) %>% 
+  distinct() %>% 
+  pull()
+
 # Define table name
 year_month = get_year_month_form_date(end_date)
 table_name = paste0("INT646_MATCH_", year_month)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)
+
+# Print that table has been created
+print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP with indexes
 patient_match_db %>%

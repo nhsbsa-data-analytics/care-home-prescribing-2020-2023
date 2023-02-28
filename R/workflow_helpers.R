@@ -1,4 +1,15 @@
 
+#' @param none
+#' @description loads/installs all required packages and functions 
+load_all_packages_and_functions = function(){
+  
+  # Source script containing all packages and functions
+  source("R/analysis_packages.R")
+  source("R/workflow_helpers.R")
+  source("R/workflow_production.R")
+}
+
+
 #' @param table_name_db: name of proposed db table
 #' @description deletes a db table if the name is already used
 drop_table_if_exists_db = function(table_name_db){
@@ -67,4 +78,13 @@ get_cqc_postcodes = function(cqc_data, start_date, end_date){
   
   # Assign postcodes to globel env for ab plus script to use
   assign("cqc_postcodes", cqc_postcodes, envir = globalenv())
+}
+
+# Get single distinct value from select column
+pull_date_string = function(data, string_date){
+  
+  data %>% 
+    select({{string_date}}) %>% 
+    distinct() %>% 
+    pull()
 }

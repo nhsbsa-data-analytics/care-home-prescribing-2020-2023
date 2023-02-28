@@ -1,4 +1,5 @@
-
+start_date = "2021-04-01"
+end_date =   "2022-03-31"
 # Part One: get cqc postcodes to include within ab plus join -------------------
 
 get_cqc_postcodes(
@@ -38,7 +39,10 @@ package_info = package_info %>%
 # AB created date
 ab_plus_epoch_date = package_info %>% 
   select(createdOn) %>% 
-  mutate(createdOn = as.character(createdOn)) %>% 
+  mutate(
+    createdOn = as.character(createdOn),
+    createdOn = gsub("-", "", createdOn)
+    ) %>% 
   pull()
 
 # Print epoch data
@@ -70,6 +74,9 @@ data_file_name = ab_info %>%
 # Get content from url: 3 mins
 data = httr::GET(data_url)$content
 
+# Update message
+print("Downloaded raw data")
+
 # Define output directory
 output_dir = tempdir()
 
@@ -77,7 +84,7 @@ output_dir = tempdir()
 output_filepath = file.path(output_dir, data_file_name)
 
 # Update message
-print("Writing raw data from raw as binary")
+print("Writing data from raw as binary")
 
 # Write binary content to temp file path
 writeBin(data, output_filepath)
@@ -172,7 +179,11 @@ results_df = results %>%
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Define table name
-table_name = paste0("INT646_AB_PLUS_", get_year_month_from_date(end_date))
+table_name = paste0("INT646_ABP_", ab_plus_epoch_date)
+
+# Now convert start_date and end_date to clean strings
+start_date = gsub("-", "", start_date)
+end_date = gsub("-", "", end_date)
 
 # Define temp table name
 table_name_temp = paste0(table_name, "_TEMP")

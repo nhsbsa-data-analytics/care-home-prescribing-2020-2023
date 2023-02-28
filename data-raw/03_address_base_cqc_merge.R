@@ -2,13 +2,22 @@
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+cqc_date = "20230217"
+
 # Create a lazy table from the CQC care home table
 cqc_db <- con %>%
-  tbl(from = cqc_data)
+  tbl(from = cqc_data) %>% 
+  mutate(CQC_DATE = cqc_date)
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
   tbl(from = ab_plus_data)
+
+# Get 4 values for final output
+ab_epoch = pull_date_string(ab_plus_db, EPOCH)
+start_date = pull_date_string(ab_plus_db, START_DATE)
+end_date = pull_date_string(ab_plus_db, END_DATE)
+cqc_date = pull_date_string(cqc_db, CQC_DATE)
 
 # Part one: Process cqc data ---------------------------------------------------
 
@@ -49,7 +58,6 @@ cqc_attributes_db = cqc_db %>%
 
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
-  select(-EPOCH) %>% 
   left_join(cqc_attributes_db) %>% 
   tidyr::pivot_longer(
     cols = ends_with("SINGLE_LINE_ADDRESS"),
@@ -60,20 +68,25 @@ ab_plus_cqc_db = ab_plus_db %>%
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
   union_all(cqc_db) %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-  slice_max(order_by = UPRN, with_ties = FALSE) %>%
-  ungroup()
+  slice_max(order_by = UPRN, with_ties = FALSE) %>% 
+  ungroup() %>% 
+  mutate(
+    START_DATE = start_date,
+    END_DATE = end_date,
+    AB_DATE = ab_epoch,
+    CQC_DATE = cqc_date
+  )
 
 # Part Three: Save as table in dw ----------------------------------------------
 
 # Specify db table name
-year_month = get_year_month_from_date(end_date)
-table_name = paste0("INT646_AB_PLUS_CQC_", year_month)
+table_name = paste0("INT646_ABP_CQC_", start_date, "_", end_date)
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
 
 # Print that table has been created
-print("Output being computed to be written back ot the db ...")
+print("Output being computed to be written back to the db ...")
 
 # Write the table back to the DB with indexes
 ab_plus_cqc_db %>%

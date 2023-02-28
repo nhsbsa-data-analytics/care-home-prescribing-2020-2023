@@ -151,6 +151,9 @@ cqc_details_df <- cqc_details %>%
     number_of_beds
   ) ; gc()
 
+# Get current year_month
+download_date = as.integer(gsub('-', '', Sys.Date()))
+
 # Process the cqc df output, in preparation for matching
 cqc_process_df = cqc_details_df %>% 
   rename(postcode = postal_code) %>% 
@@ -175,7 +178,8 @@ cqc_process_df = cqc_details_df %>%
       grepl("[0-9] - [0-9]", single_line_address) == T,
       gsub(" - ", "-", single_line_address),
       single_line_address
-    )
+    ),
+    cqc_date = download_date
   ) %>% 
   select(
     uprn,
@@ -187,15 +191,15 @@ cqc_process_df = cqc_details_df %>%
     nursing_home_flag = nursing_home,
     residential_home_flag = residential_home,
     type,
-    number_of_beds
+    number_of_beds,
+    cqc_date
   ) %>% 
   rename_with(toupper)
 
-# Get current year_month
-year_month = as.integer(substr(gsub('-', '', Sys.Date()), 1, 6))
+
 
 # Create table name
-table_name = paste0("INT646_CQC_", year_month)
+table_name = paste0("INT646_CQC_", download_date)
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
