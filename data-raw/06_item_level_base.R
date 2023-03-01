@@ -26,13 +26,17 @@ paper_db <- con %>%
 eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
 
+# Get start and end dates
+start_date = stringr::str_extract_all(match_table, "\\d{8}")[[1]][1]
+end_date = stringr::str_extract_all(match_table, "\\d{8}")[[1]][2]
+
 # Derive start and end year months
-start_year_month = get_year_month_from_date(start_date)
-end_year_month = get_year_month_from_date(end_date)
+start_year_month = as.integer(substr(start_date, 1, 6))
+end_year_month = as.integer(substr(end_date, 1, 6))
 
 # Define 'buffered' eps date range: for query efficiency
-eps_start_date = as.Date(start_date) %m-% months(2)
-eps_end_date = (as.Date(end_date)+10) %m+% months(2)
+eps_start_date = as.Date(start_date, format = "%Y%m%d") %m-% months(2)
+eps_end_date = (as.Date(end_date, format = "%Y%m%d")+10) %m+% months(2)
 
 # Start and end date as integers
 eps_start_int = get_integer_from_date(eps_start_date)
@@ -117,7 +121,7 @@ paper_db = paper_db %>%
     PAPER_POSTCODE = POSTCODE
   )
 
-# Proces eps info
+# Process eps info
 eps_db = eps_db %>%
   # Bring back ETP data
   filter(
@@ -204,11 +208,8 @@ patient_db <- fact_join_db %>%
       MALE_COUNT > 0 & FEMALE_COUNT == 0 ~ "Male",
       MALE_COUNT == 0 & FEMALE_COUNT > 0 ~ "Female",
       TRUE ~ NA_character_
-    )
-  ) %>%
-  select(-ends_with("_COUNT")) %>%
-  # Add an age band
-  mutate(
+    ),
+    # Add an age band
     AGE_BAND = case_when(
       AGE < 70 ~ "65-69",
       AGE < 75 ~ "70-74",
@@ -217,40 +218,42 @@ patient_db <- fact_join_db %>%
       AGE < 90 ~ "85-89",
       TRUE ~ "90+"
     )
-  )
+  ) %>%
+  select(-ends_with("_COUNT"))
 
 # Join fact data to patient level dimension
 fact_join_db = fact_join_db %>%
-  left_join(y = patient_db) %>%
+  left_join(y = patient_db)
   # Reorder drug information
-  relocate(GENDER, .after = PDS_GENDER) %>%
-  relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%
-  select(-c(PDS_GENDER, CALC_AGE)) %>% 
-  relocate(CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE, .before = CALC_PREC_DRUG_RECORD_ID) %>%
-  select(-CALC_PREC_DRUG_RECORD_ID)
+  # relocate(GENDER, .after = PDS_GENDER) %>%
+  # relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%
+  # select(-c(PDS_GENDER, CALC_AGE)) %>% 
+  # relocate(CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE, .before = CALC_PREC_DRUG_RECORD_ID) %>%
+  # select(-CALC_PREC_DRUG_RECORD_ID)
 
 # Part four: save output -------------------------------------------------------
 
 # Define table name
-table_name = paste0("INT646_BASE_TABLE_", year_month)
+table_name = paste0("INT646_BASE_", start_date, "_", end_date)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)
 
 # Write the table back to DALP
-tic()
 fact_join_db %>%
   compute(
     name = table_name,
     temporary = FALSE
   )
-toc()
 
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
 
 # Disconnect from database
 DBI::dbDisconnect(con)
+
+# Print created table name output
+print(paste0("This script has created table: ", table_name))
 
 # Remove objects and clean environment
 rm(list = ls()); gc()

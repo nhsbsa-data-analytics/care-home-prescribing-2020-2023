@@ -33,5 +33,5 @@ create_care_home_address_match(
 
 # 6. Join to fact table and get non ch-postcode records within time frame
 create_matched_prescription_base_table(
-  match_table = "INT646_UPRN_MATCH_202203"
+  match_table = "INT646_MATCH_20210401_20220331"
 )

@@ -51,11 +51,10 @@ create_form_level_patient_addresses = function(address_data){
 }
 
 
-#' @description matches two address tables then process for 
+#' @description matches two address tables then process for ch flag
 #' @param patient_address_data: patient address data
 #' @param lookup_address_data: address data to be matched against
-#' @param end_date: end date as a char in format 'YYYY-MM-DD'
-create_care_home_address_match = function(patient_address_data, lookup_address_data, end_date){
+create_care_home_address_match = function(patient_address_data, lookup_address_data){
   
   # Assign function inputs to global env
   assign("patient_address_data", patient_address_data, envir = globalenv())
@@ -65,14 +64,14 @@ create_care_home_address_match = function(patient_address_data, lookup_address_d
   tic(); source("data-raw/05_address_match.R"); toc()
 }
 
-create_matched_prescription_base_table = function(match_data, start_date, end_date){
+
+#' @description gets prescription info for matched records
+#' @param match_data: matched address data
+create_matched_prescription_base_table = function(match_data){
     
   # Assign function inputs to global env
   assign("match_data", match_data, envir = globalenv())
-  assign("start_date", start_date, envir = globalenv())
-  assign("end_date", end_date, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
   tic; source("data-raw/06_item_level_base.R"); toc()
-
 }
