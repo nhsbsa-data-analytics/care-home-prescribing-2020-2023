@@ -12,7 +12,7 @@ fact_db <- con %>%
 
 # Create a lazy table from the matched patient address care home table
 match_db <- con %>%
-  tbl(from = match_table)
+  tbl(from = match_data)
 
 # Create a lazy table from the drug DIM table
 drug_db <- con %>%
@@ -27,8 +27,8 @@ eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
 
 # Get start and end dates
-start_date = stringr::str_extract_all(match_table, "\\d{8}")[[1]][1]
-end_date = stringr::str_extract_all(match_table, "\\d{8}")[[1]][2]
+start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
+end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
 
 # Derive start and end year months
 start_year_month = as.integer(substr(start_date, 1, 6))
