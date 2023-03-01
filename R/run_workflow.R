@@ -27,8 +27,8 @@ create_form_level_patient_addresses(
 
 # 5. Match patient details against ch-postcode uprn and process
 create_care_home_address_match(
-  patient_address_data = "INT646_PFID_202203",
-  lookup_address_data = "INT646_AB_PLUS_CQC_202203"
+  patient_address_data = "INT646_PFID_20210401_20220331",
+  lookup_address_data = "INT646_ABP_CQC_20210401_20220331"
 )
 
 # 6. Join to fact table and get non ch-postcode records within time frame

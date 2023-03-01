@@ -2,9 +2,7 @@
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-address_data = "INT646_ABP_CQC_20210401_20220331"
-
-# Get start dates
+# Get start and end dates
 start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]
 
@@ -159,20 +157,21 @@ drop_table_if_exists_db(table_name)
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP with indexes
-Sys.time()
-tic()
 total_db %>%
   compute(
     name = table_name,
     indexes = list(c("PF_ID"), c("POSTCODE")),
     temporary = FALSE
   )
-toc()
+
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
 
 # Disconnect from database
 DBI::dbDisconnect(con)
+
+# Print created table name output
+print(paste0("This script has created table: ", table_name))
 
 # Remove objects and clean environment
 rm(list = ls()); gc()

@@ -2,6 +2,10 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+# Get start and end dates
+start_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][1]
+end_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][2]
+
 # Create a lazy table from the item level FACT table
 patient_db <- con %>%
   tbl(from = patient_address_data)
@@ -10,7 +14,7 @@ patient_db <- con %>%
 address_db <- con %>%
   tbl(from = lookup_address_data) %>% 
   rename(AB_FLAG = CH_FLAG)
-  
+
 # Get distinct patient-level address-postcode information
 patient_address_db = patient_db %>% 
   # If the address is NA we don't want to consider it
@@ -112,8 +116,8 @@ end_date = address_db %>%
   pull()
 
 # Define table name
-year_month = get_year_month_form_date(end_date)
-table_name = paste0("INT646_MATCH_", year_month)
+
+table_name = paste0("INT646_MATCH_", start_date, "_", end_date)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)
@@ -134,6 +138,9 @@ DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
 
 # Disconnect from database
 DBI::dbDisconnect(con)
+
+# Print created table name output
+print(paste0("This script has created table: ", table_name))
 
 # Remove objects and clean environment
 rm(list = ls()); gc()
