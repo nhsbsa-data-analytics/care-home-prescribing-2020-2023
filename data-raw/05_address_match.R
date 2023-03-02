@@ -86,12 +86,14 @@ match_db = match_db %>%
       TRUE ~ AB_FLAG
     ),
     
+    # Apply threshold and exclude some uprn
     UPRN_FLAG = case_when(
       SCORE <= 0.5 ~ 0, 
       !is.na(EXCUDE_FOR_CH_ANALYSIS) ~ 0,
       T ~ UPRN_FLAG
     ),
     
+    # Remove non-uprn-flag uprn
     UPRN = case_when(
       UPRN_FLAG == 0 ~ NULL, 
       T ~ UPRN
