@@ -291,5 +291,8 @@ DBI::dbDisconnect(con)
 # Print created table name output
 print(paste0("This script has created table: ", table_name))
 
+# Remove vars specific to script
+remove_vars = setdiff(ls(), keep_vars)
+
 # Remove objects and clean environment
-rm(list = ls()); gc()
+rm(list = remove_vars, remove_vars); gc()

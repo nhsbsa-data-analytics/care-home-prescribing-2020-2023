@@ -199,7 +199,8 @@ cqc_process_df = cqc_details_df %>%
   rename_with(toupper)
 
 # Check na count per column
-colSums(is.na(cqc_process_df))
+print("NA count per column")
+print(colSums(is.na(cqc_process_df)))
 
 # Create table name
 table_name = paste0("INT646_CQC_", download_date)
@@ -225,5 +226,8 @@ DBI::dbDisconnect(con)
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
-# Clear environment and clean
-rm(list = ls()); gc()
+# Remove vars specific to script
+remove_vars = setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()

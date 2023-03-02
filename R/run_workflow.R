@@ -4,6 +4,9 @@ source("R/analysis_packages.R")
 source("R/workflow_helpers.R")
 source("R/workflow_production.R")
 
+# Specify variables to retain at end of each script
+keep_vars = c(ls(), 'keep_vars')
+
 # FY 21/22 ---------------------------------------------------------------------
 
 # 1. Get latest cqc data: 0.5hr
@@ -11,7 +14,7 @@ get_latest_cqc_data()
 
 # 2. Get a select ab plus epoch supplemented with cqc-postcode uprn: 0.5hr
 get_ab_plus_supplemented_with_cqc(
-  cqc_data = "INT646_CQC_20230217", 
+  cqc_data = "INT646_CQC_20230302", 
   start_date = "2021-04-01",
   end_date =   "2022-03-31"
   )
@@ -37,5 +40,3 @@ create_care_home_address_match(
 create_matched_prescription_base_table(
   match_data = "INT646_MATCH_20210401_20220331"
 )
-
-

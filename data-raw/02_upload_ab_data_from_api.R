@@ -1,5 +1,4 @@
-start_date = "2021-04-01"
-end_date =   "2022-03-31"
+
 # Part One: get cqc postcodes to include within ab plus join -------------------
 
 get_cqc_postcodes(
@@ -264,5 +263,8 @@ print(paste0("This script has created table: ", table_name))
 # Return to project directory
 setwd(project_dir)
 
-# Clear environment and clean
-rm(list = ls()); gc()
+# Remove vars specific to script
+remove_vars = setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()
