@@ -2,6 +2,8 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+match_data = "INT646_MATCH_20210401_20220331"
+
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
@@ -25,6 +27,10 @@ paper_db <- con %>%
 # Lazy table for fact table
 eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
+
+# Lazy table for fact table
+presc_db <- con %>%
+  tbl(from = in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM"))
 
 # Get start and end dates
 start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
@@ -93,7 +99,11 @@ fact_db = fact_db %>%
     CALC_PREC_DRUG_RECORD_ID,
     ITEM_COUNT,
     ITEM_PAY_DR_NIC,
-    ITEM_CALC_PAY_QTY
+    ITEM_CALC_PAY_QTY,
+    PRESC_ID_PRNT,
+    PRESC_TYPE_PRNT,
+    PRESC_PD_ID,
+    PRESC_PD_OUPDT
   )
 
 # Get drug info
@@ -106,7 +116,28 @@ drug_db = drug_db %>%
     SECTION_DESCR,
     PARAGRAPH_DESCR,
     CHEMICAL_SUBSTANCE_BNF_DESCR,
-    BNF_CHEMICAL_SUBSTANCE
+    BNF_CHEMICAL_SUBSTANCE,
+    BASE_NAME
+  )
+
+# Process prescriber information
+presc_db = presc_db %>% 
+  inner_join(year_month_db, by = "YEAR_MONTH") %>% 
+  select(
+    YEAR_MONTH,
+    LVL_5_LTST_TYPE,
+    PRCTC_TYPE_HIST_IND_DESC,
+    LVL_5_LTST_NM,
+    LVL_5_LTST_ALT_CDE,
+    HS_TOTAL_LIST_SIZE,
+    PRESCRIBER_LTST_TYPE,
+    PRESCRIBER_LTST_SUB_TYPE,
+    PRESCRIBER_LTST_NM,
+    PRESCRIBER_LTST_CDE,
+    LVL_5_OU,
+    LVL_5_OUPDT,
+    PD_CDE,
+    PD_OUPDT
   )
 
 # Process paper info
@@ -155,6 +186,11 @@ fact_join_db = fact_db %>%
   left_join(paper_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
   left_join(eps_db, by = c("EPM_ID", "PART_DATE")) %>% 
   left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
+  left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
+                                 "PRESC_ID_PRNT" = "LVL_5_OU",
+                                 "PRESC_TYPE_PRNT" = "LVL_5_OUPDT",
+                                 "PRESC_PD_ID" = "PD_CDE",
+                                 "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
   mutate(
     POSTCODE = coalesce(
       MATCH_POSTCODE, 
@@ -223,7 +259,7 @@ patient_db <- fact_join_db %>%
 
 # Join fact data to patient level dimension
 fact_join_db = fact_join_db %>%
-  left_join(y = patient_db)
+  left_join(y = patient_db, by = c("NHS_NO"))
   # Reorder drug information
   # relocate(GENDER, .after = PDS_GENDER) %>%
   # relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%

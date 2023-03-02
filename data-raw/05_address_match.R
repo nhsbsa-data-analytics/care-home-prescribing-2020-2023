@@ -80,9 +80,21 @@ match_db = match_db %>%
     
     # Two: generate UPRN flag
     UPRN_FLAG = case_when(
-      REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) > 0L ~ 0L,
       MATCH_TYPE == "DOUBLE_KEYWORD" ~ 1L,
+      REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) > 0L ~ 0L,
+      REGEXP_INSTR(SINGLE_LINE_ADDRESS_LOOKUP, global_exclusion_keywords) > 0L ~ 0L,
       TRUE ~ AB_FLAG
+    ),
+    
+    UPRN_FLAG = case_when(
+      SCORE <= 0.5 ~ 0, 
+      !is.na(EXCUDE_FOR_CH_ANALYSIS) ~ 0,
+      T ~ UPRN_FLAG
+    ),
+    
+    UPRN = case_when(
+      UPRN_FLAG == 0 ~ NULL, 
+      T ~ UPRN
     ),
     
     # Three: generate 'general' CARE HOME flag (i.e. any care home)
