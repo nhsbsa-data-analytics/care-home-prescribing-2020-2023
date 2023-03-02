@@ -2,12 +2,9 @@
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-cqc_date = "20230217"
-
 # Create a lazy table from the CQC care home table
 cqc_db <- con %>%
-  tbl(from = cqc_data) %>% 
-  mutate(CQC_DATE = cqc_date)
+  tbl(from = cqc_data)
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
@@ -34,6 +31,13 @@ cqc_db = cqc_db %>%
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>% 
+  # Set rating to null if multiple present per SLA-postcode
+  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
+  mutate(
+    N_RATING = n_distinct(CURRENT_RATING),
+    CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
+    ) %>% 
+  ungroup() %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   summarise(
     CH_FLAG = max(CH_FLAG, na.rm = TRUE),
@@ -42,23 +46,32 @@ cqc_db = cqc_db %>%
     UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
+    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE),
+    CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
     .groups = "drop"
-  ) |>
-  mutate(EXCLUDE_FOR_CH_LEVEL_ANALYSIS = 
-           # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
-           case_when(
-             is.na(UPRN) ~ "CQC SLA with a null UPRN",
-             N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
-             T ~ NULL)
+  ) %>% 
+  mutate(
+    # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
+    EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
+      is.na(UPRN) ~ "CQC SLA with a null UPRN",
+      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
+      T ~ NULL
+      )
   )
 
 # From above processed data add residential and nursing home flag where possible
 cqc_attributes_db = cqc_db %>%
   group_by(UPRN) %>%
+  mutate(
+    N_RATING = n_distinct(CURRENT_RATING),
+    CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
+  ) %>% 
   summarise(
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     NURSING_HOME_FLAG = max(NURSING_HOME_FLAG, na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE)
+    RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE),
+    CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
+    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE)
   ) %>%
   ungroup()
 
@@ -88,7 +101,8 @@ ab_plus_cqc_db = ab_plus_db %>%
     END_DATE = end_date,
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
-  )
+  ) %>% 
+  select(-N_DISTINCT_UPRN)
 
 # Part Three: Save as table in dw ----------------------------------------------
 

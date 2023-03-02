@@ -16,10 +16,10 @@ get_ab_plus_supplemented_with_cqc(
   end_date =   "2022-03-31"
   )
 
-# 3. Merge and process cqc and ab plus: 0.1hr
+# 3. Merge and process cqc and ab plus: 1 min
 create_ab_plus_cqc_data(
   ab_plus_data = "INT646_ABP_20220422",
-  cqc_data = "INT646_CQC_20230217"
+  cqc_data = "INT646_CQC_20230302"
   )
 
 # 4. Create form level fact for records with a ch-postcode: 5hr
