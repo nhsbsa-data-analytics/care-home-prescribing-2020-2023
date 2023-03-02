@@ -43,13 +43,14 @@ cqc_db = cqc_db %>%
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
     .groups = "drop"
-  ) |>
-  mutate(EXCLUDE_FOR_CH_LEVEL_ANALYSIS = 
-           # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
-           case_when(
-             is.na(UPRN) ~ "CQC SLA with a null UPRN",
-             N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
-             T ~ NULL)
+  ) %>% 
+  mutate(
+    # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
+    EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
+      is.na(UPRN) ~ "CQC SLA with a null UPRN",
+      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
+      T ~ NULL
+      )
   )
 
 # From above processed data add residential and nursing home flag where possible

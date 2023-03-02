@@ -148,7 +148,8 @@ cqc_details_df <- cqc_details %>%
     nursing_home,
     residential_home,
     type,
-    number_of_beds
+    number_of_beds,
+    current_rating = current_ratings_overall_rating
   ) ; gc()
 
 # Get current year_month
@@ -192,11 +193,13 @@ cqc_process_df = cqc_details_df %>%
     residential_home_flag = residential_home,
     type,
     number_of_beds,
+    current_rating,
     cqc_date
   ) %>% 
   rename_with(toupper)
 
-
+# Check na count per column
+colSums(is.na(cqc_process_df))
 
 # Create table name
 table_name = paste0("INT646_CQC_", download_date)

@@ -13,6 +13,7 @@ pacman::p_load(
   'tictoc',
   'parallel',
   'janitor',
+  'yaml',
   
   # CQC API data 
   'httr',
