@@ -143,7 +143,7 @@ eps_info_db = eps_db %>%
 
 # Part three: stack paper and eps info and save --------------------------------
 
-# Stack info
+# Stack info (this returns distinct rows, reducing the table to form level)
 total_db = eps_info_db %>% 
   dplyr::union(paper_info_db) 
 
