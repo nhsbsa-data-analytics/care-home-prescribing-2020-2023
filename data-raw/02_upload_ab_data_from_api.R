@@ -254,6 +254,9 @@ ab_plus_db %>%
 # Drop table if it exists already
 drop_table_if_exists_db(table_name_temp)
 
+# Grant access
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+
 # Disconnect connection to database
 DBI::dbDisconnect(con)
 

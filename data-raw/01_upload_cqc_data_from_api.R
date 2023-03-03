@@ -220,6 +220,9 @@ con %>%
     temporary = FALSE
   )
 
+# Grant access
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+
 # Disconnect connection to database
 DBI::dbDisconnect(con)
 

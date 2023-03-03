@@ -123,6 +123,9 @@ ab_plus_cqc_db %>%
     temporary = FALSE
   )
 
+# Grant access
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+
 # Disconnect from database
 DBI::dbDisconnect(con)
 
