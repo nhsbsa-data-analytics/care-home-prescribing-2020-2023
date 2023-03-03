@@ -89,10 +89,10 @@ ab_plus_cqc_db = ab_plus_cqc_db %>%
 
 # Process paper info
 paper_info_db = paper_db %>% 
-  inner_join(year_month_db) %>% 
+  inner_join(y = year_month_db) %>% 
   addressMatchR::tidy_postcode(col = POSTCODE) %>% 
-  inner_join(ab_plus_cqc_db) %>%  
-  inner_join(fact_paper_db) %>%  
+  inner_join(y = ab_plus_cqc_db) %>%  
+  inner_join(y = fact_paper_db) %>%  
   addressMatchR::tidy_single_line_address(col = ADDRESS) %>% 
   select(
     YEAR_MONTH,
@@ -160,7 +160,6 @@ print("Output being computed to be written back to the db ...")
 total_db %>%
   compute(
     name = table_name,
-    indexes = list(c("PF_ID"), c("POSTCODE")),
     temporary = FALSE
   )
 

@@ -2,8 +2,6 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-match_data = "INT646_MATCH_20210401_20220331"
-
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
@@ -182,9 +180,9 @@ eps_db = eps_db %>%
 
 # Join all tables onto fact then process
 fact_join_db = fact_db %>% 
-  left_join(match_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
-  left_join(paper_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
-  left_join(eps_db, by = c("EPM_ID", "PART_DATE")) %>% 
+  left_join(y = match_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+  left_join(y = paper_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+  left_join(y = eps_db, by = c("EPM_ID", "PART_DATE")) %>% 
   left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
                                  "PRESC_ID_PRNT" = "LVL_5_OU",
