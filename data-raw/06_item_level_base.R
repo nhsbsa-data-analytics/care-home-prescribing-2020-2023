@@ -192,22 +192,23 @@ fact_join_db = fact_db %>%
                                  "PRESC_PD_ID" = "PD_CDE",
                                  "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
   mutate(
-    POSTCODE = coalesce(
-      MATCH_POSTCODE, 
+    BSA_POSTCODE = coalesce(
       EPS_POSTCODE, 
       PAPER_POSTCODE
       ),
-    SINGLE_LINE_ADDRESS = coalesce(
-      MATCH_SINGLE_LINE_ADDRESS,
+    BSA_SINGLE_LINE_ADDRESS = coalesce(
       EPS_SINGLE_LINE_ADDRESS,
       PAPER_SINGLE_LINE_ADDRESS
       ),
+    
+    # Apply single keyword logic to addresses that haven't been used in matching, 
+    # because they don't share a postcode with a known carehome
     CH_FLAG = case_when(
       is.na(AB_FLAG) &
-      REGEXP_INSTR(SINGLE_LINE_ADDRESS, care_home_keywords) > 0L &
-        REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) == 0L &
-        REGEXP_INSTR(SINGLE_LINE_ADDRESS, extra_exclusion_keywords) == 0L ~ 1,
-      TRUE ~ 0L
+      REGEXP_INSTR(BSA_SINGLE_LINE_ADDRESS, care_home_keywords) > 0L &
+      REGEXP_INSTR(BSA_SINGLE_LINE_ADDRESS, global_exclusion_keywords) == 0L &
+      REGEXP_INSTR(BSA_SINGLE_LINE_ADDRESS, extra_exclusion_keywords) == 0L ~ 1,
+      TRUE ~ CH_FLAG
       ),
     MATCH_TYPE = case_when(
       is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
@@ -215,7 +216,11 @@ fact_join_db = fact_db %>%
       ),
     AB_FLAG = ifelse(is.na(AB_FLAG), 0, AB_FLAG),
     UPRN_FLAG = ifelse(is.na(UPRN_FLAG), 0, UPRN_FLAG)
-    )
+    ) |>
+  select(-PAPER_POSTCODE,
+         -PAPER_SINGLE_LINE_ADDRESS,
+         -EPS_POSTCODE,
+         -EPS_SINGLE_LINE_ADDRESS)
   
 # Part three: generate consistent patient info ---------------------------------
 
