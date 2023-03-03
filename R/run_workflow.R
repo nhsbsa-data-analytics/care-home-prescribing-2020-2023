@@ -25,7 +25,7 @@ create_ab_plus_cqc_data(
   cqc_data = "INT646_CQC_20230302"
   )
 
-# 4. Create form level fact for records with a ch-postcode: 5hr
+# 4. Create form level fact for records with a ch-postcode: 8hr
 create_form_level_patient_addresses(
   address_data = "INT646_ABP_CQC_20210401_20220331"
   )

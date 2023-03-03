@@ -35,7 +35,8 @@ match_db <- addressMatchR::calc_match_addresses(
   lookup_df = address_db,
   lookup_postcode_col = "POSTCODE",
   lookup_address_col = "SINGLE_LINE_ADDRESS"
-)
+  ) %>% 
+  select(-c(START_DATE, END_DATE, AB_DATE, CQC_DATE))
 
 # Define keyword list for case statements
 care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL HOME|RESIDENTIAL-HOME|REST HOME|REST-HOME"
@@ -89,7 +90,7 @@ match_db = match_db %>%
     # Apply threshold and exclude some uprn
     UPRN_FLAG = case_when(
       SCORE <= 0.5 ~ 0, 
-      !is.na(EXCUDE_FOR_CH_ANALYSIS) ~ 0,
+      !is.na(EXCLUDE_FOR_CH_LEVEL_ANALYSIS) ~ 0,
       T ~ UPRN_FLAG
     ),
     
@@ -103,7 +104,10 @@ match_db = match_db %>%
     CH_FLAG = case_when(
       MATCH_TYPE == "PATIENT_COUNT" ~ 1L,
       MATCH_TYPE == "SINGLE_KEYWORD" ~ 1L,
-      TRUE ~ UPRN_FLAG
+      MATCH_TYPE == "DOUBLE_KEYWORD" ~ 1L,
+      REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) > 0L ~ 0L,
+      REGEXP_INSTR(SINGLE_LINE_ADDRESS_LOOKUP, global_exclusion_keywords) > 0L ~ 0L,
+      TRUE ~ AB_FLAG
     )
   )
 
@@ -117,20 +121,9 @@ patient_match_db <- patient_db %>%
       CH_FLAG = 0L, 
       MATCH_TYPE = "NO MATCH"
       )
-    )  %>% 
-  # Rearrange location of address fields
-  relocate(SINGLE_LINE_ADDRESS_LOOKUP, .after = SINGLE_LINE_ADDRESS) %>% 
-  relocate(UPRN_FLAG, .after = AB_FLAG) %>% 
-  relocate(CH_FLAG, .after = UPRN_FLAG) 
-
-# Get end date
-end_date = address_db %>% 
-  select(END_DATE) %>% 
-  distinct() %>% 
-  pull()
+    )
 
 # Define table name
-
 table_name = paste0("INT646_MATCH_", start_date, "_", end_date)
 
 # Remove table if exists
@@ -143,7 +136,7 @@ print("Output being computed to be written back to the db ...")
 patient_match_db %>%
   compute(
     name = table_name,
-    indexes = list(c("POSTCODE")),
+    indexes = list(c("PF_ID", "YEAR_MONTH")),
     temporary = FALSE
   )
 
