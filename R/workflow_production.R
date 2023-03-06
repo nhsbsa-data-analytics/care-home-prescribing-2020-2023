@@ -4,7 +4,7 @@
 get_latest_cqc_data = function(){
 
   # source single script with no date input required
-  tic(); source("data-raw/01_upload_cqc_data_from_api.R"); toc()
+  tic(); source("data-raw/01_upload_cqc_data_from_api.R"); toc(); print(Sys.time())
 }
 
 
@@ -21,7 +21,7 @@ get_ab_plus_supplemented_with_cqc = function(cqc_data, start_date, end_date){
   assign("end_date", end_date, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-  tic(); source("data-raw/02_upload_ab_data_from_api.R"); toc()
+  tic(); source("data-raw/02_upload_ab_data_from_api.R"); toc(); print(Sys.time())
 } 
 
 
@@ -35,7 +35,7 @@ create_ab_plus_cqc_data = function(cqc_data, ab_plus_data){
   assign("ab_plus_data", ab_plus_data, envir = globalenv())
   
   # stack and process the cqc and ab plus address data
-  tic(); source("data-raw/03_address_base_cqc_merge.R"); toc()
+  tic(); source("data-raw/03_address_base_cqc_merge.R"); toc(); print(Sys.time())
 }
 
 
@@ -47,7 +47,7 @@ create_form_level_patient_addresses = function(address_data){
   assign("address_data", address_data, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-  tic(); source("data-raw/04_form_level_fact.R"); toc()
+  tic(); source("data-raw/04_form_level_fact.R"); toc(); print(Sys.time())
 }
 
 
@@ -61,7 +61,7 @@ create_care_home_address_match = function(patient_address_data, lookup_address_d
   assign("lookup_address_data", lookup_address_data, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-  tic(); source("data-raw/05_address_match.R"); toc()
+  tic(); source("data-raw/05_address_match.R"); toc(); print(Sys.time())
 }
 
 
@@ -73,5 +73,5 @@ create_matched_prescription_base_table = function(match_data){
   assign("match_data", match_data, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-  tic; source("data-raw/06_item_level_base.R"); toc()
+  tic; source("data-raw/06_item_level_base.R"); toc(); print(Sys.time())
 }

@@ -163,7 +163,7 @@ read_temp_dir_csv = function(index){
 results = lapply(1:length(temp_dir_files), read_temp_dir_csv)
 
 # Clean up temp files
-file.remove(list.files(getwd()))
+file.remove(list.files(output_dir))
 
 # Bind into df then additional processing
 

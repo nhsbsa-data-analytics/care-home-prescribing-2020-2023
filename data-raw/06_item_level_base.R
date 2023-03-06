@@ -262,13 +262,62 @@ patient_db <- fact_join_db %>%
 
 # Join fact data to patient level dimension
 fact_join_db = fact_join_db %>%
-  left_join(y = patient_db, by = c("NHS_NO"))
-  # Reorder drug information
-  # relocate(GENDER, .after = PDS_GENDER) %>%
-  # relocate(AGE_BAND, AGE, .after = CALC_AGE) %>%
-  # select(-c(PDS_GENDER, CALC_AGE)) %>% 
-  # relocate(CHAPTER_DESCR:BNF_CHEMICAL_SUBSTANCE, .before = CALC_PREC_DRUG_RECORD_ID) %>%
-  # select(-CALC_PREC_DRUG_RECORD_ID)
+  left_join(y = patient_db, by = c("NHS_NO")) %>% 
+  select(
+    # Fact metadata
+    YEAR_MONTH,
+    PART_DATE,
+    EPM_ID,
+    PF_ID,
+    EPS_FLAG,
+    # Patient info
+    NHS_NO, 
+    GENDER,
+    AGE,
+    AGE_BAND,
+    # Match Info
+    BSA_POSTCODE,
+    MATCH_POSTCODE,
+    BSA_SINGLE_LINE_ADDRESS,
+    MATCH_SINGLE_LINE_ADDRESS,
+    MATCH_TYPE,
+    SCORE,
+    MAX_MONTHLY_PATIENTS,
+    AB_FLAG,
+    UPRN_FLAG,
+    CH_FLAG,
+    # AB and CQC info
+    UPRN,
+    LOCATION_ID,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    NUMBER_OF_BEDS,
+    CURRENT_RATING,
+    AB_DATE,
+    CQC_DATE,
+    # Item info
+    ITEM_COUNT,
+    ITEM_PAY_DR_NIC,
+    ITEM_CALC_PAY_QTY,
+    # Drug info
+    CALC_PREC_DRUG_RECORD_ID,
+    CHAPTER_DESCR,
+    SECTION_DESCR,
+    PARAGRAPH_DESCR,
+    CHEMICAL_SUBSTANCE_BNF_DESCR,
+    BNF_CHEMICAL_SUBSTANCE,
+    BASE_NAME,
+    # Prescriber info
+    LVL_5_LTST_TYPE,
+    PRCTC_TYPE_HIST_IND_DESC,
+    LVL_5_LTST_NM,
+    LVL_5_LTST_ALT_CDE,
+    HS_TOTAL_LIST_SIZE,
+    PRESCRIBER_LTST_TYPE,
+    PRESCRIBER_LTST_SUB_TYPE,
+    PRESCRIBER_LTST_NM,
+    PRESCRIBER_LTST_CDE
+  )
 
 # Part four: save output -------------------------------------------------------
 
