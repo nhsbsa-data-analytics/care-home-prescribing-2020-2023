@@ -2,6 +2,8 @@
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+address_data = "INT646_ABP_CQC_20210401_20220331"
+
 # Get start and end dates
 start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]
@@ -78,7 +80,7 @@ fact_eps_db = fact_db %>%
 # Fact table paper info
 fact_paper_db = fact_db %>% 
   filter(EPS_FLAG == "N") %>% 
-  select(PF_ID)
+  select(YEAR_MONTH, PF_ID)
 
 # Part two: process paper info -------------------------------------------------
 
@@ -87,12 +89,17 @@ ab_plus_cqc_db = ab_plus_cqc_db %>%
   select(POSTCODE, START_DATE, END_DATE, AB_DATE, CQC_DATE) %>% 
   distinct()
 
+paper_db %>% 
+  inner_join(y = year_month_db, by = "YEAR_MONTH") %>% 
+  group_by(POSTCODE)
+  tally()
+
 # Process paper info
 paper_info_db = paper_db %>% 
-  inner_join(y = year_month_db) %>% 
+  inner_join(y = year_month_db, by = "YEAR_MONTH") %>% 
   addressMatchR::tidy_postcode(col = POSTCODE) %>% 
-  inner_join(y = ab_plus_cqc_db) %>%  
-  inner_join(y = fact_paper_db) %>%  
+  inner_join(y = ab_plus_cqc_db, by = "POSTCODE") %>%  
+  inner_join(y = fact_paper_db, by = c("YEAR_MONTH", "PF_ID")) %>%  
   addressMatchR::tidy_single_line_address(col = ADDRESS) %>% 
   select(
     YEAR_MONTH,

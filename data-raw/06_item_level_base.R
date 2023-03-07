@@ -30,6 +30,10 @@ eps_db <- con %>%
 presc_db <- con %>%
   tbl(from = in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM"))
 
+# Lazy table for fact table
+disp_db <- con %>%
+  tbl(from = in_schema("DIM", "HS_DY_LEVEL_5_FLAT_DIM"))
+
 # Get start and end dates
 start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
@@ -73,7 +77,8 @@ match_db = match_db %>%
 fact_db = fact_db %>%
   inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
   filter(
-    CALC_AGE >= 65L,
+    # Prescribing retained for all ages
+    #CALC_AGE >= 65L,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
     PAY_ND_END == "N", # excludes not dispensed items
@@ -101,7 +106,10 @@ fact_db = fact_db %>%
     PRESC_ID_PRNT,
     PRESC_TYPE_PRNT,
     PRESC_PD_ID,
-    PRESC_PD_OUPDT
+    PRESC_PD_OUPDT,
+    DISP_CODE = DISPENSER_CODE,
+    DISP_ID,
+    DISP_OUPDT_TYPE
   )
 
 # Get drug info
@@ -123,19 +131,19 @@ presc_db = presc_db %>%
   inner_join(year_month_db, by = "YEAR_MONTH") %>% 
   select(
     YEAR_MONTH,
-    LVL_5_LTST_TYPE,
-    PRCTC_TYPE_HIST_IND_DESC,
-    LVL_5_LTST_NM,
-    LVL_5_LTST_ALT_CDE,
-    HS_TOTAL_LIST_SIZE,
-    PRESCRIBER_LTST_TYPE,
-    PRESCRIBER_LTST_SUB_TYPE,
-    PRESCRIBER_LTST_NM,
-    PRESCRIBER_LTST_CDE,
     LVL_5_OU,
     LVL_5_OUPDT,
     PD_CDE,
-    PD_OUPDT
+    PD_OUPDT,
+    PRESC_ORG_TYPE = LVL_5_LTST_TYPE,
+    PRESC_ORG_SUB_TYPE = PRCTC_TYPE_HIST_IND_DESC,
+    PRESC_ORG_NM = LVL_5_LTST_NM,
+    PRESC_ORG_CODE = LVL_5_LTST_ALT_CDE,
+    PRESC_ORG_LIST_SIZE = HS_TOTAL_LIST_SIZE,
+    PRESCRIBER_TYPE = PRESCRIBER_LTST_TYPE,
+    PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
+    PRESCRIBER_NM = PRESCRIBER_LTST_NM,
+    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
   )
 
 # Process paper info
@@ -150,6 +158,25 @@ paper_db = paper_db %>%
     PAPER_POSTCODE = POSTCODE
   )
 
+# Process Dispenser data
+disp_db = disp_db %>% 
+  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
+  select(
+    YEAR_MONTH,
+    LVL_5_OU,
+    LVL_5_OUPDT,
+    DISP_TYPE = LVL_5_LTST_TYPE,
+    DISP_NM = LVL_5_LTST_NM,
+    DISP_TRADING_NM = TRADING_LTST_NM,
+    DISP_FULL_ADDRESS = LVL_5_HIST_FULL_ADDRESS,
+    DISP_POSTCODE = LVL_5_HIST_POSTCODE,
+    DISP_DIST_FLAG = DIST_SELLING_DISPENSER_HIST,
+    DISP_LPS_FLAG = LPS_DISPENSER_HIST,
+    DISP_OOH_FLAG = OOH_DISPENSER_HIST,
+    DISP_PRIVATE_FLAG = PRIVATE_DISPENSER_HIST,
+    DISP_APPLIANCE_FLAG = APPLIANCE_DISPENSER_HIST
+  )
+  
 # Process eps info
 eps_db = eps_db %>%
   # Bring back ETP data
@@ -189,6 +216,9 @@ fact_join_db = fact_db %>%
                                  "PRESC_TYPE_PRNT" = "LVL_5_OUPDT",
                                  "PRESC_PD_ID" = "PD_CDE",
                                  "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
+  left_join(y = disp_db, by = c("YEAR_MONTH",
+                                "DISP_ID" = "LVL_5_OU",
+                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
   mutate(
     BSA_POSTCODE = coalesce(
       EPS_POSTCODE, 
@@ -251,6 +281,7 @@ patient_db <- fact_join_db %>%
     ),
     # Add an age band
     AGE_BAND = case_when(
+      AGE < 65 ~ "<65",
       AGE < 70 ~ "65-69",
       AGE < 75 ~ "70-74",
       AGE < 80 ~ "75-79",
@@ -308,15 +339,27 @@ fact_join_db = fact_join_db %>%
     BNF_CHEMICAL_SUBSTANCE,
     BASE_NAME,
     # Prescriber info
-    LVL_5_LTST_TYPE,
-    PRCTC_TYPE_HIST_IND_DESC,
-    LVL_5_LTST_NM,
-    LVL_5_LTST_ALT_CDE,
-    HS_TOTAL_LIST_SIZE,
-    PRESCRIBER_LTST_TYPE,
-    PRESCRIBER_LTST_SUB_TYPE,
-    PRESCRIBER_LTST_NM,
-    PRESCRIBER_LTST_CDE
+    PRESC_ORG_TYPE,
+    PRESC_ORG_SUB_TYPE,
+    PRESC_ORG_NM,
+    PRESC_ORG_CODE,
+    PRESC_ORG_LIST_SIZE,
+    PRESCRIBER_TYPE,
+    PRESCRIBER_SUB_TYPE,
+    PRESCRIBER_NM,
+    PRESCRIBER_CODE,
+    # Dispenser info
+    DISP_CODE,
+    DISP_TYPE,
+    DISP_NM,
+    DISP_TRADING_NM,
+    DISP_FULL_ADDRESS,
+    DISP_POSTCODE,
+    DISP_DIST_FLAG,
+    DISP_LPS_FLAG,
+    DISP_OOH_FLAG,
+    DISP_PRIVATE_FLAG,
+    DISP_APPLIANCE_FLAG
   )
 
 # Part four: save output -------------------------------------------------------
