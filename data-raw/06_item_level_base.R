@@ -198,7 +198,6 @@ fact_join_db = fact_db %>%
       EPS_SINGLE_LINE_ADDRESS,
       PAPER_SINGLE_LINE_ADDRESS
       ),
-    
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome
     CH_FLAG = case_when(
@@ -210,15 +209,17 @@ fact_join_db = fact_db %>%
       ),
     MATCH_TYPE = case_when(
       is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
-      TRUE ~ "NO MATCH"
-      ),
-    AB_FLAG = ifelse(is.na(AB_FLAG), 0, AB_FLAG),
-    UPRN_FLAG = ifelse(is.na(UPRN_FLAG), 0, UPRN_FLAG)
-    ) |>
-  select(-PAPER_POSTCODE,
-         -PAPER_SINGLE_LINE_ADDRESS,
-         -EPS_POSTCODE,
-         -EPS_SINGLE_LINE_ADDRESS)
+      TRUE ~ MATCH_TYPE
+      )
+    ) %>% 
+  tidyr::replace_na(
+    list(
+      AB_FLAG = 0L,
+      UPRN_FLAG = 0L,
+      CH_FLAG = 0L, 
+      MATCH_TYPE = "NO MATCH"
+    )
+  )
   
 # Part three: generate consistent patient info ---------------------------------
 
@@ -257,8 +258,7 @@ patient_db <- fact_join_db %>%
       AGE < 90 ~ "85-89",
       TRUE ~ "90+"
     )
-  ) %>%
-  select(-ends_with("_COUNT"))
+  )
 
 # Join fact data to patient level dimension
 fact_join_db = fact_join_db %>%
