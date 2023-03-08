@@ -35,3 +35,11 @@ PRESC_TO_CH <- DB_UPRN |>
 # Prefix PRESC AND DISP to help keep Sankey clear in case of dispensing doctors
 
 # 3 level Sankey diagram showing flow of NIC
+
+
+# Distributions of % of items/nic prescribed/dispensed by top org
+
+# 3D graph: X = % prescribed by top presc org; Y = % dispensed by top disp org; Z (colour) = total items/nic
+
+
+
