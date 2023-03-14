@@ -67,10 +67,11 @@ create_care_home_address_match = function(patient_address_data, lookup_address_d
 
 #' @description gets prescription info for matched records
 #' @param match_data: matched address data
-create_matched_prescription_base_table = function(match_data){
+create_matched_prescription_base_table = function(match_data, form_data){
     
   # Assign function inputs to global env
   assign("match_data", match_data, envir = globalenv())
+  assign("form_data", match_data, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
   tic; source("data-raw/06_item_level_base.R"); toc(); print(Sys.time())

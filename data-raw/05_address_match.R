@@ -15,28 +15,33 @@ address_db <- con %>%
   tbl(from = lookup_address_data) %>% 
   rename(AB_FLAG = CH_FLAG)
 
+# Process and match address data -----------------------------------------------
+
 # Get distinct patient-level address-postcode information
 patient_address_db = patient_db %>% 
   # If the address is NA we don't want to consider it
-  filter(!is.na(SINGLE_LINE_ADDRESS)) %>%
+  filter(
+    !is.na(SINGLE_LINE_ADDRESS),
+    CALC_AGE >= 65,
+    POSTCODE_CH == 1
+    ) %>%
   # Add monthly patient count
   group_by(YEAR_MONTH, POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(MONTHLY_PATIENTS = n_distinct(NHS_NO)) %>%
   ungroup(YEAR_MONTH) %>% 
   # Get max monthly patient count
-  summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>%
+  summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
   ungroup()
 
 # Match the patients address to the AddressBase Plus and CQC care home addresses
-match_db <- addressMatchR::calc_match_addresses(
+match_db = addressMatchR::calc_match_addresses(
   primary_df = patient_address_db,
   primary_postcode_col = "POSTCODE",
   primary_address_col = "SINGLE_LINE_ADDRESS",
   lookup_df = address_db,
   lookup_postcode_col = "POSTCODE",
   lookup_address_col = "SINGLE_LINE_ADDRESS"
-  ) %>% 
-  select(-c(START_DATE, END_DATE, AB_DATE, CQC_DATE))
+  )
 
 # Define keyword list for case statements
 care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL HOME|RESIDENTIAL-HOME|REST HOME|REST-HOME"
@@ -113,6 +118,11 @@ match_db = match_db %>%
 
 # Join the matches back to the patient addresses
 patient_match_db <- patient_db %>%
+  filter(
+    !is.na(SINGLE_LINE_ADDRESS),
+    CALC_AGE >= 65,
+    POSTCODE_CH == 1
+  ) %>%
   left_join(y = match_db, by = c("POSTCODE", "SINGLE_LINE_ADDRESS")) %>% 
   tidyr::replace_na(
     list(
