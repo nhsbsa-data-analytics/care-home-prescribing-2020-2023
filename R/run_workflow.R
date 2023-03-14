@@ -34,11 +34,10 @@ create_form_level_patient_addresses(
 create_care_home_address_match(
   patient_address_data = "INT646_FORMS_20210401_20220331",
   lookup_address_data = "INT646_ABP_CQC_20210401_20220331"
-)
+  )
 
 # 6. Join to fact table and get non ch-postcode records within time frame: 11hr
 create_matched_prescription_base_table(
   match_data = "INT646_MATCH_20210401_20220331",
   form_data = "INT646_FORMS_20210401_20220331"
   )
-Sys.time()

@@ -59,7 +59,7 @@ extra_exclusion_keywords = "CONVENT|HOSPITAL|MARINA|MONASTERY|RECOVERY"
 
 # Get appropriate year month fields as a table
 year_month_db = year_month_db %>% 
-  select(YEAR_MONTH) %>% 
+  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
   filter(
     YEAR_MONTH >= start_year_month,
     YEAR_MONTH <= end_year_month
@@ -163,7 +163,8 @@ disp_db = disp_db %>%
       OOH_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: OOH",
       PRIVATE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: PRIVATE",
       T ~ LVL_5_LTST_TYPE
-  )) %>% 
+      )
+    ) %>% 
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -288,6 +289,7 @@ fact_join_db = fact_db %>%
     CH_FLAG,
     # AB and CQC info
     UPRN,
+    PARENT_UPRN,
     LOCATION_ID,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,

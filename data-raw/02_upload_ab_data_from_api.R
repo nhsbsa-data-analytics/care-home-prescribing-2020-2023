@@ -228,6 +228,7 @@ ab_plus_db = ab_plus_db %>%
   ) %>% 
   select(
     UPRN,
+    PARENT_UPRN,
     POSTCODE,
     DPA_SINGLE_LINE_ADDRESS,
     GEO_SINGLE_LINE_ADDRESS,
