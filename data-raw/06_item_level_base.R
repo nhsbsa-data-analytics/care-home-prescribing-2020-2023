@@ -68,10 +68,7 @@ year_month_db = year_month_db %>%
 # Match info minus nhs no
 match_db = match_db %>% 
   select(-NHS_NO) %>% 
-  rename(
-    MATCH_POSTCODE = POSTCODE,
-    MATCH_SINGLE_LINE_ADDRESS = SINGLE_LINE_ADDRESS
-  )
+  rename(MATCH_SINGLE_LINE_ADDRESS = SINGLE_LINE_ADDRESS_LOOKUP)
 
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
@@ -158,20 +155,24 @@ form_db = form_db %>%
 # Process Dispenser data
 disp_db = disp_db %>% 
   inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
+  mutate(
+    DISP_TYPE = case_when(
+      DIST_SELLING_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: DISTANCE SELLING",
+      LPS_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: LPS",
+      APPLIANCE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: APPLIANCE",
+      OOH_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: OOH",
+      PRIVATE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: PRIVATE",
+      T ~ LVL_5_LTST_TYPE
+  )) %>% 
   select(
     YEAR_MONTH,
     LVL_5_OU,
     LVL_5_OUPDT,
-    DISP_TYPE = LVL_5_LTST_TYPE,
+    DISP_TYPE,
     DISP_NM = LVL_5_LTST_NM,
     DISP_TRADING_NM = TRADING_LTST_NM,
     DISP_FULL_ADDRESS = LVL_5_HIST_FULL_ADDRESS,
-    DISP_POSTCODE = LVL_5_HIST_POSTCODE,
-    DISP_DIST_FLAG = DIST_SELLING_DISPENSER_HIST,
-    DISP_LPS_FLAG = LPS_DISPENSER_HIST,
-    DISP_OOH_FLAG = OOH_DISPENSER_HIST,
-    DISP_PRIVATE_FLAG = PRIVATE_DISPENSER_HIST,
-    DISP_APPLIANCE_FLAG = APPLIANCE_DISPENSER_HIST
+    DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
   
 # Get a single gender and age for the period
@@ -216,6 +217,7 @@ pat_db <- pat_db %>%
     ),
     # Add an age band
     AGE_BAND = case_when(
+      AGE == -1 ~ "UNKNOWN",
       AGE < 65 ~ "<65",
       AGE < 70 ~ "65-69",
       AGE < 75 ~ "70-74",
@@ -276,7 +278,6 @@ fact_join_db = fact_db %>%
     AGE_BAND,
     # Match Info
     BSA_POSTCODE,
-    MATCH_POSTCODE,
     BSA_SINGLE_LINE_ADDRESS,
     MATCH_SINGLE_LINE_ADDRESS,
     MATCH_TYPE,
@@ -322,12 +323,7 @@ fact_join_db = fact_db %>%
     DISP_NM,
     DISP_TRADING_NM,
     DISP_FULL_ADDRESS,
-    DISP_POSTCODE,
-    DISP_DIST_FLAG,
-    DISP_LPS_FLAG,
-    DISP_OOH_FLAG,
-    DISP_PRIVATE_FLAG,
-    DISP_APPLIANCE_FLAG
+    DISP_POSTCODE
   )
 
 # Part four: save output -------------------------------------------------------
