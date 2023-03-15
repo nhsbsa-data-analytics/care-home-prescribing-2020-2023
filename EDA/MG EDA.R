@@ -31,6 +31,8 @@ P <- DB |>
      mutate(UPRN = max(UPRN)) |>
      ungroup()
 
+# Incorporate this 1:1 UPRN:SLA logic into base table code?
+
 #DB |> group_by(DISP_TYPE, DISP_DIST_FLAG, DISP_LPS_FLAG, DISP_OOH_FLAG, DISP_PRIVATE_FLAG, DISP_APPLIANCE_FLAG) |> summarise(n = n())
 # None of the dispensers have OOH or Private flags in this dataset, only pharmacy contractors have mutually exclusive dist/lps/appliance flags, therefore:
 DB <- DB |> mutate(DISP_TYPE = case_when(
@@ -61,12 +63,12 @@ D <- DB |>
   mutate(UPRN = max(UPRN)) |>
   ungroup()
 
-
 LINKS <- union_all(P, D) |> collect()
 
 # 3 level Sankey diagram showing flow of NIC
 
-sample_of_uprns <- LINKS |> pull(UPRN) |> unique() |> sample(5)
+# sample_of_uprns <- LINKS |> pull(UPRN) |> unique() |> sample(5)
+
 top_uprns <- P |> group_by(UPRN) |>
   summarise(ITEMS = sum(ITEMS)) |>
   slice_max(ITEMS, n = 5, with_ties = F) |>
@@ -144,11 +146,10 @@ ggplot(TOP_ORGS_PER_CH, aes(ITEMS_PER_CH)) +
   geom_histogram(bins = 150) +
   scale_x_continuous(limits = c(0,4000))
 
-ecdf(TOP_ORGS_PER_CH$ITEMS_PER_CH)(300) # 39% of CHs had <= 300 items
-
+ecdf(TOP_ORGS_PER_CH$ITEMS_PER_CH)(300) # 39% of CHs (many of them likely 'faux') had <= 300 items
 
 dom_fraction_threshold = 0.7 # What constitutes a dominant fraction of prescrbing/dispensing
-low_activity_threshold = 300
+low_activity_threshold = 300 # Exclude CHs with items below this threshold
 
 ggplot(TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold),
        aes(PROP_ITEMS_BY_TOP_PRESC_TO_CH, PROP_ITEMS_BY_TOP_DISP_FROM_CH, color = ITEMS_PER_CH^(1/3))) +
@@ -163,6 +164,18 @@ ggplot(TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold),
                                              PROP_ITEMS_BY_TOP_DISP_FROM_CH >= dom_fraction_threshold) |>
                                       nrow() / nrow(TOP_ORGS_PER_CH))*100) |>
                    round() |> paste0("%"))
+
+# Prop by dominant presc/disp org vs item volume
+
+TOP_ORGS_PER_CH |>  filter(ITEMS_PER_CH >= low_activity_threshold) |>
+  tidyr::pivot_longer(starts_with("PROP"),
+                      names_to = "PROP_TYPE",
+                      values_to = "PROP") |>
+  ggplot(aes(ITEMS_PER_CH, PROP)) +
+  geom_point() +
+  geom_smooth() +
+  facet_wrap(~PROP_TYPE)
+
 
 
 DBI::dbDisconnect(con)
