@@ -1,6 +1,7 @@
 library(dplyr)
 library(dbplyr)
 library(highcharter)
+library(ggplot2)
 
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
@@ -103,11 +104,13 @@ t2 <- t |> bind_rows(
   )
 
 highchart() |>
-  hc_add_series(t, type = "sankey")
+  hc_add_series(t,   # Showing prescribing activity from presc/disp orgs to focal CHs only 
+                #t2, # Showing all presc activity from presc/disp orgs that had activity with focal CHs
+                type = "sankey")
 
 # Colour presc/disp by type
 
-# Distributions of % of items/nic prescribed/dispensed by top org
+# Distributions of % of items/nic prescribed/dispensed by a top org
 # 3D graph: X = % prescribed by top presc org; Y = % dispensed by top disp org; Z (colour/size) = total items/nic
 
 TOP_ORGS_PER_CH <- left_join( 
@@ -119,6 +122,7 @@ TOP_ORGS_PER_CH <- left_join(
     slice_max(PROP_ITEMS_BY_PRESC_TO_CH, n = 1, with_ties = F) |>
     ungroup() |>
     select(CH = to, UPRN,
+           ITEMS_PER_CH,
            PROP_ITEMS_BY_TOP_PRESC_TO_CH = PROP_ITEMS_BY_PRESC_TO_CH,
            PRESC = from),
   
@@ -134,11 +138,31 @@ TOP_ORGS_PER_CH <- left_join(
   
   by = c("CH", "UPRN"))
 
-# Add ITEMS for bubble size
+# 17,411 CHs
 
-library(ggplot2)
-ggplot(TOP_ORGS_PER_CH, aes(PROP_ITEMS_BY_TOP_PRESC_TO_CH, PROP_ITEMS_BY_TOP_DISP_FROM_CH)) +
-  geom_point()
+ggplot(TOP_ORGS_PER_CH, aes(ITEMS_PER_CH)) + 
+  geom_histogram(bins = 150) +
+  scale_x_continuous(limits = c(0,4000))
+
+ecdf(TOP_ORGS_PER_CH$ITEMS_PER_CH)(300) # 39% of CHs had <= 300 items
+
+
+dom_fraction_threshold = 0.7 # What constitutes a dominant fraction of prescrbing/dispensing
+low_activity_threshold = 300
+
+ggplot(TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold),
+       aes(PROP_ITEMS_BY_TOP_PRESC_TO_CH, PROP_ITEMS_BY_TOP_DISP_FROM_CH, color = ITEMS_PER_CH^(1/3))) +
+  geom_point(alpha = 0.85) +
+  scale_color_distiller(palette = "RdYlBu") +
+  geom_rect(ymin = dom_fraction_threshold, ymax = 1, xmin = dom_fraction_threshold, xmax = 1, fill = NA, color = "red", linewidth = 1.5) +
+  xlab("Proportion of items prescribed by top presc org") +
+  ylab("Proportion of items dispensed by top disp org") +
+  annotate("text", x = dom_fraction_threshold+(1-dom_fraction_threshold)/2, y = dom_fraction_threshold-0.03, color = "red", size = 7,
+           label = ((TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold,
+                                             PROP_ITEMS_BY_TOP_PRESC_TO_CH >= dom_fraction_threshold,
+                                             PROP_ITEMS_BY_TOP_DISP_FROM_CH >= dom_fraction_threshold) |>
+                                      nrow() / nrow(TOP_ORGS_PER_CH))*100) |>
+                   round() |> paste0("%"))
 
 
 DBI::dbDisconnect(con)
