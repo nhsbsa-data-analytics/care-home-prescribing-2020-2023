@@ -2,6 +2,9 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+patient_address_data = "INT646_FORMS_20210401_20220331"
+lookup_address_data = "INT646_ABP_CQC_20210401_20220331"
+
 # Get start and end dates
 start_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][2]
@@ -28,7 +31,9 @@ patient_address_db = patient_db %>%
   # Add monthly patient count
   group_by(YEAR_MONTH, POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(MONTHLY_PATIENTS = n_distinct(NHS_NO)) %>%
-  ungroup(YEAR_MONTH) %>% 
+  # Fully ungroup
+  ungroup() %>% 
+  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
   ungroup()
@@ -81,7 +86,7 @@ match_db = match_db %>%
         REGEXP_INSTR(SINGLE_LINE_ADDRESS, extra_exclusion_keywords) == 0L ~ "PATIENT_COUNT",
       
       # Else: just the existing match type 
-      T ~ MATCH_TYPE
+      TRUE ~ MATCH_TYPE
     ),
     
     # Two: generate UPRN flag
@@ -96,13 +101,13 @@ match_db = match_db %>%
     UPRN_FLAG = case_when(
       SCORE <= 0.5 ~ 0, 
       !is.na(EXCLUDE_FOR_CH_LEVEL_ANALYSIS) ~ 0,
-      T ~ UPRN_FLAG
+      TRUE ~ UPRN_FLAG
     ),
     
     # Remove non-uprn-flag uprn
     UPRN = case_when(
       UPRN_FLAG == 0 ~ NULL, 
-      T ~ UPRN
+      TRUE ~ UPRN
     ),
     
     # Three: generate 'general' CARE HOME flag (i.e. any care home)
@@ -113,8 +118,24 @@ match_db = match_db %>%
       REGEXP_INSTR(SINGLE_LINE_ADDRESS, global_exclusion_keywords) > 0L ~ 0L,
       REGEXP_INSTR(SINGLE_LINE_ADDRESS_LOOKUP, global_exclusion_keywords) > 0L ~ 0L,
       TRUE ~ AB_FLAG
+    ),
+    
+    # Complete SLA-lookup for exact matches (which default to null)
+    SINGLE_LINE_ADDRESS_LOOKUP = case_when(
+      MATCH_TYPE == "EXACT" ~ SINGLE_LINE_ADDRESS,
+      TRUE ~ SINGLE_LINE_ADDRESS_LOOKUP
     )
-  )
+  ) %>% 
+  # Generate single postcode-SLA per uprn
+  group_by(UPRN) %>% 
+  mutate(
+    SINGLE_LINE_ADDRESS_STANDARDISED = max(paste0(SINGLE_LINE_ADDRESS, " ", POSTCODE))
+    ) %>% 
+  ungroup() %>% 
+  # Ensure 1 uprn per SLA
+  group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>% 
+  mutate(UPRN = max(UPRN)) %>% 
+  ungroup()
 
 # Join the matches back to the patient addresses
 patient_match_db <- patient_db %>%
@@ -132,7 +153,7 @@ patient_match_db <- patient_db %>%
       MATCH_TYPE = "NO MATCH"
       )
     )
-
+  
 # Define table name
 table_name = paste0("INT646_MATCH_", start_date, "_", end_date)
 
