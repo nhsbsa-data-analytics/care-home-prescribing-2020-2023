@@ -68,7 +68,10 @@ year_month_db = year_month_db %>%
 # Match info minus nhs no
 match_db = match_db %>% 
   select(-NHS_NO) %>% 
-  rename(MATCH_SINGLE_LINE_ADDRESS = SINGLE_LINE_ADDRESS_LOOKUP)
+  rename(
+    MATCH_SLA = SINGLE_LINE_ADDRESS_LOOKUP,
+    MATCH_SLA_STD = SINGLE_LINE_ADDDRESS_STANDARDISED
+    )
 
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
@@ -149,7 +152,7 @@ form_db = form_db %>%
     YEAR_MONTH,
     PF_ID,
     BSA_POSTCODE = POSTCODE,
-    BSA_SINGLE_LINE_ADDRESS = SINGLE_LINE_ADDRESS
+    BSA_SLA = SINGLE_LINE_ADDRESS
   )
 
 # Process Dispenser data
@@ -279,8 +282,10 @@ fact_join_db = fact_db %>%
     AGE_BAND,
     # Match Info
     BSA_POSTCODE,
-    BSA_SINGLE_LINE_ADDRESS,
-    MATCH_SINGLE_LINE_ADDRESS,
+    BSA_SLA,
+    MATCH_SLA,
+    # Standardised
+    MATCH_SLA_STD,
     MATCH_TYPE,
     SCORE,
     MAX_MONTHLY_PATIENTS,
