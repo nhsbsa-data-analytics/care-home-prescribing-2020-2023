@@ -70,7 +70,7 @@ match_db = match_db %>%
   select(-NHS_NO) %>% 
   rename(
     MATCH_SLA = SINGLE_LINE_ADDRESS_LOOKUP,
-    MATCH_SLA_STD = SINGLE_LINE_ADDDRESS_STANDARDISED
+    MATCH_SLA_STD = SINGLE_LINE_ADDRESS_STANDARDISED
     )
 
 # Filter to elderly patients in 2020/2021 and required columns
@@ -253,9 +253,9 @@ fact_join_db = fact_db %>%
     # because they don't share a postcode with a known carehome
     CH_FLAG = case_when(
       is.na(AB_FLAG) &
-      REGEXP_INSTR(BSA_SINGLE_LINE_ADDRESS, care_home_keywords) > 0L &
-      REGEXP_INSTR(BSA_SINGLE_LINE_ADDRESS, global_exclusion_keywords) == 0L &
-      REGEXP_INSTR(BSA_SINGLE_LINE_ADDRESS, extra_exclusion_keywords) == 0L ~ 1,
+      REGEXP_INSTR(BSA_SLA, care_home_keywords) > 0L &
+      REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
+      REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
       TRUE ~ CH_FLAG
       ),
     MATCH_TYPE = case_when(
