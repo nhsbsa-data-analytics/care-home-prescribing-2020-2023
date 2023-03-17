@@ -2,8 +2,6 @@
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-address_data = "INT646_ABP_CQC_20210401_20220331"
-
 # Get start and end dates
 start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]

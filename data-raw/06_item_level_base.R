@@ -350,6 +350,7 @@ print("Output being computed to be written back to the db ...")
 fact_join_db %>%
   compute(
     name = table_name,
+    indexes = list(c("UPRN_FLAG", "CH_FLAG")),
     temporary = FALSE
   )
 
