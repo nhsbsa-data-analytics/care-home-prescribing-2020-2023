@@ -2,6 +2,8 @@
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+address_data = "INT646_ABP_CQC_20210401_20220331"
+
 # Get start and end dates
 start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]
@@ -47,18 +49,36 @@ postcode_db = postcode_db %>%
   mutate(POSTCODE_CH = 1)
 
 # Get appropriate year month fields as a table
-year_month_db = year_month_db %>% 
+year_month = year_month_db %>% 
   select(YEAR_MONTH) %>% 
   filter(
     YEAR_MONTH >= start_year_month,
     YEAR_MONTH <= end_year_month
-  )
+  ) %>% 
+  pull()
 
 # Initial fact table filter
 fact_db = fact_db %>% 
-  inner_join(y = year_month_db, by = "YEAR_MONTH") %>% 
+  select(
+    # Group by vars
+    YEAR_MONTH,
+    PF_ID,
+    NHS_NO,
+    EPS_PART_DATE,
+    EPM_ID,
+    # filter vars
+    PATIENT_IDENTIFIED,
+    PAY_DA_END,
+    PAY_ND_END,
+    PAY_RB_END,
+    CD_REQ,
+    OOHC_IND,
+    PRIVATE_IND,
+    IGNORE_FLAG,
+    ITEM_COUNT 
+    ) %>% 
   filter(
-    #CALC_AGE >= 65L,
+    YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
     PAY_ND_END == "N", # excludes not dispensed items
@@ -82,7 +102,7 @@ fact_db = fact_db %>%
 
 # Process paper info
 paper_db = paper_db %>% 
-  inner_join(y = year_month_db, by = "YEAR_MONTH") %>% 
+  filter(YEAR_MONTH %in% year_month) %>% 
   select(
     YEAR_MONTH,
     PF_ID,

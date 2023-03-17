@@ -50,20 +50,22 @@ eps_end_date = (as.Date(end_date, format = "%Y%m%d")+10) %m+% months(2)
 eps_start_int = get_integer_from_date(eps_start_date)
 eps_end_int = get_integer_from_date(eps_end_date)
 
+# Get year_month vector
+year_month = year_month_db %>% 
+  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
+  select(YEAR_MONTH) %>% 
+  filter(
+    YEAR_MONTH >= start_year_month,
+    YEAR_MONTH <= end_year_month
+  ) %>% 
+  pull()
+
 # Define keyword list for case statements
 care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL HOME|RESIDENTIAL-HOME|REST HOME|REST-HOME"
 global_exclusion_keywords = "ABOVE|CARAVAN|CHILDREN|HOLIDAY|MOBILE|NO FIXED ABODE|RESORT"
 extra_exclusion_keywords = "CONVENT|HOSPITAL|MARINA|MONASTERY|RECOVERY"
 
 # Part one: prepare tables prior to left join onto fact ------------------------
-
-# Get appropriate year month fields as a table
-year_month_db = year_month_db %>% 
-  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
-  filter(
-    YEAR_MONTH >= start_year_month,
-    YEAR_MONTH <= end_year_month
-  )
 
 # Match info minus nhs no
 match_db = match_db %>% 
@@ -75,10 +77,10 @@ match_db = match_db %>%
 
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
-  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
   filter(
     # Prescribing retained for all ages
     #CALC_AGE >= 65L,
+    YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
     PAY_ND_END == "N", # excludes not dispensed items
@@ -114,7 +116,7 @@ fact_db = fact_db %>%
 
 # Get drug info
 drug_db = drug_db %>% 
-  inner_join(year_month_db, by = "YEAR_MONTH") %>% 
+  filter(YEAR_MONTH %in% year_month) %>%
   select(
     YEAR_MONTH,
     CALC_PREC_DRUG_RECORD_ID = RECORD_ID,
@@ -128,7 +130,7 @@ drug_db = drug_db %>%
 
 # Process prescriber information
 presc_db = presc_db %>% 
-  inner_join(year_month_db, by = "YEAR_MONTH") %>% 
+  filter(YEAR_MONTH %in% year_month) %>%
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -157,7 +159,7 @@ form_db = form_db %>%
 
 # Process Dispenser data
 disp_db = disp_db %>% 
-  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
+  filter(YEAR_MONTH %in% year_month) %>%
   mutate(
     DISP_TYPE = case_when(
       DIST_SELLING_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: DISTANCE SELLING",
@@ -181,10 +183,10 @@ disp_db = disp_db %>%
   
 # Get a single gender and age for the period
 pat_db <- pat_db %>% 
-  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
   filter(
     # Prescribing retained for all ages
     #CALC_AGE >= 65L,
+    YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
     PAY_ND_END == "N", # excludes not dispensed items
