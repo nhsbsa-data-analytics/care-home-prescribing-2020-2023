@@ -2,6 +2,7 @@
 library(dplyr)
 library(dbplyr)
 library(highcharter)
+library(ggplot2)
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -9,6 +10,12 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Create a lazy table from year month dim table in DWCP
 data <- con %>%
   tbl(from = in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
+
+# Create a lazy table from year month dim table in DWCP
+ab <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_ABP_CQC_20210401_20220331")) %>% 
+  filter(UPRN %in% pu_vec) %>% 
+  collect()
 
 # Get chapter info
 chapters = con %>% 
@@ -133,34 +140,141 @@ df_ten_ppm = data %>%
   ungroup() %>% 
   collect()
 
+# Merge all data
+df_total = df_overall %>% 
+  inner_join(df_cost_items_ppm) %>% 
+  inner_join(df_meds_ppm) %>% 
+  inner_join(df_ten_ppm)
+
+# Explore PMM metrics ----------------------------------------------------------
+
+# Cost PPM
+hchart(df_cost_items_ppm$COST_PPM) %>% hc_xAxis(max = 500)
+
+ggplot(df_total, aes(COST_PPM, fill = SIZE))+
+  geom_density(alpha=0.5)+
+  xlim(0,500)
 
 
+# Items PPM 
+hchart(df_cost_items_ppm$ITEMS_PPM) %>% hc_xAxis(max = 40)
 
-# Plot each ppm metric distribution
-hchart(df_cost_items_ppm$COST_PPM) %>% 
-  hc_xAxis(max = 500)
+ggplot(df_total, aes(ITEMS_PPM, fill = SIZE))+
+  geom_density(alpha=0.5)
 
-hchart(df_cost_items_ppm$ITEMS_PPM) %>% 
-  hc_xAxis(max = 40)
 
+# Meds PPM
 hchart(df_meds_ppm$MEDS_PPM)
 
+ggplot(df_total, aes(MEDS_PPM, fill = SIZE))+
+  geom_density(alpha=0.5)
+
+
+# Unique PPM
 hchart(df_ten_ppm$TEN_UNIQUE_PPM)
+
+ggplot(df_total, aes(TEN_UNIQUE_PPM, fill = SIZE))+
+  geom_density(alpha=0.5)
 
 # Findings ---------------------------------------------------------------------
 
 # 1. Care homes can be split into 2 roughly even groups
 # These are <=10 patients or >10 patients
 # This could be useful, if 'smaller' CH need special/specific consideration
-# For example, each group could be clustered separately
-# And outliers could be identified within the context of each group
+# Outlier detection may be more effective with normally distributed vars
+# In addition, whilst around half of UPRN, small CH only equate ~5% prescribing
 
 # Small CH count
 df_overall %>% 
-  filter(PATS <= 10) %>% 
-  tally()
+  group_by(SIZE) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(n),
+    PROP = n /TOTAL
+  )
 
-# Large CH count
+# Items and cost by size
 df_overall %>% 
-  filter(PATS > 10) %>% 
-  tally()
+  group_by(SIZE) %>% 
+  summarise(ITEMS=sum(ITEMS)) %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(ITEMS),
+    PROP = ITEMS / TOTAL
+    )
+
+# If 'larger' CH have 10 or more distinct patients over 12 months#
+# 1. We retain 51% of records
+# 2. Yet retain 95% of items
+
+# Investigate other size thresholds --------------------------------------------
+
+# Adjust size value to check other size thresholds
+adjust_size_check_dist = function(size_val, vars){
+  
+  df_total %>% 
+    mutate(SIZE = ifelse(PATS <= size_val, "SMALL", "LARGE")) %>% 
+    ggplot(., aes({{vars}}, fill = SIZE))+
+    geom_density(alpha=0.5)
+}
+
+# Check with 5 threshold
+adjust_size_check_dist(5, ITEMS_PPM)
+adjust_size_check_dist(5, COST_PPM)
+adjust_size_check_dist(5, MEDS_PPM)
+adjust_size_check_dist(5, TEN_UNIQUE_PPM)
+
+# Small CH count
+df_overall %>% 
+  mutate(SIZE = ifelse(PATS <= 5, "SMALL", "LARGE")) %>% 
+  group_by(SIZE) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(n),
+    PROP = n /TOTAL
+  )
+
+# Items and cost by size
+df_overall %>% 
+  mutate(SIZE = ifelse(PATS <= 5, "SMALL", "LARGE")) %>% 
+  group_by(SIZE) %>% 
+  summarise(ITEMS=sum(ITEMS)) %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(ITEMS),
+    PROP = ITEMS / TOTAL
+  )
+
+# If 'larger' CH have 5 or more distinct patients over 12 months#
+# 1. We retain 57% of records
+# 2. Yet retain 97% of items
+
+# There are maybe 2 options
+# 1. Split CH into sizes, such as 5+ or 10+
+# 2. Simply exlcude any CH with <3 patients
+
+# Parent UPRN grouping EDA -----------------------------------------------------
+
+df_total %>% 
+  mutate(PU = ifelse(is.na(PARENT_UPRN), "NO", "YES")) %>% 
+  count(PU)
+
+df_check = df_total %>% 
+  filter(!is.na(PARENT_UPRN)) %>% 
+  group_by(PARENT_UPRN) %>% 
+  mutate(UPRN_COUNT = n_distinct(UPRN)) %>% 
+  ungroup() %>% 
+  filter(UPRN_COUNT > 1) %>% 
+  select(MATCH_SLA_STD, UPRN, PARENT_UPRN, PATS)
+
+
+pu_vec = df_check %>% 
+  select(PARENT_UPRN) %>% 
+  distinct() %>% 
+  pull()
+
+DBI::dbDisconnect(con)
+
+
