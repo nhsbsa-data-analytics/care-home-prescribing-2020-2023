@@ -54,11 +54,12 @@ create_form_level_patient_addresses = function(address_data){
 #' @description matches two address tables then process for ch flag
 #' @param patient_address_data: patient address data
 #' @param lookup_address_data: address data to be matched against
-create_care_home_address_match = function(patient_address_data, lookup_address_data){
+create_care_home_address_match = function(patient_address_data, lookup_address_data, parent_uprn_data){
   
   # Assign function inputs to global env
   assign("patient_address_data", patient_address_data, envir = globalenv())
   assign("lookup_address_data", lookup_address_data, envir = globalenv())
+  assign("parent_uprn_data", parent_uprn_data, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
   tic(); source("data-raw/05_address_match.R"); toc(); print(Sys.time())

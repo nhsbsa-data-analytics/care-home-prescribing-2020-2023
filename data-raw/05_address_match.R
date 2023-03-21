@@ -2,9 +2,6 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-patient_address_data = "INT646_FORMS_20210401_20220331"
-lookup_address_data = "INT646_ABP_CQC_20210401_20220331"
-
 # Get start and end dates
 start_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][2]
@@ -18,7 +15,27 @@ address_db <- con %>%
   tbl(from = lookup_address_data) %>% 
   rename(AB_FLAG = CH_FLAG)
 
+# Address Base plus for parent uprn join
+parent_db <- con %>% 
+  tbl(from = parent_uprn_data)
+
 # Process and match address data -----------------------------------------------
+
+# Filter and process parent uprn data, 1-to-1 SLA to parent uprn
+parent_db = parent_db %>% 
+  # Rename as uprn for later left-join
+  group_by(UPRN = PARENT_UPRN) %>% 
+  summarise(
+    PARENT_UPRN_COUNT = n_distinct(GEO_SINGLE_LINE_ADDRESS),
+    SINGLE_LINE_ADDRESS_PARENT = max(paste0(GEO_SINGLE_LINE_ADDRESS, " ", POSTCODE))
+    ) %>% 
+  ungroup() %>% 
+  # Remove 'non-unified' parent uprn
+  filter(PARENT_UPRN_COUNT == 1) %>% 
+  # Ensure single SLA per uprn
+  group_by(SINGLE_LINE_ADDRESS_PARENT) %>% 
+  summarise(UPRN = max(UPRN)) %>% 
+  ungroup()
 
 # Get distinct patient-level address-postcode information
 patient_address_db = patient_db %>% 
@@ -135,7 +152,9 @@ match_db = match_db %>%
   # Ensure 1 uprn per SLA
   group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>% 
   mutate(UPRN = max(UPRN)) %>% 
-  ungroup()
+  ungroup() %>% 
+  # Get parent uprn info
+  left_join(parent_db, by = "UPRN")
 
 # Join the matches back to the patient addresses
 patient_match_db <- patient_db %>%
