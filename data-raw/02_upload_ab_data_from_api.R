@@ -1,13 +1,5 @@
 
-# Part One: get cqc postcodes to include within ab plus join -------------------
-
-get_cqc_postcodes(
-  cqc_data = cqc_data, 
-  start_date = start_date, 
-  end_date = end_date
-  )
-
-# Part Two: get ab plus package info and data downoad url ----------------------
+# Part One: get ab plus package info and data downoad url ----------------------
 
 # Identify available data packages
 url <- "https://api.os.uk/downloads/v1/dataPackages?key="
@@ -31,7 +23,7 @@ package_info = package_info %>%
     end_date = as.Date(end_date),
     createdOn = as.Date(createdOn),
     date_diff = createdOn - end_date
-    ) %>% 
+  ) %>% 
   filter(date_diff >= 0) %>% 
   slice_min(date_diff, n = 1)
 
@@ -41,7 +33,7 @@ ab_plus_epoch_date = package_info %>%
   mutate(
     createdOn = as.character(createdOn),
     createdOn = gsub("-", "", createdOn)
-    ) %>% 
+  ) %>% 
   pull()
 
 # Print epoch data
@@ -68,7 +60,7 @@ data_file_name = ab_info %>%
   select(fileName) %>% 
   pull()
 
-# Part Three: get raw data, write as binary, then read and process -------------
+# Part Two: get raw data, write as binary, then read and process ---------------
 
 # Get content from url: 3 mins
 data = httr::GET(data_url)$content
@@ -109,7 +101,19 @@ print("Reading and processing binary")
 # Extract ab plus column names
 abp_col_names = names(readr::read_csv(
   archive_read(data_file_name, file = "resources/AddressBasePlus_Header.csv")
-  ))
+))
+
+# Set up connection to the DB
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Define table name
+table_name = paste0("INT646_ABP2_", ab_plus_epoch_date)
+
+# Define temp table name
+table_name_temp = paste0(table_name, "_TEMP")
+
+# Drop table if it exists already
+drop_table_if_exists_db(table_name_temp)
 
 # Read ab plus csv file from directory and process
 read_temp_dir_csv = function(index){
@@ -129,99 +133,87 @@ read_temp_dir_csv = function(index){
   
   # Clean ab plus postcode data for binding and join
   data = data %>% 
-    mutate(POSTCODE_LOCATOR = toupper(gsub("[^[:alnum:]]", "", POSTCODE_LOCATOR))) %>% 
+    # Class filter
     filter(
+      COUNTRY == "E",
       substr(CLASS, 1, 1) != "L", # Land
       substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
       substr(CLASS, 1, 2) != "PS", # Street Record
       substr(CLASS, 1, 2) != "RC", # Car Park Space
       substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
       substr(CLASS, 1, 1) != "Z", # Object of interest
-    )
-  
-  # Get postcodes with a care home
-  ch_postcodes = data %>% 
-    filter(COUNTRY == "E") %>% 
-    filter(CLASS == 'RI01') %>% 
-    select(POSTCODE_LOCATOR) %>% 
-    rbind(cqc_postcodes) %>% 
-    distinct()
-  
-  # The AB extract will contain all AB addresses (CH and non-CH),
-  # but only from postcodes that have a CH (in the current AB epoch or the corresponding period in CQC extract)
-  output = data %>% 
-    inner_join(ch_postcodes, by = "POSTCODE_LOCATOR")
+    ) %>% 
+    # Rename and remove column
+    select(
+      # DPA
+      POST_TOWN,
+      DEP_LOCALITY = DEPENDENT_LOCALITY,
+      DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
+      THOROUGHFARE,
+      DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
+      PO_BOX_NUMBER,
+      BUILDING_NUMBER,
+      BUILDING_NAME,
+      SUB_BUILDING_NAME,
+      RM_ORGANISATION_NAME,
+      DEPARTMENT_NAME,
+      # GEO
+      TOWN_NAME,
+      LOCALITY,
+      STREET_DESCRIPTION,
+      PAO_END_SUFFIX,
+      PAO_END_NUMBER,
+      PAO_START_SUFFIX,
+      PAO_START_NUMBER,
+      PAO_TEXT,
+      SAO_END_SUFFIX,
+      SAO_END_NUMBER,
+      SAO_START_SUFFIX,
+      SAO_START_NUMBER,
+      SAO_TEXT,
+      LA_ORGANISATION,
+      # Other
+      POSTCODE_REMOVE = POSTCODE,
+      POSTCODE = POSTCODE_LOCATOR,
+      UPRN,
+      PARENT_UPRN,
+      CH_FLAG = CLASS
+    ) %>% 
+    # Generate new columns
+    mutate(
+      POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)),
+      EPOCH = ab_plus_epoch_date,
+      across(.cols = c('UPRN', 'PARENT_UPRN'), as.numeric),
+      CH_FLAG = ifelse(CH_FLAG == "RI01", 1L, 0L)
+    ) 
+    
+  # Create table
+  DBI::dbWriteTable(
+    conn = con,
+    name = table_name_temp,
+    value = data,
+    temporary = FALSE,
+    append = TRUE
+  )
   
   # Remove data and clean
   rm(data); gc()
-  
-  # Return data
-  return(output)
 }
 
 # Process each ab plus file, each of which contain 1m records: 25 mins
-results = lapply(1:length(temp_dir_files), read_temp_dir_csv)
+lapply(1:length(temp_dir_files), read_temp_dir_csv); gc()
 
-# Clean up temp files
-file.remove(list.files(output_dir))
-
-# Bind into df then additional processing
-
-results_df = results %>% 
-  bind_rows() %>% 
-  mutate(
-    EPOCH = ab_plus_epoch_date,
-    across(.cols = c('UPRN', 'UDPRN', 'PARENT_UPRN'), as.numeric),
-    CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)
-  ) %>% 
-  select(-POSTCODE) %>% 
-  mutate(POSTCODE = POSTCODE_LOCATOR)
-
-# Part four: save as db table in order to apply db functions -------------------
-
-# Set up connection to the DB
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
-
-# Define table name
-table_name = paste0("INT646_ABP_", ab_plus_epoch_date)
-
-# Now convert start_date and end_date to clean strings
-start_date = gsub("-", "", start_date)
-end_date = gsub("-", "", end_date)
-
-# Define temp table name
-table_name_temp = paste0(table_name, "_TEMP")
-
-# Drop table if it exists already
-drop_table_if_exists_db(table_name_temp)
-
-# Upload to DB with indexes
-con %>%
-  copy_to(
-    df = results_df,
-    name = table_name_temp,
-    indexes = list(c("UPRN"), c("POSTCODE")),
-    temporary = FALSE
-  )
+# Part three: save as db table in order to apply db functions ------------------
 
 # Connect to temp table
 ab_plus_db = con %>%
-  tbl(from = table_name_temp)
-
-# Generate multiple SLA
-ab_plus_db = ab_plus_db %>% 
-  # Rename required as OS table names have changed
-  rename(
-    DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
-    DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
-    DEP_LOCALITY = DEPENDENT_LOCALITY
-  ) %>% 
-  # Generate and clean SLA
+  tbl(from = table_name_temp) %>% 
+  # SLA creation plus formatting
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
   addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
   addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>% 
-  nhsbsaR::oracle_merge_strings(
+  oracle_merge_strings_edit(
     first_col = "DPA_SINGLE_LINE_ADDRESS",
     second_col = "GEO_SINGLE_LINE_ADDRESS",
     merge_col = "CORE_SINGLE_LINE_ADDRESS"
@@ -235,11 +227,7 @@ ab_plus_db = ab_plus_db %>%
     CORE_SINGLE_LINE_ADDRESS,
     CH_FLAG,
     EPOCH
-  ) %>% 
-  mutate(
-    START_DATE = start_date,
-    END_DATE = end_date
-  )
+  ) 
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
@@ -248,7 +236,6 @@ drop_table_if_exists_db(table_name)
 ab_plus_db %>%
   compute(
     name = table_name,
-    indexes = list(c("UPRN", c("POSTCODE"))),
     temporary = FALSE
   )
 

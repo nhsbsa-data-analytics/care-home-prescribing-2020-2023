@@ -12,8 +12,6 @@ ab_plus_db <- con %>%
 
 # Get 4 values for final output
 ab_epoch = pull_date_string(ab_plus_db, EPOCH)
-start_date = pull_date_string(ab_plus_db, START_DATE)
-end_date = pull_date_string(ab_plus_db, END_DATE)
 cqc_date = pull_date_string(cqc_db, CQC_DATE)
 
 # Part one: Process cqc data ---------------------------------------------------
@@ -77,8 +75,16 @@ cqc_attributes_db = cqc_db %>%
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
+# Get postcodes to filter ABP
+postcodes_db = ab_plus_db %>% 
+  filter(CH_FLAG == 1) %>% 
+  select(POSTCODE) %>% 
+  union_all(cqc_db %>% select(POSTCODE)) %>% 
+  distinct() 
+
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
+  inner_join(postcodes_db, by = "POSTCODE") %>% 
   select(-EPOCH) %>% 
   left_join(cqc_attributes_db, by = "UPRN") %>% 
   tidyr::pivot_longer(
@@ -107,7 +113,9 @@ ab_plus_cqc_db = ab_plus_db %>%
 # Part Three: Save as table in dw ----------------------------------------------
 
 # Specify db table name
-table_name = paste0("INT646_ABP_CQC_", start_date, "_", end_date)
+table_name = paste0(
+  "INT646_ABP_CQC_", gsub("-", "", start_date), "_", gsub("-", "", end_date)
+  )
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)

@@ -14,15 +14,15 @@ get_latest_cqc_data()
 
 # 2. Get a select ab plus epoch supplemented with cqc-postcode uprn: 0.5hr
 get_ab_plus_supplemented_with_cqc(
-  cqc_data = "INT646_CQC_20230305", 
-  start_date = "2021-04-01",
   end_date =   "2022-03-31"
   )
 
 # 3. Merge and process cqc and ab plus: 1 min
 create_ab_plus_cqc_data(
   ab_plus_data = "INT646_ABP_20220422",
-  cqc_data = "INT646_CQC_20230305"
+  cqc_data = "INT646_CQC_20230305",
+  start_date = "2021-04-01",
+  end_date =   "2022-03-31"
   )
 
 # 4. Create form level fact for records with a ch-postcode: 8hr

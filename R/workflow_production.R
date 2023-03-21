@@ -13,11 +13,9 @@ get_latest_cqc_data = function(){
 #' @param  cqc_data: the name of the cqc db table
 #' @param start_date: start date as a char in format 'YYYY-MM-DD'
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
-get_ab_plus_supplemented_with_cqc = function(cqc_data, start_date, end_date){
+get_ab_plus_supplemented_with_cqc = function(start_date, end_date){
   
   # Assign function inputs to global env
-  assign("cqc_data", cqc_data, envir = globalenv())
-  assign("start_date", start_date, envir = globalenv())
   assign("end_date", end_date, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
@@ -28,11 +26,13 @@ get_ab_plus_supplemented_with_cqc = function(cqc_data, start_date, end_date){
 #' @description downloads a single epoch of ab plus closest to end_date
 #' @param ab_plus_data: name of the ab plus db table
 #' @param cqc_data: the name of the cqc db table
-create_ab_plus_cqc_data = function(cqc_data, ab_plus_data){
+create_ab_plus_cqc_data = function(cqc_data, ab_plus_data, start_date, end_date){
   
   # Assign function inputs to global env
   assign("cqc_data", cqc_data, envir = globalenv())
   assign("ab_plus_data", ab_plus_data, envir = globalenv())
+  assign("start_date", start_date, envir = globalenv())
+  assign("end_date", end_date, envir = globalenv())
   
   # stack and process the cqc and ab plus address data
   tic(); source("data-raw/03_address_base_cqc_merge.R"); toc(); print(Sys.time())
