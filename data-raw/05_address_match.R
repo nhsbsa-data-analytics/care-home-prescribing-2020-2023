@@ -21,20 +21,18 @@ parent_db <- con %>%
 
 # Process and match address data -----------------------------------------------
 
-# Filter and process parent uprn data, 1-to-1 SLA to parent uprn
+# Get parent uprn occurring with AB-CQC lookup data
+parent_uprn_db = address_db %>% 
+  filter(!is.na(PARENT_UPRN)) %>% 
+  select(UPRN = PARENT_UPRN) %>% 
+  distinct()
+
+# Get single GEO SLA per parent uprn
 parent_db = parent_db %>% 
-  # Rename as uprn for later left-join
-  group_by(UPRN = PARENT_UPRN) %>% 
-  summarise(
-    PARENT_UPRN_COUNT = n_distinct(GEO_SINGLE_LINE_ADDRESS),
-    SINGLE_LINE_ADDRESS_PARENT = max(paste0(GEO_SINGLE_LINE_ADDRESS, " ", POSTCODE))
-    ) %>% 
-  ungroup() %>% 
-  # Remove 'non-unified' parent uprn
-  filter(PARENT_UPRN_COUNT == 1) %>% 
-  # Ensure single SLA per uprn
+  inner_join(parent_uprn_db) %>% 
+  mutate(SINGLE_LINE_ADDRESS_PARENT = paste0(GEO_SINGLE_LINE_ADDRESS, " ", POSTCODE)) %>% 
   group_by(SINGLE_LINE_ADDRESS_PARENT) %>% 
-  summarise(UPRN = max(UPRN)) %>% 
+  summarise(PARENT_UPRN = max(UPRN)) %>%
   ungroup()
 
 # Get distinct patient-level address-postcode information
@@ -154,7 +152,7 @@ match_db = match_db %>%
   mutate(UPRN = max(UPRN)) %>% 
   ungroup() %>% 
   # Get parent uprn info
-  left_join(parent_db, by = "UPRN")
+  left_join(parent_db, by = "PARENT_UPRN")
 
 # Join the matches back to the patient addresses
 patient_match_db <- patient_db %>%
