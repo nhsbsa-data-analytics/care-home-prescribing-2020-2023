@@ -72,7 +72,8 @@ match_db = match_db %>%
   select(-NHS_NO) %>% 
   rename(
     MATCH_SLA = SINGLE_LINE_ADDRESS_LOOKUP,
-    MATCH_SLA_STD = SINGLE_LINE_ADDRESS_STANDARDISED
+    MATCH_SLA_STD = SINGLE_LINE_ADDRESS_STANDARDISED,
+    MATCH_SLA_PARENT = SINGLE_LINE_ADDRESS_PARENT
     )
 
 # Filter to elderly patients in 2020/2021 and required columns
@@ -238,8 +239,9 @@ pat_db <- pat_db %>%
 
 # Join all tables onto fact then process
 fact_join_db = fact_db %>% 
-  left_join(y = match_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+  # Must join paper address first
   left_join(y = form_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+  left_join(y = match_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
   left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
@@ -286,8 +288,8 @@ fact_join_db = fact_db %>%
     BSA_POSTCODE,
     BSA_SLA,
     MATCH_SLA,
-    # Standardised
     MATCH_SLA_STD,
+    MATCH_SLA_PARENT,
     MATCH_TYPE,
     SCORE,
     MAX_MONTHLY_PATIENTS,

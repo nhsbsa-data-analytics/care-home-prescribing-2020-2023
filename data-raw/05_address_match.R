@@ -125,6 +125,12 @@ match_db = match_db %>%
       TRUE ~ UPRN
     ),
     
+    # Remove non-uprn-flag parent uprn
+    PARENT_UPRN = case_when(
+      UPRN_FLAG == 0 ~ NULL, 
+      TRUE ~ PARENT_UPRN
+    ),
+    
     # Three: generate 'general' CARE HOME flag (i.e. any care home)
     CH_FLAG = case_when(
       MATCH_TYPE == "PATIENT_COUNT" ~ 1L,
