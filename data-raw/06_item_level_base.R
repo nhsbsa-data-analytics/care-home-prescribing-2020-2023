@@ -2,6 +2,9 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+match_data = "INT646_MATCH_20210401_20220331"
+form_data = "INT646_FORMS_20210401_20220331"
+
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
@@ -69,12 +72,28 @@ extra_exclusion_keywords = "CONVENT|HOSPITAL|MARINA|MONASTERY|RECOVERY"
 
 # Match info minus nhs no
 match_db = match_db %>% 
-  select(-NHS_NO) %>% 
-  rename(
+  select(
+    YEAR_MONTH_MATCH = YEAR_MONTH,
+    PF_ID_MATCH = PF_ID,
     MATCH_SLA = SINGLE_LINE_ADDRESS_LOOKUP,
     MATCH_SLA_STD = SINGLE_LINE_ADDRESS_STANDARDISED,
-    MATCH_SLA_PARENT = SINGLE_LINE_ADDRESS_PARENT
-    )
+    MATCH_SLA_PARENT = SINGLE_LINE_ADDRESS_PARENT,
+    MATCH_TYPE,
+    SCORE,
+    MAX_MONTHLY_PATIENTS,
+    AB_FLAG,
+    CH_FLAG,
+    UPRN_FLAG,
+    UPRN,                         
+    PARENT_UPRN,
+    LOCATION_ID,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    CURRENT_RATING,
+    NUMBER_OF_BEDS,
+    AB_DATE,
+    CQC_DATE
+  )
 
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
@@ -152,8 +171,8 @@ presc_db = presc_db %>%
 # Process form fact
 form_db = form_db %>% 
   select(
-    YEAR_MONTH,
-    PF_ID,
+    YEAR_MONTH_FORMS = YEAR_MONTH,
+    PF_ID_FORMS = PF_ID,
     BSA_POSTCODE = POSTCODE,
     BSA_SLA = SINGLE_LINE_ADDRESS
   )
@@ -238,10 +257,11 @@ pat_db <- pat_db %>%
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
 # Join all tables onto fact then process
-fact_join_db = fact_db %>% 
-  # Must join paper address first
-  left_join(y = form_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
-  left_join(y = match_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
+fact_db %>% 
+  left_join(y = form_db, by = c("YEAR_MONTH" = "YEAR_MONTH_FORMS", 
+                                "PF_ID" = "PF_ID_FORMS")) %>% 
+  left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
+                                "PF_ID" = "PF_ID_MATCH")) %>% 
   left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
@@ -252,6 +272,7 @@ fact_join_db = fact_db %>%
   left_join(y = disp_db, by = c("YEAR_MONTH",
                                 "DISP_ID" = "LVL_5_OU",
                                 "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
+  show_query()
   mutate(
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome
@@ -335,7 +356,8 @@ fact_join_db = fact_db %>%
     DISP_TRADING_NM,
     DISP_FULL_ADDRESS,
     DISP_POSTCODE
-  )
+  ) %>% 
+  show_query()
 
 # Part four: save output -------------------------------------------------------
 
