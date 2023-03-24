@@ -11,12 +11,6 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 data <- con %>%
   tbl(from = in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
 
-# Create a lazy table from year month dim table in DWCP
-ab <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_ABP_CQC_20210401_20220331")) %>% 
-  filter(UPRN %in% pu_vec) %>% 
-  collect()
-
 # Get chapter info
 chapters = con %>% 
   tbl(from = in_schema("DIM", "CDR_EP_DRUG_BNF_DIM")) %>% 
@@ -29,10 +23,12 @@ chapters = con %>%
   pull()
 
 # Get column names
-cols = data.frame(COL = names(data))
+cols = data.frame(COL = names(data)) %>% arrange(COL)
 
-# High-level figures
-df_overall = data %>% 
+# Part 1: compare data whether grouped by parent uprn or not -------------------
+
+# Grouped by uprn
+df_std = data %>% 
   filter(UPRN_FLAG == 1) %>% 
   group_by(
     MATCH_SLA_STD,
@@ -53,9 +49,78 @@ df_overall = data %>%
   collect() %>% 
   mutate(SIZE = ifelse(PATS <= 10, "SMALL", "LARGE"))
 
+# Grouped by parent uprn (where applicable
+df_merge = data %>% 
+  filter(UPRN_FLAG == 1) %>% 
+  mutate(
+    MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
+    UPRN = coalesce(PARENT_UPRN, UPRN)
+  ) %>% 
+  group_by(
+    MATCH_SLA_STD,
+    UPRN
+  ) %>% 
+  summarise(
+    PARENT_UPRN = max(PARENT_UPRN),
+    NURSING_HOME_FLAG = max(NURSING_HOME_FLAG),
+    RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG),
+    MAX_MONTHLY_PATIENTS = max(MAX_MONTHLY_PATIENTS),
+    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS),
+    MONTHS = n_distinct(YEAR_MONTH),
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    NIC = sum(ITEM_PAY_DR_NIC)
+  ) %>% 
+  ungroup() %>% 
+  collect() %>% 
+  mutate(
+    SIZE = ifelse(PATS <= 10, "SMALL", "LARGE"),
+    PARENT_UPRN = ifelse(is.na(PARENT_UPRN), 0, 1)
+    )
+
+# Many of the 'small' CH can be grouped together 
+table(df_std$SIZE)
+table(df_merge$SIZE)
+
+# Many 'parent groups are still small, there are only 309 'parent groups' 
+df_merge %>% 
+  filter(SIZE == "LARGE") %>% 
+  count(PARENT_UPRN)
+
+# With 'parent groups', 96% of items are now accounted by 'large' CH
+df_merge %>% 
+  group_by(SIZE) %>% 
+  summarise(ITEMS=sum(ITEMS)) %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(ITEMS),
+    PROP = ITEMS / TOTAL
+  )
+
+# With 'parent groups', 63% of SLA records are now accounted by 'large' CH
+df_merge %>% 
+  group_by(SIZE) %>% 
+  count() %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(n),
+    PROP = n /TOTAL
+  )
+
+# If 'larger' CH have 10 or more distinct patients over 12 months
+# And we use 'parent uprn' groups where applicable
+# 1. We retain 63% of records
+# 2. Yet retain 96% of items
+
+# Part 2: generate the 'basic' CH metrics and investigate distributions --------
+
 # Pat features
 df_pat = data %>% 
   filter(UPRN_FLAG == 1) %>% 
+  mutate(
+    MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
+    UPRN = coalesce(PARENT_UPRN, UPRN)
+  ) %>%
   group_by(MATCH_SLA_STD, UPRN) %>% 
   summarise(
     MALE = n_distinct(NHS_NO[GENDER == "Male"]),
@@ -86,6 +151,10 @@ df_pat = data %>%
 # Cost PPM
 df_cost_items_ppm = data %>% 
   filter(UPRN_FLAG == 1) %>% 
+  mutate(
+    MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
+    UPRN = coalesce(PARENT_UPRN, UPRN)
+  ) %>%
   group_by(MATCH_SLA_STD, UPRN, NHS_NO) %>% 
   summarise(
     MEAN_PATIENT_MONTHLY_COST = sum(ITEM_PAY_DR_NIC * 0.01, na.rm = TRUE) / n_distinct(YEAR_MONTH),
@@ -106,6 +175,10 @@ df_meds_ppm = data %>%
     UPRN_FLAG == 1, 
     CHAPTER_DESCR %in% chapters
   ) %>% 
+  mutate(
+    MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
+    UPRN = coalesce(PARENT_UPRN, UPRN)
+  ) %>%
   # Number of unique meds per patient month
   group_by(MATCH_SLA_STD, UPRN, NHS_NO, YEAR_MONTH) %>% 
   summarise(MONTHLY_UNIQUE_MEDS =  n_distinct(CHEMICAL_SUBSTANCE_BNF_DESCR)) %>%
@@ -120,12 +193,16 @@ df_meds_ppm = data %>%
   ungroup() %>% 
   collect()
 
-# 10 or more uique meds
+# 10 or more unique meds
 df_ten_ppm = data %>% 
   filter(
     UPRN_FLAG == 1, 
     CHAPTER_DESCR %in% chapters
   ) %>% 
+  mutate(
+    MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
+    UPRN = coalesce(PARENT_UPRN, UPRN)
+  ) %>%
   # Number of unique meds per patient month
   group_by(MATCH_SLA_STD, UPRN, NHS_NO, YEAR_MONTH) %>% 
   summarise(MONTHLY_UNIQUE_MEDS =  n_distinct(CHEMICAL_SUBSTANCE_BNF_DESCR)) %>%
@@ -141,12 +218,12 @@ df_ten_ppm = data %>%
   collect()
 
 # Merge all data
-df_total = df_overall %>% 
+df_total = df_merge %>% 
   inner_join(df_cost_items_ppm) %>% 
   inner_join(df_meds_ppm) %>% 
   inner_join(df_ten_ppm)
 
-# Explore PMM metrics ----------------------------------------------------------
+# 3. Explore PMM metrics distributions -----------------------------------------
 
 # Cost PPM
 hchart(df_cost_items_ppm$COST_PPM) %>% hc_xAxis(max = 500)
@@ -176,58 +253,30 @@ hchart(df_ten_ppm$TEN_UNIQUE_PPM)
 ggplot(df_total, aes(TEN_UNIQUE_PPM, fill = SIZE))+
   geom_density(alpha=0.5)
 
-# Findings ---------------------------------------------------------------------
-
-# 1. Care homes can be split into 2 roughly even groups
-# These are <=10 patients or >10 patients
+# Removing 'smmall' CH helps normaise metric distributions
 # This could be useful, if 'smaller' CH need special/specific consideration
 # Outlier detection may be more effective with normally distributed vars
-# In addition, whilst around half of UPRN, small CH only equate ~5% prescribing
 
-# Small CH count
-df_overall %>% 
-  group_by(SIZE) %>% 
-  count() %>% 
-  ungroup() %>% 
-  mutate(
-    TOTAL = sum(n),
-    PROP = n /TOTAL
-  )
-
-# Items and cost by size
-df_overall %>% 
-  group_by(SIZE) %>% 
-  summarise(ITEMS=sum(ITEMS)) %>% 
-  ungroup() %>% 
-  mutate(
-    TOTAL = sum(ITEMS),
-    PROP = ITEMS / TOTAL
-    )
-
-# If 'larger' CH have 10 or more distinct patients over 12 months#
-# 1. We retain 51% of records
-# 2. Yet retain 95% of items
-
-# Investigate other size thresholds --------------------------------------------
+# 4. Investigate other large/size CH thresholds --------------------------------
 
 # Adjust size value to check other size thresholds
 adjust_size_check_dist = function(size_val, vars){
   
   df_total %>% 
-    mutate(SIZE = ifelse(PATS <= size_val, "SMALL", "LARGE")) %>% 
+    mutate(SIZE = ifelse(PATS < size_val, "SMALL", "LARGE")) %>% 
     ggplot(., aes({{vars}}, fill = SIZE))+
     geom_density(alpha=0.5)
 }
 
-# Check with 5 threshold
-adjust_size_check_dist(5, ITEMS_PPM)
-adjust_size_check_dist(5, COST_PPM)
+# Check with 5 threshold, large CH distributions still normal
+adjust_size_check_dist(5, ITEMS_PPM) + xlim(0,40)
+adjust_size_check_dist(5, COST_PPM) + xlim(0,400)
 adjust_size_check_dist(5, MEDS_PPM)
 adjust_size_check_dist(5, TEN_UNIQUE_PPM)
 
 # Small CH count
-df_overall %>% 
-  mutate(SIZE = ifelse(PATS <= 5, "SMALL", "LARGE")) %>% 
+df_total %>% 
+  mutate(SIZE = ifelse(PATS < 5, "SMALL", "LARGE")) %>% 
   group_by(SIZE) %>% 
   count() %>% 
   ungroup() %>% 
@@ -237,8 +286,8 @@ df_overall %>%
   )
 
 # Items and cost by size
-df_overall %>% 
-  mutate(SIZE = ifelse(PATS <= 5, "SMALL", "LARGE")) %>% 
+df_total %>% 
+  mutate(SIZE = ifelse(PATS < 5, "SMALL", "LARGE")) %>% 
   group_by(SIZE) %>% 
   summarise(ITEMS=sum(ITEMS)) %>% 
   ungroup() %>% 
@@ -247,34 +296,48 @@ df_overall %>%
     PROP = ITEMS / TOTAL
   )
 
-# If 'larger' CH have 5 or more distinct patients over 12 months#
-# 1. We retain 57% of records
-# 2. Yet retain 97% of items
+# If 'larger' CH have *5* or more distinct patients over 12 months#
+# 1. We retain 70% of records
+# 2. Yet retain 97.8% of items
 
-# There are maybe 2 options
-# 1. Split CH into sizes, such as 5+ or 10+
-# 2. Simply exlcude any CH with <3 patients
+# Repeat with 4 threshold
+adjust_size_check_dist(3, ITEMS_PPM) + xlim(0,40)
+adjust_size_check_dist(3, COST_PPM) + xlim(0,400)
+adjust_size_check_dist(3, MEDS_PPM)
+adjust_size_check_dist(3, TEN_UNIQUE_PPM)
 
-# Parent UPRN grouping EDA -----------------------------------------------------
-
+# Small CH count
 df_total %>% 
-  mutate(PU = ifelse(is.na(PARENT_UPRN), "NO", "YES")) %>% 
-  count(PU)
-
-df_check = df_total %>% 
-  filter(!is.na(PARENT_UPRN)) %>% 
-  group_by(PARENT_UPRN) %>% 
-  mutate(UPRN_COUNT = n_distinct(UPRN)) %>% 
+  mutate(SIZE = ifelse(PATS < 3, "SMALL", "LARGE")) %>% 
+  group_by(SIZE) %>% 
+  count() %>% 
   ungroup() %>% 
-  filter(UPRN_COUNT > 1) %>% 
-  select(MATCH_SLA_STD, UPRN, PARENT_UPRN, PATS)
+  mutate(
+    TOTAL = sum(n),
+    PROP = n /TOTAL
+  )
 
+# Items and cost by size
+df_total %>% 
+  mutate(SIZE = ifelse(PATS < 3, "SMALL", "LARGE")) %>% 
+  group_by(SIZE) %>% 
+  summarise(ITEMS=sum(ITEMS)) %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(ITEMS),
+    PROP = ITEMS / TOTAL
+  )
 
-pu_vec = df_check %>% 
-  select(PARENT_UPRN) %>% 
-  distinct() %>% 
-  pull()
+# If 'larger' CH have *3* or more distinct patients over 12 months#
+# 1. We retain 77.5% of records
+# 2. Yet retain 98.8% of items
 
+# 5. Conclusions ---------------------------------------------------------------
+
+# 1. Use 'parent uprn' groups to reduce the number of 'small' CH
+# 2. Exclude any CH with <5 patients (still ~98% items)
+# 3. If needed, reduce this threshold and exclude any CH with <3 patients
+
+# Disconnect and clean
 DBI::dbDisconnect(con)
-
-
+rm(list = ls()); gc()
