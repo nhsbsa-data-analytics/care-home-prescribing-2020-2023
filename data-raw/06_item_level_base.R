@@ -257,7 +257,7 @@ pat_db <- pat_db %>%
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
 # Join all tables onto fact then process
-fact_db %>% 
+fact_join_db = fact_db %>% 
   left_join(y = form_db, by = c("YEAR_MONTH" = "YEAR_MONTH_FORMS", 
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
@@ -271,8 +271,7 @@ fact_db %>%
                                  "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
   left_join(y = disp_db, by = c("YEAR_MONTH",
                                 "DISP_ID" = "LVL_5_OU",
-                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
-  show_query()
+                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>% 
   mutate(
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome
@@ -356,8 +355,7 @@ fact_db %>%
     DISP_TRADING_NM,
     DISP_FULL_ADDRESS,
     DISP_POSTCODE
-  ) %>% 
-  show_query()
+  )
 
 # Part four: save output -------------------------------------------------------
 
