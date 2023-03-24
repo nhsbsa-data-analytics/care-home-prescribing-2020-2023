@@ -80,7 +80,8 @@ df_pat = data %>%
     AGE_75_79_PROP = AGE_75_79 / PATS,
     AGE_80_84_PROP = AGE_80_84 / PATS,
     AGE_85_89_PROP = AGE_85_89 / PATS,
-    AGE_90_PLUS_PROP = AGE_90_PLUS / PATS
+    AGE_90_PLUS_PROP = AGE_90_PLUS / PATS,
+    PARENT_UPRN = ifelse(is.na(PARENT_UPRN), 0, 1)
   )
 
 # 3. Metrics: existing CH metrics ----------------------------------------------
@@ -483,18 +484,18 @@ plot_vars(df_bnf)
 
 # Merge all data
 df_total = df_pat %>% 
-  inner_join(df_cost_items) %>% 
-  inner_join(df_poly_one) %>% 
-  inner_join(df_poly_two) %>% 
-  inner_join(df_chapter) %>% 
-  inner_join(df_section) %>% 
-  inner_join(df_paragraph) %>% 
-  inner_join(df_bnf)
+  left_join(df_cost_items) %>% 
+  left_join(df_poly_one) %>% 
+  left_join(df_poly_two) %>% 
+  left_join(df_chapter) %>% 
+  left_join(df_section) %>% 
+  left_join(df_paragraph) %>% 
+  left_join(df_bnf) %>% 
+  mutate_all(.funs = replace_na)
 
 # Close, remove and clean
 DBI::dbDisconnect(con)
 
 # All vars except total data
 remove = setdiff(ls(), c("df_total"))
-rm(list = remove)
-gc()
+rm(list = c(remove, "remove")); gc()
