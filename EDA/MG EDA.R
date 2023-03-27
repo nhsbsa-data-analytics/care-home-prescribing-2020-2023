@@ -76,16 +76,14 @@ t2 <- t |> bind_rows(
   )
 
 highchart() |>
-  hc_add_series(t,   # Showing prescribing activity from presc/disp orgs to focal CHs only 
-                #t2, # Showing all presc activity from presc/disp orgs that had activity with focal CHs
+  hc_add_series(#t,   # Showing prescribing activity from presc/disp orgs to focal CHs only 
+                t2, # Showing all presc activity from presc/disp orgs that had activity with focal CHs
                 type = "sankey")
 
 # Colour presc/disp by type
 
 # Distributions of % of items/nic prescribed/dispensed by a top org
 # 3D graph: X = % prescribed by top presc org; Y = % dispensed by top disp org; Z (colour/size) = total items/nic
-
-## Not updated from here
 
 
 TOP_ORGS_PER_CH <- left_join( 
@@ -107,26 +105,28 @@ TOP_ORGS_PER_CH <- left_join(
            PROP_ITEMS_BY_DISP_FROM_CH = ITEMS/ITEMS_PER_CH) |>
     slice_max(PROP_ITEMS_BY_DISP_FROM_CH, n = 1, with_ties = F) |>
     ungroup() |>
-    select(CH = from, UPRN,
+    select(CH = from,
            PROP_ITEMS_BY_TOP_DISP_FROM_CH = PROP_ITEMS_BY_DISP_FROM_CH,
            DISP = to),
   
-  by = c("CH", "UPRN"))
+  by = "CH")
 
-# 17,411 CHs
+# 17,648 CHs
 
 ggplot(TOP_ORGS_PER_CH, aes(ITEMS_PER_CH)) + 
   geom_histogram(bins = 150) +
   scale_x_continuous(limits = c(0,4000))
 
-ecdf(TOP_ORGS_PER_CH$ITEMS_PER_CH)(300) # 39% of CHs (many of them likely 'faux') had <= 300 items
+ecdf(TOP_ORGS_PER_CH$ITEMS_PER_CH)(300) # 40% of CHs (many of them likely 'faux') had <= 300 items
 
 dom_fraction_threshold = 0.7 # What constitutes a dominant fraction of prescrbing/dispensing
 low_activity_threshold = 300 # Exclude CHs with items below this threshold
 
 ggplot(TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold),
-       aes(PROP_ITEMS_BY_TOP_PRESC_TO_CH, PROP_ITEMS_BY_TOP_DISP_FROM_CH, color = ITEMS_PER_CH^(1/3))) +
+       aes(PROP_ITEMS_BY_TOP_PRESC_TO_CH, PROP_ITEMS_BY_TOP_DISP_FROM_CH, color = log(ITEMS_PER_CH))) +
   geom_point(alpha = 0.85) +
+  scale_x_continuous(breaks = seq(0,1,0.1)) +
+  scale_y_continuous(breaks = seq(0,1,0.1)) +
   scale_color_distiller(palette = "RdYlBu") +
   geom_rect(ymin = dom_fraction_threshold, ymax = 1, xmin = dom_fraction_threshold, xmax = 1, fill = NA, color = "red", linewidth = 1.5) +
   xlab("Proportion of items prescribed by top presc org") +
@@ -140,7 +140,8 @@ ggplot(TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold),
 
 # Prop by dominant presc/disp org vs item volume
 
-TOP_ORGS_PER_CH |>  filter(ITEMS_PER_CH >= low_activity_threshold) |>
+TOP_ORGS_PER_CH |>  filter(ITEMS_PER_CH >= low_activity_threshold,
+                           ITEMS_PER_CH <= 10e3) |>
   tidyr::pivot_longer(starts_with("PROP"),
                       names_to = "PROP_TYPE",
                       values_to = "PROP") |>
@@ -150,5 +151,81 @@ TOP_ORGS_PER_CH |>  filter(ITEMS_PER_CH >= low_activity_threshold) |>
   facet_wrap(~PROP_TYPE)
 
 
+# Group by Presc + Disp, count items/nic, n distinct CHs
+
+# Reconnect to base table w/o UPRN_FLAG==1 filter, so we get all CH prescribing
+DB <- tbl(con, in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
+
+t3 <- DB |>
+      group_by(PRESC_ORG_NM, DISP_NM) |>
+      summarise(
+        NIC = sum(ITEM_PAY_DR_NIC/100),
+        ITEMS = sum(ITEM_COUNT),
+        CH_COUNT = n_distinct(MATCH_SLA_STD),
+        .groups = "drop"
+      ) |> collect()
+
+top_20_presc <- t3 |> group_by(PRESC_ORG_NM) |>
+  summarise(ITEMS = sum(ITEMS)) |>
+  slice_max(ITEMS, n = 20, with_ties = F) |>
+  pull(PRESC_ORG_NM)
+
+top_20_disp <- t3 |> group_by(DISP_NM) |>
+  summarise(ITEMS = sum(ITEMS)) |>
+  slice_max(ITEMS, n = 20, with_ties = F) |>
+  pull(DISP_NM)
+
+t4 <- DB |> mutate(
+  PRESC_ORG_NM = case_when(
+    PRESC_ORG_NM %in% top_20_presc ~ PRESC_ORG_NM,
+    T ~ "OTHER"
+  ),
+  DISP_NM = case_when(
+    DISP_NM %in% top_20_disp ~ DISP_NM,
+    T ~ "OTHER"
+  )) |>
+  filter(!(PRESC_ORG_NM=="OTHER" & DISP_NM=="OTHER")) |>
+  group_by(PRESC_ORG_NM, DISP_NM) |>
+  summarise(
+    NIC = sum(ITEM_PAY_DR_NIC/100),
+    ITEMS = sum(ITEM_COUNT),
+    CH_COUNT = n_distinct(MATCH_SLA_STD),
+    .groups = "drop"
+  ) |> collect()
+
+t4 |> mutate(
+  PRESC_ORG_NM = factor(PRESC_ORG_NM, levels = c(top_20_presc, "OTHER") |> rev()),
+  DISP_NM = factor(DISP_NM, levels = c(top_20_disp, "OTHER"))
+) |>
+  hchart(type = "heatmap", hcaes(DISP_NM, PRESC_ORG_NM, value = log(ITEMS) |> round(2)),
+             dataLabels = list(enabled = T,
+                               #format = "{point.value:.1f}",
+                               #formatter = htmlwidgets::JS("function () { return Math.round(Math.exp(this.point.value)/1000 * 10) / 10 + 'k' ; }"),
+                               formatter = htmlwidgets::JS("function () { return (Math.round(this.point.ITEMS / 1000 * 10) / 10).toLocaleString() + 'k' ; }"),
+                               style = list(fontSize = "8px"))) |>
+  hc_colorAxis(
+    minColor = "blue",
+    maxColor = "red",
+    tickAmount = 2,
+    labels = list(enabled = F)
+  ) |>
+  hc_tooltip(
+    formatter = htmlwidgets::JS(
+      paste0(
+        "
+            function() {
+                outHTML =
+                  '<b>ITEMS: </b>' + this.point.ITEMS.prinprint + '<br>' +
+                  '<b>NIC: </b>' + '£' + Math.round(this.point.NIC).toLocaleString() + '<br>' +
+                  '<b>Distinct carehomes: </b>' + this.point.CH_COUNT
+                return outHTML;
+            }
+            "
+  )))
+
+
+
+
+# Zoom-in on dispensing doctors
 
 DBI::dbDisconnect(con)
