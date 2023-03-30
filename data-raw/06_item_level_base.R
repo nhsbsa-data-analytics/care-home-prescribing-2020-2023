@@ -2,9 +2,6 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-match_data = "INT646_MATCH_20210401_20220331"
-form_data = "INT646_FORMS_20210401_20220331"
-
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))

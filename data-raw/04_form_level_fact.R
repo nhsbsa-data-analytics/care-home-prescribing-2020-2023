@@ -36,7 +36,7 @@ eps_db <- con %>%
 
 # Postcodes with a care home
 postcode_db <- con %>%
-  tbl(from = in_schema("ADNSH", address_data))
+  tbl(from = address_data)
 
 # Part one: filter two fact table cuts for eps and paper info ------------------
 
