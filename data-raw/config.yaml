@@ -1,0 +1,14 @@
+
+FY_21_22:
+    # Start and end dates
+    start_date: "2021-04-01"
+    end_date: "2022-03-31"
+    
+    # ABP, CQC and ABP-CQC data
+    abp_data: "INT646_ABP_20220422"
+    cqc_data: "INT646_CQC_20230217"
+    address_data: "INT646_ABP_CQC_20210401_20220331"
+    
+    # Matched results and final output
+    patient_address_data: "INT646_PFID_20210401_20220331"
+    match_data: "INT646_MATCH_20210401_20220331"
