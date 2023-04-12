@@ -1,0 +1,389 @@
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Create a lazy table from year month dim table in DWCP
+year_month_db <- con %>%
+  tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
+
+# Create a lazy table from the item level FACT table
+fact_db <- con %>%
+  tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
+
+# Create a lazy table from the item level FACT table
+pat_db <- con %>%
+  tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
+
+# Create a lazy table from the matched patient address care home table
+match_db <- con %>%
+  tbl(from = match_data)
+
+# Create a lazy table from the matched patient address care home table
+form_db <- con %>%
+  tbl(from = form_data)
+
+# Create a lazy table from the drug DIM table
+drug_db <- con %>%
+  tbl(from = in_schema("DIM", "CDR_EP_DRUG_BNF_DIM"))
+
+# Lazy table for fact table
+presc_db <- con %>%
+  tbl(from = in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM"))
+
+# Lazy table for fact table
+disp_db <- con %>%
+  tbl(from = in_schema("DIM", "HS_DY_LEVEL_5_FLAT_DIM"))
+
+# Get start and end dates
+start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
+end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
+
+# Derive start and end year months
+start_year_month = as.integer(substr(start_date, 1, 6))
+end_year_month = as.integer(substr(end_date, 1, 6))
+
+# Define 'buffered' eps date range: for query efficiency
+eps_start_date = as.Date(start_date, format = "%Y%m%d") %m-% months(2)
+eps_end_date = (as.Date(end_date, format = "%Y%m%d")+10) %m+% months(2)
+
+# Start and end date as integers
+eps_start_int = get_integer_from_date(eps_start_date)
+eps_end_int = get_integer_from_date(eps_end_date)
+
+# Get year_month vector
+year_month = year_month_db %>% 
+  inner_join(year_month_db,  by = "YEAR_MONTH") %>% 
+  select(YEAR_MONTH) %>% 
+  filter(
+    YEAR_MONTH >= start_year_month,
+    YEAR_MONTH <= end_year_month
+  ) %>% 
+  pull()
+
+# Define keyword list for case statements
+care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL HOME|RESIDENTIAL-HOME|REST HOME|REST-HOME"
+global_exclusion_keywords = "ABOVE|CARAVAN|CHILDREN|HOLIDAY|MOBILE|NO FIXED ABODE|RESORT"
+extra_exclusion_keywords = "CONVENT|HOSPITAL|MARINA|MONASTERY|RECOVERY"
+
+# Part one: prepare tables prior to left join onto fact ------------------------
+
+# Match info minus nhs no
+match_db = match_db %>% 
+  select(
+    YEAR_MONTH_MATCH = YEAR_MONTH,
+    PF_ID_MATCH = PF_ID,
+    MATCH_SLA = SINGLE_LINE_ADDRESS_LOOKUP,
+    MATCH_SLA_STD = SINGLE_LINE_ADDRESS_STANDARDISED,
+    MATCH_SLA_PARENT = SINGLE_LINE_ADDRESS_PARENT,
+    MATCH_TYPE,
+    SCORE,
+    MAX_MONTHLY_PATIENTS,
+    AB_FLAG,
+    CH_FLAG,
+    UPRN_FLAG,
+    UPRN,                         
+    PARENT_UPRN,
+    LOCATION_ID,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    CURRENT_RATING,
+    NUMBER_OF_BEDS,
+    AB_DATE,
+    CQC_DATE
+  )
+
+# Filter to elderly patients in 2020/2021 and required columns
+fact_db = fact_db %>%
+  filter(
+    # Prescribing retained for all ages
+    #CALC_AGE >= 65L,
+    YEAR_MONTH %in% year_month,
+    PATIENT_IDENTIFIED == "Y",
+    PAY_DA_END == "N", # excludes disallowed items
+    PAY_ND_END == "N", # excludes not dispensed items
+    PAY_RB_END == "N", # excludes referred back items
+    CD_REQ == "N", # excludes controlled drug requisitions
+    OOHC_IND == 0L, # excludes out of hours dispensing
+    PRIVATE_IND == 0L, # excludes private dispensers
+    IGNORE_FLAG == "N", # remove dummy ldp forms
+    ITEM_COUNT >= 1 # remove element-level rows
+  ) %>%
+  select(
+    YEAR_MONTH,
+    PF_ID,
+    EPS_FLAG,
+    PART_DATE = EPS_PART_DATE,
+    EPM_ID,
+    PDS_GENDER,
+    CALC_AGE,
+    PATIENT_IDENTIFIED,
+    NHS_NO,
+    CALC_PREC_DRUG_RECORD_ID,
+    ITEM_COUNT,
+    ITEM_PAY_DR_NIC,
+    ITEM_CALC_PAY_QTY,
+    PRESC_ID_PRNT,
+    PRESC_TYPE_PRNT,
+    PRESC_PD_ID,
+    PRESC_PD_OUPDT,
+    DISP_CODE = DISPENSER_CODE,
+    DISP_ID,
+    DISP_OUPDT_TYPE
+  )
+
+# Get drug info
+drug_db = drug_db %>% 
+  filter(YEAR_MONTH %in% year_month) %>%
+  select(
+    YEAR_MONTH,
+    CALC_PREC_DRUG_RECORD_ID = RECORD_ID,
+    CHAPTER_DESCR,
+    SECTION_DESCR,
+    PARAGRAPH_DESCR,
+    CHEMICAL_SUBSTANCE_BNF_DESCR,
+    BNF_CHEMICAL_SUBSTANCE,
+    BASE_NAME
+  )
+
+# Process prescriber information
+presc_db = presc_db %>% 
+  filter(YEAR_MONTH %in% year_month) %>%
+  select(
+    YEAR_MONTH,
+    LVL_5_OU,
+    LVL_5_OUPDT,
+    PD_CDE,
+    PD_OUPDT,
+    PRESC_ORG_TYPE = LVL_5_LTST_TYPE,
+    PRESC_ORG_SUB_TYPE = PRCTC_TYPE_HIST_IND_DESC,
+    PRESC_ORG_NM = LVL_5_LTST_NM,
+    PRESC_ORG_CODE = LVL_5_LTST_ALT_CDE,
+    PRESC_ORG_LIST_SIZE = HS_TOTAL_LIST_SIZE,
+    PRESCRIBER_TYPE = PRESCRIBER_LTST_TYPE,
+    PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
+    PRESCRIBER_NM = PRESCRIBER_LTST_NM,
+    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
+  )
+
+# Process form fact
+form_db = form_db %>% 
+  select(
+    YEAR_MONTH_FORMS = YEAR_MONTH,
+    PF_ID_FORMS = PF_ID,
+    BSA_POSTCODE = POSTCODE,
+    BSA_SLA = SINGLE_LINE_ADDRESS
+  )
+
+# Process Dispenser data
+disp_db = disp_db %>% 
+  filter(YEAR_MONTH %in% year_month) %>%
+  mutate(
+    DISP_TYPE = case_when(
+      DIST_SELLING_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: DISTANCE SELLING",
+      LPS_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: LPS",
+      APPLIANCE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: APPLIANCE",
+      OOH_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: OOH",
+      PRIVATE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: PRIVATE",
+      T ~ LVL_5_LTST_TYPE
+      )
+    ) %>% 
+  select(
+    YEAR_MONTH,
+    LVL_5_OU,
+    LVL_5_OUPDT,
+    DISP_TYPE,
+    DISP_NM = LVL_5_LTST_NM,
+    DISP_TRADING_NM = TRADING_LTST_NM,
+    DISP_FULL_ADDRESS = LVL_5_HIST_FULL_ADDRESS,
+    DISP_POSTCODE = LVL_5_HIST_POSTCODE
+  )
+  
+# Get a single gender and age for the period
+pat_db <- pat_db %>% 
+  filter(
+    # Prescribing retained for all ages
+    #CALC_AGE >= 65L,
+    YEAR_MONTH %in% year_month,
+    PATIENT_IDENTIFIED == "Y",
+    PAY_DA_END == "N", # excludes disallowed items
+    PAY_ND_END == "N", # excludes not dispensed items
+    PAY_RB_END == "N", # excludes referred back items
+    CD_REQ == "N", # excludes controlled drug requisitions
+    OOHC_IND == 0L, # excludes out of hours dispensing
+    PRIVATE_IND == 0L, # excludes private dispensers
+    IGNORE_FLAG == "N", # remove dummy ldp forms
+    ITEM_COUNT >= 1 # remove element-level rows
+  ) %>%
+  group_by(NHS_NO) %>%
+  summarise(
+    # Gender
+    MALE_COUNT = sum(
+      ifelse(PDS_GENDER == 1, 1, 0),
+      na.rm = TRUE
+    ),
+    FEMALE_COUNT = sum(
+      ifelse(PDS_GENDER == 2, 1, 0),
+      na.rm = TRUE
+    ),
+    # Take the max age
+    AGE = max(
+      CALC_AGE,
+      na.rm = TRUE
+    )
+  ) %>%
+  ungroup() %>%
+  mutate(
+    GENDER = case_when(
+      MALE_COUNT > 0 & FEMALE_COUNT == 0 ~ "Male",
+      MALE_COUNT == 0 & FEMALE_COUNT > 0 ~ "Female",
+      TRUE ~ NA_character_
+    ),
+    # Add an age band
+    AGE_BAND = case_when(
+      AGE == -1 ~ "UNKNOWN",
+      AGE < 65 ~ "<65",
+      AGE < 70 ~ "65-69",
+      AGE < 75 ~ "70-74",
+      AGE < 80 ~ "75-79",
+      AGE < 85 ~ "80-84",
+      AGE < 90 ~ "85-89",
+      TRUE ~ "90+"
+    )
+  )
+
+# Part two: multiple left joins, coalesce and identify new keyword matches -----
+
+# Join all tables onto fact then process
+fact_join_db = fact_db %>% 
+  left_join(y = form_db, by = c("YEAR_MONTH" = "YEAR_MONTH_FORMS", 
+                                "PF_ID" = "PF_ID_FORMS")) %>% 
+  left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
+                                "PF_ID" = "PF_ID_MATCH")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
+  left_join(y = pat_db, by = c("NHS_NO")) %>% 
+  left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
+                                 "PRESC_ID_PRNT" = "LVL_5_OU",
+                                 "PRESC_TYPE_PRNT" = "LVL_5_OUPDT",
+                                 "PRESC_PD_ID" = "PD_CDE",
+                                 "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
+  left_join(y = disp_db, by = c("YEAR_MONTH",
+                                "DISP_ID" = "LVL_5_OU",
+                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>% 
+  mutate(
+    # Apply single keyword logic to addresses that haven't been used in matching, 
+    # because they don't share a postcode with a known carehome
+    CH_FLAG = case_when(
+      is.na(AB_FLAG) &
+      REGEXP_INSTR(BSA_SLA, care_home_keywords) > 0L &
+      REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
+      REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
+      TRUE ~ CH_FLAG
+      ),
+    MATCH_TYPE = case_when(
+      is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
+      TRUE ~ MATCH_TYPE
+      ),
+    #Zeroes for nas after left-join
+    AB_FLAG = case_when(is.na(AB_FLAG) ~ 0, T ~ AB_FLAG),
+    UPRN_FLAG = case_when(is.na(UPRN_FLAG) ~ 0, T ~ UPRN_FLAG),
+    CH_FLAG = case_when(is.na(CH_FLAG) ~ 0, T ~ CH_FLAG),
+    MATCH_TYPE = case_when(is.na(MATCH_TYPE) ~ "NO MATCH", T ~ MATCH_TYPE)
+    ) %>%
+  select(
+    # Fact metadata
+    YEAR_MONTH,
+    PART_DATE,
+    EPM_ID,
+    PF_ID,
+    EPS_FLAG,
+    # Patient info
+    NHS_NO, 
+    GENDER,
+    AGE,
+    AGE_BAND,
+    # Match Info
+    BSA_POSTCODE,
+    BSA_SLA,
+    MATCH_SLA,
+    MATCH_SLA_STD,
+    MATCH_SLA_PARENT,
+    MATCH_TYPE,
+    SCORE,
+    MAX_MONTHLY_PATIENTS,
+    AB_FLAG,
+    UPRN_FLAG,
+    CH_FLAG,
+    # AB and CQC info
+    UPRN,
+    PARENT_UPRN,
+    LOCATION_ID,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    NUMBER_OF_BEDS,
+    CURRENT_RATING,
+    AB_DATE,
+    CQC_DATE,
+    # Item info
+    ITEM_COUNT,
+    ITEM_PAY_DR_NIC,
+    ITEM_CALC_PAY_QTY,
+    # Drug info
+    CALC_PREC_DRUG_RECORD_ID,
+    CHAPTER_DESCR,
+    SECTION_DESCR,
+    PARAGRAPH_DESCR,
+    CHEMICAL_SUBSTANCE_BNF_DESCR,
+    BNF_CHEMICAL_SUBSTANCE,
+    BASE_NAME,
+    # Prescriber info
+    PRESC_ORG_TYPE,
+    PRESC_ORG_SUB_TYPE,
+    PRESC_ORG_NM,
+    PRESC_ORG_CODE,
+    PRESC_ORG_LIST_SIZE,
+    PRESCRIBER_TYPE,
+    PRESCRIBER_SUB_TYPE,
+    PRESCRIBER_NM,
+    PRESCRIBER_CODE,
+    # Dispenser info
+    DISP_CODE,
+    DISP_TYPE,
+    DISP_NM,
+    DISP_TRADING_NM,
+    DISP_FULL_ADDRESS,
+    DISP_POSTCODE
+  )
+
+# Part four: save output -------------------------------------------------------
+
+# Define table name
+table_name = paste0("INT646_BASE_", start_date, "_", end_date)
+
+# Remove table if exists
+drop_table_if_exists_db(table_name)
+
+# Print that table has been created
+print("Output being computed to be written back to the db ...")
+
+# Write the table back to DALP
+fact_join_db %>%
+  compute(
+    name = table_name,
+    indexes = list(c("UPRN_FLAG", "CH_FLAG")),
+    temporary = FALSE
+  )
+
+# Grant access
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+
+# Disconnect from database
+DBI::dbDisconnect(con)
+
+# Print created table name output
+print(paste0("This script has created table: ", table_name))
+
+# Remove vars specific to script
+remove_vars = setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()

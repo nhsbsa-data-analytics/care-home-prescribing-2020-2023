@@ -17,7 +17,23 @@ data = data %>%
   mutate(
     MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
     UPRN = coalesce(PARENT_UPRN, UPRN)
-  )
+  ) %>% 
+  group_by(UPRN) %>% 
+  mutate(MATCH_SLA_STD = max(MATCH_SLA_STD)) %>% 
+  ungroup()
+
+# Get single rating per care home
+df_rating = data %>% 
+  group_by(MATCH_SLA_STD) %>% 
+  count(CURRENT_RATING) %>% 
+  ungroup() %>% 
+  collect() %>% 
+  filter(!is.na(CURRENT_RATING)) %>% 
+  arrange(MATCH_SLA_STD, n) %>% 
+  group_by(MATCH_SLA_STD) %>% 
+  slice_max(n) %>% 
+  ungroup() %>% 
+  select(-n)
 
 # Get chapter info
 chapters = con %>% 
@@ -491,7 +507,9 @@ df_total = df_pat %>%
   left_join(df_section) %>% 
   left_join(df_paragraph) %>% 
   left_join(df_bnf) %>% 
-  mutate_all(.funs = replace_na)
+  mutate_all(.funs = replace_na) %>% 
+  left_join(df_rating) %>% 
+  mutate(CURRENT_RATING = ifelse(is.na(CURRENT_RATING), "Unknown", CURRENT_RATING))
 
 # Close, remove and clean
 DBI::dbDisconnect(con)
