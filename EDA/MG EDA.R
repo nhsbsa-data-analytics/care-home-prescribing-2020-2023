@@ -199,9 +199,9 @@ t4 |> mutate(
 ) |>
   hchart(type = "heatmap", hcaes(DISP_NM, PRESC_ORG_NM, value = log(ITEMS) |> round(2)),
              dataLabels = list(enabled = T,
-                               #format = "{point.value:.1f}",
+                               format = "{point.value:.1f}",
                                #formatter = htmlwidgets::JS("function () { return Math.round(Math.exp(this.point.value)/1000 * 10) / 10 + 'k' ; }"),
-                               formatter = htmlwidgets::JS("function () { return (Math.round(this.point.ITEMS / 1000 * 10) / 10).toLocaleString() + 'k' ; }"),
+                               #formatter = htmlwidgets::JS("function () { return (Math.round(this.point.ITEMS / 1000 * 10) / 10).toLocaleString() + 'k' ; }"),
                                style = list(fontSize = "8px"))) |>
   hc_colorAxis(
     minColor = "blue",
