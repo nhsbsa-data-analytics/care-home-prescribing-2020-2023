@@ -7,20 +7,9 @@ library(ggplot2)
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Create a lazy table from year month dim table in DWCP
+# Create lazy table
 data <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
-
-# Create parent uprn groups
-data = data %>% 
-  filter(UPRN_FLAG == 1) %>% 
-  mutate(
-    MATCH_SLA_STD = coalesce(MATCH_SLA_PARENT, MATCH_SLA_STD),
-    UPRN = coalesce(PARENT_UPRN, UPRN)
-  ) %>% 
-  group_by(UPRN) %>% 
-  mutate(MATCH_SLA_STD = max(MATCH_SLA_STD)) %>% 
-  ungroup()
+  tbl(from = in_schema("ADNSH", "INT646_MATCH_SLA"))
 
 # Get single rating per care home
 df_rating = data %>% 

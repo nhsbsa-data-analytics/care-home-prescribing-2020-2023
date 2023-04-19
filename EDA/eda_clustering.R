@@ -4,6 +4,7 @@ library(dplyr)
 library(dbplyr)
 library(highcharter)
 library(ggplot2)
+library(tidyr)
 
 # Get data
 tictoc::tic()
@@ -128,3 +129,69 @@ df_output %>%
   ggplot(aes(x, y, color = DRUG_TOTAL, size = CHAPTER_CENTRAL_NERVOUS_SYSTEM^3))+
   geom_point()+
   scale_color_continuous(type = "viridis")
+
+# Chapter proportions by mean DRUG_TOTAL metric --------------------------------
+
+drug_chapter_vars = c(names(df)[grepl("CHAPTER", names(df))], "DRUG_TOTAL")
+
+df_bar = df_total %>% 
+  select(drug_chapter_vars) %>% 
+  mutate(
+    DRUG_TOTAL = round(DRUG_TOTAL),
+    DRUG_TOTAL = case_when(
+      DRUG_TOTAL <= 4 ~ "1-4",
+      DRUG_TOTAL >= 9 ~ "9+",
+      T ~ as.character(DRUG_TOTAL)
+    ),
+    DRUG_TOTAL = factor(DRUG_TOTAL, levels = c("1-4", "5", "6", "7", "8", "9+"))
+  ) %>% 
+  group_by(DRUG_TOTAL) %>% 
+  summarise_all(.funs = mean) %>% 
+  pivot_longer(!DRUG_TOTAL, names_to = "CHAPTER", values_to = "MEAN")
+
+down_chapters = c(
+  "CHAPTER_ANAESTHESIA",
+  "CHAPTER_INFECTIONS",
+  "CHAPTER_EYE",
+  "CHAPTER_CARDIOVASCULAR_SYSTEM",
+  "CHAPTER_ENDOCRINE_SYSTEM"
+)
+
+up_chapters = c(
+  "CHAPTER_RESPIRATORY_SYSTEM",
+  "CHAPTER_NUTRITION_AND_BLOOD",
+  "CHAPTER_MUSCULOSKELETAL_AND_JOINT_DISEASES",
+  "CHAPTER_GASTRO_INTESTINAL_SYSTEM"
+)
+
+for(i in up_chapters){
+  p = df_bar %>% 
+    filter(CHAPTER == i) %>% 
+    ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
+    geom_bar(stat = "identity")
+  print(p)
+}
+
+for(i in down_chapters){
+  p = df_bar %>% 
+    filter(CHAPTER == i) %>% 
+    ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
+    geom_bar(stat = "identity")
+  print(p)
+}
+
+df_bar %>% 
+  filter(CHAPTER %in% up_chapters) %>% 
+  ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
+  geom_bar(stat = "identity")
+
+df_bar %>% 
+  filter(CHAPTER %in% down_chapters) %>% 
+  ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
+  geom_bar(stat = "identity")
+
+# Rating by metric -------------------------------------------------------------
+
+
+# Disconnect from database
+DBI::dbDisconnect(con)

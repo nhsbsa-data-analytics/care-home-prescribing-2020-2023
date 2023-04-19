@@ -252,3 +252,23 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
     dplyr::left_join(y = merged_df)
 }
 
+# Function to execute and collect dbplyr code with specified degree of parallelism
+collect_with_parallelism = function(df, parallel_num){
+  
+  # Pull the DB connection
+  db_connection <- df$src$con
+  
+  # Specify degree of parallelism
+  string_insert = paste0("SELECT /*+ PARALLEL(", parallel_num, ") */")
+  
+  # Specify parallelism for first select
+  query = gsub("SELECT", string_insert, sql_render(data))
+  
+  # Build new query
+  new_query = dbplyr::build_sql(con = db_connection, query)
+  
+  # Collect newly generated sql
+  dplyr::tbl(src = db_connection, dplyr::sql(new_query)) %>% collect()
+  
+}
+
