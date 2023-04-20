@@ -193,5 +193,68 @@ df_bar %>%
 # Rating by metric -------------------------------------------------------------
 
 
-# Disconnect from database
-DBI::dbDisconnect(con)
+df_rating = df_total %>% 
+  filter(!CURRENT_RATING %in% c("Inspected but not rated", "Unknown")) %>% 
+  mutate(CURRENT_RATING = factor(
+    CURRENT_RATING, 
+    levels = c("Inadequate", "Requires improvement", "Good", "Outstanding")
+    )) %>% 
+  select(UPRN, CURRENT_RATING) %>% 
+  inner_join(
+    df_pca %>% 
+      tibble::rownames_to_column("UPRN") %>% 
+      mutate(UPRN = as.double(UPRN))
+  ) %>% 
+  select(-UPRN) %>% 
+  group_by(CURRENT_RATING) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup()
+
+cols = names(df_rating)[names(df_rating) != c("CURRENT_RATING")]
+
+descending_vars = c(
+  "BNF_DIAZEPAM",
+  "BNF_TRAMADOL_HYDROCHLORIDE",
+  "SECTION_DRUGS_USED_IN_PSYCHOSES_AND_RELATED_DISORDERS",
+  "CHAPTER_RESPIRATORY_SYSTEM",
+  "CHAPTER_NUTRITION_AND_BLOOD",
+  "DAMN",
+  "NSAID",
+  "ACB_9"
+)
+
+ascending_vars = c(
+  "BNF_FENTANYL",
+  "BNF_DONEPEZIL_HYDROCHLORIDE",
+  "PARAGRAPH_URINARY_TRACT_INFECTIONS",
+  "PARAGRAPH_OPIOID_ANALGESICS",
+  "SECTION_ANALGESICS",
+  "CHAPTER_ANAESTHESIA",
+  "CHAPTER_MALIGNANT_DISEASE_AND_IMMUNOSUPPRESSION",
+  "CHAPTER_INCONTINENCE_APPLIANCES",
+  "CHAPTER_EAR_NOSE_AND_OROPHARYNX",
+  "CHAPTER_MUSCULOSKELETAL_AND_JOINT_DISEASES",
+  "CHAPTER_INFECTIONS",
+  "CHAPTER_INCONTINENCE_APPLIANCES"
+)
+
+other_vars = c(
+  "DRUG_TOTAL",
+  "ITEMS_PPM"
+)
+
+# Function to plot groups of variables
+ggplot_plot_fun = function(vars){
+  p = df_rating %>% 
+    rename_at(vars, ~"METRIC") %>%
+    ggplot(aes(CURRENT_RATING, METRIC, fill = "lightblue"))+
+    geom_col()+
+    ggtitle(vars)
+  print(p)
+}
+
+# Plots
+lapply(cols, ggplot_plot_fun)
+lapply(descending_vars, ggplot_plot_fun)
+lapply(ascending_vars, ggplot_plot_fun)
+lapply(other_vars, ggplot_plot_fun)
