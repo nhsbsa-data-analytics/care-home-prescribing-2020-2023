@@ -16,7 +16,7 @@ df_rating = data %>%
   group_by(MATCH_SLA_STD) %>% 
   count(CURRENT_RATING) %>% 
   ungroup() %>% 
-  collect() %>% 
+  collect_with_parallelism_dbi(., 8) %>% 
   filter(!is.na(CURRENT_RATING)) %>% 
   arrange(MATCH_SLA_STD, n) %>% 
   group_by(MATCH_SLA_STD) %>% 

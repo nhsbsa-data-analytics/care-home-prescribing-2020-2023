@@ -253,22 +253,50 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
 }
 
 # Function to execute and collect dbplyr code with specified degree of parallelism
-collect_with_parallelism = function(df, parallel_num){
+collect_with_parallelism_dbi = function(lazy_tbl, parallel_num){
   
   # Pull the DB connection
-  db_connection <- df$src$con
+  db_connection <- lazy_tbl$src$con
   
   # Specify degree of parallelism
   string_insert = paste0("SELECT /*+ PARALLEL(", parallel_num, ") */")
   
   # Specify parallelism for first select
-  query = gsub("SELECT", string_insert, sql_render(data))
+  query = gsub("SELECT", string_insert, sql_render(lazy_tbl))
+  
+  # Build new query
+  new_query = dbplyr::build_sql(con = db_connection, query)
+  
+  # Send query to db
+  result_db = DBI::dbSendQuery(con, new_query)
+  
+  # Fetch results
+  result_df = DBI::dbFetch(result_db)
+  
+  # Clear results
+  DBI::dbClearResult(result_db)
+  
+  # Result
+  return(result_df)
+}
+
+# Function to execute and collect dbplyr code with specified degree of parallelism
+collect_with_parallelism = function(lazy_tbl, n){
+  
+  # Pull the DB connection
+  db_connection <- lazy_tbl$src$con
+  
+  # Specify degree of parallelism
+  string_insert = paste0("SELECT /*+ PARALLEL(", n, ") */")
+  
+  # Specify parallelism for first select
+  query = gsub("SELECT", string_insert, sql_render(lazy_tbl))
   
   # Build new query
   new_query = dbplyr::build_sql(con = db_connection, query)
   
   # Collect newly generated sql
   dplyr::tbl(src = db_connection, dplyr::sql(new_query)) %>% collect()
-  
 }
 
+dplyr::com

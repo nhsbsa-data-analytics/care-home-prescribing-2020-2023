@@ -132,8 +132,10 @@ df_output %>%
 
 # Chapter proportions by mean DRUG_TOTAL metric --------------------------------
 
-drug_chapter_vars = c(names(df)[grepl("CHAPTER", names(df))], "DRUG_TOTAL")
+# Create chapter names vector
+drug_chapter_vars = c(names(df_total)[grepl("CHAPTER", names(df_total))], "DRUG_TOTAL")
 
+# Process data and simplify DRUG_TOTAL categories
 df_bar = df_total %>% 
   select(drug_chapter_vars) %>% 
   mutate(
@@ -149,6 +151,19 @@ df_bar = df_total %>%
   summarise_all(.funs = mean) %>% 
   pivot_longer(!DRUG_TOTAL, names_to = "CHAPTER", values_to = "MEAN")
 
+# Function to plot
+ggplot_bar_chapter = function(vars){
+  p = df_bar %>% 
+    filter(CHAPTER == vars) %>% 
+    ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
+    geom_bar(stat = "identity")
+  print(p)
+}
+
+# All plots
+lapply(names(df_total)[grepl("CHAPTER", names(df_total))], ggplot_bar_chapter)
+
+# Identify upward trend chapters
 down_chapters = c(
   "CHAPTER_ANAESTHESIA",
   "CHAPTER_INFECTIONS",
@@ -157,6 +172,7 @@ down_chapters = c(
   "CHAPTER_ENDOCRINE_SYSTEM"
 )
 
+# Identify downward trend chapters
 up_chapters = c(
   "CHAPTER_RESPIRATORY_SYSTEM",
   "CHAPTER_NUTRITION_AND_BLOOD",
@@ -164,27 +180,17 @@ up_chapters = c(
   "CHAPTER_GASTRO_INTESTINAL_SYSTEM"
 )
 
-for(i in up_chapters){
-  p = df_bar %>% 
-    filter(CHAPTER == i) %>% 
-    ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
-    geom_bar(stat = "identity")
-  print(p)
-}
+# All plots
+lapply(down_chapters, ggplot_bar_chapter)
+lapply(up_chapters, ggplot_bar_chapter)
 
-for(i in down_chapters){
-  p = df_bar %>% 
-    filter(CHAPTER == i) %>% 
-    ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
-    geom_bar(stat = "identity")
-  print(p)
-}
-
+# Grouped plot
 df_bar %>% 
   filter(CHAPTER %in% up_chapters) %>% 
   ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
   geom_bar(stat = "identity")
 
+# Grouped plot
 df_bar %>% 
   filter(CHAPTER %in% down_chapters) %>% 
   ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
@@ -192,7 +198,7 @@ df_bar %>%
 
 # Rating by metric -------------------------------------------------------------
 
-
+# Process rating information
 df_rating = df_total %>% 
   filter(!CURRENT_RATING %in% c("Inspected but not rated", "Unknown")) %>% 
   mutate(CURRENT_RATING = factor(
@@ -210,8 +216,23 @@ df_rating = df_total %>%
   summarise_all(.funs = mean) %>% 
   ungroup()
 
+# All column names
 cols = names(df_rating)[names(df_rating) != c("CURRENT_RATING")]
 
+# Function to plot groups of variables
+ggplot_bar_rating = function(vars){
+  p = df_rating %>% 
+    rename_at(vars, ~"METRIC") %>%
+    ggplot(aes(CURRENT_RATING, METRIC, fill = "lightblue"))+
+    geom_col()+
+    ggtitle(vars)
+  print(p)
+}
+
+# All plots
+lapply(cols, ggplot_bar_rating)
+
+# Trend columns
 descending_vars = c(
   "BNF_DIAZEPAM",
   "BNF_TRAMADOL_HYDROCHLORIDE",
@@ -223,6 +244,7 @@ descending_vars = c(
   "ACB_9"
 )
 
+# Trend columns
 ascending_vars = c(
   "BNF_FENTANYL",
   "BNF_DONEPEZIL_HYDROCHLORIDE",
@@ -238,23 +260,182 @@ ascending_vars = c(
   "CHAPTER_INCONTINENCE_APPLIANCES"
 )
 
+# Other columns of interest
 other_vars = c(
   "DRUG_TOTAL",
   "ITEMS_PPM"
 )
 
-# Function to plot groups of variables
-ggplot_plot_fun = function(vars){
-  p = df_rating %>% 
-    rename_at(vars, ~"METRIC") %>%
-    ggplot(aes(CURRENT_RATING, METRIC, fill = "lightblue"))+
-    geom_col()+
-    ggtitle(vars)
+# Plots
+lapply(descending_vars, ggplot_bar_rating)
+lapply(ascending_vars, ggplot_bar_rating)
+lapply(other_vars, ggplot_bar_rating)
+
+# Scatterplots -----------------------------------------------------------------
+
+# Columns to remove
+remove_vars = c(
+  "UPRN",
+  'CURRENT_RATING',
+  'MATCH_SLA_STD',
+  'PARENT_UPRN',
+  'NURSING_HOME_FLAG',
+  'RESIDENTIAL_HOME_FLAG',
+  'MAX_MONTHLY_PATIENTS',
+  'NUMBER_OF_BEDS',
+  'MONTHS',
+  'ITEMS',
+  'NIC',
+  'MALE',
+  'FEMALE',
+  'UNKNOWN',
+  'AGE_65_69',
+  'AGE_70_74',
+  'AGE_75_79',
+  'AGE_80_84',
+  'AGE_85_89',
+  'AGE_90_PLUS',
+  'PATS'
+)
+
+# Columns to correlate
+df_scatter = df_total %>% 
+  select(-remove_vars) %>% 
+  cor() %>% 
+  as.data.frame() %>% 
+  tibble::rownames_to_column("METRIC_ONE") %>% 
+  pivot_longer(!METRIC_ONE, names_to = "METRIC_TWO", values_to = "CORR") %>% 
+  filter(
+    CORR >= 0.3 | CORR <= -0.3,
+    CORR != 1,
+    !grepl("^DRUG_", METRIC_TWO),
+    !grepl("ITEMS", METRIC_TWO),
+    !grepl("COST_", METRIC_TWO)
+  )
+
+# Plot function
+ggplot_scatter = function(var_ind){
+  p = ggplot(df_total, aes_string(
+    x = df_scatter$METRIC_ONE[var_ind],
+    y = df_scatter$METRIC_TWO[var_ind]
+    ))+
+    geom_point()
   print(p)
 }
 
-# Plots
-lapply(cols, ggplot_plot_fun)
-lapply(descending_vars, ggplot_plot_fun)
-lapply(ascending_vars, ggplot_plot_fun)
-lapply(other_vars, ggplot_plot_fun)
+# All plots
+lapply(1:nrow(df_scatter), ggplot_scatter)
+
+# Select plots 
+ggplot_select_scatter = function(var_one, var_two){
+  p = ggplot(df_total, aes_string(
+    x = var_one,
+    y = var_two,
+    color = 'MALE_PROP'
+    ))+
+    geom_point()+
+    scale_color_viridis_b()
+    #scale_color_gradient(low = "lightblue", high = "red")
+  print(p)
+}
+
+# Select plots, now coloured by gender proportion (yellow and green more male)
+ggplot_select_scatter('CHAPTER_STOMA_APPLIANCES', "CHAPTER_CARDIOVASCULAR_SYSTEM")
+ggplot_select_scatter("CHAPTER_CENTRAL_NERVOUS_SYSTEM", "CHAPTER_CARDIOVASCULAR_SYSTEM")
+ggplot_select_scatter("CHAPTER_APPLIANCES", "CHAPTER_CARDIOVASCULAR_SYSTEM")
+ggplot_select_scatter("SECTION_LAXATIVES", "CHAPTER_CARDIOVASCULAR_SYSTEM")
+ggplot_select_scatter("COST_PPM", "CHAPTER_CARDIOVASCULAR_SYSTEM")
+ggplot_select_scatter("SECTION_ANALGESICS", "SECTION_DRUGS_USED_IN_PSYCHOSES_AND_RELATED_DISORDERS")
+
+# Age by gender and section/chapter heatmaps -----------------------------------
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Create lazy table
+data <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_MATCH_SLA"))
+
+# BNF sections of interest
+sections = c(
+  'Antifungal drugs',
+  'Laxatives',
+  'Antidepressant drugs',
+  'Drugs used in psychoses and related disorders',
+  'Analgesics'
+)
+
+# Section-level metrics
+df_gen = data %>% 
+  group_by(AGE_BAND, GENDER) %>% 
+  mutate(TOTAL = sum(ITEM_COUNT)) %>% 
+  ungroup() %>% 
+  filter(SECTION_DESCR %in% sections) %>% 
+  group_by(AGE_BAND, GENDER, SECTION_DESCR, TOTAL) %>% 
+  summarise(ITEMS = sum(ITEM_COUNT)) %>% 
+  ungroup() %>% 
+  mutate(PROP = round(ITEMS / TOTAL, 5)) %>% 
+  collect() %>% 
+  arrange(SECTION_DESCR, AGE_BAND, GENDER) %>% 
+  filter(!is.na(GENDER))
+
+# Plot heatmaps
+for(i in sections){
+  p = df_gen %>% 
+    filter(SECTION_DESCR == i) %>% 
+    hchart(., 
+           "heatmap", 
+           hcaes(GENDER, AGE_BAND, value = PROP),
+           dataLabels = list(enabled = TRUE)
+    ) %>% 
+    hc_title(text = i)
+  print(p)
+}
+
+# Get chapter info
+chapters = con %>% 
+  tbl(from = in_schema("DIM", "CDR_EP_DRUG_BNF_DIM")) %>% 
+  filter(YEAR_MONTH == 202201) %>% 
+  select(BNF_CHAPTER, CHAPTER_DESCR) %>% 
+  distinct() %>% 
+  collect() %>% 
+  filter(BNF_CHAPTER %in% c('01','02','03','04','06','07','08','09','10')) %>% 
+  select(CHAPTER_DESCR) %>% 
+  pull()
+
+# Section-level metrics
+df_gen_ch = data %>% 
+  group_by(AGE_BAND, GENDER) %>% 
+  mutate(TOTAL = sum(ITEM_COUNT)) %>% 
+  ungroup() %>% 
+  group_by(AGE_BAND, GENDER, CHAPTER_DESCR, TOTAL) %>% 
+  summarise(ITEMS = sum(ITEM_COUNT)) %>% 
+  ungroup() %>% 
+  mutate(PROP = round(ITEMS / TOTAL, 5)) %>% 
+  collect() %>% 
+  arrange(CHAPTER_DESCR, AGE_BAND, GENDER) %>% 
+  filter(
+    !is.na(GENDER),
+    CHAPTER_DESCR %in% chapters
+    )
+
+# Plot heatmaps
+for(i in chapters){
+  p = df_gen_ch %>% 
+    filter(CHAPTER_DESCR == i) %>% 
+    hchart(., 
+           "heatmap", 
+           hcaes(GENDER, AGE_BAND, value = PROP),
+           dataLabels = list(enabled = TRUE)
+    ) %>% 
+    hc_title(text = i)
+  print(p)
+}
+
+# Disconnect
+DBI::dbDisconnect(con)
+
+# Clean
+rm(list = ls()); gc()
+
+#-------------------------------------------------------------------------------
