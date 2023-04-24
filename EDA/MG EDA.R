@@ -2,8 +2,11 @@ library(dplyr)
 library(dbplyr)
 library(highcharter)
 library(ggplot2)
+#devtools::install_github('nhsbsa-data-analytics/nhsbsaR')
+library(nhsbsaR)
 
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+con <- con_nhsbsa(database = "DALP")
 
 DB <- tbl(con, in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
 
@@ -35,7 +38,7 @@ D <- DB |>
          to = paste("DISP", to)) |>
   relocate(all_of(c("DISP_CODE", "DISP_TYPE")), .after = id)
 
-LINKS <- union_all(P, D) |> collect()
+LINKS <- union_all(P, D) |> collect_with_parallelism(12)
 
 # 3 level Sankey diagram showing flow of NIC
 
@@ -44,7 +47,7 @@ LINKS <- union_all(P, D) |> collect()
 top_CHs <- P |> group_by(to) |>
   summarise(ITEMS = sum(ITEMS)) |>
   slice_max(ITEMS, n = 5, with_ties = F) |>
-  collect() |>
+  collect_with_parallelism(12) |>
   pull(to)
 
 t <- LINKS |> 
