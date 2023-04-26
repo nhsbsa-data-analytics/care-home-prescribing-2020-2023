@@ -100,8 +100,6 @@ abp_col_names = names(readr::read_csv(
   archive_read(data_file_name, file = "resources/AddressBasePlus_Header.csv")
 ))
 
-############
-
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
@@ -229,12 +227,12 @@ ab_plus_db = con %>%
   ) 
 
 # Drop table if it exists already
-drop_table_if_exists_db(table_name_test)
+drop_table_if_exists_db(table_name)
 
 # Write the table back to the DB with indexes
 ab_plus_db %>%
   compute(
-    name = table_name_test,
+    name = table_name,
     temporary = FALSE
   )
 

@@ -84,6 +84,7 @@ fact_db = fact_db %>%
     PAY_ND_END == "N", # excludes not dispensed items
     PAY_RB_END == "N", # excludes referred back items
     # The filters above I understand. What are the reasons for next 3 filters?
+    # I understand what is being filtered out, but would like to know why?
     CD_REQ == "N", # excludes controlled drug requisitions
     OOHC_IND == 0L, # excludes out of hours dispensing
     PRIVATE_IND == 0L, # excludes private dispensers

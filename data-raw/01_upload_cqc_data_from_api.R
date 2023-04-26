@@ -20,7 +20,7 @@ api_content = get_api_content(
 no_of_pages = ceiling(api_content$total / 10000)
 
 # Set a partner code (if we don't set this then we struggle to throttle calls)
-# MMc: not sure what code this?
+# MMc: not sure what code this is?
 get_cqc_locations_details = function(page_num){
   
   # Url with page number pasted inside
@@ -47,7 +47,7 @@ location_vec = cqc_locations %>% pull(locationId)
 
 # Function to query cqc api
 get_cqc_api_location_data = function(loc_num){
-  browser()
+  
   # Paste location url with location_id
   url = glue("https://api.cqc.org.uk/public/v1/locations/{location_vec[loc_num]}")
   
@@ -61,8 +61,7 @@ get_cqc_api_location_data = function(loc_num){
 }
 
 # Generate appropriate number of cores
-# MMc: I set to all but 1 core for my lower spec MI AVD (4 cores total)
-n_cores = parallel::detectCores() - 1
+n_cores = parallel::detectCores() - 2
 
 # Set up parallel
 clust = parallel::makeCluster(n_cores)
@@ -154,7 +153,8 @@ cqc_details_df <- cqc_details %>%
     ),
     # Change type of numeric col
     number_of_beds = as.integer(number_of_beds)
-  ) ; gc()
+  ) %>% 
+  select(-starts_with("gac_service_types_name")); gc()
 
 # Get current year_month
 download_date = as.integer(format(today(), "%Y%m%d"))
