@@ -8,6 +8,8 @@ library(tidyr)
 
 # Get data
 tictoc::tic()
+source("R/analysis_packages.R")
+source("R/workflow_helpers.R")
 source("EDA/eda_metric_generation.R")
 tictoc::toc()
 
@@ -44,7 +46,7 @@ remove_vars = c(
   'PATS'
 )
 
-# PCA --------------------------------------------------------------------------
+# 1. PCA -----------------------------------------------------------------------
 
 # DF for pca
 df_pca = df_total %>% 
@@ -85,7 +87,7 @@ factoextra::fviz_contrib(pca, choice = "var", axes = 2, top = 10)+
 factoextra::fviz_contrib(pca, choice = "var", axes = 3, top = 10)+
   coord_flip()
 
-# Clustering -------------------------------------------------------------------
+# 2. Clustering ----------------------------------------------------------------
 
 # DF for clustering
 mat_clust = df_total %>% 
@@ -130,7 +132,7 @@ df_output %>%
   geom_point()+
   scale_color_continuous(type = "viridis")
 
-# Chapter proportions by mean DRUG_TOTAL metric --------------------------------
+# 3. Chapter proportions by mean DRUG_TOTAL metric -----------------------------
 
 # Create chapter names vector
 drug_chapter_vars = c(names(df_total)[grepl("CHAPTER", names(df_total))], "DRUG_TOTAL")
@@ -196,7 +198,7 @@ df_bar %>%
   ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
   geom_bar(stat = "identity")
 
-# Rating by metric -------------------------------------------------------------
+# 4. Rating by metric ----------------------------------------------------------
 
 # Process rating information
 df_rating = df_total %>% 
@@ -207,9 +209,9 @@ df_rating = df_total %>%
     )) %>% 
   select(UPRN, CURRENT_RATING) %>% 
   inner_join(
-    df_pca %>% 
-      tibble::rownames_to_column("UPRN") %>% 
-      mutate(UPRN = as.double(UPRN))
+    df_total %>% 
+      select(-remove_vars),
+    by = "UPRN"
   ) %>% 
   select(-UPRN) %>% 
   group_by(CURRENT_RATING) %>% 
@@ -230,7 +232,7 @@ ggplot_bar_rating = function(vars){
 }
 
 # All plots
-lapply(cols, ggplot_bar_rating)
+#lapply(cols, ggplot_bar_rating)
 
 # Trend columns
 descending_vars = c(
@@ -271,7 +273,7 @@ lapply(descending_vars, ggplot_bar_rating)
 lapply(ascending_vars, ggplot_bar_rating)
 lapply(other_vars, ggplot_bar_rating)
 
-# Scatterplots -----------------------------------------------------------------
+# 5. Correlated vars scatterplots ----------------------------------------------
 
 # Columns to remove
 remove_vars = c(
@@ -347,7 +349,7 @@ ggplot_select_scatter("SECTION_LAXATIVES", "CHAPTER_CARDIOVASCULAR_SYSTEM")
 ggplot_select_scatter("COST_PPM", "CHAPTER_CARDIOVASCULAR_SYSTEM")
 ggplot_select_scatter("SECTION_ANALGESICS", "SECTION_DRUGS_USED_IN_PSYCHOSES_AND_RELATED_DISORDERS")
 
-# Age by gender and section/chapter heatmaps -----------------------------------
+# 6. Age by gender and section/chapter heatmaps --------------------------------
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -438,4 +440,121 @@ DBI::dbDisconnect(con)
 # Clean
 rm(list = ls()); gc()
 
-#-------------------------------------------------------------------------------
+# 7. Quick check of distinct pat count vs ch number of beds --------------------
+
+# Chart
+df_total %>% 
+  ggplot(aes(NUMBER_OF_BEDS, PATS))+
+  geom_jitter(size = 0.2)+
+  geom_abline(color = "red", size = 1.5)+
+  xlim(0, 200)+
+  ylim(0,500)
+
+# Distribution of rounded number of beds per patient
+df_total %>% 
+  mutate(BEDS_PER_PAT = ceiling(PATS / NUMBER_OF_BEDS)) %>% 
+  count(BEDS_PER_PAT) %>% 
+  filter(BEDS_PER_PAT != Inf) %>% 
+  mutate(
+    BEDS_PER_PAT = case_when(
+      BEDS_PER_PAT >= 10 ~ "Ten or more",
+      T ~ as.character(BEDS_PER_PAT)
+    ),
+    BEDS_PER_PAT = factor(BEDS_PER_PAT)
+  ) %>% 
+  ggplot(aes(BEDS_PER_PAT, n))+
+  geom_col()+
+  coord_flip()
+
+# 8. Composite rating feature view ---------------------------------------------
+
+# Trend columns
+descending_vars = c(
+  "BNF_DIAZEPAM",
+  "SECTION_DRUGS_USED_IN_PSYCHOSES_AND_RELATED_DISORDERS",
+  "CHAPTER_RESPIRATORY_SYSTEM",
+  "CHAPTER_NUTRITION_AND_BLOOD",
+  "DAMN",
+  "NSAID",
+  "ACB_9"
+)
+
+# Trend columns
+ascending_vars = c(
+  "BNF_FENTANYL",
+  "BNF_DONEPEZIL_HYDROCHLORIDE",
+  "PARAGRAPH_URINARY_TRACT_INFECTIONS",
+  "PARAGRAPH_OPIOID_ANALGESICS",
+  "SECTION_ANALGESICS",
+  "CHAPTER_ANAESTHESIA",
+  "CHAPTER_MALIGNANT_DISEASE_AND_IMMUNOSUPPRESSION",
+  "CHAPTER_INCONTINENCE_APPLIANCES",
+  "CHAPTER_EAR_NOSE_AND_OROPHARYNX",
+  "CHAPTER_MUSCULOSKELETAL_AND_JOINT_DISEASES",
+  "CHAPTER_INFECTIONS",
+  "CHAPTER_INCONTINENCE_APPLIANCES"
+)
+
+# Create 
+asc_decile_rank = function(x) abs(ntile(x, 4) - 11)
+desc_decile_rank = function(x) ntile(x, 4)
+
+# Rank df
+df_rank = df_total %>% 
+  select(
+    MATCH_SLA_STD, 
+    descending_vars,
+    ascending_vars
+    ) %>% 
+  mutate_at(.vars = ascending_vars, .funs = asc_decile_rank) %>% 
+  mutate_at(.vars = descending_vars, .funs = desc_decile_rank) %>% 
+  mutate(SCORE = rowSums(.[2:ncol(.)])) %>% 
+  inner_join(
+    df_total %>% 
+      select(MATCH_SLA_STD, CURRENT_RATING)
+  ) %>% 
+  filter(
+    CURRENT_RATING != "Inspected but not rated",
+    CURRENT_RATING != "Unknown"
+  ) %>% 
+  mutate(
+    CURRENT_RATING = factor(
+      CURRENT_RATING, 
+      levels = c("Outstanding", "Good", "Inadequate", "Requires improvement")
+    ))
+
+# Chart 1
+df_rank %>% 
+  ggplot(aes(SCORE, color = CURRENT_RATING)) + 
+  geom_density(size = 1)
+
+# Chart 2
+df_rank %>% 
+  filter(
+    CURRENT_RATING != "Requires improvement",
+    CURRENT_RATING != "Good"
+  ) %>% 
+  ggplot(aes(SCORE, color = CURRENT_RATING)) + 
+  geom_density(size = 1)
+
+# Classifying scores into groups using SCORE of 112 as boundary
+df_rank %>% 
+  filter(
+    CURRENT_RATING != "Requires improvement",
+    CURRENT_RATING != "Good"
+  ) %>% 
+  mutate(
+    GROUP = as.numeric(SCORE >= 112),
+    GROUP = ifelse(GROUP == 0, "Outstanding", "Inadequate")
+    ) %>% 
+  count(GROUP, CURRENT_RATING) %>% 
+  mutate(CLASS = ifelse(GROUP == CURRENT_RATING, "Correct", "Incorrect")) %>% 
+  group_by(CLASS) %>%
+  summarise(n = sum(n)) %>% 
+  ungroup() %>% 
+  mutate(
+    TOTAL = sum(n),
+    PROP = round(n / TOTAL, 2)
+  )
+
+# ------------------------------------------------------------------------------
