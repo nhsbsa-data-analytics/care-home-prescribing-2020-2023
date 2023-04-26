@@ -37,7 +37,7 @@ ab_plus_epoch_date = package_info %>%
   pull()
 
 # Print epoch data
-print(paste0("This script will use AB Plus epoch: ", ab_plus_epoch_date))
+print(glue("This script will use AB Plus epoch: {ab_plus_epoch_date}"))
 
 # Get ab plus epoch version api url
 url = package_info %>% 
@@ -83,11 +83,8 @@ writeBin(data, output_filepath)
 # Remove api content and clean
 rm(data); gc()
 
-# Get project directory
-project_dir = getwd()
-
-# Set to temp dir
-setwd(output_dir)
+# Get project directory and set to temp dir
+project_dir = setwd(output_dir)
 
 # Get ab plus csv file names within directory
 temp_dir_files = archive(data_file_name) %>% 
@@ -103,14 +100,16 @@ abp_col_names = names(readr::read_csv(
   archive_read(data_file_name, file = "resources/AddressBasePlus_Header.csv")
 ))
 
+############
+
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Define table name
-table_name = paste0("INT646_ABP2_", ab_plus_epoch_date)
+table_name = glue("INT646_ABP2_{ab_plus_epoch_date}")
 
 # Define temp table name
-table_name_temp = paste0(table_name, "_TEMP")
+table_name_temp = glue("{table_name}_TEMP")
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name_temp)
@@ -119,7 +118,7 @@ drop_table_if_exists_db(table_name_temp)
 read_temp_dir_csv = function(index){
   
   # Print index to 
-  print(paste0(index, " out of ", length(temp_dir_files), " files"))
+  print(glue("{index} out of {length(temp_dir_files)} files"))
   
   # Read in each csv and cast all columns as character
   data = readr::read_csv(
@@ -186,7 +185,7 @@ read_temp_dir_csv = function(index){
       across(.cols = c('UPRN', 'PARENT_UPRN'), as.numeric),
       CH_FLAG = ifelse(CH_FLAG == "RI01", 1L, 0L)
     ) 
-    
+  
   # Create table
   DBI::dbWriteTable(
     conn = con,
@@ -207,7 +206,7 @@ lapply(1:length(temp_dir_files), read_temp_dir_csv); gc()
 
 # Connect to temp table
 ab_plus_db = con %>%
-  tbl(from = table_name_temp) %>% 
+  tbl(from = table_name_temp) %>%
   # SLA creation plus formatting
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
@@ -230,12 +229,12 @@ ab_plus_db = con %>%
   ) 
 
 # Drop table if it exists already
-drop_table_if_exists_db(table_name)
+drop_table_if_exists_db(table_name_test)
 
 # Write the table back to the DB with indexes
 ab_plus_db %>%
   compute(
-    name = table_name,
+    name = table_name_test,
     temporary = FALSE
   )
 
@@ -243,13 +242,15 @@ ab_plus_db %>%
 drop_table_if_exists_db(table_name_temp)
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
 
 # Print that table has been created
-print(paste0("This script has created table: ", table_name))
+print(glue("This script has created table: {table_name}"))
 
 # Return to project directory
 setwd(project_dir)

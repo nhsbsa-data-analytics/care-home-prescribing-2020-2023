@@ -13,7 +13,9 @@ year_month_db <- con %>%
 fact_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
-# Create a lazy table from the item level FACT table
+# Create a lazy table from the item level FACT table The fact_db is the same as
+# the pat_db - why? There are some operations done on both can be done a single
+# time, before saving a copy if necessary
 pat_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
@@ -29,11 +31,11 @@ form_db <- con %>%
 drug_db <- con %>%
   tbl(from = in_schema("DIM", "CDR_EP_DRUG_BNF_DIM"))
 
-# Lazy table for fact table
+# Lazy table for prescriber table
 presc_db <- con %>%
   tbl(from = in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM"))
 
-# Lazy table for fact table
+# Lazy table for dispenser table
 disp_db <- con %>%
   tbl(from = in_schema("DIM", "HS_DY_LEVEL_5_FLAT_DIM"))
 
@@ -99,6 +101,7 @@ match_db = match_db %>%
 fact_db = fact_db %>%
   filter(
     # Prescribing retained for all ages
+    # Why is prescribing retained for all ages here?
     #CALC_AGE >= 65L,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
@@ -188,8 +191,8 @@ disp_db = disp_db %>%
       OOH_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: OOH",
       PRIVATE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: PRIVATE",
       T ~ LVL_5_LTST_TYPE
-      )
-    ) %>% 
+    )
+  ) %>% 
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -200,8 +203,9 @@ disp_db = disp_db %>%
     DISP_FULL_ADDRESS = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
-  
-# Get a single gender and age for the period
+
+# Get a single gender and age for the period Could the ops done here (starting
+# from same table as fact_db) not be done in fact_db, to avoid the join later?
 pat_db <- pat_db %>% 
   filter(
     # Prescribing retained for all ages
@@ -241,7 +245,8 @@ pat_db <- pat_db %>%
       MALE_COUNT == 0 & FEMALE_COUNT > 0 ~ "Female",
       TRUE ~ NA_character_
     ),
-    # Add an age band
+    # Add an age band Will we need a more complex treatment of age/age-band when
+    # considering periods of longer than the initial single year?
     AGE_BAND = case_when(
       AGE == -1 ~ "UNKNOWN",
       AGE < 65 ~ "<65",
@@ -261,7 +266,7 @@ fact_join_db = fact_db %>%
   left_join(y = form_db, by = c("YEAR_MONTH" = "YEAR_MONTH_FORMS", 
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
-                                "PF_ID" = "PF_ID_MATCH")) %>% 
+                                 "PF_ID" = "PF_ID_MATCH")) %>% 
   left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
@@ -277,21 +282,21 @@ fact_join_db = fact_db %>%
     # because they don't share a postcode with a known carehome
     CH_FLAG = case_when(
       is.na(AB_FLAG) &
-      REGEXP_INSTR(BSA_SLA, care_home_keywords) > 0L &
-      REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
-      REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
+        REGEXP_INSTR(BSA_SLA, care_home_keywords) > 0L &
+        REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
+        REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
       TRUE ~ CH_FLAG
-      ),
+    ),
     MATCH_TYPE = case_when(
       is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
       TRUE ~ MATCH_TYPE
-      ),
+    ),
     #Zeroes for nas after left-join
     AB_FLAG = case_when(is.na(AB_FLAG) ~ 0, T ~ AB_FLAG),
     UPRN_FLAG = case_when(is.na(UPRN_FLAG) ~ 0, T ~ UPRN_FLAG),
     CH_FLAG = case_when(is.na(CH_FLAG) ~ 0, T ~ CH_FLAG),
     MATCH_TYPE = case_when(is.na(MATCH_TYPE) ~ "NO MATCH", T ~ MATCH_TYPE)
-    ) %>%
+  ) %>%
   select(
     # Fact metadata
     YEAR_MONTH,
@@ -377,7 +382,9 @@ fact_join_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
 
 # Disconnect from database
 DBI::dbDisconnect(con)
