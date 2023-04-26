@@ -1,8 +1,8 @@
 
 # Load/install all required packages and functions
-source("EDA/mmc/analysis_packages_mmc.R")
-source("EDA/mmc/workflow_helpers_mmc.R")
-source("EDA/mmc/workflow_production_mmc.R")
+source("EDA/mmc/analysis_packages.R")
+source("EDA/mmc/workflow_helpers.R")
+source("EDA/mmc/workflow_production.R")
 
 # Specify variables to retain at end of each script
 keep_vars = c(ls(), 'keep_vars')
@@ -20,7 +20,7 @@ get_ab_plus_supplemented_with_cqc(
 # 3. Merge and process cqc and ab plus: 1 min
 create_ab_plus_cqc_data(
   ab_plus_data = "INT646_ABP_20220422",
-  cqc_data = "INT646_CQC_20230406",
+  cqc_data = "INT646_CQC_20230305",
   start_date = "2021-04-01",
   end_date =   "2022-03-31"
 )

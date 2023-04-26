@@ -13,9 +13,9 @@ year_month_db <- con %>%
 fact_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
-# Create a lazy table from the item level FACT table The fact_db is the same as
-# the pat_db - why? There are some operations done on both can be done a single
-# time, before saving a copy if necessary
+# Create a lazy table from the item level FACT table
+# The fact_db is the same as the pat_db - why? There are some operations done on
+# both can be done a single time, before saving a copy if necessary
 pat_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
@@ -204,8 +204,9 @@ disp_db = disp_db %>%
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
 
-# Get a single gender and age for the period Could the ops done here (starting
-# from same table as fact_db) not be done in fact_db, to avoid the join later?
+# Get a single gender and age for the period 
+# Could the ops done here (starting from same table as fact_db) not be done in
+# fact_db, to avoid the join later?
 pat_db <- pat_db %>% 
   filter(
     # Prescribing retained for all ages
@@ -245,8 +246,9 @@ pat_db <- pat_db %>%
       MALE_COUNT == 0 & FEMALE_COUNT > 0 ~ "Female",
       TRUE ~ NA_character_
     ),
-    # Add an age band Will we need a more complex treatment of age/age-band when
-    # considering periods of longer than the initial single year?
+    # Add an age band
+    # Will we need a more complex treatment of age/age-band when considering
+    # periods of longer than the initial single year?
     AGE_BAND = case_when(
       AGE == -1 ~ "UNKNOWN",
       AGE < 65 ~ "<65",
@@ -282,9 +284,9 @@ fact_join_db = fact_db %>%
     # because they don't share a postcode with a known carehome
     CH_FLAG = case_when(
       is.na(AB_FLAG) &
-        REGEXP_INSTR(BSA_SLA, care_home_keywords) > 0L &
-        REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
-        REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
+      REGEXP_INSTR(BSA_SLA, care_home_keywords) > 0L &
+      REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
+      REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
       TRUE ~ CH_FLAG
     ),
     MATCH_TYPE = case_when(
