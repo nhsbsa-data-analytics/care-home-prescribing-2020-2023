@@ -298,5 +298,3 @@ collect_with_parallelism = function(lazy_tbl, n){
   # Collect newly generated sql
   dplyr::tbl(src = db_connection, dplyr::sql(new_query)) %>% collect()
 }
-
-dplyr::com
