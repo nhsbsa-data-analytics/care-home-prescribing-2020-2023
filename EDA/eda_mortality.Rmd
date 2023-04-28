@@ -1,0 +1,113 @@
+---
+title: "eda_mortality"
+author: "Mark McPherson"
+date: "2023-04-27"
+output: html_document
+---
+
+## Setup
+
+```{r setup}
+knitr::opts_chunk$set(echo = FALSE)
+
+library(knitr)
+library(kableExtra)
+
+library(nhsbsaR)
+library(dplyr)
+library(dbplyr)
+library(DBI)
+library(tidyr)
+library(lubridate)
+library(glue)
+
+source("../R/workflow_helpers.R")
+```
+
+## Data
+
+```{r data}
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Create a lazy table from the matched patient address care home table
+match_db <- con %>%
+  tbl(from = "INT646_MATCH_SLA")
+
+pds_db <- con %>%
+  tbl(from = in_schema("DIM", "DALL_PDS_PATIENT_DIM"))
+```
+
+## Data Quality
+
+```{r}
+names(pds_db)
+```
+
+```{r}
+pds_db %>% select(ACTIVE_FLAG, NHS_NO_PDS, DOD, DEATH_STATUS, PRACTICE) %>% head()
+```
+
+```{r D_implies_DOD_exists}
+# Are all DODs present when DEATH_STATUS == "D"?
+pds_db %>% filter(DEATH_STATUS == "D" & is.na(DOD)) %>% select(DOD, DEATH_STATUS)
+```
+Single record has death flag, but no DOD. May be able to be eliminated if no rx in timeframe. Is it worth doing so, since only 1 record will not affect any conclusions made.
+
+```{r DOD_implies_D}
+# Are all DEATH_STATUS flags set correctly?
+pds_db %>% filter(is.na(DEATH_STATUS) & !is.na(DOD)) %>% select(DOD, DEATH_STATUS)
+```
+So we can be confident that if DOD is present, then the DEATH_STATUS flag is correctly set.
+
+```{r join}
+db <- match_db %>% 
+  left_join(
+    pds_db %>% select(ACTIVE_FLAG, NHS_NO_PDS, DOD, DEATH_STATUS, PRACTICE),
+    by = c("NHS_NO" = "NHS_NO_PDS")
+  )
+
+db %>% head()
+```
+## EDA
+
+```{r summary_uprn}
+summary_home_type <- db %>%
+  mutate(
+    DEATH_STATUS = case_when(is.na(DEATH_STATUS) ~ "A", T ~ DEATH_STATUS),
+    HOME_TYPE = case_when(
+      NURSING_HOME_FLAG == 1L ~ "NURSING",
+      RESIDENTIAL_HOME_FLAG == 1L ~ "RESIDENTIAL",
+      TRUE ~ "UNCLASSIFIED"
+    ),
+  ) %>% 
+  group_by(HOME_TYPE, DEATH_STATUS) %>%
+  summarise(n = n()) %>% 
+  mutate(freq = n / sum(n))
+
+summary_home_type %>%
+  arrange(HOME_TYPE, DEATH_STATUS)
+```
+
+Look at a single low bed count care home to understand how it looks on a UPRN level.
+
+```{r single_uprn}
+single_uprn <- db %>% 
+  filter(NUMBER_OF_BEDS <= 5, !is.na(DOD)) %>%
+  head(1) %>% 
+  pull(UPRN)
+```
+
+```{r single_uprn_db}
+single_uprn_db <- db %>% 
+  filter(UPRN == single_uprn) %>% 
+  select(YEAR_MONTH, PART_DATE, NHS_NO, GENDER, AGE, AGE_BAND, ITEM_COUNT, DOD, DEATH_STATUS)
+
+single_uprn_db %>% 
+  group_by(YEAR_MONTH, NHS_NO) %>% 
+  summarise(ITEM_COUNT_PX_MONTH = sum(ITEM_COUNT)) %>% 
+  arrange(YEAR_MONTH, NHS_NO)
+```
+
+
+

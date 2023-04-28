@@ -1,17 +1,8 @@
 
-# Libraries
-library(dplyr)
-library(dbplyr)
-library(highcharter)
-library(ggplot2)
-library(tidyr)
-
 # Get data
-tictoc::tic()
 source("R/analysis_packages.R")
 source("R/workflow_helpers.R")
 source("EDA/eda_metric_generation.R")
-tictoc::toc()
 
 # Columns to remove
 remove_vars = c(
@@ -45,6 +36,84 @@ remove_vars = c(
   'FEMALE_PROP',
   'PATS'
 )
+
+# 0. High-level figures --------------------------------------------------------
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Create lazy table
+data <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_MATCH_SLA"))
+
+# Create lazy table
+base <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
+
+# Any care home figures
+df_high = data %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  ungroup() %>% 
+  collect()
+
+# Exact care home figures
+df_exact = data %>% 
+  group_by(YEAR_MONTH) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  ungroup() %>% 
+  collect() %>% 
+  arrange(YEAR_MONTH) %>% 
+  mutate(
+    YEAR_MONTH = factor(YEAR_MONTH),
+    TYPE = "Exact care home matching"
+    )
+
+# High level figures df
+df_any = base %>% 
+  filter(CH_FLAG == 1) %>% 
+  group_by(YEAR_MONTH) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  ungroup() %>% 
+  collect() %>% 
+  arrange(YEAR_MONTH) %>% 
+  mutate(
+    YEAR_MONTH = factor(YEAR_MONTH),
+    TYPE = "Any care home matching"
+  )
+
+# combing above 2 df
+df_comb = rbind(df_any, df_exact)
+
+# Mean patients per month
+mean(df_high$PATS)
+
+# Patients per month
+df_comb %>% 
+  highcharter::hchart(., "line", hcaes(YEAR_MONTH, PATS, group = TYPE)) %>% 
+  hc_yAxis(min = 0)
+
+# Cost per month 
+df_comb %>% 
+  highcharter::hchart(., "line", hcaes(YEAR_MONTH, COST, group = TYPE)) %>% 
+  hc_yAxis(min = 0)
+
+# Items per month
+df_comb %>% 
+  highcharter::hchart(., "line", hcaes(YEAR_MONTH, ITEMS, group = TYPE)) %>% 
+  hc_yAxis(min = 0)
+
 
 # 1. PCA -----------------------------------------------------------------------
 
@@ -163,7 +232,7 @@ ggplot_bar_chapter = function(vars){
 }
 
 # All plots
-lapply(names(df_total)[grepl("CHAPTER", names(df_total))], ggplot_bar_chapter)
+#lapply(names(df_total)[grepl("CHAPTER", names(df_total))], ggplot_bar_chapter)
 
 # Identify upward trend chapters
 down_chapters = c(
@@ -326,7 +395,7 @@ ggplot_scatter = function(var_ind){
 }
 
 # All plots
-lapply(1:nrow(df_scatter), ggplot_scatter)
+#lapply(1:nrow(df_scatter), ggplot_scatter)
 
 # Select plots 
 ggplot_select_scatter = function(var_one, var_two){
@@ -557,4 +626,8 @@ df_rank %>%
     PROP = round(n / TOTAL, 2)
   )
 
-# ------------------------------------------------------------------------------
+# Disconnect and clean ---------------------------------------------------------
+
+DBI::dbDisconnect(con); rm(list = ls()); gc()
+
+#-------------------------------------------------------------------------------
