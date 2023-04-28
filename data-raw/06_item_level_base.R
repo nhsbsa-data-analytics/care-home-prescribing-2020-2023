@@ -154,6 +154,8 @@ presc_db = presc_db %>%
     LVL_5_OUPDT,
     PD_CDE,
     PD_OUPDT,
+    PRESC_SLA = LVL_5_HIST_FULL_ADDRESS,
+    PRESC_POSTCODE = LVL_5_HIST_POSTCODE,
     PRESC_ORG_TYPE = LVL_5_LTST_TYPE,
     PRESC_ORG_SUB_TYPE = PRCTC_TYPE_HIST_IND_DESC,
     PRESC_ORG_NM = LVL_5_LTST_NM,
@@ -194,7 +196,7 @@ disp_db = disp_db %>%
     DISP_TYPE,
     DISP_NM = LVL_5_LTST_NM,
     DISP_TRADING_NM = TRADING_LTST_NM,
-    DISP_FULL_ADDRESS = LVL_5_HIST_FULL_ADDRESS,
+    DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
   
@@ -336,6 +338,8 @@ fact_join_db = fact_db %>%
     BNF_CHEMICAL_SUBSTANCE,
     BASE_NAME,
     # Prescriber info
+    PRESC_SLA,
+    PRESC_POSTCODE,
     PRESC_ORG_TYPE,
     PRESC_ORG_SUB_TYPE,
     PRESC_ORG_NM,
@@ -350,7 +354,7 @@ fact_join_db = fact_db %>%
     DISP_TYPE,
     DISP_NM,
     DISP_TRADING_NM,
-    DISP_FULL_ADDRESS,
+    DISP_SLA,
     DISP_POSTCODE
   )
 
