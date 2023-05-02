@@ -1,17 +1,11 @@
 
-# Libraries
-library(dplyr)
-library(dbplyr)
-library(highcharter)
-library(ggplot2)
-library(tidyr)
-
 # Get data
-tictoc::tic()
 source("R/analysis_packages.R")
 source("R/workflow_helpers.R")
 source("EDA/eda_metric_generation.R")
-tictoc::toc()
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Columns to remove
 remove_vars = c(
@@ -45,6 +39,100 @@ remove_vars = c(
   'FEMALE_PROP',
   'PATS'
 )
+
+# 0. High-level figures --------------------------------------------------------
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Create lazy table
+data <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_MATCH_SLA"))
+
+# Create lazy table
+base <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
+
+# Any care home figures
+df_high = data %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  collect() %>% 
+  mutate(TYPE = "Exact care home matching")
+
+# Any care home figures
+df_high_ch = base %>% 
+  filter(CH_FLAG == 1) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  collect() %>% 
+  mutate(TYPE = "Any care home matching")
+
+# Both above
+df_high_all = rbind(df_high, df_high_ch)
+
+# Exact care home figures
+df_exact = data %>% 
+  group_by(YEAR_MONTH) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  ungroup() %>% 
+  collect() %>% 
+  arrange(YEAR_MONTH) %>% 
+  mutate(
+    YEAR_MONTH = factor(YEAR_MONTH),
+    TYPE = "Exact care home matching"
+    )
+
+# High level figures df
+df_any = base %>% 
+  filter(CH_FLAG == 1) %>% 
+  group_by(YEAR_MONTH) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+  ) %>% 
+  ungroup() %>% 
+  collect() %>% 
+  arrange(YEAR_MONTH) %>% 
+  mutate(
+    YEAR_MONTH = factor(YEAR_MONTH),
+    TYPE = "Any care home matching"
+  )
+
+# combing above 2 df
+df_comb = rbind(df_any, df_exact)
+
+# Mean patients per month
+mean(df_high$PATS)
+
+# Patients per month
+df_comb %>% 
+  highcharter::hchart(., "line", hcaes(YEAR_MONTH, PATS, group = TYPE)) %>% 
+  hc_yAxis(min = 0) %>% 
+  hc_xAxis(title = list(text = "Month")) %>% 
+  hc_yAxis(title = list(text = "Number of Distinct Patients")) %>% 
+  hc_title(text = "Number of Distinct Patients per Month by Match Type for FY21/22")
+
+# Cost per month 
+df_comb %>% 
+  highcharter::hchart(., "line", hcaes(YEAR_MONTH, COST, group = TYPE)) %>% 
+  hc_yAxis(min = 0)
+
+# Items per month
+df_comb %>% 
+  highcharter::hchart(., "line", hcaes(YEAR_MONTH, ITEMS, group = TYPE)) %>% 
+  hc_yAxis(min = 0)
 
 # 1. PCA -----------------------------------------------------------------------
 
@@ -163,7 +251,7 @@ ggplot_bar_chapter = function(vars){
 }
 
 # All plots
-lapply(names(df_total)[grepl("CHAPTER", names(df_total))], ggplot_bar_chapter)
+#lapply(names(df_total)[grepl("CHAPTER", names(df_total))], ggplot_bar_chapter)
 
 # Identify upward trend chapters
 down_chapters = c(
@@ -197,6 +285,22 @@ df_bar %>%
   filter(CHAPTER %in% down_chapters) %>% 
   ggplot(aes(DRUG_TOTAL, MEAN, fill = CHAPTER))+
   geom_bar(stat = "identity")
+
+# Hchart
+df_bar %>% 
+  filter(CHAPTER == "CHAPTER_ANAESTHESIA") %>% 
+  hchart(., "column", hcaes(DRUG_TOTAL, MEAN)) %>% 
+  hc_xAxis(title = list(text = "Mean number of Monthly Unique Medicines per Patient")) %>% 
+  hc_yAxis(title = list(text = "Proportion of prescribing")) %>% 
+  hc_title(text = "Proportion of drugs from the <b>Aneasthesia Chapter</b> against the Mean Number of Monthly Unqiue Medicines per Patient")
+
+# Hchart
+df_bar %>% 
+  filter(CHAPTER == "CHAPTER_GASTRO_INTESTINAL_SYSTEM") %>% 
+  hchart(., "column", hcaes(DRUG_TOTAL, MEAN)) %>% 
+  hc_xAxis(title = list(text = "Mean number of Monthly Unique Medicines per Patient")) %>% 
+  hc_yAxis(title = list(text = "Proportion of prescribing")) %>% 
+  hc_title(text = "Proportion of drugs from the <b>Gastro Intestinal Chapter</b> against the Mean Number of Monthly Unqiue Medicines per Patient")
 
 # 4. Rating by metric ----------------------------------------------------------
 
@@ -273,6 +377,20 @@ lapply(descending_vars, ggplot_bar_rating)
 lapply(ascending_vars, ggplot_bar_rating)
 lapply(other_vars, ggplot_bar_rating)
 
+# Hchart
+df_rating %>% 
+  hchart(., "column", hcaes(CURRENT_RATING, NSAID)) %>% 
+  hc_xAxis(title = list(text = "Current Care Home Rating")) %>% 
+  hc_yAxis(title = list(text = "Polypharmacy Metric Value")) %>% 
+  hc_title(text = "Proportion of <b>Patients Prescribed a Non-Steroidal Anti-Inflammmatory Drug and one or more other medicine likely to cause kidney injury</b> by Care Home Rating")
+
+# Hchart
+df_rating %>% 
+  hchart(., "column", hcaes(CURRENT_RATING, CHAPTER_INCONTINENCE_APPLIANCES)) %>% 
+  hc_xAxis(title = list(text = "Current Care Home Rating")) %>% 
+  hc_yAxis(title = list(text = "Proportion of Prescribing")) %>% 
+  hc_title(text = "Proportion of Prescribing from the <b>Incontinence Appliances Chapter</b> by Care Home Rating")
+
 # 5. Correlated vars scatterplots ----------------------------------------------
 
 # Columns to remove
@@ -326,7 +444,7 @@ ggplot_scatter = function(var_ind){
 }
 
 # All plots
-lapply(1:nrow(df_scatter), ggplot_scatter)
+#lapply(1:nrow(df_scatter), ggplot_scatter)
 
 # Select plots 
 ggplot_select_scatter = function(var_one, var_two){
@@ -349,10 +467,22 @@ ggplot_select_scatter("SECTION_LAXATIVES", "CHAPTER_CARDIOVASCULAR_SYSTEM")
 ggplot_select_scatter("COST_PPM", "CHAPTER_CARDIOVASCULAR_SYSTEM")
 ggplot_select_scatter("SECTION_ANALGESICS", "SECTION_DRUGS_USED_IN_PSYCHOSES_AND_RELATED_DISORDERS")
 
-# 6. Age by gender and section/chapter heatmaps --------------------------------
+# Hchart
+df_total %>% 
+  filter(
+    SECTION_LAXATIVES > 0,
+    CHAPTER_CARDIOVASCULAR_SYSTEM > 0,
+    row_number() <= 2000
+  ) %>% 
+  hchart(., "scatter", hcaes(
+    SECTION_LAXATIVES, 
+    CHAPTER_CARDIOVASCULAR_SYSTEM
+    )) %>% 
+  hc_xAxis(title = list(text = "Proportion of Prescribing from the Laxatives Section")) %>% 
+  hc_yAxis(title = list(text = "Proportion of Prescribing from the Cardiovascular System Chapter")) %>% 
+  hc_title(text = "Sample of <b>Laxatives Section</b> against <b>Cardiovascular Chapter</b> Prescribing Proportions per Care Home in FY21/22")
 
-# Set up connection to DALP
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
+# 6. Age by gender and section/chapter heatmaps --------------------------------
 
 # Create lazy table
 data <- con %>%
@@ -434,11 +564,18 @@ for(i in chapters){
   print(p)
 }
 
-# Disconnect
-DBI::dbDisconnect(con)
-
-# Clean
-rm(list = ls()); gc()
+# Hchart
+df_gen %>% 
+  filter(SECTION_DESCR == "Antidepressant drugs") %>% 
+  hchart(., 
+         "heatmap", 
+         hcaes(GENDER, AGE_BAND, value = PROP),
+         dataLabels = list(enabled = TRUE)
+  ) %>% 
+  hc_xAxis(title = list(text = "Gender")) %>% 
+  hc_yAxis(title = list(text = "Age Band")) %>% 
+  hc_title(text = "Proportion of Prescribing of the <b>Antidepressant Drug Section</b> by Gender and Age Band") %>% 
+  hc_legend(enabled = FALSE)
 
 # 7. Quick check of distinct pat count vs ch number of beds --------------------
 
@@ -449,6 +586,17 @@ df_total %>%
   geom_abline(color = "red", size = 1.5)+
   xlim(0, 200)+
   ylim(0,500)
+
+# Chart
+df_total %>% 
+  filter(
+    NUMBER_OF_BEDS > 0,
+    row_number() <= 2000
+    ) %>% 
+  hchart(., "scatter", hcaes(NUMBER_OF_BEDS, PATS)) %>% 
+  hc_xAxis(title = list(text = "Number of Beds")) %>% 
+  hc_yAxis(title = list(text = "Number of Distinct Patients")) %>% 
+  hc_title(text = "Sample of the Number of Beds against the Number of Distinct Patients per Care Home in FY21/22")
 
 # Distribution of rounded number of beds per patient
 df_total %>% 
@@ -557,4 +705,8 @@ df_rank %>%
     PROP = round(n / TOTAL, 2)
   )
 
-# ------------------------------------------------------------------------------
+# Disconnect and clean ---------------------------------------------------------
+
+DBI::dbDisconnect(con); rm(list = ls()); gc()
+
+#-------------------------------------------------------------------------------

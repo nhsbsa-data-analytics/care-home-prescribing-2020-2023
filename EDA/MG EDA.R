@@ -79,11 +79,11 @@ t2 <- t |> bind_rows(
   )
 
 highchart() |>
-  hc_add_series(#t,   # Showing prescribing activity from presc/disp orgs to focal CHs only 
-                t2, # Showing all presc activity from presc/disp orgs that had activity with focal CHs
+  hc_add_series(t,   # Showing prescribing activity from presc/disp orgs to focal CHs only 
+                #t2, # Showing all presc activity from presc/disp orgs that had activity with focal CHs
                 type = "sankey")
 
-# Colour presc/disp by type
+# Colour presc/disp by type?
 
 # Distributions of % of items/nic prescribed/dispensed by a top org
 # 3D graph: X = % prescribed by top presc org; Y = % dispensed by top disp org; Z (colour/size) = total items/nic
@@ -166,9 +166,9 @@ t3 <- DB |>
         ITEMS = sum(ITEM_COUNT),
         CH_COUNT = n_distinct(MATCH_SLA_STD),
         .groups = "drop"
-      ) |> collect()
+      ) |> collect_with_parallelism(12)
 
-top_20_presc <- t3 |> group_by(PRESC_ORG_NM) |>
+top_20_presc <- t3 |> group_by(PRESC_ORG_NM) |> 
   summarise(ITEMS = sum(ITEMS)) |>
   slice_max(ITEMS, n = 20, with_ties = F) |>
   pull(PRESC_ORG_NM)
