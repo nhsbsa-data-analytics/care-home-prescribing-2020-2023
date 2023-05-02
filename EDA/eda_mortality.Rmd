@@ -10,8 +10,8 @@ output: html_document
 ```{r setup}
 knitr::opts_chunk$set(echo = FALSE)
 
-library(knitr)
-library(kableExtra)
+# library(knitr)
+# library(kableExtra)
 
 library(nhsbsaR)
 library(dplyr)
@@ -69,12 +69,26 @@ db <- match_db %>%
 
 db %>% head()
 ```
+Check format of DOD
+
+```{r dod_format}
+dod_db <- db %>% 
+  head(10000) %>% 
+  filter(!is.na(DOD))
+
+dod_db %>% 
+  select(DOD) %>%
+  head(1) %>%
+  pull(DOD) %>% 
+  str()
+```
+
 ## EDA
 
 ```{r summary_uprn}
 summary_home_type <- db %>%
   mutate(
-    DEATH_STATUS = case_when(is.na(DEATH_STATUS) ~ "A", T ~ DEATH_STATUS),
+    DEATH_STATUS = case_when(is.na(DEATH_STATUS) ~ "A", TRUE ~ DEATH_STATUS),
     HOME_TYPE = case_when(
       NURSING_HOME_FLAG == 1L ~ "NURSING",
       RESIDENTIAL_HOME_FLAG == 1L ~ "RESIDENTIAL",
@@ -92,8 +106,11 @@ summary_home_type %>%
 Look at a single low bed count care home to understand how it looks on a UPRN level.
 
 ```{r single_uprn}
-single_uprn <- db %>% 
-  filter(NUMBER_OF_BEDS <= 5, !is.na(DOD)) %>%
+dod_db <- db %>% 
+  filter(!is.na(DOD)) %>% 
+  filter(between(DOD, as.Date("2022-10-10"), as.Date("2022-10-11")))
+
+single_uprn <- dod_db %>% 
   head(1) %>% 
   pull(UPRN)
 ```
