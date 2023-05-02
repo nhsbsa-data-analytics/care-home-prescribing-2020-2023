@@ -166,7 +166,7 @@ t3 <- DB |>
         ITEMS = sum(ITEM_COUNT),
         CH_COUNT = n_distinct(MATCH_SLA_STD),
         .groups = "drop"
-      ) |> collect_with_parallelism(12)
+      ) |> collect_with_parallelism(6)
 
 top_20_presc <- t3 |> group_by(PRESC_ORG_NM) |> 
   summarise(ITEMS = sum(ITEMS)) |>
@@ -194,7 +194,7 @@ t4 <- DB |> mutate(
     ITEMS = sum(ITEM_COUNT),
     CH_COUNT = n_distinct(MATCH_SLA_STD),
     .groups = "drop"
-  ) |> collect()
+  ) |> collect_with_parallelism(6)
 
 t4 |> mutate(
   PRESC_ORG_NM = factor(PRESC_ORG_NM, levels = c(top_20_presc, "OTHER") |> rev()),
@@ -218,7 +218,7 @@ t4 |> mutate(
         "
             function() {
                 outHTML =
-                  '<b>ITEMS: </b>' + this.point.ITEMS.prinprint + '<br>' +
+                  '<b>ITEMS: </b>' + this.point.ITEMS + '<br>' +
                   '<b>NIC: </b>' + '£' + Math.round(this.point.NIC).toLocaleString() + '<br>' +
                   '<b>Distinct carehomes: </b>' + this.point.CH_COUNT
                 return outHTML;
