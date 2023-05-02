@@ -298,3 +298,22 @@ collect_with_parallelism = function(lazy_tbl, n){
   # Collect newly generated sql
   dplyr::tbl(src = db_connection, dplyr::sql(new_query)) %>% collect()
 }
+
+# Clean a df address (i.e. a non-db table)
+tidy_df_single_line_address = function(df, vars){
+  
+  df %>% 
+    mutate(
+      # Address cleaning
+      {{vars}} := gsub(" & ", " AND ", {{vars}}),
+      {{vars}} := gsub("(\\D)(\\d)", "\\1 \\2", {{vars}}),
+      {{vars}} := gsub("(\\d)(\\D)", "\\1 \\2", {{vars}}),
+      {{vars}} := gsub("[,.();:#'']", " ", {{vars}}),
+      {{vars}} := stringr::str_squish({{vars}}),
+      {{vars}} := ifelse(
+        grepl("[0-9] - [0-9]", {{vars}}) == T,
+        gsub(" - ", "-", {{vars}}),
+        {{vars}}
+        )
+    )
+}

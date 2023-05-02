@@ -81,6 +81,94 @@ DBI::dbWriteTable(
 
 # 2. Match companies to abp and cqc care homes ---------------------------------
 
+#'https://www.cqc.org.uk/sites/default/files/2023-04/26_April_2023_CQC_directory.csv'
+
+df = readODS::read_ods(
+  "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.ods",
+  sheet = 2
+  )
+
+options(java.parameters = "-Xmx16g")
+library(xlsx)
+library(readODS)
+
+options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx32g"))
+gc()
+
+df = readODS::read_ods(
+  path = "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.ods",
+  sheet = 2,
+  range = "A1:A2"
+)
+
+df = readxl::read_xlsx(
+  path = "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.xlsx",
+  sheet = 2
+)
+
+df =readxl::read_xlsx(
+  path = "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.xlsx",
+  sheet = 2
+)
+
+df = data.table::fread("C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/CQC_location_information.csv")
+
+
+a = read.csv(url(cqc_url))
+
+download = RCurl::getURL(cqc_url)
+output_file = tempfile()
+
+# Download zip file into temp (NOTE: 60s timeout might need several attempts)
+download.file(url, output_file)
+
+# Set to temp dir
+setwd(output_dir)
+
+connect = httr::GET(url)
+
+# Get ab plus csv file names within directory
+zip_file_name = archive(file_name) %>% 
+  select(path) %>% 
+  pull()
+
+# Extract ab plus column names
+data = readr::read_csv(
+  archive_read(file_name, file = zip_file_name)
+)
+
+
+a = xlsx::read.xlsx(
+  file = url,
+  sheetIndex = 0
+)
+
+data = readODS::read_ods(
+  paths = ,
+  sheet = 2
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 # Create a lazy table from the CQC care home table
 house_db = con %>%
   tbl(from = "INT646_COMPANIES_BASE")
@@ -341,10 +429,12 @@ DBI::dbDisconnect(con); rm(list = ls()); gc()
 # Clean and remove objects
 
 
-df = CompaniesHouse::company_ExtractDirectorsData(ch[3], mkey)
+df = CompaniesHouse::company_ExtractDirectorsData('03260168', key)
+
+df
 
 # One
-CompaniesHouse::CompanyDataExtract(ch[3], mkey)
+CompaniesHouse::CompanyDataExtract(03260168, key)
 
 # Two
 company_ExtractDirectorsData("00041424", key)
