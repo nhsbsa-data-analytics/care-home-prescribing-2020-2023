@@ -136,6 +136,7 @@ cqc_details_df <- cqc_details %>%
   # Select the required cols and uppercase
   select(
     location_id,
+    provider_id,
     uprn,
     registration_date,
     deregistration_date,
