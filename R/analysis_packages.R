@@ -14,6 +14,8 @@ pacman::p_load(
   'parallel',
   'janitor',
   'yaml',
+  'purrr',
+  'tidyr',
   
   # CQC API data 
   'httr',

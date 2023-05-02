@@ -107,11 +107,42 @@ cqc_details = parallel::parLapply(
 # Stop Cluster
 parallel::stopCluster(clust)
 
-# Select care homes project columns of interest
-cqc_details_df <- cqc_details %>%
+# Select care homes project columns of interest 
+cqc_details_reduced <- cqc_details %>%
+  map(
+    ~ .x %>% 
+      select(
+        any_of(
+          c(
+            "locationId",
+            "providerId",
+            "type",
+            "name",
+            "ods_code",
+            "uprn",
+            "registrationDate",
+            "deregistrationDate",
+            "numberOfBeds",
+            "localAuthority",
+            "lastInspection.date",
+            "gacServiceTypes.name"
+          )
+        ),
+        starts_with("postal"),
+        starts_with("onspd"),
+        starts_with("relationships"),
+        starts_with("regulatedActivities.name"),
+        starts_with("regulatedActivities.code"),
+        starts_with("specialisms"),
+        starts_with("currentRatings.overall.rating")#,
+        # starts_with("currentRatings.service") # could take this too, but adds 14 cols
+      )
+  )
+
+# Bind all dfs together and apply some transformations
+cqc_details_df <- cqc_details_reduced %>%
   bind_rows() %>% 
-  janitor::clean_names() %>% 
-  # Filter to the period of interest
+  janitor::clean_names() %>%
   mutate(
     # Add the nursing home / residential home flag
     nursing_home = ifelse(
@@ -132,32 +163,57 @@ cqc_details_df <- cqc_details %>%
     ),
     # Change type of numeric col
     number_of_beds = as.integer(number_of_beds)
+  ) %>% 
+  # Having problems getting function to work
+  # unite_to_plural(
+  #   specialism,
+  #   regulated_activities_name,
+  #   regulated_activities_code,
+  #   relationships_related_location_id,
+  #   relationships_related_location_name,
+  #   relationships_type,
+  #   relationships_reason
+  # )
+  unite(
+    "specialisms", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
   ) %>%
-  # Select the required cols and uppercase
-  select(
-    location_id,
-    uprn,
-    registration_date,
-    deregistration_date,
-    name,
-    postal_address_line1,
-    postal_address_line2,
-    postal_address_town_city,
-    postal_address_county,
-    postal_code,
-    nursing_home,
-    residential_home,
-    type,
-    number_of_beds,
-    current_rating = current_ratings_overall_rating
-  ) ; gc()
+  unite(
+    "regulated_activities_name", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
+  ) %>%
+  unite(
+    "regulated_activities_code", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
+  ) %>%
+  unite(
+    "relationships_related_location_id", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
+  ) %>%
+  unite(
+    "relationships_related_location_name", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
+  ) %>%
+  unite(
+    "relationships_type", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
+  ) %>%
+  unite(
+    "relationships_reason", starts_with("specialisms"),
+    sep = ",", na.rm = TRUE
+  )
+  
+gc()
 
 # Get current year_month
 download_date = as.integer(gsub('-', '', Sys.Date()))
 
 # Process the cqc df output, in preparation for matching
 cqc_process_df = cqc_details_df %>% 
-  rename(postcode = postal_code) %>% 
+  rename(
+    postcode = postal_code,
+    current_rating = currentRatings.overall.rating
+  ) %>% 
   mutate(
     # Paste fields together to create single line address
     single_line_address = toupper(paste(

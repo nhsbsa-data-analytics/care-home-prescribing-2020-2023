@@ -252,3 +252,54 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
     dplyr::left_join(y = merged_df)
 }
 
+
+#' Unite columns by specified prefix
+#' 
+#' @description Given a prefix in singular terms, unite all columns starting with
+#'  that prefix into a single column named as plural, with values being the values
+#'  as a comma separated list.
+#'
+#' @param data A data.frame or tibble
+#' @param prefix Common prefix of columns to unite
+#' @param ... The columns, specified in singular terms - not working
+#'
+#' @return
+#' 
+#' @examples
+#' tibble(col_foo = c("a", "b"), col_bar = c("c", "d")) %>% 
+#' unite_to_plural("col)
+#' 
+#' # A tibble: 2 × 1
+#' # cols 
+#' # <chr>
+#' # a,c  
+#' # b,d  
+#' 
+# Need to work out why below is failing, seems to be peculiarity of NSE...
+# unite_to_plural <- function(data, ...) {
+#   args <- as.character(match.call(expand.dots = FALSE)$`...`)
+#   
+#   for (col in args) {
+#     data <- tidyr::unite(
+#       data,
+#       paste0(col, "s"),
+#       starts_with(col),
+#       sep = ",",
+#       na.rm = TRUE
+#     )
+#   }
+#   
+#   data
+# }
+# 
+# It is not due to the dots it seems, since single col version below has same
+# issue
+unite_to_plural <- function(data, prefix) {
+ tidyr::unite(
+    data,
+    paste0(prefix, "s"),
+    starts_with(prefix),
+    sep = ",",
+    na.rm = TRUE
+  )
+}
