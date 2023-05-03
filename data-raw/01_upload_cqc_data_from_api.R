@@ -249,6 +249,7 @@ con %>%
 
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ADNSH"))
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

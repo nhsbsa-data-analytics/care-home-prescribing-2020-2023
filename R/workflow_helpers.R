@@ -273,24 +273,29 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
 #' ) %>% 
 #' unite_to_plural(cols, foos)
 #' 
-#' # A tibble: 2 × 2
-#' # cols  foos
-#' # <chr> <chr>
-#' # a,c   e,f
-#' # b,d   g,h
+#'  A tibble: 2 × 2
+#'  cols  foos 
+#'  <chr> <chr>
+#' 1 a|c   e|g  
+#' 2 b|d   f|h 
 unite_to_plural <- function(data, ...) {
-  browser()
   args <- as.character(match.call(expand.dots = FALSE)$`...`)
 
-  for (col in args) {
-    data <- tidyr::unite(
-      data,
-      col,
-      starts_with(substr(col, 1, nchar(col) - 1)),
-      sep = ",",
-      na.rm = TRUE
-    )
-  }
-
-  data
+  united_cols <- lapply(
+    args,
+    function(x) {
+      tidyr::unite(
+        data %>% select(starts_with(substr(x, 1, nchar(x) - 1))),
+        x,
+        everything(),
+        sep = "|",
+        na.rm = TRUE
+      ) %>% 
+        rename({{x}} := 1)
+    }
+  )
+  
+  data %>%
+    select(-starts_with(substr(args, 1, nchar(args) - 1))) %>%
+    bind_cols(united_cols)
 }
