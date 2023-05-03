@@ -215,7 +215,11 @@ cqc_process_df = cqc_details_df %>%
       gsub(" - ", "-", single_line_address),
       single_line_address
     ),
-    cqc_date = download_date
+    cqc_date = download_date,
+    specialisms = gsub("Caring for ", "", specialisms),
+    regulated_activities_names = gsub(
+      "Accommodation for ", "", regulated_activities_names
+    )
   ) %>% 
   select(
     uprn,
