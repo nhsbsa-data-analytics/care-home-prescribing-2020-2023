@@ -183,7 +183,15 @@ download_date = as.integer(gsub('-', '', Sys.Date()))
 cqc_process_df = cqc_details_df %>% 
   rename(
     postcode = postal_code,
-    current_rating = currentRatings.overall.rating
+    current_rating = current_ratings_overall_rating,
+    nursing_home_flag = nursing_home,
+    residential_home_flag = residential_home,
+    ccg_code = onspd_ccg_code,
+    ccg_name = onspd_ccg_name,
+    icb_code = onspd_icb_code,
+    icb_name = onspd_icb_name,
+    latitude = onspd_latitude,
+    longitude = onspd_longitude
   ) %>% 
   mutate(
     # Paste fields together to create single line address
@@ -216,12 +224,29 @@ cqc_process_df = cqc_details_df %>%
     deregistration_date,
     single_line_address,
     postcode,
-    nursing_home_flag = nursing_home,
-    residential_home_flag = residential_home,
+    nursing_home_flag,
+    residential_home_flag,
     type,
     number_of_beds,
     current_rating,
-    cqc_date
+    cqc_date,
+    provider_id,
+    name,
+    local_authority,
+    last_inspection_date,
+    ccg_code,
+    ccg_name,
+    icb_code,
+    icb_name,
+    latitude,
+    longitude,
+    specialisms,
+    regulated_activities_names,
+    regulated_activities_codes,
+    relationships_related_location_ids,
+    relationships_related_location_names,
+    relationships_types,
+    relationships_reasons
   ) %>% 
   rename_with(toupper)
 
@@ -250,6 +275,7 @@ con %>%
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ADNSH"))
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MAMCP"))
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
