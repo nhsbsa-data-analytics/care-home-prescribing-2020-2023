@@ -107,11 +107,18 @@ ch_db = con %>%
 
 # Process companies data
 house_db = house_db %>% 
-  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER)
-
+  filter(
+    REGEXP_LIKE(
+      # Relevant care home related codes
+      SIC_CODE_SIC_TEXT_1, '86102|86900|87100|87200|87300|87900'
+      )
+    ) %>% 
+  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER, COMPANY_TYPE = SIC_CODE_SIC_TEXT_1) 
+  
 # Process care home address data
 ch_db = ch_db %>% 
-  select(SINGLE_LINE_ADDRESS, POSTCODE, UPRN, CH_FLAG)
+  filter(CH_FLAG == 1) %>% 
+  select(SINGLE_LINE_ADDRESS, POSTCODE, UPRN)
 
 # Match: ~ 30 mins
 match_db = addressMatchR::calc_match_addresses(
@@ -138,36 +145,14 @@ match_db %>%
 
 # 1.3. Process companies care home match output --------------------------------
 
-# Uprn info
-uprn_db = con %>% 
-  tbl(from = "INT646_MATCH_20210401_20220331")
-
-# Relevant care home uprns (i.e. not young people ch)
-uprn_db = uprn_db %>% 
-  filter(CH_FLAG == 1) %>% 
-  select(UPRN) %>% 
-  distinct()
-
-# Care home names
-ch_db = con %>%
-  tbl(from = "INT646_ABP_CQC_20210401_20220331")
-
-# Process care home address data
-ch_db = ch_db %>% 
-  select(SINGLE_LINE_ADDRESS, POSTCODE, UPRN, CH_FLAG)
-
 # Companies match output
 match_db = con %>% 
   tbl(from = "INT646_COMPANIES_CH_MATCH")
 
 # Process results
-res_db = match_db %>% 
+match_db = match_db %>% 
   # Filter appropriate matches
-  filter(
-    SCORE > 0.5,
-    CH_FLAG == 1
-  ) %>% 
-  inner_join(uprn_db, by = "UPRN") %>% 
+  filter(SCORE > 0.5) %>% 
   # Single sla per uprn
   group_by(UPRN) %>% 
   mutate(SINGLE_LINE_ADDRESS = max(SINGLE_LINE_ADDRESS)) %>% 
@@ -203,7 +188,7 @@ match_db %>%
 # 1.4. Match companies house to gp practice info -------------------------------
 
 # Get relevant practices from base table
-base_db = con %>% 
+presc_db = con %>% 
   tbl(from = "INT646_BASE_20210401_20220331")
 
 # Create a lazy table from the CQC care home table
@@ -211,38 +196,39 @@ house_db = con %>%
   tbl(from = "INT646_COMPANIES_BASE")
 
 # Alt codes that appear for ch prescribing in base table
-base_db %>%
+presc_db = presc_db %>%
   filter(
     CH_FLAG == 1,
     !is.na(PRESC_POSTCODE),
-    PRESC_SLA != '-'
+    PRESC_SLA != '-',
+    PRESC_ORG_TYPE != "HOSPITAL"
     ) %>%
-  select(
+  group_by(
     PRESC_SLA,
     PRESC_CODE = PRESC_ORG_CODE,
     POSTCODE = PRESC_POSTCODE,
     PRESC_ORG_TYPE
   ) %>% 
-  tally()
-  group_by(
-    
-  ) %>%
-  summarise(PRESC_SLA = max(PRESC_SLA, na.rm = TRUE)) %>% 
-  ungroup() %>%
+  summarise(ITEMS = sum(ITEM_COUNT)) %>% 
+  ungroup() %>% 
   tidy_postcode(., POSTCODE) %>%
   tidy_single_line_address(., PRESC_SLA) %>% 
-  
-
-
-
+  group_by(PRESC_CODE) %>% 
+  slice_max(
+    order_by = ITEMS,
+    with_ties = FALSE
+  ) %>% 
+  select(-ITEMS)
+    
 # Process companies data
 house_db = house_db %>% 
-  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER) %>% 
-  tidy_single_line_address(., COMPANY_SLA)
-
-
-
-
+  filter(
+    REGEXP_LIKE(
+      # Relevant care home related codes
+      SIC_CODE_SIC_TEXT_1, '86102|86210|86220|86900'
+    )
+  ) %>%
+  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER, COMPANY_TYPE = SIC_CODE_SIC_TEXT_1) 
 
 # Match
 match_db = addressMatchR::calc_match_addresses(
@@ -251,7 +237,7 @@ match_db = addressMatchR::calc_match_addresses(
   primary_address_col = "COMPANY_SLA",
   lookup_df = presc_db,
   lookup_postcode_col = "POSTCODE",
-  lookup_address_col = "SLA"
+  lookup_address_col = "PRESC_SLA"
 )
 
 # Define table name
@@ -267,11 +253,11 @@ match_db %>%
     temporary = FALSE
   )
 
-# 5. Process companies gp match ------------------------------------------------
+# 1.5. Process companies gp match ------------------------------------------------
 
 # Companies match output
 match_db = con %>% 
-  tbl(from = "INT646_COMPANIES_GP_MATCH")
+  tbl(from = "INT646_COMPANIES_CH_RESULTS")
 
 # Process output
 match_db = match_db %>% 
@@ -305,139 +291,80 @@ match_db %>%
     temporary = FALSE
   )
 
-# 6. Get directors from company numbers ----------------------------------------
+# 1.6. Get directors from company numbers ----------------------------------------
+
+# Install package
+#devtools::install_github("MatthewSmith430/CompaniesHouse")
 
 # Create account
-browseURL('https://account.companieshouse.gov.uk/user/register?request=ey')
+#browseURL('https://account.companieshouse.gov.uk/user/register?request=ey')
 
 # Request a key
-browseURL("https://developer.companieshouse.gov.uk/developer/applications/register ")
+#browseURL("https://developer.companieshouse.gov.uk/developer/applications/register ")
 
 # Get key from renviron file
 key <- Sys.getenv("CH_API_KEY")
 
-# Care home results
-ch_db = con %>% 
+# Companies match output
+ch_match_db = con %>% 
   tbl(from = "INT646_COMPANIES_CH_RESULTS")
 
-# GP results
-gp_db = con %>% 
+# Care home companies match vector
+ch_vec = ch_match_db %>% 
+  select(COMPANY_NUMBER) %>% 
+  distinct() %>% 
+  pull()
+
+# Companies match output
+gp_match_db = con %>% 
   tbl(from = "INT646_COMPANIES_GP_RESULTS")
 
-# CH company number vec
-ch = ch_db %>% 
+# Care home companies match vector
+gp_vec = gp_match_db %>% 
   select(COMPANY_NUMBER) %>% 
+  distinct() %>% 
   pull()
 
-# GP company number vec
-gp = gp_db %>% 
-  select(COMPANY_NUMBER) %>% 
-  pull()
-
-
-
-# Disconnect
-DBI::dbDisconnect(con); rm(list = ls()); gc()
-
-# Clean and remove objects
-
-
-df = CompaniesHouse::company_ExtractDirectorsData('03260168', key)
-
-df
-
-# One
-CompaniesHouse::CompanyDataExtract(03260168, key)
-
-# Two
-company_ExtractDirectorsData("00041424", key)
-
-# Three
-indiv_ExtractDirectorsData(df$director.id, mkey)
-
-df
-
-
-
-CompaniesHouse::DirectorSearch_limit_first("66Fxv2-ucvvtVhvVuia-qhJf0tA", mkey)
-
-
-
-
-company_ExtractDirectorsData("SL58AN", key)
-CompanySearchList<-CompanySearch_limit_first(company = "unilever", mkey = key)
-
-?CompanySearch_limit
-
-devtools::install_github("MatthewSmith430/CompaniesHouse")
-library(CompaniesHouse)
-
-for(i in 130:180){
-  a=company_ExtractDirectorsData(i, key)
-  print(a)
-}
-a
-
-url = 'https://api.company-information.service.gov.uk/search/companies/company_number?q=00041424'
-
-get_check <-httr::GET(url, httr::authenticate(key, ""))
-
-text = httr::content(get_check, as="text")
-
-#'  Returns companies officer details for identified company (company number) on Companies House via the API 
-#' 
-#'  @param comp_num The company number you want a list of officers for
-#'  @param mkey The api key which you need to generate - see above for more details
-#'  @return The results of the search performed
-#'  @example 
-#'  search_officers("Company Number", "a_fake_api_key")  
-#'  
-search_officers <- function(comp_num, key){
+# Get director id function
+get_director_id = function(company_num){
   
-  print("running")
+  # Wait
+  Sys.sleep(0.5)
   
-  # concatenate API URL with a CompaniesHouse company number 
-  curl_cmd <- paste0("https://api.companieshouse.gov.uk/company/", ch[1], "/officers")
+  # Skip errors
+  out = tryCatch({
+    
+    # Try get director data
+    CompaniesHouse::company_ExtractDirectorsData(company_num, key)
+    },
+    error = function(cond){
+      message(paste0("Error with ", company_num))
+    }
+  )
   
-  curl_cmd
-  
-  # Run the call and collect the response data
-  get_check <-httr::GET(curl_cmd, httr::authenticate(key, ""))
-  get_data <- httr::content(get_check, as="text")
-  json_data <- jsonlite::fromJSON(get_data, flatten = TRUE)
-  
-  return (json_data)
+  # Return
+  return(out)
 }
 
-ch[1]
+# Output
+results = lapply(ch_vec, get_director_id)
 
-get_check
+# Care home results
+ch_results = results %>% 
+  bind_rows() %>% 
+  janitor::clean_names() %>% 
+  rename_all(.funs = toupper) %>% 
+  rename(COMPANY_NUMBER = COMPANY_ID) %>% 
+  rename_all(.funs = function(x) paste0("CH_", x))
 
-a = search_officers(ch[1], key)
+# Output
+tic()
+results = lapply(gc_vec, get_director_id)
+toc()
 
-a
+# Care home results
+gp_results = results %>% bind_rows()
 
+# Generate results
+results = list()
 
-#' Returns a list of company appointments for a officer done via the CompaniesHouse API 
-#' 
-#'  @param officer_id The officer id for the officer you want to search for
-#'  @param mkey The api key which you need to generate - see above for more details
-#'  @return The results of the search performed
-#'  @example 
-#'  search_officers("CompanyOfficerID", "a_fake_api_key")  
-#'  
-search_appointments <- function(officer_id, mkey){
-  
-  print("running")
-  
-  # concatenate API URL with a CompaniesHouse officer id
-  curl_cmd <- paste0("https://api.companieshouse.gov.uk/officers/", officer_id, "/appointments")
-  
-  # Run the call and collect the response data
-  get_check <-httr::GET(curl_cmd, httr::authenticate(mkey, ""))
-  get_data <- httr::content(get_check, as="text")
-  json_data <- jsonlite::fromJSON(get_data, flatten = TRUE)
-  
-  
-  return (json_data)
-}
