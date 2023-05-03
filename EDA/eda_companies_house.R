@@ -6,7 +6,7 @@ source("R/workflow_helpers.R")
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# 1. Bulk download of companies house data -------------------------------------
+# 1.1. Bulk download of companies house data -----------------------------------
 
 # Get project directory
 project_dir = getwd()
@@ -23,7 +23,10 @@ file_name = basename(url)
 # Define output file path
 output_filepath = file.path(output_dir, file_name)
 
-# Download zip file into temp (NOTE: 60s timeout might need several attempts)
+# Set time out
+options(timeout = 180)
+
+# Download zip file into temp (NOTE: extend 180s timeout if necessary)
 download.file(url, destfile = output_filepath)
   
 # Set to temp dir
@@ -56,7 +59,20 @@ data = data %>%
     COMPANY_SLA = stringr::str_squish(COMPANY_SLA),
     POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)),
     ) %>% 
-  select(COMPANY_SLA, POSTCODE, everything())
+  # Remove variables
+  select(
+    -contains("ACCOUNTS_"),
+    -contains("RETURNS_"),
+    -contains("PREVIOUS_"),
+    -contains("REG_"),
+    -contains("MORTGAGES_"),
+    -contains("CONF_"),
+    -contains("LIMITED_")
+  ) %>% 
+  # Order variables
+  select(COMPANY_SLA, POSTCODE, everything()) %>% 
+  # Tidy sla
+  tidy_df_single_line_address(., COMPANY_SLA); gc()
 
 # Revert back to project dir
 setwd(project_dir)
@@ -67,7 +83,7 @@ table_name = "INT646_COMPANIES_BASE"
 # Remove table if exists
 drop_table_if_exists_db(table_name)
 
-# Create table
+# Create table: ~
 DBI::dbWriteTable(
   conn = con,
   name = table_name,
@@ -77,97 +93,9 @@ DBI::dbWriteTable(
 )
 
 # Remove companies data as quite large
-#rm(data); gc()
+rm(data); gc()
 
-# 2. Match companies to abp and cqc care homes ---------------------------------
-
-#'https://www.cqc.org.uk/sites/default/files/2023-04/26_April_2023_CQC_directory.csv'
-
-df = readODS::read_ods(
-  "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.ods",
-  sheet = 2
-  )
-
-options(java.parameters = "-Xmx16g")
-library(xlsx)
-library(readODS)
-
-options(java.parameters = c("-XX:+UseConcMarkSweepGC", "-Xmx32g"))
-gc()
-
-df = readODS::read_ods(
-  path = "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.ods",
-  sheet = 2,
-  range = "A1:A2"
-)
-
-df = readxl::read_xlsx(
-  path = "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.xlsx",
-  sheet = 2
-)
-
-df =readxl::read_xlsx(
-  path = "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/03_April_2023_HSCA_Active_Locations.xlsx",
-  sheet = 2
-)
-
-df = data.table::fread("C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/CQC_location_information.csv")
-
-
-a = read.csv(url(cqc_url))
-
-download = RCurl::getURL(cqc_url)
-output_file = tempfile()
-
-# Download zip file into temp (NOTE: 60s timeout might need several attempts)
-download.file(url, output_file)
-
-# Set to temp dir
-setwd(output_dir)
-
-connect = httr::GET(url)
-
-# Get ab plus csv file names within directory
-zip_file_name = archive(file_name) %>% 
-  select(path) %>% 
-  pull()
-
-# Extract ab plus column names
-data = readr::read_csv(
-  archive_read(file_name, file = zip_file_name)
-)
-
-
-a = xlsx::read.xlsx(
-  file = url,
-  sheetIndex = 0
-)
-
-data = readODS::read_ods(
-  paths = ,
-  sheet = 2
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# 1.2. Match companies to abp and cqc care homes -------------------------------
 
 # Create a lazy table from the CQC care home table
 house_db = con %>%
@@ -179,8 +107,7 @@ ch_db = con %>%
 
 # Process companies data
 house_db = house_db %>% 
-  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER) %>% 
-  tidy_single_line_address(., COMPANY_SLA)
+  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER)
 
 # Process care home address data
 ch_db = ch_db %>% 
@@ -209,31 +136,42 @@ match_db %>%
     temporary = FALSE
   )
 
-# 3. Process companies caare home match output ---------------------------------
+# 1.3. Process companies care home match output --------------------------------
+
+# Uprn info
+uprn_db = con %>% 
+  tbl(from = "INT646_MATCH_20210401_20220331")
 
 # Relevant care home uprns (i.e. not young people ch)
-uprn_db = con %>% 
-  tbl(from = "INT646_MATCH_20210401_20220331") %>% 
+uprn_db = uprn_db %>% 
   filter(CH_FLAG == 1) %>% 
   select(UPRN) %>% 
   distinct()
 
-# Companies match output
-match_db = con %>% 
-  tbl(from = "INT646_COMPANIES_CH_MATCH")
+# Care home names
+ch_db = con %>%
+  tbl(from = "INT646_ABP_CQC_20210401_20220331")
 
 # Process care home address data
 ch_db = ch_db %>% 
   select(SINGLE_LINE_ADDRESS, POSTCODE, UPRN, CH_FLAG)
 
+# Companies match output
+match_db = con %>% 
+  tbl(from = "INT646_COMPANIES_CH_MATCH")
+
 # Process results
-match_db = match_db %>% 
+res_db = match_db %>% 
   # Filter appropriate matches
   filter(
     SCORE > 0.5,
     CH_FLAG == 1
   ) %>% 
   inner_join(uprn_db, by = "UPRN") %>% 
+  # Single sla per uprn
+  group_by(UPRN) %>% 
+  mutate(SINGLE_LINE_ADDRESS = max(SINGLE_LINE_ADDRESS)) %>% 
+  ungroup() %>% 
   # Take top sla-uprn info per company
   group_by(COMPANY_SLA, COMPANY_NUMBER, POSTCODE) %>% 
   slice_max(
@@ -242,16 +180,12 @@ match_db = match_db %>%
   ) %>% 
   ungroup() %>% 
   # Take single company per uprn
-  group_by(POSTCODE, UPRN, SINGLE_LINE_ADDRESS, CH_FLAG, SCORE) %>% 
+  group_by(POSTCODE, UPRN, SINGLE_LINE_ADDRESS) %>%
   slice_max(
-    order_by = COMPANY_NUMBER,
-    with_ties = FALSE
-  ) %>% 
-  ungroup() %>% 
-  # Single sla per uprn
-  group_by(UPRN) %>% 
-  mutate(SINGLE_LINE_ADDRESS = max(SINGLE_LINE_ADDRESS)) %>% 
-  ungroup() 
+   order_by = SCORE,
+   with_ties = FALSE
+  ) %>%
+  ungroup()
 
 # Define table name
 table_name = "INT646_COMPANIES_CH_RESULTS"
@@ -266,70 +200,49 @@ match_db %>%
     temporary = FALSE
   )
 
-# 4. Match companies house to gp practice info ---------------------------------
+# 1.4. Match companies house to gp practice info -------------------------------
 
 # Get relevant practices from base table
 base_db = con %>% 
   tbl(from = "INT646_BASE_20210401_20220331")
-
-# Care home names
-abp_db = con %>%
-  tbl(from = "INT646_ABP_20220422")
 
 # Create a lazy table from the CQC care home table
 house_db = con %>%
   tbl(from = "INT646_COMPANIES_BASE")
 
 # Alt codes that appear for ch prescribing in base table
-presc_db = base_db %>%
+base_db %>%
   filter(
     CH_FLAG == 1,
     !is.na(PRESC_POSTCODE),
     PRESC_SLA != '-'
     ) %>%
-  group_by(
+  select(
+    PRESC_SLA,
     PRESC_CODE = PRESC_ORG_CODE,
     POSTCODE = PRESC_POSTCODE,
-  ) %>%
-  summarise(
-    SLA = max(PRESC_SLA, na.rm = TRUE),
-    UPRN = NA
+    PRESC_ORG_TYPE
   ) %>% 
+  tally()
+  group_by(
+    
+  ) %>%
+  summarise(PRESC_SLA = max(PRESC_SLA, na.rm = TRUE)) %>% 
   ungroup() %>%
   tidy_postcode(., POSTCODE) %>%
-  tidy_single_line_address(., SLA)
+  tidy_single_line_address(., PRESC_SLA) %>% 
+  
 
-# Postcodes to filer ab
-postcode_db = base_db %>% 
-  filter(
-    CH_FLAG == 1,
-    !is.na(PRESC_POSTCODE),
-    PRESC_SLA != '-'
-  ) %>% 
-  group_by(POSTCODE = PRESC_POSTCODE) %>% 
-  summarise() %>% 
-  ungroup() %>% 
-  tidy_postcode(., POSTCODE)
+
 
 # Process companies data
 house_db = house_db %>% 
-  inner_join(postcode_db, by = "POSTCODE") %>% 
   select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER) %>% 
   tidy_single_line_address(., COMPANY_SLA)
 
-# Filter by postcode and prepare for union
-abp_db = abp_db %>% 
-  inner_join(postcode_db, by = "POSTCODE") %>% 
-  mutate(PRESC_CODE = NA) %>% 
-  select(
-    SLA = GEO_SINGLE_LINE_ADDRESS, 
-    POSTCODE, 
-    UPRN,
-    PRESC_CODE
-  )
 
-# Union data
-presc_db = union(presc_db, abp_db)
+
+
 
 # Match
 match_db = addressMatchR::calc_match_addresses(
