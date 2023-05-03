@@ -255,51 +255,42 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
 
 #' Unite columns by specified prefix
 #' 
-#' @description Given a prefix in singular terms, unite all columns starting with
-#'  that prefix into a single column named as plural, with values being the values
-#'  as a comma separated list.
+#' @description Given a list of new col names expressed as plurals terms, unite
+#'  all columns starting with their singular prefix into a single column, with 
+#'  values being the values of the columns as a comma separated list.
+#'  
+#'  This assumes the plural is the simplest case, an 's'.
 #'
 #' @param data A data.frame or tibble
-#' @param prefix Common prefix of columns to unite
-#' @param ... The columns, specified in singular terms - not working
+#' @param ... The new columns on which to base the unites
 #'
 #' @return
 #' 
 #' @examples
-#' tibble(col_foo = c("a", "b"), col_bar = c("c", "d")) %>% 
-#' unite_to_plural("col)
+#' tibble(
+#'   col1 = c("a", "b"), col2 = c("c", "d"),
+#'   foo1 = c("e", "f"), foo2 = c("g", "h")
+#' ) %>% 
+#' unite_to_plural(cols, foos)
 #' 
-#' # A tibble: 2 × 1
-#' # cols 
-#' # <chr>
-#' # a,c  
-#' # b,d  
-#' 
-# Need to work out why below is failing, seems to be peculiarity of NSE...
-# unite_to_plural <- function(data, ...) {
-#   args <- as.character(match.call(expand.dots = FALSE)$`...`)
-#   
-#   for (col in args) {
-#     data <- tidyr::unite(
-#       data,
-#       paste0(col, "s"),
-#       starts_with(col),
-#       sep = ",",
-#       na.rm = TRUE
-#     )
-#   }
-#   
-#   data
-# }
-# 
-# It is not due to the dots it seems, since single col version below has same
-# issue
-unite_to_plural <- function(data, prefix) {
- tidyr::unite(
-    data,
-    paste0(prefix, "s"),
-    starts_with(prefix),
-    sep = ",",
-    na.rm = TRUE
-  )
+#' # A tibble: 2 × 2
+#' # cols  foos
+#' # <chr> <chr>
+#' # a,c   e,f
+#' # b,d   g,h
+unite_to_plural <- function(data, ...) {
+  browser()
+  args <- as.character(match.call(expand.dots = FALSE)$`...`)
+
+  for (col in args) {
+    data <- tidyr::unite(
+      data,
+      col,
+      starts_with(substr(col, 1, nchar(col) - 1)),
+      sep = ",",
+      na.rm = TRUE
+    )
+  }
+
+  data
 }

@@ -245,22 +245,12 @@ cqc_details_df <- cqc_details_reduced %>%
   )
 toc()
 
-unite_to_plural <- function(data, ...) {
-  browser()
-  args <- as.character(match.call(expand.dots = FALSE)$`...`)
-  
-  for (col in args) {
-    print(paste0(col, "s"))
-    print(data %>% select(starts_with(col)) %>% names())
-    browser()
-    data <- tidyr::unite(
-      data,
-      paste0(col, "s"),
-      starts_with(col),
-      sep = ",",
-      na.rm = TRUE
-    )
-  }
-  
-  data
+unite_to_plural <- function(data, new_col) {
+  data <- tidyr::unite(
+    data,
+    new_col,
+    starts_with(substr(new_col, 1, nchar(new_col) - 1)),
+    sep = ",",
+    na.rm = TRUE
+  )
 }

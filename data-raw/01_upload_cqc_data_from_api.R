@@ -164,43 +164,14 @@ cqc_details_df <- cqc_details_reduced %>%
     # Change type of numeric col
     number_of_beds = as.integer(number_of_beds)
   ) %>% 
-  # Having problems getting function to work
-  # unite_to_plural(
-  #   specialism,
-  #   regulated_activities_name,
-  #   regulated_activities_code,
-  #   relationships_related_location_id,
-  #   relationships_related_location_name,
-  #   relationships_type,
-  #   relationships_reason
-  # )
-  unite(
-    "specialisms", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
-  ) %>%
-  unite(
-    "regulated_activities_name", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
-  ) %>%
-  unite(
-    "regulated_activities_code", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
-  ) %>%
-  unite(
-    "relationships_related_location_id", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
-  ) %>%
-  unite(
-    "relationships_related_location_name", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
-  ) %>%
-  unite(
-    "relationships_type", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
-  ) %>%
-  unite(
-    "relationships_reason", starts_with("specialisms"),
-    sep = ",", na.rm = TRUE
+  unite_to_plural(
+    specialisms,
+    regulated_activities_names,
+    regulated_activities_codes,
+    relationships_related_location_ids,
+    relationships_related_location_names,
+    relationships_types,
+    relationships_reasons
   )
   
 gc()
