@@ -113,7 +113,12 @@ house_db = house_db %>%
       SIC_CODE_SIC_TEXT_1, '86102|86900|87100|87200|87300|87900'
       )
     ) %>% 
-  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER, COMPANY_TYPE = SIC_CODE_SIC_TEXT_1) 
+  select(
+    COMPANY_SLA, 
+    POSTCODE, 
+    COMPANY_NUMBER, 
+    COMPANY_TYPE = SIC_CODE_SIC_TEXT_1
+    ) 
   
 # Process care home address data
 ch_db = ch_db %>% 
@@ -130,29 +135,13 @@ match_db = addressMatchR::calc_match_addresses(
   lookup_address_col = "SINGLE_LINE_ADDRESS"
 )
 
-# Define table name
-table_name = "INT646_COMPANIES_CH_MATCH"
-
-# Remove table if exists
-drop_table_if_exists_db(table_name)
-
-# Write the table back to DALP with indexes
-match_db %>%
-  compute(
-    name = table_name,
-    temporary = FALSE
-  )
-
-# 1.3. Process companies care home match output --------------------------------
-
-# Companies match output
-match_db = con %>% 
-  tbl(from = "INT646_COMPANIES_CH_MATCH")
-
 # Process results
 match_db = match_db %>% 
   # Filter appropriate matches
-  filter(SCORE > 0.5) %>% 
+  filter(
+    SCORE > 0.5,
+    !is.na(UPRN)
+  ) %>% 
   # Single sla per uprn
   group_by(UPRN) %>% 
   mutate(SINGLE_LINE_ADDRESS = max(SINGLE_LINE_ADDRESS)) %>% 
@@ -165,10 +154,10 @@ match_db = match_db %>%
   ) %>% 
   ungroup() %>% 
   # Take single company per uprn
-  group_by(POSTCODE, UPRN, SINGLE_LINE_ADDRESS) %>%
+  group_by(UPRN, SINGLE_LINE_ADDRESS) %>%
   slice_max(
-   order_by = SCORE,
-   with_ties = FALSE
+    order_by = SCORE,
+    with_ties = FALSE
   ) %>%
   ungroup()
 
@@ -185,7 +174,7 @@ match_db %>%
     temporary = FALSE
   )
 
-# 1.4. Match companies house to gp practice info -------------------------------
+# 1.3. Match companies house to gp practice info -------------------------------
 
 # Get relevant practices from base table
 presc_db = con %>% 
@@ -228,7 +217,12 @@ house_db = house_db %>%
       SIC_CODE_SIC_TEXT_1, '86102|86210|86220|86900'
     )
   ) %>%
-  select(COMPANY_SLA, POSTCODE, COMPANY_NUMBER, COMPANY_TYPE = SIC_CODE_SIC_TEXT_1) 
+  select(
+    COMPANY_SLA, 
+    POSTCODE, 
+    COMPANY_NUMBER, 
+    COMPANY_TYPE = SIC_CODE_SIC_TEXT_1
+    ) 
 
 # Match
 match_db = addressMatchR::calc_match_addresses(
@@ -239,25 +233,6 @@ match_db = addressMatchR::calc_match_addresses(
   lookup_postcode_col = "POSTCODE",
   lookup_address_col = "PRESC_SLA"
 )
-
-# Define table name
-table_name = "INT646_COMPANIES_GP_MATCH"
-
-# Remove table if exists
-drop_table_if_exists_db(table_name)
-
-# Write the table back to DALP with indexes: ~15mins
-match_db %>%
-  compute(
-    name = table_name,
-    temporary = FALSE
-  )
-
-# 1.5. Process companies gp match ------------------------------------------------
-
-# Companies match output
-match_db = con %>% 
-  tbl(from = "INT646_COMPANIES_CH_RESULTS")
 
 # Process output
 match_db = match_db %>% 
@@ -291,7 +266,7 @@ match_db %>%
     temporary = FALSE
   )
 
-# 1.6. Get directors from company numbers ----------------------------------------
+# 1.4. Match to company directors ----------------------------------------------
 
 # Install package
 #devtools::install_github("MatthewSmith430/CompaniesHouse")
@@ -304,6 +279,10 @@ match_db %>%
 
 # Get key from renviron file
 key <- Sys.getenv("CH_API_KEY")
+
+# Base data
+base_db = con %>% 
+  tbl(from = "INT646_BASE_20210401_20220331")
 
 # Companies match output
 ch_match_db = con %>% 
@@ -325,11 +304,11 @@ gp_vec = gp_match_db %>%
   distinct() %>% 
   pull()
 
-# Get director id function
+# Get director id function, 0.8s sleep for throttling 
 get_director_id = function(company_num){
   
   # Wait
-  Sys.sleep(0.5)
+  Sys.sleep(0.8)
   
   # Skip errors
   out = tryCatch({
@@ -358,13 +337,227 @@ ch_results = results %>%
   rename_all(.funs = function(x) paste0("CH_", x))
 
 # Output
-tic()
-results = lapply(gc_vec, get_director_id)
-toc()
+results = lapply(gp_vec, get_director_id)
 
 # Care home results
-gp_results = results %>% bind_rows()
+gp_results = results %>% 
+  bind_rows() %>% 
+  janitor::clean_names() %>% 
+  rename_all(.funs = toupper) %>% 
+  rename(COMPANY_NUMBER = COMPANY_ID) %>% 
+  rename_all(.funs = function(x) paste0("GP_", x))
 
-# Generate results
-results = list()
+# Alt code to uprn item count
+items = base_db %>% 
+  filter(UPRN_FLAG == 1) %>% 
+  group_by(
+    PRESC_CODE = PRESC_ORG_CODE,
+    UPRN
+    ) %>% 
+  summarise(ITEMS = sum(ITEM_COUNT)) %>% 
+  ungroup() %>% 
+  collect_with_parallelism(., 8)
+
+# Care home results
+ch = ch_match_db %>% 
+  collect_with_parallelism(., 8) %>% 
+  rename_all(.funs = function(x) paste0("CH_", x))
+
+# GP results
+gp = gp_match_db %>% 
+  collect_with_parallelism(., 8) %>% 
+  rename_all(.funs = function(x) paste0("GP_", x))
+
+# Final output
+output = items %>% 
+  left_join(gp, by = c("PRESC_CODE" = "GP_PRESC_CODE")) %>% 
+  left_join(ch, by = c("UPRN" = "CH_UPRN")) %>% 
+  filter(!is.na(GP_COMPANY_SLA) & !is.na(CH_COMPANY_SLA)) %>% 
+  left_join(
+    gp_results %>% 
+      select(GP_COMPANY_NUMBER, GP_DIRECTOR_ID, GP_DIRECTORS),
+    relationship = "many-to-many"
+  ) %>% 
+  left_join(
+    ch_results %>% 
+      select(CH_COMPANY_NUMBER, CH_DIRECTOR_ID, CH_DIRECTORS),
+    relationship = "many-to-many"
+  ) %>% 
+  select(
+    GP_DIRECTORS,
+    GP_DIRECTOR_ID,
+    GP_COMPANY_NUMBER, 
+    GP_COMPANY_SLA, 
+    GP_PRESC_SLA, 
+    PRESC_CODE, 
+    ITEMS, 
+    UPRN, 
+    CH_PRESC_SLA = CH_SINGLE_LINE_ADDRESS, 
+    CH_COMPANY_SLA, 
+    CH_COMPANY_NUMBER,
+    CH_DIRECTOR_ID,
+    CH_DIRECTORS
+    ) %>% 
+  filter(
+    GP_DIRECTOR_ID == CH_DIRECTOR_ID,
+    GP_COMPANY_NUMBER != CH_COMPANY_NUMBER
+    ) %>% 
+  distinct()
+
+# 2.1. Get director and links info ---------------------------------------------
+
+# CQC data
+cqc_db = con %>% 
+  tbl(from = "INT646_CQC_20230502")
+
+# CQC data
+ab_db = con %>% 
+  tbl(from = "INT646_ABP_CQC_20210401_20220331") %>% 
+  filter(!is.na(LOCATION_ID)) %>% 
+  select(LOCATION_ID) %>% 
+  distinct()
+
+# Collect and filter
+cqc = cqc_db %>% 
+  inner_join(ab_db) %>% 
+  collect_with_parallelism(., 8) %>% 
+  filter(!is.na(PROVIDER_COMPANIES_HOUSE_NUMBER)) %>% 
+  select(
+    UPRN, 
+    LOCATION_ID, 
+    SINGLE_LINE_ADDRESS, 
+    POSTCODE, 
+    PROVIDER_UPRN, 
+    PROVIDER_ID,
+    PROVIDER_COMPANIES_HOUSE_NUMBER,
+    PROVIDER_SLA,
+    PROVIDER_POSTCODE
+    )
+
+# Provider company numbers: ~90mins
+prov_vec = cqc %>% 
+  select(PROVIDER_COMPANIES_HOUSE_NUMBER) %>% 
+  distinct() %>% 
+  pull()
+
+# Output
+results = lapply(prov_vec, get_director_id)
+
+# Provider results
+prov_results = results %>% 
+  bind_rows() %>% 
+  janitor::clean_names() %>% 
+  rename_all(.funs = toupper) %>% 
+  mutate(POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)))
+
+# Director ids
+director_vec = prov_results %>% 
+  select(DIRECTOR_ID) %>% 
+  distinct() %>% 
+  pull()
+
+# Get information for every company a director is associated with
+get_all_directors_company_info = function(dir_id){
+  
+  # Wait
+  Sys.sleep(0.4)
+  
+  # Skip errors
+  out = tryCatch({
+    
+    # Paste director id into url
+    url<-paste0("https://api.company-information.service.gov.uk/officers/", dir_id,"/appointments")
+    
+    # Get content
+    content <- httr::GET(url, httr::authenticate(key, "")) #returns an R list object
+    
+    # Convert binary to character
+    content = jsonlite::fromJSON(rawToChar(content$content))
+    
+    # Insert fields into df
+    df = cbind(
+      DIRECTOR_ID = dir_id,
+      DIRECTOR_NAME = content$name,
+      SECONDARY_DIRECTOR_ROLE = content$items$officer_role,
+      SECONDARY_COMPANY_NAME = content$items$appointed_to$company_name,
+      SECONDARY_COMPANY_NUMBER = content$items$appointed_to$company_number,
+      SECONDARY_COMPANY_STATUS = content$items$appointed_to$company_status, 
+      ADDRESS_ONE = content$items$address$address_line_1,
+      ADDRESS_TWO = content$items$address$address_line_2,
+      ADDRESS_THREE = content$items$address$locality,
+      ADDRESS_FOUR = content$items$address$region,
+      SECONDARY_POSTCODE = content$items$address$postal_code,
+      SECONDARY_APPOINMENT_TYPE = content$kind
+    ) %>% 
+      as.data.frame()
+    
+    # Return
+    return(df)
+  },
+  
+  # Error 
+  error = function(cond){
+    message(paste0("Error with ", dir_id))
+    }
+  )
+  
+  # Return
+  return(out)
+}
+
+# Data
+results = lapply(director_vec, get_all_directors_company_info)
+
+# Bind rows
+dir_results = results %>% 
+  bind_rows() %>% 
+  group_by(DIRECTOR_ID) %>% 
+  mutate(COMPANY_COUNT = n()) %>% 
+  ungroup() %>% 
+  filter(COMPANY_COUNT >= 2)
+
+# Data
+saveRDS(dir_results, "../../Desktop/DIRECTOR_LOOOKUP.Rds")
+
+# Get associated company numbers
+comp_vec = dir_results %>% 
+  select(SECONDARY_COMPANY_NUMBER) %>% 
+  distinct() %>% 
+  pull()
+
+# Get sic code from company number
+get_company_sic = function(comp_num){
+  
+  # Wait
+  Sys.sleep(0.2)
+  
+  # Skip errors
+  out = tryCatch({
+    
+    # Df output
+    df = data.frame(
+      COMPANY_NUMBER = comp_num,
+      COMPANY_SIC = CompaniesHouse::CompanySIC("00041424", key)
+    )
+    
+    # Return
+    return(df)
+  },
+  
+  # Error 
+  error = function(cond){
+    message(paste0("Error with ", comp_num))
+    }
+  )
+  
+  # Return
+  return(out)
+}
+  
+# Data
+results = lapply(comp_vec, get_company_sic)
+  
+# Df of associated sic codes
+sic = results %>% 
+  bind_rows() 
 
