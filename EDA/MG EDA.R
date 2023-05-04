@@ -160,13 +160,14 @@ TOP_ORGS_PER_CH |>  filter(ITEMS_PER_CH >= low_activity_threshold,
 DB <- tbl(con, in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
 
 t3 <- DB |>
+      filter(CH_FLAG==1) |>
       group_by(PRESC_ORG_NM, DISP_NM) |>
       summarise(
         NIC = sum(ITEM_PAY_DR_NIC/100),
         ITEMS = sum(ITEM_COUNT),
         CH_COUNT = n_distinct(MATCH_SLA_STD),
         .groups = "drop"
-      ) |> collect_with_parallelism(6)
+      ) |> collect_with_parallelism(8)
 
 top_20_presc <- t3 |> group_by(PRESC_ORG_NM) |> 
   summarise(ITEMS = sum(ITEMS)) |>
@@ -226,8 +227,59 @@ t4 |> mutate(
             "
   )))
 
+## Gorgemead Lited + Trinity Medical Centre
+
+t4 |> filter(
+  PRESC_ORG_NM=="TRINTY MEDICAL CENTRE",
+  DISP_NM=="GORGEMEAD LIMITED"
+)
 
 
+# % CH prescribing and total volume by presc org
+
+# Running time c. 6 min
+t5 <- fact_db <- con %>%
+  tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT")) |>
+  filter(
+    YEAR_MONTH %in% c(202104,202105,202106,202107,202108,202109,202110,202111,202112,202201,202202,202203),
+    #PATIENT_IDENTIFIED == "Y",
+    PAY_DA_END == "N", # excludes disallowed items
+    PAY_ND_END == "N", # excludes not dispensed items
+    PAY_RB_END == "N", # excludes referred back items
+    CD_REQ == "N", # excludes controlled drug requisitions
+    #OOHC_IND == 0L, # excludes out of hours dispensing
+    PRIVATE_IND == 0L, # excludes private dispensers
+    IGNORE_FLAG == "N", # remove dummy ldp forms
+    ITEM_COUNT >= 1 # remove element-level rows
+  ) |>
+  left_join(DB |> select(YEAR_MONTH, PF_ID, CH_FLAG),
+            by=c("YEAR_MONTH", "PF_ID")) |>
+  left_join(tbl(con, in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM")),
+            by = c("YEAR_MONTH" = "YEAR_MONTH",
+                   "PRESC_ID_PRNT" = "LVL_5_OU",
+                   "PRESC_TYPE_PRNT" = "LVL_5_OUPDT",
+                   "PRESC_PD_ID" = "PD_CDE",
+                   "PRESC_PD_OUPDT" = "PD_OUPDT")) |>
+  select(PRESC_ORG_NM = LVL_5_LTST_NM, ITEM_PAY_DR_NIC, ITEM_COUNT, CH_FLAG) |>
+  mutate(CH_FLAG = ifelse(is.na(CH_FLAG), 0, 1)) |>
+  group_by(PRESC_ORG_NM, CH_FLAG) |>
+  summarise(ITEMS = sum(ITEM_COUNT),
+            NIC = sum(ITEM_PAY_DR_NIC),
+            .groups = "drop") |>
+  arrange(PRESC_ORG_NM, CH_FLAG) |>
+  collect_with_parallelism(18)
+
+
+t5 <- t5 |> group_by(PRESC_ORG_NM) |>
+  mutate(
+    TOTAL_ITEMS = sum(ITEMS),
+    PROP_ITEMS_CH = ITEMS/TOTAL_ITEMS,
+    TOTAL_NIC = sum(NIC),
+    PROP_NIC_CH = NIC/TOTAL_NIC
+         ) |>
+  ungroup()
+
+hchart(t4, type = "bubble", hcaes(TOTAL_ITEMS< ))
 
 # Zoom-in on dispensing doctors
 
