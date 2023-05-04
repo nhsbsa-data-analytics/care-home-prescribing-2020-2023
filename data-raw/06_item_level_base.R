@@ -2,9 +2,6 @@
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-match_data = "INT646_MATCH_20210401_20220331"
-form_data = "INT646_FORMS_20210401_20220331"
-
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
@@ -121,7 +118,7 @@ fact_db = fact_db %>%
     CALC_AGE,
     PATIENT_IDENTIFIED,
     NHS_NO,
-    CALC_PREC_DRUG_RECORD_ID,
+    PAY_DRUG_RECORD_ID,
     ITEM_COUNT,
     ITEM_PAY_DR_NIC,
     ITEM_CALC_PAY_QTY,
@@ -139,7 +136,7 @@ drug_db = drug_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
   select(
     YEAR_MONTH,
-    CALC_PREC_DRUG_RECORD_ID = RECORD_ID,
+    PAY_DRUG_RECORD_ID = RECORD_ID,
     CHAPTER_DESCR,
     SECTION_DESCR,
     PARAGRAPH_DESCR,
@@ -157,6 +154,8 @@ presc_db = presc_db %>%
     LVL_5_OUPDT,
     PD_CDE,
     PD_OUPDT,
+    PRESC_SLA = LVL_5_HIST_FULL_ADDRESS,
+    PRESC_POSTCODE = LVL_5_HIST_POSTCODE,
     PRESC_ORG_TYPE = LVL_5_LTST_TYPE,
     PRESC_ORG_SUB_TYPE = PRCTC_TYPE_HIST_IND_DESC,
     PRESC_ORG_NM = LVL_5_LTST_NM,
@@ -197,7 +196,7 @@ disp_db = disp_db %>%
     DISP_TYPE,
     DISP_NM = LVL_5_LTST_NM,
     DISP_TRADING_NM = TRADING_LTST_NM,
-    DISP_FULL_ADDRESS = LVL_5_HIST_FULL_ADDRESS,
+    DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
   
@@ -262,7 +261,7 @@ fact_join_db = fact_db %>%
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
                                 "PF_ID" = "PF_ID_MATCH")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "PAY_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
                                  "PRESC_ID_PRNT" = "LVL_5_OU",
@@ -331,7 +330,7 @@ fact_join_db = fact_db %>%
     ITEM_PAY_DR_NIC,
     ITEM_CALC_PAY_QTY,
     # Drug info
-    CALC_PREC_DRUG_RECORD_ID,
+    PAY_DRUG_RECORD_ID,
     CHAPTER_DESCR,
     SECTION_DESCR,
     PARAGRAPH_DESCR,
@@ -339,6 +338,8 @@ fact_join_db = fact_db %>%
     BNF_CHEMICAL_SUBSTANCE,
     BASE_NAME,
     # Prescriber info
+    PRESC_SLA,
+    PRESC_POSTCODE,
     PRESC_ORG_TYPE,
     PRESC_ORG_SUB_TYPE,
     PRESC_ORG_NM,
@@ -353,7 +354,7 @@ fact_join_db = fact_db %>%
     DISP_TYPE,
     DISP_NM,
     DISP_TRADING_NM,
-    DISP_FULL_ADDRESS,
+    DISP_SLA,
     DISP_POSTCODE
   )
 
