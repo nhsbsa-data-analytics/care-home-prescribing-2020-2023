@@ -118,7 +118,7 @@ fact_db = fact_db %>%
     CALC_AGE,
     PATIENT_IDENTIFIED,
     NHS_NO,
-    CALC_PREC_DRUG_RECORD_ID,
+    PAY_DRUG_RECORD_ID,
     ITEM_COUNT,
     ITEM_PAY_DR_NIC,
     ITEM_CALC_PAY_QTY,
@@ -136,7 +136,7 @@ drug_db = drug_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
   select(
     YEAR_MONTH,
-    CALC_PREC_DRUG_RECORD_ID = RECORD_ID,
+    PAY_DRUG_RECORD_ID = RECORD_ID,
     CHAPTER_DESCR,
     SECTION_DESCR,
     PARAGRAPH_DESCR,
@@ -261,7 +261,7 @@ fact_join_db = fact_db %>%
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
                                 "PF_ID" = "PF_ID_MATCH")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "PAY_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
                                  "PRESC_ID_PRNT" = "LVL_5_OU",
@@ -330,7 +330,7 @@ fact_join_db = fact_db %>%
     ITEM_PAY_DR_NIC,
     ITEM_CALC_PAY_QTY,
     # Drug info
-    CALC_PREC_DRUG_RECORD_ID,
+    PAY_DRUG_RECORD_ID,
     CHAPTER_DESCR,
     SECTION_DESCR,
     PARAGRAPH_DESCR,
