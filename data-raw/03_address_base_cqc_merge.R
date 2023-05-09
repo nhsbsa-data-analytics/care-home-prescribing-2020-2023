@@ -255,6 +255,9 @@ local_ab_plus_cqc_db <- ab_plus_cqc_db %>%
   collect()
 
 local_ab_plus_cqc_db %>%
+  mutate(
+    across(where(is.POSIXct), as.character)
+  ) %>% 
   write_table_long_chars(con, table_name)
 
 con %>% add_indexes(table_name, c("UPRN", "POSTCODE"))

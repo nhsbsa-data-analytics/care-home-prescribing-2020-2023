@@ -20,7 +20,10 @@ drop_table_if_exists_db = function(table_name_db){
       name = Id(schema = toupper(con@info$username), table = table_name_db)
     ) == T
   ){
-    DBI::dbRemoveTable(conn = con, name = table_name_db)
+    DBI::dbRemoveTable(
+      conn = con,
+      name = Id(schema = toupper(con@info$username), table = table_name_db)
+    )
     print("Table dropped")
   } else {
     print("Table does not exist")
@@ -360,6 +363,8 @@ write_table_long_chars <- function(data, con, table_name) {
         pull()
       
       if (max_chars > 255) {
+        # Need the <<- so that field.types in parent env (i.e. the actual
+        # function env) is updated
         field.types <<- append(
           field.types,
           setNames(glue("varchar2({max_chars * 2})"), idx)
@@ -368,12 +373,9 @@ write_table_long_chars <- function(data, con, table_name) {
     }
   })
   
-  browser()
-  
-  # Write table with original data, i.e. not converted.
   dbWriteTable(
     con,
-    table_name,
+    Id(schema = toupper(con@info$username), table = table_name),
     data,
     field.types = field.types
   )
