@@ -15,8 +15,15 @@ load_all_packages_and_functions = function(){
 drop_table_if_exists_db = function(table_name_db){
   
   # Drop any existing table beforehand
-  if(DBI::dbExistsTable(conn = con, name = table_name_db) == T){
+  if(DBI::dbExistsTable(
+      conn = con,
+      name = Id(schema = toupper(con@info$username), table = table_name_db)
+    ) == T
+  ){
     DBI::dbRemoveTable(conn = con, name = table_name_db)
+    print("Table dropped")
+  } else {
+    print("Table does not exist")
   }
 }
 
@@ -264,7 +271,7 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
 #' @param data A data.frame or tibble
 #' @param ... The new columns on which to base the unites
 #'
-#' @return
+#' @return The data with unite operations applied
 #' 
 #' @examples
 #' tibble(
@@ -298,4 +305,100 @@ unite_to_plural <- function(data, ...) {
   data %>%
     select(-starts_with(substr(args, 1, nchar(args) - 1))) %>%
     bind_cols(united_cols)
+}
+
+
+#' Print number of NA values in selected columns
+#'
+#' @param data A data.frame, tibble or lazy table
+#' @param ... Columns as bare names
+#'
+#' @return Used for side effect only
+#'
+#' @examples
+#' airquality %>% 
+#'   check_na(Ozone, Solar.R)
+#'
+#' #  Ozone Solar.R
+#' #     37       7
+check_na <- function(data, ...) {
+  check <- data %>%
+    as_tibble() %>% 
+    select(...)
+  
+  print(colSums(is.na(check)))
+}
+
+
+#' Write data.frame or tibble to database, with datatype set to appropriate
+#' value for strings longer than default 255 characters
+#'
+#' @param data A data.frame or tibble
+#' @param con A DB connection (only tried with Oracle SQL)
+#' @param table_name Name of new table
+#'
+#' @return Used for side effect only
+#'
+#' @examples
+#' con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#' tib <- tibble(x = rep("long!!", 1000))
+#' tib <- write_table_long_chars(con, "LONG_TABLE")
+write_table_long_chars <- function(data, con, table_name) {
+  field.types = list()
+  
+  iwalk(data, \(x, idx) {
+    if (typeof(x) == "character") {
+      max_chars <- data %>%
+        select(all_of(idx)) %>%
+        # Convert all character columns to UTF-8, this prevents an error in nchar.
+        # https://stackoverflow.com/questions/60906507/
+        # how-to-solve-error-error-in-ncharrownamesm-invalid-multibyte-string-ele
+        mutate(
+          !!sym(idx) := iconv(!!sym(idx), "WINDOWS-1252", "UTF-8", sub = "")
+        ) %>%
+        summarise(max(nchar(!!sym(idx)), na.rm = TRUE)) %>%
+        pull()
+      
+      if (max_chars > 255) {
+        field.types <<- append(
+          field.types,
+          setNames(glue("varchar2({max_chars * 2})"), idx)
+        )
+      }
+    }
+  })
+  
+  browser()
+  
+  # Write table with original data, i.e. not converted.
+  dbWriteTable(
+    con,
+    table_name,
+    data,
+    field.types = field.types
+  )
+}
+
+
+#' Add indexes to an existing table
+#'
+#' @param con A DBI connection
+#' @param table_name Name of table
+#' @param indexes Character vector of column names to index on
+#'
+#' @export Used for side effect only
+#'
+#' @examples
+#' con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#' con %>% add_indexes("EXISTING_TABLE", c("UPRN", "POSTCODE"))
+add_indexes <- function(con, table_name, indexes) {
+  walk(
+    indexes,
+    \(x) dbGetQuery(
+      con,
+      paste0(
+        "CREATE INDEX ", table_name, "_", x, " ON ", table_name, "(", x, ");"
+      )
+    )
+  )
 }

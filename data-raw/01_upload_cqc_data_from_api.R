@@ -124,8 +124,7 @@ cqc_details_reduced <- cqc_details %>%
             "deregistrationDate",
             "numberOfBeds",
             "localAuthority",
-            "lastInspection.date",
-            "gacServiceTypes.name"
+            "lastInspection.date"
           )
         ),
         starts_with("postal"),
@@ -134,8 +133,9 @@ cqc_details_reduced <- cqc_details %>%
         starts_with("regulatedActivities.name"),
         starts_with("regulatedActivities.code"),
         starts_with("specialisms"),
-        starts_with("currentRatings.overall.rating")#,
+        starts_with("currentRatings.overall.rating"),
         # starts_with("currentRatings.service") # could take this too, but adds 14 cols
+        starts_with("gacServiceTypes.name")
       )
   )
 
@@ -171,7 +171,8 @@ cqc_details_df <- cqc_details_reduced %>%
     relationships_related_location_ids,
     relationships_related_location_names,
     relationships_types,
-    relationships_reasons
+    relationships_reasons,
+    gac_service_types_names
   )
   
 gc()
@@ -191,7 +192,8 @@ cqc_process_df = cqc_details_df %>%
     icb_code = onspd_icb_code,
     icb_name = onspd_icb_name,
     latitude = onspd_latitude,
-    longitude = onspd_longitude
+    longitude = onspd_longitude,
+    gac_service_types = gac_service_types_names
   ) %>% 
   mutate(
     # Paste fields together to create single line address
@@ -215,11 +217,7 @@ cqc_process_df = cqc_details_df %>%
       gsub(" - ", "-", single_line_address),
       single_line_address
     ),
-    cqc_date = download_date,
-    specialisms = gsub("Caring for ", "", specialisms),
-    regulated_activities_names = gsub(
-      "Accommodation for ", "", regulated_activities_names
-    )
+    cqc_date = download_date
   ) %>% 
   select(
     uprn,
@@ -250,13 +248,13 @@ cqc_process_df = cqc_details_df %>%
     relationships_related_location_ids,
     relationships_related_location_names,
     relationships_types,
-    relationships_reasons
+    relationships_reasons,
+    gac_service_types
   ) %>% 
   rename_with(toupper)
 
 # Check na count per column
-print("NA count per column")
-print(colSums(is.na(cqc_process_df)))
+check_na(cqc_process_df, everything())
 
 # Create table name
 table_name = paste0("INT646_CQC_", download_date)
@@ -267,14 +265,9 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
 
-# Upload to DB with indexes
-con %>%
-  copy_to(
-    df = cqc_process_df,
-    name = table_name,
-    indexes = list(c("LOCATION_ID"), c("UPRN"), c("POSTCODE")),
-    temporary = FALSE
-  )
+cqc_process_df %>% write_table_long_chars(con, table_name)
+
+con %>% add_indexes(table_name, c("LOCATION_ID", "UPRN", "POSTCODE"))
 
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
