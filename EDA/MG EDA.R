@@ -159,6 +159,9 @@ TOP_ORGS_PER_CH |>  filter(ITEMS_PER_CH >= low_activity_threshold,
 # Reconnect to base table w/o UPRN_FLAG==1 filter, so we get all CH prescribing
 DB <- tbl(con, in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
 
+# All (CH and non-CH) activity between top-20 CH prescribing orgs and
+# top-20 dispensers. Tooltips show the no. of CHs involved.
+
 t3 <- DB |>
       filter(CH_FLAG==1) |>
       group_by(PRESC_ORG_NM, DISP_NM) |>
@@ -227,60 +230,141 @@ t4 |> mutate(
             "
   )))
 
-## Gorgemead Lited + Trinity Medical Centre
-
-t4 |> filter(
-  PRESC_ORG_NM=="TRINTY MEDICAL CENTRE",
-  DISP_NM=="GORGEMEAD LIMITED"
-)
-
-
 # % CH prescribing and total volume by presc org
 
-# Running time c. 6 min
-t5 <- fact_db <- con %>%
-  tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT")) |>
-  filter(
-    YEAR_MONTH %in% c(202104,202105,202106,202107,202108,202109,202110,202111,202112,202201,202202,202203),
-    #PATIENT_IDENTIFIED == "Y",
-    PAY_DA_END == "N", # excludes disallowed items
-    PAY_ND_END == "N", # excludes not dispensed items
-    PAY_RB_END == "N", # excludes referred back items
-    CD_REQ == "N", # excludes controlled drug requisitions
-    #OOHC_IND == 0L, # excludes out of hours dispensing
-    PRIVATE_IND == 0L, # excludes private dispensers
-    IGNORE_FLAG == "N", # remove dummy ldp forms
-    ITEM_COUNT >= 1 # remove element-level rows
-  ) |>
-  left_join(DB |> select(YEAR_MONTH, PF_ID, CH_FLAG),
-            by=c("YEAR_MONTH", "PF_ID")) |>
-  left_join(tbl(con, in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM")),
-            by = c("YEAR_MONTH" = "YEAR_MONTH",
-                   "PRESC_ID_PRNT" = "LVL_5_OU",
-                   "PRESC_TYPE_PRNT" = "LVL_5_OUPDT",
-                   "PRESC_PD_ID" = "PD_CDE",
-                   "PRESC_PD_OUPDT" = "PD_OUPDT")) |>
-  select(PRESC_ORG_NM = LVL_5_LTST_NM, ITEM_PAY_DR_NIC, ITEM_COUNT, CH_FLAG) |>
-  mutate(CH_FLAG = ifelse(is.na(CH_FLAG), 0, 1)) |>
-  group_by(PRESC_ORG_NM, CH_FLAG) |>
+t5 <- DB |> group_by(PRESC_ORG_NM, CH_FLAG) |>
+    summarise(ITEMS = sum(ITEM_COUNT),
+              NIC = sum(ITEM_PAY_DR_NIC),
+              .groups = "drop") |>
+    group_by(PRESC_ORG_NM) |>
+    mutate(
+      TOTAL_ITEMS = sum(ITEMS),
+      PROP_ITEMS_CH = ITEMS/TOTAL_ITEMS,
+      TOTAL_NIC = sum(NIC),
+      PROP_NIC_CH = NIC/TOTAL_NIC
+      ) |>
+    ungroup() |>
+    arrange(PRESC_ORG_NM, CH_FLAG) |>
+    collect_with_parallelism(18)
+
+# Some presc orgs don't have any CH prescribing, eg (IRLAM) SALFORD CARE CTRS MEDICAL PRACTI
+
+# Only relatively small practices specialise in CH prescribing
+
+# PA angle? Identify presc/disp orgs that have a lot of CH activity and where CH activity is a high %
+# of their total activity.
+
+t5 |> filter(CH_FLAG==1, TOTAL_ITEMS>=100) |>
+      mutate(CH_ITEMS = TOTAL_ITEMS*PROP_ITEMS_CH) |>
+hchart(type = "scatter", hcaes(CH_ITEMS, PROP_ITEMS_CH)) |>
+  hc_tooltip(
+    formatter = htmlwidgets::JS(
+      paste0(
+        "
+            function() {
+                outHTML =
+                  '<i>' + this.point.PRESC_ORG_NM + '</i><br>' + 
+                  '<b>CH ITEMS: </b>' + this.point.CH_ITEMS + '<br>' +
+                  '<b>PROPORTION OF ITEMS TO CHs: </b>' + this.point.PROP_ITEMS_CH + '<br>'
+                return outHTML;
+            }
+            "
+      )))
+
+
+t6 <- DB |> group_by(DISP_NM, CH_FLAG) |>
   summarise(ITEMS = sum(ITEM_COUNT),
             NIC = sum(ITEM_PAY_DR_NIC),
             .groups = "drop") |>
-  arrange(PRESC_ORG_NM, CH_FLAG) |>
-  collect_with_parallelism(18)
-
-
-t5 <- t5 |> group_by(PRESC_ORG_NM) |>
+  group_by(DISP_NM) |>
   mutate(
     TOTAL_ITEMS = sum(ITEMS),
     PROP_ITEMS_CH = ITEMS/TOTAL_ITEMS,
     TOTAL_NIC = sum(NIC),
     PROP_NIC_CH = NIC/TOTAL_NIC
-         ) |>
-  ungroup()
+  ) |>
+  ungroup() |>
+  arrange(DISP_NM, CH_FLAG) |>
+  collect_with_parallelism(18)
 
-hchart(t4, type = "bubble", hcaes(TOTAL_ITEMS< ))
+t6 |> filter(CH_FLAG==1, TOTAL_NIC<=1e9) |>
+      mutate(CH_NIC = TOTAL_NIC*PROP_NIC_CH) |>
+hchart(type = "scatter", hcaes(CH_NIC, PROP_NIC_CH)) |>
+  #hc_xAxis(type = "logarithmic") |>
+  hc_tooltip(
+    formatter = htmlwidgets::JS(
+      paste0(
+        "
+            function() {
+                outHTML =
+                  '<i>' + this.point.DISP_NM + '</i><br>' + 
+                  '<b>CH NIC: </b>' + this.point.CH_NIC + '<br>' +
+                  '<b>PROPORTION OF NIC TO CHs: </b>' + this.point.PROP_NIC_CH + '<br>'
+                return outHTML;
+            }
+            "
+      )))
+
 
 # Zoom-in on dispensing doctors
+
+DB |> group_by(PRESCRIBER_SUB_TYPE) |>
+  summarise(n = n()) |>
+  collect_with_parallelism(10) -> t
+
+# Prop of self-dispensing among dispensing doctors
+
+t7 <- DB |> filter(PRESCRIBER_SUB_TYPE=="DISPENSING ONLY DOCTOR") |>
+  mutate(SELF_DISP = ifelse(PRESC_ORG_CODE==DISP_CODE, 1L, 0L)) |>
+  group_by(PRESC_ORG_NM, SELF_DISP) |>
+  summarise(ITEMS = sum(ITEM_COUNT),
+            NIC = sum(ITEM_PAY_DR_NIC),
+            .groups = "drop") |>
+  group_by(PRESC_ORG_NM) |>
+  mutate(
+    TOTAL_ITEMS = sum(ITEMS),
+    PROP_ITEMS_SD = ITEMS/TOTAL_ITEMS,
+    TOTAL_NIC = sum(NIC),
+    PROP_NIC_SD = NIC/TOTAL_NIC
+  ) |>
+  ungroup() |>
+  arrange(PRESC_ORG_NM, SELF_DISP) |>
+  collect_with_parallelism(18)
+
+t7 |> filter(SELF_DISP==1 & ITEMS>=100) |>
+  tidyr::pivot_longer(starts_with("PROP"), names_to = "PROP_TYPE", values_to = "PROP") |>
+  mutate(PROP_TYPE = case_when(
+    PROP_TYPE == "PROP_ITEMS_SD" ~ "Proportion of self-dispensed items",
+    PROP_TYPE == "PROP_NIC_SD" ~ "Proportion of self-dispensed NIC"
+  )) |>
+  ggplot(aes(PROP)) + 
+  geom_histogram() +
+  facet_wrap(~PROP_TYPE, ncol = 1)
+
+# Bubble chart: prop of self-dispensed items/nic, prop of self-dispensed items/nic to CHs, size = total items/nic
+  
+t8 <- DB |> filter(PRESCRIBER_SUB_TYPE=="DISPENSING ONLY DOCTOR") |>
+  mutate(SELF_DISP = ifelse(PRESC_ORG_CODE==DISP_CODE, 1L, 0L)) |>
+  group_by(PRESC_ORG_NM, SELF_DISP, CH_FLAG) |>
+  summarise(ITEMS = sum(ITEM_COUNT),
+            NIC = sum(ITEM_PAY_DR_NIC),
+            .groups = "drop") |>
+  group_by(PRESC_ORG_NM) |>
+  mutate(
+    TOTAL_ITEMS = sum(ITEMS),
+    PROP_ITEMS_SD_CH = ITEMS/TOTAL_ITEMS,
+    TOTAL_NIC = sum(NIC),
+    PROP_NIC_SD_CH = NIC/TOTAL_NIC
+  ) |>
+  ungroup() |>
+  arrange(PRESC_ORG_NM, SELF_DISP, CH_FLAG) |>
+  collect_with_parallelism(18)
+
+t9 <- left_join(t7 |> filter(SELF_DISP==1),
+                t8 |> filter(SELF_DISP==1 & CH_FLAG==1) |> select(PRESC_ORG_NM, PROP_ITEMS_SD_CH, PROP_NIC_SD_CH),
+                by="PRESC_ORG_NM")
+
+ggplot(t9, aes(PROP_ITEMS_SD, PROP_ITEMS_SD_CH)) + geom_point(aes(color = TOTAL_ITEMS)) +
+  scale_color_distiller(palette = "RdYlBu")
 
 DBI::dbDisconnect(con)
