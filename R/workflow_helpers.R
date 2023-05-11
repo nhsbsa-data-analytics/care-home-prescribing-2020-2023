@@ -283,11 +283,11 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
 #' ) %>% 
 #' unite_to_plural(cols, foos)
 #' 
-#'  A tibble: 2 × 2
-#'  cols  foos 
-#'  <chr> <chr>
-#' 1 a|c   e|g  
-#' 2 b|d   f|h 
+#' # A tibble: 2 × 2
+#' #  cols  foos 
+#' #  <chr> <chr>
+#' # 1 a|c   e|g  
+#' # 2 b|d   f|h 
 unite_to_plural <- function(data, ...) {
   args <- as.character(match.call(expand.dots = FALSE)$`...`)
 
@@ -398,9 +398,7 @@ add_indexes <- function(con, table_name, indexes) {
     indexes,
     \(x) dbGetQuery(
       con,
-      paste0(
-        "CREATE INDEX ", table_name, "_", x, " ON ", table_name, "(", x, ");"
-      )
+      glue("CREATE INDEX {table_name}_{x} ON {table_name}({x});")
     )
   )
 }
