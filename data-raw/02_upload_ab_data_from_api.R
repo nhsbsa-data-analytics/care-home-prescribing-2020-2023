@@ -244,6 +244,8 @@ drop_table_if_exists_db(table_name_temp)
 
 # Grant access
 DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ADNSH"))
+DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MAMCP"))
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

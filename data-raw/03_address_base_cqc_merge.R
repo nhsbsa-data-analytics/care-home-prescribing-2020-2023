@@ -194,10 +194,6 @@ postcodes_db = ab_plus_db %>%
 # 5 TRUE           TRUE           13588
 ##
 
-# Removing columns that are character with nchar > 255 for now. This is due to
-# having issues with specifying data types, which was only an issue due to these
-# columns.
-
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>%
   inner_join(postcodes_db, by = "POSTCODE") %>% 
