@@ -8,7 +8,9 @@ app_ui <- function(request) {
   tagList(
     # Leave this function for adding external resources
     golem_add_external_resources(),
+    # Need this for accessibility
     tags$html(lang = "en"),
+    # Need this for shiny bootstrap dependencies
     bootstrapLib(),
     # Your application UI logic
     nhs_header(),
@@ -25,7 +27,8 @@ app_ui <- function(request) {
           tabPanel(
             title = "Article",
             mod_markdown_example_ui("markdown_example_ui_1"),
-            mod_chart_example_ui("chart_example_ui_1")
+            mod_chart_example_ui("chart_example_ui_1"),
+            mod_patients_age_gender_ui("patients_age_gender_1")
           ),
           # Whenever tab button is clicked, windows scroll to the top
           tags$script(" $(document).ready(function () {
