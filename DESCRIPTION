@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 Package: carehomes2
 Title: Estimated prescribing patterns for care home patients: 2020/21 to 2022/23
 Version: 0.0.0.9000
@@ -19,7 +18,10 @@ Authors@R:
              family = "McPherson",
              role = "ctb",
              email = "mark.mcphersoni@nhsbsa.nhs.uk"))
-Description: This R package has been developed by NHS Business Services Authority Data Analytics Learning Lab to use a combination of analytics and user research to explore prescribing in care homes in England over the three year period: 2020/21 to 2022/23. 
+Description: This R package has been developed by NHS Business Services 
+               Authority Data Analytics Learning Lab to use a combination of
+               analytics and user research to explore prescribing in care homes
+               in England over the three year period: 2020/21 to 2022/23. 
 License: Apache License (>= 2)
 Imports:
     config,
