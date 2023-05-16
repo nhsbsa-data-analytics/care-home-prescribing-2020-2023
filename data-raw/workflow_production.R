@@ -80,9 +80,5 @@ create_matched_prescription_base_table = function(match_data, form_data){
   assign("form_data", match_data, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-<<<<<<< HEAD
-  tic; source("data-raw/06_item_level_base.R"); toc(); print(Sys.time())
-=======
-  tictoc::tic; source("data-raw/06_item_level_base.R"); tictoc::toc(); print(Sys.time())
->>>>>>> 7fad2b0 (Rebase and resolve conflicts from main)
+  tictoc::tic(); source("data-raw/06_item_level_base.R"); tictoc::toc(); print(Sys.time())
 }
