@@ -14,16 +14,20 @@ mod_patients_age_gender_ui <- function(id){
     h3_tabstop("Subtitle"),
     p("Text…"),
     nhs_card(
-      heading = p("Choose input values:"),
-      nhs_grid_2_col(
+      heading = p("Chart heading"),
+      nhs_grid_3_col(
         nhs_selectInput(inputId = ns("my_input1"),
-                        label = "Input 1",
-                        choices = ...,
+                        label = "Year",
+                        choices = c("1","2","3"),
                         full_width = T),
         nhs_selectInput(inputId = ns("my_input2"),
-                        label = "Input 2",
-                        choices = ...,
+                        label = "Geography",
+                        choices = c("1","2","3"),
                         full_width = T),
+        nhs_selectInput(inputId = ns("my_input3"),
+                        label = "Sub Geography",
+                        choices = c("1","2","3"),
+                        full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("my_chart"), height = "400px"),
       mod_nhs_download_ui(id = ns("download_my_chart"))
