@@ -3,10 +3,11 @@
 #' Based on the nhsbsaR highcharter theme, since it returns a list we can edit
 #' it to the specific theme for this shiny app.
 #'
+#' @param hc Highcharts object
 #' @param palette Which colour palette to use from the `nhsbsaR` package.
 #' @param stack Stack option for highcharter.
 #'
-#' @return
+#' @return Highcharts object with theme added.
 #' @export
 theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
   

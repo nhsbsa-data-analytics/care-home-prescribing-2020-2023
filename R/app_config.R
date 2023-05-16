@@ -9,7 +9,11 @@
 #'
 #' @noRd
 app_sys <- function(...) {
+<<<<<<< HEAD
   system.file(..., package = "careHomePrescribing2023")
+=======
+  system.file(..., package = "carehomes2")
+>>>>>>> 7fad2b0 (Rebase and resolve conflicts from main)
 }
 
 

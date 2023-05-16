@@ -1,4 +1,4 @@
-Package: careHomePrescribing2023
+Package: carehomes2
 Title: Estimated prescribing patterns for care home patients: 2020/21 to 2022/23
 Version: 0.0.0.9000
 Authors@R: 
@@ -20,15 +20,31 @@ Authors@R:
              email = "mark.mcphersoni@nhsbsa.nhs.uk"))
 Description: This R package has been developed by NHS Business Services Authority Data Analytics Learning Lab to use a combination of analytics and user research to explore prescribing in care homes in England over the three year period: 2020/21 to 2022/23. 
 License: Apache License (>= 2)
-Imports: 
-    config (>= 0.3.1),
-    golem (>= 0.4.0),
-    shiny (>= 1.7.4),
-    markdown,
+Imports:
+    config,
+    DBI,
+    dplyr,
+    dbplyr,
+    golem,
     highcharter,
-    nhsbsaR
+    lubridate,
+    magrittr,
+    nhsbsaR,
+    pacman,
+    rlang,
+    shiny,
+    tictoc
+Suggests:
+    addressMatchR,
+    archive,
+    httr,
+    janitor,
+    jsonlite,
+    readr,
+    yaml
 Remotes:
     nhsbsa-data-analytics/nhsbsaR
+    nhsbsa-data-analytics/addressMatchR
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3

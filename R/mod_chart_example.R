@@ -42,11 +42,11 @@ mod_chart_example_server <- function(id) {
     output$chart <- highcharter::renderHighchart({
 
       # Generate bins based on input$bins from ui.R
-      x <- faithful[, 2]
+      x <- datasets::faithful[, 2]
       bins <- seq(min(x), max(x), length.out = as.numeric(input$bins) + 1)
 
       # Draw the histogram with the specified number of bins
-      chart <- hist(x, breaks = bins)
+      chart <- graphics::hist(x, breaks = bins)
 
       # Output interactive chart
       chart %>%
@@ -57,7 +57,7 @@ mod_chart_example_server <- function(id) {
     mod_nhs_download_server(
       id = "download_test",
       filename = "test.csv",
-      export_data = faithful
+      export_data = datasets::faithful
     )
   })
 }
