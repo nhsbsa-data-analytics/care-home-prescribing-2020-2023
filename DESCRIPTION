@@ -1,17 +1,29 @@
 Package: nhsbsaShinyR
-Title: An Amazing Shiny App
+Title: Estimated prescribing patterns for care home patients: 2020/21 to 2022/23
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "firstname",
-           family = "lastname",
-           role = c("aut", "cre"),
-           email = "your@email.com")
-Description: What the package does (one paragraph).
+    c(person(given = "DALL",
+             family = "",
+             role = c("aut", "cre"),
+             email = "nhsbsa.dall@nhs.net"),
+      person(given = "Adnan",
+             family = "Shroufi",
+             role = "ctb",
+             email = "adnan.shroufi@nhsbsa.nhs.uk"),
+      person(given = "Mihail",
+             family = "Garbuzov",
+             role = "ctb",
+             email = "mihail.garbuzov@nhsbsa.nhs.uk"),
+      person(given = "Mark",
+             family = "McPherson",
+             role = "ctb",
+             email = "mark.mcphersoni@nhsbsa.nhs.uk"))
+Description: This R package has been developed by NHS Business Services Authority Data Analytics Learning Lab to use a combination of analytics and user research to explore prescribing in care homes in England over the three year period: 2020/21 to 2022/23. 
 License: Apache License (>= 2)
 Imports: 
     config (>= 0.3.1),
-    golem (>= 0.3.1),
-    shiny (>= 1.6.0),
+    golem (>= 0.4.0),
+    shiny (>= 1.7.4),
     markdown,
     highcharter,
     nhsbsaR
@@ -19,6 +31,6 @@ Remotes:
     nhsbsa-data-analytics/nhsbsaR
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.3
 Depends: 
-    R (>= 2.10)
+    R (>= 4.2.2)
