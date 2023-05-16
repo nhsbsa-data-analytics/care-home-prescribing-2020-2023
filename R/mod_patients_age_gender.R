@@ -20,13 +20,13 @@ mod_patients_age_gender_ui <- function(id){
                         label = "Year",
                         choices = c("1","2","3"),
                         full_width = T),
-        nhs_selectInput(inputId = ns("my_input2"),
+        nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = c("1","2","3"),
+                        choices = names(careHomePrescribing2023::geographys),
                         full_width = T),
-        nhs_selectInput(inputId = ns("my_input3"),
+        nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",
-                        choices = c("1","2","3"),
+                        choices = NULL, # dynamically generated
                         full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("my_chart"), height = "400px"),
