@@ -62,8 +62,6 @@ cqc_db = cqc_db %>%
 cqc_attributes_db = cqc_db %>%
   group_by(UPRN) %>%
   mutate(
-    # Observation: There is a 1:1 correspondence btwn CQC SLA with a null UPRN
-    # and N_RATING == 6...surprising and why?
     N_RATING = n_distinct(CURRENT_RATING),
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
   ) %>% 
