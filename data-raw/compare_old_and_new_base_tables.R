@@ -456,7 +456,7 @@ saveRDS(nulls_both_rest, "nulls_both_rest.rds")
 
 nulls_cmp_rest <- readRDS("nulls_both_rest.rds")
 
-for(col in cols) {
+for(col in common_cols) {
   nulls_cmp_rest <- nulls_cmp_rest %>% 
     mutate(
       !!sym(glue("{col}_RATIO")) := case_when(
