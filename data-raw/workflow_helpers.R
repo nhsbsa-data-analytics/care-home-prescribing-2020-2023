@@ -4,9 +4,9 @@
 load_all_packages_and_functions = function(){
   
   # Source script containing all packages and functions
-  source("R/analysis_packages.R")
-  source("R/workflow_helpers.R")
-  source("R/workflow_production.R")
+  source("EDA/mmc/analysis_packages_mmc.R")
+  source("EDA/mmc/workflow_helpers_mmc.R")
+  source("EDA/mmc/workflow_production_mmc.R")
 }
 
 

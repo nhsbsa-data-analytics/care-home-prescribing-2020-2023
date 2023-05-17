@@ -11,9 +11,14 @@ pacman::p_load(
   'dbplyr',
   'DBI',
   'tictoc',
-  'parallel',
+  # MMc: had some issues running this, so manually installed each separately...
+  # got this warning:
+  # Warning in install.packages :
+  #   package ‘parallel’ is a base package, and should not be updated
+  # 'parallel',
   'janitor',
   'yaml',
+  'glue',
   
   # CQC API data 
   'httr',

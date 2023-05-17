@@ -8,16 +8,19 @@ end_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][2]
 
 # Create a lazy table from the item level FACT table
 patient_db <- con %>%
-  tbl(from = patient_address_data)
+  tbl(from = patient_address_data) %>% 
+  filter(SUBSTR(POSTCODE, 1, 3) == "AL1")
 
 # Create a lazy table from the AddressBase Plus and CQC care home table
 address_db <- con %>%
   tbl(from = lookup_address_data) %>% 
-  rename(AB_FLAG = CH_FLAG)
+  rename(AB_FLAG = CH_FLAG) %>% 
+  filter(SUBSTR(POSTCODE, 1, 3) == "AL1")
 
 # Address Base plus for parent uprn join
 parent_db <- con %>% 
-  tbl(from = parent_uprn_data)
+  tbl(from = parent_uprn_data) %>% 
+  filter(SUBSTR(POSTCODE, 1, 3) == "AL1")
 
 # Process and match address data -----------------------------------------------
 
@@ -30,8 +33,11 @@ parent_uprn_db = address_db %>%
 # Get single GEO SLA per parent uprn
 parent_db = parent_db %>% 
   inner_join(parent_uprn_db) %>% 
-  mutate(SINGLE_LINE_ADDRESS_PARENT = paste0(GEO_SINGLE_LINE_ADDRESS, " ", POSTCODE)) %>% 
+  # Why is only GEO SLA kept in this step? Is there not a need to join parent
+  # UPRN on DPA or CORE SLA?
+  mutate(SINGLE_LINE_ADDRESS_PARENT = paste(GEO_SINGLE_LINE_ADDRESS, POSTCODE)) %>% 
   group_by(SINGLE_LINE_ADDRESS_PARENT) %>% 
+  # Similar to previous scripts, is this not a bit arbitrary taking max UPRN?
   summarise(PARENT_UPRN = max(UPRN)) %>%
   ungroup()
 
@@ -42,18 +48,86 @@ patient_address_db = patient_db %>%
     !is.na(SINGLE_LINE_ADDRESS),
     CALC_AGE >= 65,
     POSTCODE_CH == 1
-    ) %>%
+  ) %>%
   # Add monthly patient count
   group_by(YEAR_MONTH, POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(MONTHLY_PATIENTS = n_distinct(NHS_NO)) %>%
-  # Fully ungroup
-  ungroup() %>% 
+  # Fully ungroup - this is not needed, can simply group by new columns directly
+  # ungroup() %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
   ungroup()
 
+# drop_table_if_exists_db("PATIENT_ADDRESS_TEST")
+# drop_table_if_exists_db("ADDRESS_TEST")
+# 
+# con %>%
+#   copy_to(
+#     df = patient_address_db,
+#     name = "PATIENT_ADDRESS_TEST",
+#     indexes = list(c("POSTCODE")),
+#     temporary = FALSE
+#   )
+# 
+# con %>%
+#   copy_to(
+#     df = address_db,
+#     name = "ADDRESS_TEST",
+#     indexes = list(c("POSTCODE")),
+#     temporary = FALSE
+#   )
+# 
+# patient_address_db <- con %>% 
+#   tbl(from = "PATIENT_ADDRESS_TEST")
+# 
+# address_db <- con %>% 
+#   tbl(from = "ADDRESS_TEST")
+
 # Match the patients address to the AddressBase Plus and CQC care home addresses
+# Why was JW matching used over the simpler Levenhstein method? Did you try the
+# latter at all, only curious... 
+
+# NOTE: there are a mix of all UPPER and mixed case in LOOKUP somehow. I don't
+# think the INSTR used in the function is giving expected results: run the below
+# after sticking a browser() at start of addressMatchR::calc_match_addresses and
+# clicking 'next' until non_exact_match_jw_match_df is first created.
+
+non_exact_match_jw_match_tib <- non_exact_match_jw_match_df %>% as_tibble()
+token_match_tib <- non_exact_match_jw_match_tib %>% select(TOKEN, TOKEN_LOOKUP)
+token_match_subs_tib <- token_match_tib %>%
+  rowwise() %>%
+  filter(
+    grepl(toupper(TOKEN), toupper(TOKEN_LOOKUP), fixed = TRUE)|
+      grepl(toupper(TOKEN_LOOKUP), toupper(TOKEN), fixed = TRUE)
+  )
+
+# Compare this to the result of the code block where further filters are applied
+# to non_exact_match_jw_match_df - it is empty.
+# Removing the INSTR calls and appending below code to the pipe works as expected
+# (I am not sure on the performance of such a query...):
+
+# %>% 
+# filter(
+#   sql("UPPER(TOKEN) LIKE '%' || UPPER(TOKEN_LOOKUP) || '%'") |
+#   sql("UPPER(TOKEN_LOOKUP) LIKE '%' || UPPER(TOKEN) || '%'")
+# )
+
+# NOTE2: The > 1 RHS condition on the INSTR calls should be >= 1. E.g.
+# INSTR("sub", "substring") = 1 and would be discarded for > 1.
+
+# NOTE3: There could be some further eliminations that are easy pickings. E.g.
+# run below while browsing in addressMatchR::calc_match_addresses, after the
+# above steps in first NOTE:
+
+# token_lens <- token_match_subs_tib %>% transmute(len = nchar(TOKEN)) %>% group_by(len) %>% summarise(n = n())
+# token_lookup_lens <- token_match_subs_tib %>% transmute(len = nchar(TOKEN_LOOKUP)) %>% group_by(len) %>% summarise(n = n())
+
+# Quite a few single char tokens...
+
+# NOTE 4: Found some addresses which are for ELECTRICITY SUB STATION e.g.
+# ELECTRICITY SUB STATION 43 M FROM HATFIELD NURSING... 
+
 match_db = addressMatchR::calc_match_addresses(
   primary_df = patient_address_db,
   primary_postcode_col = "POSTCODE",
@@ -61,7 +135,7 @@ match_db = addressMatchR::calc_match_addresses(
   lookup_df = address_db,
   lookup_postcode_col = "POSTCODE",
   lookup_address_col = "SINGLE_LINE_ADDRESS"
-  )
+)
 
 # Define keyword list for case statements
 care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL HOME|RESIDENTIAL-HOME|REST HOME|REST-HOME"
@@ -113,6 +187,7 @@ match_db = match_db %>%
     ),
     
     # Apply threshold and exclude some uprn
+    # I don't get how we have any with scores <= 0.8
     UPRN_FLAG = case_when(
       SCORE <= 0.5 ~ 0, 
       !is.na(EXCLUDE_FOR_CH_LEVEL_ANALYSIS) ~ 0,
@@ -150,11 +225,12 @@ match_db = match_db %>%
   # Generate single postcode-SLA per uprn
   group_by(UPRN) %>% 
   mutate(
-    SINGLE_LINE_ADDRESS_STANDARDISED = max(paste0(SINGLE_LINE_ADDRESS, " ", POSTCODE))
-    ) %>% 
+    SINGLE_LINE_ADDRESS_STANDARDISED = max(paste(SINGLE_LINE_ADDRESS, POSTCODE))
+  ) %>% 
   ungroup() %>% 
   # Ensure 1 uprn per SLA
-  group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>% 
+  group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>%
+  # Using max is arbitrary? Why not most recent?
   mutate(UPRN = max(UPRN)) %>% 
   ungroup() %>% 
   # Get parent uprn info
@@ -162,6 +238,8 @@ match_db = match_db %>%
 
 # Join the matches back to the patient addresses
 patient_match_db <- patient_db %>%
+  # Filter could be applied once earlier in process to get subset of patients of
+  # interest
   filter(
     !is.na(SINGLE_LINE_ADDRESS),
     CALC_AGE >= 65,
@@ -174,9 +252,9 @@ patient_match_db <- patient_db %>%
       UPRN_FLAG = 0L,
       CH_FLAG = 0L, 
       MATCH_TYPE = "NO MATCH"
-      )
     )
-  
+  )
+
 # Define table name
 table_name = paste0("INT646_MATCH_", start_date, "_", end_date)
 
@@ -195,7 +273,9 @@ patient_match_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
+DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
 
 # Disconnect from database
 DBI::dbDisconnect(con)
