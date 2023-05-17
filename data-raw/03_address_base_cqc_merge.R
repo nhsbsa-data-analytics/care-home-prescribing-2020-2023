@@ -34,11 +34,10 @@ cqc_db = cqc_db %>%
   mutate(
     N_RATING = n_distinct(CURRENT_RATING),
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
-    ) %>% 
-  ungroup() %>% 
+  ) %>% 
+  ungroup() %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   summarise(
-    CH_FLAG = max(CH_FLAG, na.rm = TRUE),
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     N_DISTINCT_UPRN = n_distinct(UPRN),
     UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
@@ -49,12 +48,14 @@ cqc_db = cqc_db %>%
     .groups = "drop"
   ) %>% 
   mutate(
-    # Note, this is done after summarise(), so we'd later exclude only SLAs that had null UPRNs in all CQC records, not just one record
+    # Note, this is done after summarise(), so we'd later exclude only SLAs that
+    # had null UPRNs in all CQC records, not just one record
     EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
       is.na(UPRN) ~ "CQC SLA with a null UPRN",
-      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",  # ...of which all UPRNs except one have already been discarded at this point
+      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",
+      # ...of which all UPRNs except one have already been discarded at this point
       T ~ NULL
-      )
+    )
   )
 
 # From above processed data add residential and nursing home flag where possible
@@ -95,10 +96,10 @@ ab_plus_cqc_db = ab_plus_db %>%
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
   union_all(cqc_db) %>% 
-  # Get unique SLAs from among AB & CQC tables
-  # (individual SLAs may come from either/all of: up to 3 variants in AB table and 1 variant in CQC table;
-  #  label not included due to potential for overlap)
-  # ...and keep one UPRN per unique SLA (in case any SLAs have 2+ UPRNs)
+  # Get unique SLAs from among AB & CQC tables (individual SLAs may come from
+  # either/all of: up to 3 variants in AB table and 1 variant in CQC table;
+  # label not included due to potential for overlap) ...and keep one UPRN per
+  # unique SLA (in case any SLAs have 2+ UPRNs)
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>% 
   ungroup() %>% 
@@ -113,9 +114,7 @@ ab_plus_cqc_db = ab_plus_db %>%
 # Part Three: Save as table in dw ----------------------------------------------
 
 # Specify db table name
-table_name = paste0(
-  "INT646_ABP_CQC_", gsub("-", "", start_date), "_", gsub("-", "", end_date)
-  )
+table_name = gsub('-', '', paste0("INT646_ABP_CQC_", start_date, "_", end_date))
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
@@ -127,21 +126,25 @@ print("Output being computed to be written back to the db ...")
 ab_plus_cqc_db %>%
   compute(
     name = table_name,
-    indexes = list(c("UPRN", c("POSTCODE"))),
+    indexes = c("UPRN", "POSTCODE"),
     temporary = FALSE
   )
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

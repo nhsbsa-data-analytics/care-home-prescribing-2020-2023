@@ -2,7 +2,7 @@
 #' @description downloads the latest cqc data from the cqc api
 #' @param none: date for data generated from Sys.date()
 get_latest_cqc_data = function(){
-
+  
   # source single script with no date input required
   tic(); source("data-raw/01_upload_cqc_data_from_api.R"); toc(); print(Sys.time())
 }
@@ -69,7 +69,7 @@ create_care_home_address_match = function(patient_address_data, lookup_address_d
 #' @description gets prescription info for matched records
 #' @param match_data: matched address data
 create_matched_prescription_base_table = function(match_data, form_data){
-    
+  
   # Assign function inputs to global env
   assign("match_data", match_data, envir = globalenv())
   assign("form_data", match_data, envir = globalenv())

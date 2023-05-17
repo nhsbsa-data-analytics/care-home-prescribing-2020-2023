@@ -11,9 +11,9 @@ pacman::p_load(
   'dbplyr',
   'DBI',
   'tictoc',
-  'parallel',
   'janitor',
   'yaml',
+  'glue',
   
   # CQC API data 
   'httr',
