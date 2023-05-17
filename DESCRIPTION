@@ -26,7 +26,8 @@ Imports:
     shiny (>= 1.7.4),
     markdown,
     highcharter,
-    nhsbsaR
+    nhsbsaR,
+    purrr
 Remotes:
     nhsbsa-data-analytics/nhsbsaR
 Encoding: UTF-8
