@@ -37,7 +37,7 @@ ab_plus_epoch_date = package_info %>%
   pull()
 
 # Print epoch data
-print(glue("This script will use AB Plus epoch: {ab_plus_epoch_date}"))
+print(paste0("This script will use AB Plus epoch: ", ab_plus_epoch_date))
 
 # Get ab plus epoch version api url
 url = package_info %>% 
@@ -104,10 +104,10 @@ abp_col_names = names(readr::read_csv(
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Define table name
-table_name = glue("INT646_ABP2_{ab_plus_epoch_date}")
+table_name = paste0("INT646_ABP2_", ab_plus_epoch_date)
 
 # Define temp table name
-table_name_temp = glue("{table_name}_TEMP")
+table_name_temp = paste0(table_name, "_TEMP")
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name_temp)
@@ -116,7 +116,7 @@ drop_table_if_exists_db(table_name_temp)
 read_temp_dir_csv = function(index){
   
   # Print index to 
-  print(glue("{index} out of {length(temp_dir_files)} files"))
+  print(paste0(index, " out of ", length(temp_dir_files), " files"))
   
   # Read in each csv and cast all columns as character
   data = readr::read_csv(
@@ -240,21 +240,23 @@ ab_plus_db %>%
 drop_table_if_exists_db(table_name_temp)
 
 # Grant access
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
 
 # Print that table has been created
-print(glue("This script has created table: {table_name}"))
+print(paste0("This script has created table: ", table_name))
 
 # Return to project directory
 setwd(project_dir)
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
