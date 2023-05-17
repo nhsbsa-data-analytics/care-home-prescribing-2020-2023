@@ -1,8 +1,8 @@
 
 # Load/install all required packages and functions
-source("EDA/mmc/analysis_packages.R")
-source("EDA/mmc/workflow_helpers.R")
-source("EDA/mmc/workflow_production.R")
+source("EDA/analysis_packages.R")
+source("EDA/workflow_helpers.R")
+source("EDA/workflow_production.R")
 
 # Specify variables to retain at end of each script
 keep_vars = c(ls(), 'keep_vars')

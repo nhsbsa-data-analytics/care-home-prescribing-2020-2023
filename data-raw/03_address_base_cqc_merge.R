@@ -33,22 +33,16 @@ cqc_db = cqc_db %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(
     N_RATING = n_distinct(CURRENT_RATING),
-    # Why not use the most recent current rating, rather than lexicographical ordering?
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
   ) %>% 
-  # Why the ungroup and then group by same columns?
-  # ungroup() %>%
-  # group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
+  ungroup() %>%
+  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   summarise(
-    # At this point CH_FLAG == 1L for all rows
-    # CH_FLAG = max(CH_FLAG, na.rm = TRUE),
-    # Why not use the most recent location ID?
     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     N_DISTINCT_UPRN = n_distinct(UPRN),
     UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
     NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
     RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
-    # Why not use the most recent number of beds?
     NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE),
     CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
     .groups = "drop"
@@ -56,11 +50,6 @@ cqc_db = cqc_db %>%
   mutate(
     # Note, this is done after summarise(), so we'd later exclude only SLAs that
     # had null UPRNs in all CQC records, not just one record
-    
-    # Just an observation, that there is only a single SLA with 2 UPRNS. Typo?
-    # Better to manually fix the typo than exclude. I know one such exclusion
-    # will make very little difference at a classification level, but when at
-    # the CH level it may be missed.
     EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
       is.na(UPRN) ~ "CQC SLA with a null UPRN",
       N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",
@@ -114,7 +103,6 @@ ab_plus_cqc_db = ab_plus_db %>%
   # label not included due to potential for overlap) ...and keep one UPRN per
   # unique SLA (in case any SLAs have 2+ UPRNs)
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-  # Why not use the most recent UPRN?
   slice_max(order_by = UPRN, with_ties = FALSE) %>% 
   ungroup() %>% 
   mutate(
@@ -128,7 +116,7 @@ ab_plus_cqc_db = ab_plus_db %>%
 # Part Three: Save as table in dw ----------------------------------------------
 
 # Specify db table name
-table_name = gsub('-', '', glue("INT646_ABP_CQC_{start_date}_{end_date}"))
+table_name = gsub('-', '', paste0("INT646_ABP_CQC_", start_date, "_", end_date))
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
@@ -140,24 +128,25 @@ print("Output being computed to be written back to the db ...")
 ab_plus_cqc_db %>%
   compute(
     name = table_name,
-    # Why not include SLA in index? Why the extra c()?
-    indexes = list(c("UPRN", "POSTCODE")),
+    indexes = c("UPRN", "POSTCODE"),
     temporary = FALSE
   )
 
 # Grant access
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
 # Print that table has been created
-print(glue("This script has created table: {table_name}"))
+print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

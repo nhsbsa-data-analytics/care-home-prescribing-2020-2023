@@ -30,7 +30,7 @@ parent_uprn_db = address_db %>%
 # Get single GEO SLA per parent uprn
 parent_db = parent_db %>% 
   inner_join(parent_uprn_db) %>% 
-  mutate(SINGLE_LINE_ADDRESS_PARENT = paste(GEO_SINGLE_LINE_ADDRESS, POSTCODE)) %>% 
+  mutate(SINGLE_LINE_ADDRESS_PARENT = paste0(GEO_SINGLE_LINE_ADDRESS, " ", POSTCODE)) %>% 
   group_by(SINGLE_LINE_ADDRESS_PARENT) %>% 
   summarise(PARENT_UPRN = max(UPRN)) %>%
   ungroup()
@@ -46,16 +46,13 @@ patient_address_db = patient_db %>%
   # Add monthly patient count
   group_by(YEAR_MONTH, POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(MONTHLY_PATIENTS = n_distinct(NHS_NO)) %>%
-  # Fully ungroup - this is not needed, can simply group by new columns directly
-  # ungroup() %>% 
+  ungroup() %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
   ungroup()
 
 # Match the patients address to the AddressBase Plus and CQC care home addresses
-# Why was JW matching used over the simpler Levenhstein method? Did you try the
-# latter at all, only curious... 
 match_db = addressMatchR::calc_match_addresses(
   primary_df = patient_address_db,
   primary_postcode_col = "POSTCODE",
@@ -152,7 +149,7 @@ match_db = match_db %>%
   # Generate single postcode-SLA per uprn
   group_by(UPRN) %>% 
   mutate(
-    SINGLE_LINE_ADDRESS_STANDARDISED = max(paste(SINGLE_LINE_ADDRESS, POSTCODE))
+    SINGLE_LINE_ADDRESS_STANDARDISED = max(paste0(SINGLE_LINE_ADDRESS, " ", POSTCODE))
   ) %>% 
   ungroup() %>% 
   # Ensure 1 uprn per SLA
@@ -164,8 +161,6 @@ match_db = match_db %>%
 
 # Join the matches back to the patient addresses
 patient_match_db <- patient_db %>%
-  # Filter could be applied once earlier in process to get subset of patients of
-  # interest. Perhaps done to avoid a quirk of dbplyr?
   filter(
     !is.na(SINGLE_LINE_ADDRESS),
     CALC_AGE >= 65,
@@ -199,18 +194,20 @@ patient_match_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
-# Print created table name output
+# Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

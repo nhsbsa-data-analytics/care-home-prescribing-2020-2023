@@ -14,8 +14,6 @@ fact_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
 # Create a lazy table from the item level FACT table
-# The fact_db is the same as the pat_db - why? There are some operations done on
-# both can be done a single time, before saving a copy if necessary
 pat_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
@@ -101,7 +99,6 @@ match_db = match_db %>%
 fact_db = fact_db %>%
   filter(
     # Prescribing retained for all ages
-    # Why is prescribing retained for all ages here?
     #CALC_AGE >= 65L,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
@@ -205,8 +202,6 @@ disp_db = disp_db %>%
   )
 
 # Get a single gender and age for the period 
-# Could the ops done here (starting from same table as fact_db) not be done in
-# fact_db, to avoid the join later?
 pat_db <- pat_db %>% 
   filter(
     # Prescribing retained for all ages
@@ -384,18 +379,20 @@ fact_join_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
-# Print created table name output
+# Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

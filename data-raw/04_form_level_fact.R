@@ -167,7 +167,7 @@ fact_join_db = fact_db %>%
 # Part three: stack paper and eps info and save --------------------------------
 
 # Define output table name
-table_name = glue("INT646_FORMS_{start_date}_{end_date}")
+table_name = paste0("INT646_FORMS_", start_date, "_", end_date)
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
@@ -183,18 +183,20 @@ fact_join_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MIGAR"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO ADNSH"))
-DBI::dbExecute(con, glue("GRANT SELECT ON {table_name} TO MAMCP"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
-# Print created table name output
-print(glue("This script has created table: {table_name}"))
+# Print that table has been created
+print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
