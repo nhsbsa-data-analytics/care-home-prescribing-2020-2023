@@ -410,7 +410,26 @@ output = items %>%
 cqc_db = con %>% 
   tbl(from = "INT646_CQC_20230502")
 
-# CQC data
+# Create a lazy table from the CQC care home table
+house_db = con %>%
+  tbl(from = "INT646_COMPANIES_BASE")
+
+# Get companies house sic info
+house = house_db %>% 
+  select(SIC_CODE_SIC_TEXT_1) %>% 
+  filter(SIC_CODE_SIC_TEXT_1 != "None Supplied") %>% 
+  distinct() %>% 
+  collect() %>% 
+  mutate(
+    SECONDARY_COMPANY_SIC = stringr::str_split(SIC_CODE_SIC_TEXT_1, " - ") %>% purrr::map_chr(1),
+    SECONDARY_COMPANY_SIC_TYPE = stringr::str_split(SIC_CODE_SIC_TEXT_1, " - ") %>% purrr::map_chr(2)
+  ) %>% 
+  select(
+    SECONDARY_COMPANY_SIC, 
+    SECONDARY_COMPANY_SIC_TYPE
+    )
+
+# Only process relevant location-id
 ab_db = con %>% 
   tbl(from = "INT646_ABP_CQC_20210401_20220331") %>% 
   filter(!is.na(LOCATION_ID)) %>% 
@@ -423,20 +442,20 @@ cqc = cqc_db %>%
   collect_with_parallelism(., 8) %>% 
   filter(!is.na(PROVIDER_COMPANIES_HOUSE_NUMBER)) %>% 
   select(
-    UPRN, 
-    LOCATION_ID, 
-    SINGLE_LINE_ADDRESS, 
-    POSTCODE, 
+    CH_UPRN = UPRN, 
+    CH_LOCATION_ID = LOCATION_ID, 
+    CH_SLA = SINGLE_LINE_ADDRESS, 
+    CH_POSTCODE = POSTCODE, 
     PROVIDER_UPRN, 
     PROVIDER_ID,
-    PROVIDER_COMPANIES_HOUSE_NUMBER,
+    PROVIDER_COMPANY_ID = PROVIDER_COMPANIES_HOUSE_NUMBER,
     PROVIDER_SLA,
     PROVIDER_POSTCODE
     )
 
 # Provider company numbers: ~90mins
 prov_vec = cqc %>% 
-  select(PROVIDER_COMPANIES_HOUSE_NUMBER) %>% 
+  select(PROVIDER_COMPANY_ID) %>% 
   distinct() %>% 
   pull()
 
@@ -450,6 +469,54 @@ prov_results = results %>%
   rename_all(.funs = toupper) %>% 
   mutate(POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)))
 
+# Function to coerce double digit chars
+double_digit = function(x) ifelse(nchar(x) < 2, paste0("0", x), as.character(x))
+
+# Process provider information
+prov_results = prov_results %>% 
+  mutate(
+    # Measure of field completeness
+    COUNT = rowSums(is.na(.)),
+    # Coerce end date in order to max
+    END_DATE = replace_na(END_DATE, as.Date("2099-12-31")),
+    # Create director birth year month
+    BIRTH_MONTH = double_digit(BIRTH_MONTH),
+    DIRECTOR_BIRTH_YEAR_MONTH = ifelse(
+      !is.na(BIRTH_YEAR) & !is.na(BIRTH_MONTH),
+      paste0(BIRTH_YEAR, BIRTH_MONTH),
+      NA
+      )
+    ) %>% 
+  group_by(COMPANY_ID, DIRECTOR_ID) %>% 
+  # Maximum end date
+  slice_max(
+    order_by = END_DATE,
+    with_ties = TRUE,
+    na_rm = FALSE
+  ) %>% 
+  # If still tied, then most populated entry
+  slice_max(
+    order_by = COUNT,
+    with_ties = FALSE
+  ) %>% 
+  ungroup() %>% 
+  # Number of provider companies per diirector id
+  group_by(DIRECTOR_ID) %>% 
+  mutate(PROVIDER_COMPANY_COUNT = n_distinct(COMPANY_ID)) %>% 
+  ungroup() %>% 
+  select(
+    PROVIDER_COMPANY_ID = COMPANY_ID,
+    PROVIDER_COMPANY_COUNT,
+    DIRECTOR_ID,
+    DIRECTOR_NAME = DIRECTORS,
+    DIRECTOR_START_DATE = START_DATE,
+    DIRECTOR_END_DATE = END_DATE,
+    DIRECTOR_OCCUPATION = OCCUPATION,
+    DIRECTOR_ROLE = ROLE,
+    DIRECTOR_POSTCODE = POSTCODE,
+    DIRECTOR_BIRTH_YEAR_MONTH
+  )
+
 # Director ids
 director_vec = prov_results %>% 
   select(DIRECTOR_ID) %>% 
@@ -460,7 +527,7 @@ director_vec = prov_results %>%
 get_all_directors_company_info = function(dir_id){
   
   # Wait
-  Sys.sleep(0.4)
+  Sys.sleep(1)
   
   # Skip errors
   out = tryCatch({
@@ -488,7 +555,7 @@ get_all_directors_company_info = function(dir_id){
       ADDRESS_FOUR = content$items$address$region,
       SECONDARY_POSTCODE = content$items$address$postal_code,
       SECONDARY_APPOINMENT_TYPE = content$kind
-    ) %>% 
+      ) %>% 
       as.data.frame()
     
     # Return
@@ -512,12 +579,33 @@ results = lapply(director_vec, get_all_directors_company_info)
 dir_results = results %>% 
   bind_rows() %>% 
   group_by(DIRECTOR_ID) %>% 
-  mutate(COMPANY_COUNT = n()) %>% 
+  mutate(SECONDARY_COMPANY_COUNT = n_distinct(SECONDARY_COMPANY_NUMBER)) %>% 
   ungroup() %>% 
-  filter(COMPANY_COUNT >= 2)
+  # Only interested in directors with multiple companies
+  filter(SECONDARY_COMPANY_COUNT >= 2)
 
-# Data
-saveRDS(dir_results, "../../Desktop/DIRECTOR_LOOOKUP.Rds")
+# Process director data
+dir_results = dir_results %>% 
+  rename(SECONDARY_COMPANY_COUNT = COMPANY_COUNT) %>% 
+  mutate(
+    # Paste fields together to create single line address
+    SECONDARY_SLA = toupper(paste(
+      ifelse(is.na(SECONDARY_COMPANY_NAME), "", SECONDARY_COMPANY_NAME),
+      ifelse(is.na(ADDRESS_ONE), "", ADDRESS_ONE),
+      ifelse(is.na(ADDRESS_TWO), "", ADDRESS_TWO),
+      ifelse(is.na(ADDRESS_THREE), "", ADDRESS_THREE),
+      ifelse(is.na(ADDRESS_FOUR), "", ADDRESS_FOUR)
+    )),
+    # Postcode Cleaning
+    SECONDARY_POSTCODE = toupper(gsub("[^[:alnum:]]", "", SECONDARY_POSTCODE))
+  ) %>% 
+  select(-c(DIRECTOR_NAME, ADDRESS_ONE, ADDRESS_TWO, ADDRESS_THREE, ADDRESS_FOUR)) %>% 
+  group_by(DIRECTOR_ID, SECONDARY_COMPANY_NUMBER) %>% 
+  slice_min(
+    order_by = SECONDARY_COMPANY_STATUS,
+    with_ties = FALSE
+  ) %>% 
+  ungroup()
 
 # Get associated company numbers
 comp_vec = dir_results %>% 
@@ -529,15 +617,15 @@ comp_vec = dir_results %>%
 get_company_sic = function(comp_num){
   
   # Wait
-  Sys.sleep(0.2)
+  Sys.sleep(1)
   
   # Skip errors
   out = tryCatch({
     
     # Df output
     df = data.frame(
-      COMPANY_NUMBER = comp_num,
-      COMPANY_SIC = CompaniesHouse::CompanySIC("00041424", key)
+      SECONDARY_COMPANY_NUMBER = comp_num,
+      SECONDARY_COMPANY_SIC = CompaniesHouse::CompanySIC(comp_num, key)
     )
     
     # Return
@@ -556,8 +644,46 @@ get_company_sic = function(comp_num){
   
 # Data
 results = lapply(comp_vec, get_company_sic)
-  
+
 # Df of associated sic codes
 sic = results %>% 
-  bind_rows() 
+  bind_rows()
 
+# Compile all information
+total = cqc %>% 
+  inner_join(
+    prov_results,
+    by = "PROVIDER_COMPANY_ID",
+    relationship = "many-to-many"
+  ) %>% 
+  inner_join(
+    dir_results,
+    by = "DIRECTOR_ID",
+    relationship = "many-to-many"
+  ) %>% 
+  left_join(sic, by = "SECONDARY_COMPANY_NUMBER") %>% 
+  left_join(house, by = "SECONDARY_COMPANY_SIC") %>% 
+  arrange(DIRECTOR_ID, CH_LOCATION_ID) %>% 
+  mutate(
+    DIRECTOR_START_DATE = as.character(DIRECTOR_START_DATE),
+    DIRECTOR_END_DATE = as.character(DIRECTOR_END_DATE)
+  )
+
+# Define table name
+table_name = "INT646_DIRECTOR_BASE"
+
+# Remove table if exists
+drop_table_if_exists_db(table_name)
+
+# Create table
+DBI::dbWriteTable(
+  conn = con,
+  name = table_name,
+  value = total,
+  temporary = FALSE,
+  append = TRUE
+)
+
+# Disconnect and clear ---------------------------------------------------------
+
+DBI::dbDisconnect(con); rm(list = ls()); gc()

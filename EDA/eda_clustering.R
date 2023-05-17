@@ -42,9 +42,6 @@ remove_vars = c(
 
 # 0. High-level figures --------------------------------------------------------
 
-# Set up connection to DALP
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
-
 # Create lazy table
 data <- con %>%
   tbl(from = in_schema("ADNSH", "INT646_MATCH_SLA"))
@@ -55,23 +52,27 @@ base <- con %>%
 
 # Any care home figures
 df_high = data %>% 
+  filter(AGE_BAND != "<65") %>% 
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
     COST = round(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
-  collect() %>% 
+  collect_with_parallelism(., 8) %>% 
   mutate(TYPE = "Exact care home matching")
 
 # Any care home figures
 df_high_ch = base %>% 
-  filter(CH_FLAG == 1) %>% 
+  filter(
+    AGE_BAND != "<65",
+    CH_FLAG == 1
+    ) %>% 
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
     COST = round(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
-  collect() %>% 
+  collect_with_parallelism(., 8) %>% 
   mutate(TYPE = "Any care home matching")
 
 # Both above
@@ -79,6 +80,7 @@ df_high_all = rbind(df_high, df_high_ch)
 
 # Exact care home figures
 df_exact = data %>% 
+  filter(AGE_BAND != "<65") %>% 
   group_by(YEAR_MONTH) %>% 
   summarise(
     PATS = n_distinct(NHS_NO),
@@ -86,7 +88,7 @@ df_exact = data %>%
     COST = round(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
   ungroup() %>% 
-  collect() %>% 
+  collect_with_parallelism(., 8) %>%  
   arrange(YEAR_MONTH) %>% 
   mutate(
     YEAR_MONTH = factor(YEAR_MONTH),
@@ -95,7 +97,10 @@ df_exact = data %>%
 
 # High level figures df
 df_any = base %>% 
-  filter(CH_FLAG == 1) %>% 
+  filter(
+    CH_FLAG == 1,
+    AGE_BAND != "<65"
+    ) %>% 
   group_by(YEAR_MONTH) %>% 
   summarise(
     PATS = n_distinct(NHS_NO),
@@ -103,7 +108,7 @@ df_any = base %>%
     COST = round(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
   ungroup() %>% 
-  collect() %>% 
+  collect_with_parallelism(., 8) %>% 
   arrange(YEAR_MONTH) %>% 
   mutate(
     YEAR_MONTH = factor(YEAR_MONTH),
@@ -704,6 +709,159 @@ df_rank %>%
     TOTAL = sum(n),
     PROP = round(n / TOTAL, 2)
   )
+
+# 9. Provider Size -------------------------------------------------------------
+
+# Create lazy table
+cqc <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_CQC_20230502"))
+
+# Dates for filter
+start_date = "2021-04-01"
+end_date =   "2022-03-31"
+
+# With provider features
+df_prov = cqc %>% 
+  mutate(
+    REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
+    DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
+    CH_FLAG = 1L
+  ) %>% 
+  filter(
+    !is.na(UPRN),
+    REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
+    is.na(DEREGISTRATION_DATE) | 
+      DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
+  ) %>% 
+  mutate(UPRN = as.numeric(UPRN)) %>% 
+  collect() %>% 
+  group_by(PROVIDER_ID) %>% 
+  mutate(PROVIDER_SIZE = n_distinct(UPRN)) %>% 
+  ungroup() %>% 
+  inner_join(
+    df_total,
+    by = "UPRN"
+  ) %>% 
+  group_by(PROVIDER_ID) %>% 
+  mutate(PROVIDER_SIZE = n_distinct(UPRN)) %>% 
+  ungroup() %>% 
+  select(UPRN, PROVIDER_ID, PROVIDER_SLA, PROVIDER_SIZE)
+
+# Columns to remove
+remove_vars = c(
+  "UPRN",
+  'CURRENT_RATING',
+  'MATCH_SLA_STD',
+  'PARENT_UPRN',
+  'NURSING_HOME_FLAG',
+  'RESIDENTIAL_HOME_FLAG',
+  'MAX_MONTHLY_PATIENTS',
+  'NUMBER_OF_BEDS',
+  'MONTHS',
+  'ITEMS',
+  'NIC',
+  'MALE',
+  'FEMALE',
+  'UNKNOWN',
+  'AGE_65_69',
+  'AGE_70_74',
+  'AGE_75_79',
+  'AGE_80_84',
+  'AGE_85_89',
+  'AGE_90_PLUS',
+  'PATS'
+)
+
+# Columns to correlate
+df_scatter = df_prov %>% 
+  inner_join(
+    df_total,
+    by = "UPRN"
+    ) %>% 
+  mutate(
+    PROVIDER_SIZE = case_when(
+      PROVIDER_SIZE >= 11 & PROVIDER_SIZE <= 20 ~ "11-20",
+      PROVIDER_SIZE >= 21 & PROVIDER_SIZE <= 50 ~ "21-50",
+      PROVIDER_SIZE >= 51 & PROVIDER_SIZE <= 100 ~ "51-100",
+      PROVIDER_SIZE >= 101 ~ "100+",
+      T ~ as.character(PROVIDER_SIZE)
+    ),
+    PROVIDER_SIZE = factor(
+      PROVIDER_SIZE,
+      levels = c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11-20", "21-50", "51-100", "100+")
+    )
+  ) %>% 
+  select(-remove_vars) %>% 
+  select(-c(PROVIDER_SLA, PROVIDER_ID)) %>% 
+  group_by(PROVIDER_SIZE) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup()
+
+# Columns for loop
+cols = names(df_scatter)[!names(df_scatter) == "PROVIDER_SIZE"]
+
+# Create Charts
+for(i in cols){
+  p = ggplot(df_scatter, aes_string('PROVIDER_SIZE', i))+
+    geom_col()
+  print(p)
+}
+
+# Get top 100 providers
+top_prov = df_prov %>% 
+  select(PROVIDER_ID, PROVIDER_SIZE) %>% 
+  distinct() %>% 
+  arrange(desc(PROVIDER_SIZE)) %>% 
+  top_n(100) %>% 
+  select(PROVIDER_ID) %>% 
+  pull()
+
+# Filter provider data
+top_prov_df = df_prov %>% 
+  filter(PROVIDER_ID %in% top_prov) %>% 
+  inner_join(
+    df_total,
+    by = "UPRN"
+  ) %>% 
+  select(-remove_vars) %>% 
+  group_by(PROVIDER_ID, PROVIDER_SLA, PROVIDER_SIZE) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup()
+
+# Columns for loop
+cols = names(df_scatter)[!names(df_scatter) %in% c("PROVIDER_SLA", "PROVIDER_SIZE", "PROVIDER_ID")]
+
+# Plot function
+plot_prov_bar = function(vars){
+  p = top_prov_df %>% 
+    rename_at(vars, ~"METRIC") %>% 
+    select(PROVIDER_SLA, METRIC) %>% 
+    arrange(METRIC) %>% 
+    hchart(., "area", hcaes(PROVIDER_SLA, METRIC)) %>% 
+    hc_title(text = vars) %>% 
+    hc_xAxis(categories = FALSE)
+  print(p)
+}
+
+# Check plots
+lapply(cols[12:22], plot_prov_bar)
+
+# Single plot
+plot_prov_bar("DRUG")
+
+top_prov_df %>% 
+  ggplot(., hcaes(DRUG_20))+
+  geom_density()
+
+df_total %>% 
+  ggplot(., hcaes(DRUG_20))+
+  geom_density()
+  
+  
+
+df_prov = df_total %>% 
+  left_join(prov) %>% 
+  mutate(PROVIDER_SIZE = ifelse(is.na(PROVIDER_SIZE), 1, PROVIDER_SIZE))
 
 # Disconnect and clean ---------------------------------------------------------
 
