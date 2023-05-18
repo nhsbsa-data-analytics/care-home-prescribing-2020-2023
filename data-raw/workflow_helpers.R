@@ -252,66 +252,20 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
     dplyr::left_join(y = merged_df)
 }
 
-# Function to execute and collect dbplyr code with specified degree of parallelism
-collect_with_parallelism_dbi = function(lazy_tbl, parallel_num){
-  
-  # Pull the DB connection
-  db_connection <- lazy_tbl$src$con
-  
-  # Specify degree of parallelism
-  string_insert = paste0("SELECT /*+ PARALLEL(", parallel_num, ") */")
-  
-  # Specify parallelism for first select
-  query = gsub("SELECT", string_insert, sql_render(lazy_tbl))
-  
-  # Build new query
-  new_query = dbplyr::build_sql(con = db_connection, query)
-  
-  # Send query to db
-  result_db = DBI::dbSendQuery(con, new_query)
-  
-  # Fetch results
-  result_df = DBI::dbFetch(result_db)
-  
-  # Clear results
-  DBI::dbClearResult(result_db)
-  
-  # Result
-  return(result_df)
-}
-
-# Function to execute and collect dbplyr code with specified degree of parallelism
-collect_with_parallelism = function(lazy_tbl, n){
-  
-  # Pull the DB connection
-  db_connection <- lazy_tbl$src$con
-  
-  # Specify degree of parallelism
-  string_insert = paste0("SELECT /*+ PARALLEL(", n, ") */")
-  
-  # Specify parallelism for first select
-  query = gsub("SELECT", string_insert, sql_render(lazy_tbl))
-  
-  # Build new query
-  new_query = dbplyr::build_sql(con = db_connection, query)
-  
-  # Collect newly generated sql
-  dplyr::tbl(src = db_connection, dplyr::sql(new_query)) %>% collect()
-}
-
 # Clean a df address (i.e. a non-db table)
 tidy_df_single_line_address = function(df, vars){
   
   df %>% 
     mutate(
       # Address cleaning
+      {{vars}} := toupper({{vars}}),
       {{vars}} := gsub(" & ", " AND ", {{vars}}),
       {{vars}} := gsub("(\\D)(\\d)", "\\1 \\2", {{vars}}),
       {{vars}} := gsub("(\\d)(\\D)", "\\1 \\2", {{vars}}),
       {{vars}} := gsub("[,.();:#''\"]", " ", {{vars}}),
       {{vars}} := stringr::str_squish({{vars}}),
       {{vars}} := ifelse(
-        grepl("[0-9] - [0-9]", {{vars}}) == T,
+        grepl("[0-9] - [0-9]", {{vars}}) == TRUE,
         gsub(" - ", "-", {{vars}}),
         {{vars}}
         )
