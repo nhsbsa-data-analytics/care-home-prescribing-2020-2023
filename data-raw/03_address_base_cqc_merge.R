@@ -213,10 +213,6 @@ cqc_db_trimmed <- cqc_db_trimmed %>%
 ab_plus_cqc_db = ab_plus_db %>%
   inner_join(postcodes_db, by = "POSTCODE") %>% 
   select(-EPOCH) %>% 
-  # Removing the POSTCODE and CH_FLAG before joining the fuller CQC data.
-  # Previous code already discarded both from CQC before this point. See code
-  # above for comparison. In effect we are taking AB+ over CQC for these fields
-  # from now on. Is that correct?
   left_join(
     cqc_db_trimmed,
     by = "UPRN"
@@ -228,12 +224,6 @@ ab_plus_cqc_db = ab_plus_db %>%
   ) %>% 
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
-  # For some reason at this point the PARENT_UPRN column is not in the CQC data.
-  # I tried to find where this is introduced in the original workflow but could
-  # not!
-  
-  # Also, due to taking out some previous code the UPRN is not numeric yet.
-  # Added here, but ultimately can do this in script 1.
   union_all(
     cqc_db_trimmed %>% 
       mutate(
@@ -244,12 +234,17 @@ ab_plus_cqc_db = ab_plus_db %>%
   # Get unique SLAs from among AB & CQC tables
   # (individual SLAs may come from either/all of: up to 3 variants in AB table and 1 variant in CQC table;
   #  label not included due to potential for overlap)
+  # ...and keep one UPRN per unique SLA (in case any SLAs have 2+ UPRNs)
+  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
+  slice_max(order_by = UPRN, with_ties = FALSE) %>% 
+  ungroup() %>% 
   mutate(
     START_DATE = start_date,
     END_DATE = end_date,
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
-  )
+  ) %>% 
+  select(-N_DISTINCT_UPRN)
 
 # Part Three: Save as table in dw ----------------------------------------------
 
