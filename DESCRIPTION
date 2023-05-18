@@ -30,6 +30,7 @@ Imports:
     dbplyr,
     golem,
     highcharter,
+    htmltools,
     lubridate,
     magrittr,
     nhsbsaR,
