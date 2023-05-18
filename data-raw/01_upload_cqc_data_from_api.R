@@ -249,8 +249,8 @@ cqc_process_df <- cqc_details_df %>%
     cqc_date
   ) %>% 
   left_join(cqc_providers_df, by = "provider_id") %>% 
-  tidy_df_single_line_address(., single_line_address) %>% 
-  tidy_df_single_line_address(., provider_sla) %>% 
+  tidy_df_single_line_address(single_line_address) %>% 
+  tidy_df_single_line_address(provider_sla) %>% 
   rename_with(toupper)
 
 # Check na count per column
