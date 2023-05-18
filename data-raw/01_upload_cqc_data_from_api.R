@@ -123,18 +123,15 @@ cqc_details_reduced <- cqc_details %>%
             "registrationDate",
             "deregistrationDate",
             "numberOfBeds",
-            "localAuthority",
-            "lastInspection.date"
+            "lastInspection.date",
+            "currentRatings.overall.rating"
           )
         ),
         starts_with("postal"),
-        starts_with("onspd"),
-        starts_with("relationships"),
         starts_with("regulatedActivities.name"),
-        starts_with("regulatedActivities.code"),
         starts_with("specialisms"),
-        starts_with("currentRatings.overall.rating"),
-        # starts_with("currentRatings.service") # could take this too, but adds 14 cols
+        starts_with("currentRatings.overall.keyQuestionRatings.name"),
+        starts_with("currentRatings.overall.keyQuestionRatings.rating"),
         starts_with("gacServiceTypes.name")
       )
   )
@@ -167,11 +164,8 @@ cqc_details_df <- cqc_details_reduced %>%
   unite_to_plural(
     specialisms,
     regulated_activities_names,
-    regulated_activities_codes,
-    relationships_related_location_ids,
-    relationships_related_location_names,
-    relationships_types,
-    relationships_reasons,
+    current_ratings_overall_key_question_ratings_names,
+    current_ratings_overall_key_question_ratings_ratings,
     gac_service_types_names
   )
   
@@ -187,12 +181,8 @@ cqc_process_df = cqc_details_df %>%
     current_rating = current_ratings_overall_rating,
     nursing_home_flag = nursing_home,
     residential_home_flag = residential_home,
-    ccg_code = onspd_ccg_code,
-    ccg_name = onspd_ccg_name,
-    icb_code = onspd_icb_code,
-    icb_name = onspd_icb_name,
-    latitude = onspd_latitude,
-    longitude = onspd_longitude,
+    key_question_names = current_ratings_overall_key_question_ratings_names,
+    key_question_ratings = current_ratings_overall_key_question_ratings_ratings,
     gac_service_types = gac_service_types_names
   ) %>% 
   mutate(
@@ -231,24 +221,15 @@ cqc_process_df = cqc_details_df %>%
     type,
     number_of_beds,
     current_rating,
+    key_question_names,
+    key_question_ratings,
     cqc_date,
     provider_id,
     name,
-    local_authority,
+    ods_code,
     last_inspection_date,
-    ccg_code,
-    ccg_name,
-    icb_code,
-    icb_name,
-    latitude,
-    longitude,
     specialisms,
     regulated_activities_names,
-    regulated_activities_codes,
-    relationships_related_location_ids,
-    relationships_related_location_names,
-    relationships_types,
-    relationships_reasons,
     gac_service_types
   ) %>% 
   rename_with(toupper)

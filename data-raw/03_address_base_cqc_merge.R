@@ -41,6 +41,10 @@ cqc_db_raw <- cqc_db %>%
 cqc_db_trimmed <- cqc_db_raw %>% 
   mutate(TEMP_DECIDER = coalesce(LAST_INSPECTION_DATE, REGISTRATION_DATE)) %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>% 
+  summarise(
+    N_DISTINCT_UPRN = n_distinct(UPRN),
+    .groups = "drop"
+  ) %>% 
   slice_max(
     TEMP_DECIDER,
     with_ties = FALSE
@@ -50,6 +54,8 @@ cqc_db_trimmed <- cqc_db_raw %>%
   mutate(
     EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
       is.na(UPRN) ~ "CQC SLA with a null UPRN",
+      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs", 
+      # ...of which all UPRNs except one have already been discarded at this point
       TRUE ~ NULL
     )
   )
@@ -142,8 +148,6 @@ cqc_db_trimmed <- cqc_db_raw %>%
 # 
 # print(glue("Number of homes changing type: {changed_type_count}"))
 # 
-# # Done with ROW_ID, as was added only for above checks
-cqc_db_trimmed <- cqc_db_trimmed %>% select(-ROW_ID)
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
@@ -152,7 +156,7 @@ postcodes_db = ab_plus_db %>%
   filter(CH_FLAG == 1) %>% 
   select(POSTCODE) %>% 
   union_all(cqc_db_trimmed %>% select(POSTCODE)) %>% 
-  distinct() 
+  distinct()
 
 ## Checking POSTCODE & CH_FLAG - we currently take the AB+ values forward
 # ab_plus_cqc_db_check = ab_plus_db %>%
@@ -194,7 +198,18 @@ postcodes_db = ab_plus_db %>%
 # 5 TRUE           TRUE           13588
 ##
 
-# Add cqc attributes then pivot SLA long
+# Remove columns no longer needed
+cqc_db_trimmed <- cqc_db_trimmed %>% 
+  select(-c(
+    ROW_ID,
+    POSTCODE,
+    CH_FLAG,
+    ODS_CODE,
+    REGULATED_ACTIVITIES_NAMES,
+    starts_with("KEY_QUESTION")
+  ))
+
+# Add cqc data then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>%
   inner_join(postcodes_db, by = "POSTCODE") %>% 
   select(-EPOCH) %>% 
@@ -202,7 +217,10 @@ ab_plus_cqc_db = ab_plus_db %>%
   # Previous code already discarded both from CQC before this point. See code
   # above for comparison. In effect we are taking AB+ over CQC for these fields
   # from now on. Is that correct?
-  left_join(cqc_db_trimmed %>% select(-c(POSTCODE, CH_FLAG)), by = "UPRN") %>%
+  left_join(
+    cqc_db_trimmed,
+    by = "UPRN"
+  ) %>%
   tidyr::pivot_longer(
     cols = ends_with("SINGLE_LINE_ADDRESS"),
     names_to = "ADDRESS_TYPE",
@@ -247,10 +265,10 @@ drop_table_if_exists_db(table_name)
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to the DB with indexes
-local_ab_plus_cqc_db <- ab_plus_cqc_db %>%
+ab_plus_cqc_df <- ab_plus_cqc_db %>%
   collect()
 
-local_ab_plus_cqc_db %>%
+ab_plus_cqc_df %>%
   mutate(
     across(where(is.POSIXct), as.character)
   ) %>% 
