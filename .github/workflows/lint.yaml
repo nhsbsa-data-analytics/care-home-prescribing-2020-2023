@@ -23,6 +23,7 @@ jobs:
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: lintr
+          pak-version: rc
 
       - name: Lint
         run: lintr::lint_package()
