@@ -61,7 +61,7 @@ cqc_df = cqc_db %>%
     )
   )
 
-# From above processed CQC data add attributes (e.g. residential and nursing home flags) where possible
+# Extract one row of CQC attributes per UPRN (e.g. residential and nursing home flags)
 cqc_attributes_df = cqc_db %>%
   mutate(
     REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
@@ -105,7 +105,7 @@ postcodes_db = ab_plus_db %>%
   filter(CH_FLAG == 1) %>% 
   select(POSTCODE) %>% 
   union_all(cqc_db %>% select(POSTCODE)) %>% 
-  distinct() 
+  distinct()
 
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
