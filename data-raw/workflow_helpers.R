@@ -252,3 +252,22 @@ oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
     dplyr::left_join(y = merged_df)
 }
 
+# Clean a df address (i.e. a non-db table)
+tidy_df_single_line_address = function(df, vars){
+  
+  df %>% 
+    mutate(
+      # Address cleaning
+      {{vars}} := toupper({{vars}}),
+      {{vars}} := gsub(" & ", " AND ", {{vars}}),
+      {{vars}} := gsub("(\\D)(\\d)", "\\1 \\2", {{vars}}),
+      {{vars}} := gsub("(\\d)(\\D)", "\\1 \\2", {{vars}}),
+      {{vars}} := gsub("[,.();:#''\"]", " ", {{vars}}),
+      {{vars}} := stringr::str_squish({{vars}}),
+      {{vars}} := ifelse(
+        grepl("[0-9] - [0-9]", {{vars}}) == TRUE,
+        gsub(" - ", "-", {{vars}}),
+        {{vars}}
+        )
+    )
+}

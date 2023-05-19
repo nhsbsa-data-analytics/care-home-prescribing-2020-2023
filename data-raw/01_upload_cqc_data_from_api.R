@@ -91,7 +91,7 @@ parallel::clusterExport(
 )
 
 # Print script update
-print("Now downloading CQC API data ...")
+print("Now downloading CQC API location data ...")
 
 # Generate cqc details
 cqc_details <- parallel::parLapply(
@@ -109,9 +109,11 @@ cqc_details_df <- cqc_details %>%
   janitor::clean_names() %>%
   select(
     location_id,
+    provider_id,
     uprn,
     registration_date,
     deregistration_date,
+    last_inspection_date,
     name,
     postal_address_line1,
     postal_address_line2,
@@ -146,6 +148,66 @@ cqc_details_df <- cqc_details %>%
   ) %>% 
   select(-starts_with("gac_service_types_name")); gc()
 
+# Get provider id vec
+provider_vec = cqc_details_df %>% 
+  select(provider_id) %>% 
+  distinct() %>% 
+  pull()
+
+# NOTE: provider info doesn't work in parallel due to cqc api
+get_cqc_api_provider_data = function(loc_num){
+  
+  # Wait
+  Sys.sleep(0.05)
+  
+  # Paste location url with location_id
+  url = paste0(
+    "https://api.cqc.org.uk/public/v1/providers/", 
+    provider_vec[loc_num]
+  )
+  
+  # Get data
+  data = get_api_content(url) %>% 
+    unlist() %>% 
+    bind_rows()
+  
+  # Return data
+  return(data)
+}
+
+# Print script update
+print("Now downloading CQC API provider data ...")
+
+# With sys.sleep takes ~30 mins
+cqc_details = lapply(
+  X = 1:length(provider_vec), 
+  FUN = get_cqc_api_provider_data
+)
+
+# Process the provider data
+cqc_providers_df = cqc_details %>% 
+  bind_rows() %>% 
+  janitor::clean_names() %>% 
+  mutate(
+    # Paste fields together to create single line address
+    provider_sla = toupper(paste(
+      ifelse(is.na(name), "", name),
+      ifelse(is.na(postal_address_line1), "", postal_address_line1),
+      ifelse(is.na(postal_address_town_city), "", postal_address_town_city),
+      ifelse(is.na(region), "", region)
+    )),
+    # Postcode Cleaning
+    postal_code = toupper(gsub("[^[:alnum:]]", "", postal_code))
+  ) %>% 
+  select(
+    provider_id, 
+    provider_uprn = uprn,
+    provider_companies_house_number = companies_house_number,
+    provider_sla,
+    provider_postcode = postal_code,
+    provider_last_inspection_date = last_inspection_date
+  )
+
 # Get current year_month
 download_date <- as.integer(format(today(), "%Y%m%d"))
 
@@ -168,23 +230,13 @@ cqc_process_df <- cqc_details_df %>%
   mutate(
     # Postcode Cleaning
     postcode = toupper(gsub("[^[:alnum:]]", "", postcode)),
-    # Address cleaning
-    single_line_address = toupper(single_line_address),
-    single_line_address = gsub(" & ", "and", single_line_address),
-    single_line_address = gsub("(\\D)(\\d)", "\\1 \\2", single_line_address),
-    single_line_address = gsub("(\\d)(\\D)", "\\1 \\2", single_line_address),
-    single_line_address = gsub("[,.();:#'']", " ", single_line_address),
-    single_line_address = stringr::str_squish(single_line_address),
-    single_line_address = ifelse(
-      grepl("[0-9] - [0-9]", single_line_address) == T,
-      gsub(" - ", "-", single_line_address),
-      single_line_address
-    ),
     cqc_date = download_date
   ) %>% 
   select(
     uprn,
     location_id,
+    provider_id,
+    last_inspection_date,
     registration_date,
     deregistration_date,
     single_line_address,
@@ -196,6 +248,9 @@ cqc_process_df <- cqc_details_df %>%
     current_rating,
     cqc_date
   ) %>% 
+  left_join(cqc_providers_df, by = "provider_id") %>% 
+  tidy_df_single_line_address(single_line_address) %>% 
+  tidy_df_single_line_address(provider_sla) %>% 
   rename_with(toupper)
 
 # Check na count per column

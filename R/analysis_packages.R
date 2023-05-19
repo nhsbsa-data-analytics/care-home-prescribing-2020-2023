@@ -9,10 +9,12 @@ pacman::p_load(
   # Global
   'dplyr',
   'dbplyr',
+  'tidyr',
   'DBI',
   'tictoc',
   'janitor',
   'yaml',
+  'highcharter',
   'glue',
   
   # CQC API data 
