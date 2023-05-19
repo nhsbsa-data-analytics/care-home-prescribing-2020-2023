@@ -1,5 +1,5 @@
 # TO DO:
-# Add new CQC from scipt 01
+# Bring new CQC columns added in script 01
 # Populate PARENT_UPRNs in CQC records
 
 # Set up connection to the DB
