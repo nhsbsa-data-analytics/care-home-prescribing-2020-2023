@@ -93,8 +93,8 @@ cqc_attributes_df = cqc_db %>%
   )
 
 # The tables above needed to be processed locally due to inadequate dbplyr translation
-# of the function last(); these tables are now coplied into the DB temporarily to be used
-# as lazy tables downstream; local dfs removed
+# of the function last() (as of v.2.3.2); these tables are now copied into the DB temporarily to be used
+# as lazy tables downstream; local dfs are removed
 copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE)
 cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
 
