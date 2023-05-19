@@ -48,6 +48,8 @@ cqc_trimmed_db <- cqc_raw_db %>%
     N_DISTINCT_UPRN = n_distinct(UPRN),
     TEMP_DECIDER = coalesce(LAST_INSPECTION_DATE, REGISTRATION_DATE)
   ) %>%
+  arrange(POSTCODE, SINGLE_LINE_ADDRESS, TEMP_DECIDER) %>% 
+  fill(UPRN, "up") %>% 
   slice_max(
     TEMP_DECIDER,
     with_ties = FALSE
