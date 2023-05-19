@@ -1,3 +1,6 @@
+# TO DO:
+# Add new CQC from scipt 01
+# Populate PARENT_UPRNs in CQC records
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -38,7 +41,7 @@ cqc_df = cqc_db %>%
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
   ) %>% 
   ungroup() %>%
-  collect() %>%
+  collect() %>% # Collected, because function last() used below isn't translated well by dbplyr
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   summarise(
     LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER, na.rm = TRUE),
@@ -74,7 +77,7 @@ cqc_attributes_df = cqc_db %>%
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>%
-  collect() %>%
+  collect() %>% # Collected, because function last() used below isn't translated well by dbplyr
   group_by(UPRN) %>%
   mutate(
     N_RATING = n_distinct(CURRENT_RATING),
@@ -91,7 +94,7 @@ cqc_attributes_df = cqc_db %>%
 
 # The tables above needed to be processed locally due to inadequate dbplyr translation
 # of the function last(); these tables are now coplied into the DB temporarily to be used
-# as lazy tables downstream
+# as lazy tables downstream; local dfs removed
 copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE)
 cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
 
