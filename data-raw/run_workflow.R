@@ -1,8 +1,8 @@
 
 # Load/install all required packages and functions
 source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
-source("R/workflow_production.R")
+source("data-raw/workflow_helpers.R")
+source("data-raw/workflow_production.R")
 
 # Specify variables to retain at end of each script
 keep_vars = c(ls(), 'keep_vars')
