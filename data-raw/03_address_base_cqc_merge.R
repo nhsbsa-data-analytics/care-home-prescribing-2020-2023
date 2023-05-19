@@ -7,8 +7,7 @@ cqc_db <- con %>%
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
-  # Temporarily using Adnan's table as I dropped mine!
-  tbl(in_schema("ADNSH", ab_plus_data))
+  tbl(from = ab_plus_data)
 
 # Get 4 values for final output
 ab_epoch = pull_date_string(ab_plus_db, EPOCH)
@@ -68,6 +67,7 @@ cqc_na_uprn_db <- cqc_trimmed_db %>%
   filter(is.na(UPRN))
 
 cqc_trimmed_db <- cqc_trimmed_db %>% 
+  filter(!is.na(UPRN)) %>% # We have these in cqc_na_uprn_db to add back later
   group_by(UPRN) %>% 
   slice_max(
     TEMP_DECIDER,
@@ -223,7 +223,7 @@ postcodes_db = ab_plus_db %>%
 cqc_trimmed_db <- cqc_trimmed_db %>% 
   select(-c(
     ROW_ID,
-    # ODS_CODE, # This will be in cqc table as was added in script 01, whch I have yet to run...
+    ODS_CODE,
     REGULATED_ACTIVITIES_NAMES,
     starts_with("KEY_QUESTION")
     # We should look at what is in data and remove any further ones not needed in base table
