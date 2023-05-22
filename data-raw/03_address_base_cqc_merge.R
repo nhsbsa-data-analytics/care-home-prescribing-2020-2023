@@ -1,3 +1,4 @@
+
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
@@ -13,172 +14,65 @@ ab_plus_db <- con %>%
 ab_epoch = pull_date_string(ab_plus_db, EPOCH)
 cqc_date = pull_date_string(cqc_db, CQC_DATE)
 
-# Distinct SLA and postcode per uprn and location-id 
+# Part one: Process cqc data ---------------------------------------------------
 
-# CAVEAT: A relatively small number of entries (264) were removed. We only kept
-# the latest record for each combination of postcode and single line address.
-# Latest is determined by latest inspection if it exists, or registration date
-# if it does not. Of these removed entries, 11 individual care homes had changed
-# their type from residential to nursing home, or vice versa.
-cqc_raw_db <- cqc_db %>% 
+# Distinct SLA and postcode per uprn and location-id
+cqc_db = cqc_db %>% 
   mutate(
     REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
     DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
-    LAST_INSPECTION_DATE = TO_DATE(LAST_INSPECTION_DATE, "YYYY-MM-DD"), # NEW
     CH_FLAG = 1L
   ) %>% 
   filter(
+    #!is.na(UPRN),  # Do not exclude records with null UPRNs, as these will be used for CH/non-CH level analysis
     REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>% 
-  # Adding ROW_ID for later validation purposes. Ultimately will not be needed,
-  # unless we do decide to keep some validation code in the process?
-  mutate(ROW_ID = rank(LOCATION_ID)) # NEW
-
-# I have split off here in order to keep the raw data for the later validation.
-# If validation code is not kept, can be joined into one longer pipe as before.
-
-# The treatment of ratings and other summary calculations are dropped due to
-# change in logic, using only most recent record per POSTCODE, SLA.
-cqc_trimmed_db <- cqc_raw_db %>% 
-  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>% 
+  # Set rating to null if multiple present per SLA-postcode
+  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(
+    N_RATING = n_distinct(CURRENT_RATING),
+    CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
+  ) %>% 
+  ungroup() %>%
+  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
+  summarise(
+    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
     N_DISTINCT_UPRN = n_distinct(UPRN),
-    TEMP_DECIDER = coalesce(LAST_INSPECTION_DATE, REGISTRATION_DATE)
+    UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
+    NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
+    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
+    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE),
+    CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
+    .groups = "drop"
+  ) %>% 
+  mutate(
+    # Note, this is done after summarise(), so we'd later exclude only SLAs that
+    # had null UPRNs in all CQC records, not just one record
+    EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
+      is.na(UPRN) ~ "CQC SLA with a null UPRN",
+      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",
+      # ...of which all UPRNs except one have already been discarded at this point
+      T ~ NULL
+    )
+  )
+
+# From above processed data add residential and nursing home flag where possible
+cqc_attributes_db = cqc_db %>%
+  group_by(UPRN) %>%
+  mutate(
+    N_RATING = n_distinct(CURRENT_RATING),
+    CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
+  ) %>% 
+  summarise(
+    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
+    NURSING_HOME_FLAG = max(NURSING_HOME_FLAG, na.rm = TRUE),
+    RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE),
+    CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
+    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE)
   ) %>%
-  arrange(POSTCODE, SINGLE_LINE_ADDRESS, TEMP_DECIDER) %>% 
-  fill(UPRN, "up") %>% 
-  slice_max(
-    TEMP_DECIDER,
-    with_ties = FALSE
-  ) %>% 
-  ungroup()%>% 
-  mutate(
-    EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
-      is.na(UPRN) ~ "CQC SLA with a null UPRN",
-      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs", 
-      # ...of which all UPRNs except one have already been discarded at this point
-      TRUE ~ NULL
-    )
-  ) %>% 
-  mutate(
-    EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
-      is.na(UPRN) ~ "CQC SLA with a null UPRN",
-      N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs", 
-      # ...of which all UPRNs except one have already been discarded at this point
-      TRUE ~ NULL
-    )
-  ) %>% 
-  select(-N_DISTINCT_UPRN, TEMP_DECIDER)
-
-# At this point cqc_trimmed_db has the most recent entry for each POSTCODE, SLA
-# combination. But the UPRN is NOT distinct, some UPRNs occur up to 6 times.
-
-# Validation and checking
-
-# The whole commented out section below is just some checking of the data at
-# this stage. So this can be either removed in the final workflow, or left in if
-# deemed useful, e.g. to get numbers for caveats.
-
-# ## Get all removed entries. Count is 264.
-# cqc_db_removed <- cqc_db_raw %>% 
-#   anti_join(
-#     cqc_db_trimmed,
-#     by = c("ROW_ID")
-#   )
-# 
-# removed_count = cqc_db_removed %>% collect() %>% nrow()
-# 
-# print(glue("Number of entries removed: {removed_count}"))
-# 
-# ## Get all entries for which the postcode/SLA combination is among the removed
-# ## rows. This is simply for sanity checking by visual inspection.
-# cqc_db_trimmed_check <- cqc_db_trimmed %>% 
-#   transmute(
-#     POSTCODE,
-#     SINGLE_LINE_ADDRESS,
-#     REGISTRATION_DATE,
-#     DEREGISTRATION_DATE,
-#     LAST_INSPECTION_DATE,
-#     NURSING_HOME_FLAG,
-#     RESIDENTIAL_HOME_FLAG,
-#     CURRENT_RATING
-#   ) %>%
-#   collect()
-# 
-# cqc_db_removed_check <- cqc_db_removed %>% 
-#   transmute(
-#     POSTCODE,
-#     SINGLE_LINE_ADDRESS,
-#     REGISTRATION_DATE,
-#     DEREGISTRATION_DATE,
-#     LAST_INSPECTION_DATE,
-#     NURSING_HOME_FLAG,
-#     RESIDENTIAL_HOME_FLAG,
-#     CURRENT_RATING
-#   ) %>%
-#   collect()
-# 
-# cqc_db_check <- cqc_db_removed_check %>% 
-#   left_join(
-#     cqc_db_trimmed_check,
-#     by = c("POSTCODE", "SINGLE_LINE_ADDRESS"),
-#     suffix = c(".REMOVED", ".KEPT")
-#   )
-# 
-# cqc_db_check <- cqc_db_check %>%
-#   pivot_longer(
-#     cols = c(ends_with(".REMOVED"), ends_with(".KEPT")),
-#     names_to = c(".value", "STATUS"),
-#     names_pattern = "(.*)\\.(.*)"
-#   ) %>% 
-#   arrange(POSTCODE, SINGLE_LINE_ADDRESS, STATUS)
-# 
-# ## Find care homes which changed type - count is 11
-# cqc_changed_type <- cqc_db_raw %>%
-#   mutate(
-#     NH = if_else(NURSING_HOME_FLAG == 1, "NH", NA_character_),
-#     RH = if_else(RESIDENTIAL_HOME_FLAG == 1, "RH", NA_character_),
-#   ) %>% 
-#   collect() %>% 
-#   unite(HOME_TYPE, NH, RH, sep = " ", na.rm = TRUE) %>% 
-#   select(
-#     POSTCODE,
-#     SINGLE_LINE_ADDRESS,
-#     HOME_TYPE,
-#     NURSING_HOME_FLAG,
-#     RESIDENTIAL_HOME_FLAG
-#   ) %>% 
-#   group_by(POSTCODE, SINGLE_LINE_ADDRESS, HOME_TYPE) %>%
-#   summarise(n = n()) %>%
-#   summarise(n = n()) %>%
-#   ungroup() %>% 
-#   filter(n > 1) %>% 
-#   select(-n)
-# 
-# changed_type_count = cqc_changed_type %>%
-#   collect() %>%
-#   nrow()
-# 
-# print(glue("Number of homes changing type: {changed_type_count}"))
-
-
-# # From above processed data add residential and nursing home flag where possible
-# cqc_attributes_db = cqc_db %>%
-#   group_by(UPRN) %>%
-#   mutate(
-#     N_RATING = n_distinct(CURRENT_RATING),
-#     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
-#   ) %>% 
-#   summarise(
-#     LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
-#     NURSING_HOME_FLAG = max(NURSING_HOME_FLAG, na.rm = TRUE),
-#     RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE),
-#     CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
-#     NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE)
-#   ) %>%
-#   ungroup()
+  ungroup()
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
@@ -186,27 +80,10 @@ cqc_trimmed_db <- cqc_raw_db %>%
 postcodes_db = ab_plus_db %>% 
   filter(CH_FLAG == 1) %>% 
   select(POSTCODE) %>% 
-  union_all(cqc_trimmed_db %>% select(POSTCODE)) %>% 
+  union_all(cqc_db %>% select(POSTCODE)) %>% 
   distinct() 
 
-# Instead of having a separate attributes table, we now have just one table for
-# cqc, with distinct UPRNs. So this can be left joined to AB+, for the same
-# result as previous attributes table. But, we now have ALL columns. So, we need
-# to decide what to carry forward with.
-
-# Remove columns no longer needed
-cqc_attribtes_db <- cqc_trimmed_db %>% 
-  select(-c(
-    POSTCODE,
-    CH_FLAG,
-    ROW_ID,
-    ODS_CODE,
-    REGULATED_ACTIVITIES_NAMES,
-    starts_with("KEY_QUESTION")
-    # We should look at what is in data and remove any further ones not needed in base table
-  ))
-
-# Pivot SLA long
+# Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
   inner_join(postcodes_db, by = "POSTCODE") %>% 
   select(-EPOCH) %>% 
@@ -216,16 +93,9 @@ ab_plus_cqc_db = ab_plus_db %>%
     names_to = "ADDRESS_TYPE",
     values_to = "SINGLE_LINE_ADDRESS"
   ) %>% 
-  filter(!is.na(SINGLE_LINE_ADDRESS)) %>% 
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
-  union_all(
-    cqc_trimmed_db %>% 
-      mutate(
-        UPRN = as.numeric(UPRN),
-        PARENT_UPRN = NA_real_
-      )
-  ) %>%  
+  union_all(cqc_db) %>% 
   # Get unique SLAs from among AB & CQC tables (individual SLAs may come from
   # either/all of: up to 3 variants in AB table and 1 variant in CQC table;
   # label not included due to potential for overlap) ...and keep one UPRN per
@@ -238,7 +108,8 @@ ab_plus_cqc_db = ab_plus_db %>%
     END_DATE = end_date,
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
-  )
+  ) %>% 
+  select(-N_DISTINCT_UPRN)
 
 # Part Three: Save as table in dw ----------------------------------------------
 
@@ -251,18 +122,13 @@ drop_table_if_exists_db(table_name)
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
 
-# Collect table as need to use more than default varchars2 for a couple of
-# columns.
-ab_plus_cqc_df <- ab_plus_cqc_db %>%
-  collect() %>% 
-  mutate(across(where(is.POSIXct), as.character))
-
-# Write the table back to the DB
-ab_plus_cqc_df %>%
-  write_table_long_chars(con, table_name)
-
-# Add indexes
-con %>% add_indexes(table_name, c("UPRN", "POSTCODE"))
+# Write the table back to the DB with indexes
+ab_plus_cqc_db %>%
+  compute(
+    name = table_name,
+    indexes = c("UPRN", "POSTCODE"),
+    temporary = FALSE
+  )
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% lapply(

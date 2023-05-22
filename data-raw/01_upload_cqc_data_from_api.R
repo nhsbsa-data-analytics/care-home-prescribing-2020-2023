@@ -118,7 +118,7 @@ cqc_details_reduced <- cqc_details %>%
             "providerId",
             "type",
             "name",
-            "ods_code",
+            "odsCode",
             "uprn",
             "registrationDate",
             "deregistrationDate",
