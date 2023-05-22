@@ -11,7 +11,7 @@ cqc_db <- con %>%
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
-  tbl(from = ab_plus_data)
+  tbl(in_schema("ADNSH", ab_plus_data))
 
 # Get 4 values for final output
 ab_epoch = pull_date_string(ab_plus_db, EPOCH)
@@ -41,16 +41,30 @@ cqc_df = cqc_db %>%
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
   ) %>% 
   ungroup() %>%
-  collect() %>% # Collected, because function last() used below isn't translated well by dbplyr
+  collect() %>% # Collected, because function arrange() does not work with dbplyr
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
+  arrange(TEMP_DECIDER) %>% 
+  # After arranging by TEMP_DECIDER, we fill NA values downwards by carrying the
+  # last non NA value downward
+  fill(
+    LOCATION_ID,
+    UPRN,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    NUMBER_OF_BEDS,
+    CURRENT_RATING,
+    .direction = "down" # only need down, since we want the last row
+  ) %>% 
+  # We take last value of each group (equivalent to taking last row since NAs
+  # were filled)
   summarise(
-    LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER, na.rm = TRUE),
+    LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER),
     N_DISTINCT_UPRN = n_distinct(UPRN),
-    UPRN = last(as.numeric(UPRN), order_by = TEMP_DECIDER, na.rm = TRUE),
-    NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = TEMP_DECIDER, na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER, na.rm = TRUE),
-    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER, na.rm = TRUE),
-    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER, na.rm = TRUE),
+    UPRN = last(as.numeric(UPRN), order_by = TEMP_DECIDER),
+    NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = TEMP_DECIDER),
+    RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER),
+    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER),
+    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER),
     .groups = "drop"
   ) %>%
   mutate(
@@ -77,12 +91,28 @@ cqc_attributes_df = cqc_db %>%
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>%
-  collect() %>% # Collected, because function last() used below isn't translated well by dbplyr
   group_by(UPRN) %>%
   mutate(
     N_RATING = n_distinct(CURRENT_RATING),
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
+  ) %>%
+  ungroup() %>% 
+  collect() %>% # Collected, because function arrange() does not work with dbplyr
+  group_by(UPRN) %>%
+  arrange(TEMP_DECIDER) %>% 
+  # After arranging by TEMP_DECIDER, we fill NA values downwards by carrying the
+  # last non NA value downward
+  fill(
+    LOCATION_ID,
+    UPRN,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    NUMBER_OF_BEDS,
+    CURRENT_RATING,
+    .direction = "down" # only need down, since we want the last row
   ) %>% 
+  # We take last value of each group (equivalent to taking last row since NAs
+  # were filled)
   summarise(
     LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER, na.rm = TRUE),
     NURSING_HOME_FLAG = last(NURSING_HOME_FLAG, order_by = TEMP_DECIDER, na.rm = TRUE),
@@ -95,10 +125,10 @@ cqc_attributes_df = cqc_db %>%
 # The tables above needed to be processed locally due to inadequate dbplyr translation
 # of the function last() (as of v.2.3.2); these tables are now copied into the DB temporarily to be used
 # as lazy tables downstream; local dfs are removed
-copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE)
+copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE, overwrite = TRUE)
 cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
 
-copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE)
+copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE, overwrite = TRUE)
 cqc_attributes_db <- con %>% tbl(from = "TEMP_CQC_ATTRIBUTES_DF"); rm(cqc_attributes_df)
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
@@ -120,6 +150,7 @@ ab_plus_cqc_db = ab_plus_db %>%
     names_to = "ADDRESS_TYPE",
     values_to = "SINGLE_LINE_ADDRESS"
   ) %>% 
+  filter(!is.na(SINGLE_LINE_ADDRESS)) %>% 
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
   union_all(cqc_db) %>% 
