@@ -11,7 +11,7 @@ cqc_db <- con %>%
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
-  tbl(in_schema("ADNSH", ab_plus_data))
+  tbl(from = ab_plus_data)
 
 # Get 4 values for final output
 ab_epoch = pull_date_string(ab_plus_db, EPOCH)
