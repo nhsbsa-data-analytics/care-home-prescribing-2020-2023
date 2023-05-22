@@ -1,3 +1,6 @@
+# TO DO:
+# Bring new CQC columns added in script 01
+# Populate PARENT_UPRNs in CQC records
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -17,14 +20,16 @@ cqc_date = pull_date_string(cqc_db, CQC_DATE)
 # Part one: Process cqc data ---------------------------------------------------
 
 # Distinct SLA and postcode per uprn and location-id
-cqc_db = cqc_db %>% 
+cqc_df = cqc_db %>% 
   mutate(
     REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
     DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
-    CH_FLAG = 1L
+    LAST_INSPECTION_DATE = TO_DATE(LAST_INSPECTION_DATE, "YYYY-MM-DD"),
+    CH_FLAG = 1L,
+    TEMP_DECIDER = coalesce(LAST_INSPECTION_DATE, REGISTRATION_DATE)
   ) %>% 
   filter(
-    #!is.na(UPRN),  # Do not exclude records with null UPRNs, as these will be used for CH/non-CH level analysis
+    #!is.na(UPRN),  # Do not exclude records with null UPRNs, as these will still be used for CH/non-CH level analysis
     REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
@@ -36,43 +41,95 @@ cqc_db = cqc_db %>%
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
   ) %>% 
   ungroup() %>%
+  collect() %>% # Collected, because function arrange() does not work with dbplyr
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-  summarise(
-    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
-    N_DISTINCT_UPRN = n_distinct(UPRN),
-    UPRN = max(as.integer(UPRN), na.rm = TRUE), # One UPRN is retained, chosen arbitrarily
-    NURSING_HOME_FLAG = max(as.integer(NURSING_HOME_FLAG), na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = max(as.integer(RESIDENTIAL_HOME_FLAG), na.rm = TRUE),
-    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE),
-    CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
-    .groups = "drop"
+  arrange(TEMP_DECIDER) %>% 
+  # After arranging by TEMP_DECIDER, we fill NA values downwards by carrying the
+  # last non NA value downward
+  fill(
+    LOCATION_ID,
+    UPRN,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    NUMBER_OF_BEDS,
+    CURRENT_RATING,
+    .direction = "down" # only need down, since we want the last row
   ) %>% 
+  # We take last value of each group (equivalent to taking last row since NAs
+  # were filled)
+  summarise(
+    LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER),
+    N_DISTINCT_UPRN = n_distinct(UPRN),
+    UPRN = last(as.numeric(UPRN), order_by = TEMP_DECIDER),
+    NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = TEMP_DECIDER),
+    RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER),
+    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER),
+    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER),
+    .groups = "drop"
+  ) %>%
   mutate(
     # Note, this is done after summarise(), so we'd later exclude only SLAs that
     # had null UPRNs in all CQC records, not just one record
     EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
-      is.na(UPRN) ~ "CQC SLA with a null UPRN",
+      is.na(UPRN) ~ "CQC SLA where UPRN was null in all records pulled",
       N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",
       # ...of which all UPRNs except one have already been discarded at this point
-      T ~ NULL
+      T ~ NA_character_
     )
   )
 
-# From above processed data add residential and nursing home flag where possible
-cqc_attributes_db = cqc_db %>%
+# Extract one row of CQC attributes per UPRN (e.g. residential and nursing home flags)
+cqc_attributes_df = cqc_db %>%
+  mutate(
+    REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
+    DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
+    LAST_INSPECTION_DATE = TO_DATE(LAST_INSPECTION_DATE, "YYYY-MM-DD"),
+    TEMP_DECIDER = coalesce(LAST_INSPECTION_DATE, REGISTRATION_DATE)
+  ) %>% 
+  filter(
+    REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
+    is.na(DEREGISTRATION_DATE) | 
+      DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
+  ) %>%
   group_by(UPRN) %>%
   mutate(
     N_RATING = n_distinct(CURRENT_RATING),
     CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
-  ) %>% 
-  summarise(
-    LOCATION_ID = max(LOCATION_ID, na.rm = TRUE),
-    NURSING_HOME_FLAG = max(NURSING_HOME_FLAG, na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG, na.rm = TRUE),
-    CURRENT_RATING = max(CURRENT_RATING, na.rm = TRUE),
-    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS, na.rm = TRUE)
   ) %>%
-  ungroup()
+  ungroup() %>% 
+  collect() %>% # Collected, because function arrange() does not work with dbplyr
+  group_by(UPRN) %>%
+  arrange(TEMP_DECIDER) %>% 
+  # After arranging by TEMP_DECIDER, we fill NA values downwards by carrying the
+  # last non NA value downward
+  fill(
+    LOCATION_ID,
+    UPRN,
+    NURSING_HOME_FLAG,
+    RESIDENTIAL_HOME_FLAG,
+    NUMBER_OF_BEDS,
+    CURRENT_RATING,
+    .direction = "down" # only need down, since we want the last row
+  ) %>% 
+  # We take last value of each group (equivalent to taking last row since NAs
+  # were filled)
+  summarise(
+    LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER, na.rm = TRUE),
+    NURSING_HOME_FLAG = last(NURSING_HOME_FLAG, order_by = TEMP_DECIDER, na.rm = TRUE),
+    RESIDENTIAL_HOME_FLAG = last(RESIDENTIAL_HOME_FLAG, order_by = TEMP_DECIDER, na.rm = TRUE),
+    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER, na.rm = TRUE),
+    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# The tables above needed to be processed locally due to inadequate dbplyr translation
+# of the function last() (as of v.2.3.2); these tables are now copied into the DB temporarily to be used
+# as lazy tables downstream; local dfs are removed
+copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE, overwrite = TRUE)
+cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
+
+copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE, overwrite = TRUE)
+cqc_attributes_db <- con %>% tbl(from = "TEMP_CQC_ATTRIBUTES_DF"); rm(cqc_attributes_df)
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
@@ -81,7 +138,7 @@ postcodes_db = ab_plus_db %>%
   filter(CH_FLAG == 1) %>% 
   select(POSTCODE) %>% 
   union_all(cqc_db %>% select(POSTCODE)) %>% 
-  distinct() 
+  distinct()
 
 # Add cqc attributes then pivot SLA long
 ab_plus_cqc_db = ab_plus_db %>% 
@@ -93,6 +150,7 @@ ab_plus_cqc_db = ab_plus_db %>%
     names_to = "ADDRESS_TYPE",
     values_to = "SINGLE_LINE_ADDRESS"
   ) %>% 
+  filter(!is.na(SINGLE_LINE_ADDRESS)) %>% 
   select(-ADDRESS_TYPE) %>% 
   relocate(SINGLE_LINE_ADDRESS, .after = POSTCODE) %>% 
   union_all(cqc_db) %>% 
