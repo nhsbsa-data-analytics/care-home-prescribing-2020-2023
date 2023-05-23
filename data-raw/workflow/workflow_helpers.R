@@ -1,17 +1,18 @@
 
-#' @param none
 #' @description loads/installs all required packages and functions 
+#' @noRd
 load_all_packages_and_functions = function(){
   
   # Source script containing all packages and functions
-  source("R/analysis_packages.R")
-  source("R/workflow_helpers.R")
-  source("R/workflow_production.R")
+  source("data-raw/workflow/workflow_packages.R")
+  source("data-raw/workflow/workflow_helpers.R")
+  source("data-raw/workflow/workflow_production.R")
 }
 
 
 #' @param table_name_db: name of proposed db table
 #' @description deletes a db table if the name is already used
+#' @noRd
 drop_table_if_exists_db = function(table_name_db){
   
   # Drop any existing table beforehand
@@ -23,6 +24,7 @@ drop_table_if_exists_db = function(table_name_db){
 
 #' @param date_field: string in the form 'YYYY-MM-DD'
 #' @description gets numerical year-month from string in date format
+#' @noRd
 get_year_month_from_date = function(date_field){
   
   # Add a zero in fron tof single month integer
@@ -41,6 +43,7 @@ get_year_month_from_date = function(date_field){
 
 #' @param date_field: string in the form 'YYYY-MM-DD'
 #' @description gets date as 8 digit integer
+#' @noRd
 get_integer_from_date = function(x) as.integer(gsub("-", "", x))
 
 
@@ -48,6 +51,7 @@ get_integer_from_date = function(x) as.integer(gsub("-", "", x))
 #' @param  cqc_data: the name of the cqc db table
 #' @param start_date: start date as a char in format 'YYYY-MM-DD'
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
+#' @noRd
 get_cqc_postcodes = function(cqc_data, start_date, end_date){
   
   # Set up connection to the DB
@@ -55,41 +59,41 @@ get_cqc_postcodes = function(cqc_data, start_date, end_date){
   
   # Create a lazy table from the CQC care home table
   cqc_db <- con %>%
-    tbl(from = cqc_data)
+    dplyr::tbl(from = cqc_data)
   
   # Get cqc postcodes to include within later ab plus join
   cqc_postcodes = cqc_db %>% 
-    mutate(
+    dplyr::mutate(
       REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
       DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD")
     ) %>% 
-    filter(
+    dplyr::filter(
       !is.na(UPRN),
       REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
       is.na(DEREGISTRATION_DATE) | 
         DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
     ) %>% 
-    select(POSTCODE_LOCATOR = POSTCODE) %>% 
-    distinct() %>% 
-    collect()
+    dplyr::select(POSTCODE_LOCATOR = POSTCODE) %>% 
+    dplyr::distinct() %>% 
+    dplyr::collect()
   
   # Disconnect now, in case the function crashes due to memory restriction
   DBI::dbDisconnect(con)
   
-  # Assign postcodes to globel env for ab plus script to use
+  # Assign postcodes to global env for ab plus script to use
   assign("cqc_postcodes", cqc_postcodes, envir = globalenv())
 }
 
-# Get single distinct value from select column
+#' @description Get single distinct value from select column
+#' @noRd
 pull_date_string = function(data, string_date){
   
   data %>% 
-    select({{string_date}}) %>% 
-    distinct() %>% 
-    pull()
+    dplyr::select({{string_date}}) %>% 
+    dplyr::distinct() %>% 
+    dplyr::pull()
 }
 
-#' format_postcode_db(df, postcode)
 format_postcode_db <- function(df, postcode) {
   
   # Simple formatting of postcode
@@ -97,6 +101,8 @@ format_postcode_db <- function(df, postcode) {
     dplyr::mutate(POSTCODE_OLD := {{ postcode }})
   
   # Just Process distinct postcodes
+  LEN <- NULL
+  PCD_TEMP <- NULL
   output <- df %>%
     dplyr::select(POSTCODE_OLD, {{ postcode }}) %>%
     dplyr::filter(!is.na({{ postcode }})) %>%
@@ -180,7 +186,9 @@ format_postcode_db <- function(df, postcode) {
   return(df)
 }
 
-#' Merge Two Strings Together Whilst Retaining an Order of Some Kind
+#' @description Merge Two Strings Together Whilst Retaining an Order of Some
+#'   Kind
+#' @noRd
 oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
   
   # Get the unique combinations we want to merge (in case there are duplicates)
@@ -270,4 +278,123 @@ tidy_df_single_line_address = function(df, vars){
         {{vars}}
         )
     )
+}
+
+
+#' Unite columns by specified prefix
+#' 
+#' @description Given a list of new col names expressed as plurals terms, unite
+#'  all columns starting with their singular prefix into a single column, with 
+#'  values being the values of the columns as a comma separated list.
+#'  
+#'  This assumes the plural is the simplest case, an 's'.
+#'
+#' @param data A data.frame or tibble
+#' @param ... The new columns on which to base the unites
+#'
+#' @return The data with unite operations applied
+#' 
+#' @examples
+#' tibble(
+#'   col1 = c("a", "b"), col2 = c("c", "d"),
+#'   foo1 = c("e", "f"), foo2 = c("g", "h")
+#' ) %>% 
+#' unite_to_plural(cols, foos)
+#' 
+#' # A tibble: 2 × 2
+#' #  cols  foos 
+#' #  <chr> <chr>
+#' # 1 a|c   e|g  
+#' # 2 b|d   f|h 
+unite_to_plural <- function(data, ...) {
+  args <- as.character(match.call(expand.dots = FALSE)$`...`)
+  
+  united_cols <- lapply(
+    args,
+    function(x) {
+      tidyr::unite(
+        data %>% select(starts_with(substr(x, 1, nchar(x) - 1))),
+        x,
+        everything(),
+        sep = "|",
+        na.rm = TRUE
+      ) %>% 
+        rename({{x}} := 1)
+    }
+  )
+  
+  data %>%
+    select(-starts_with(substr(args, 1, nchar(args) - 1))) %>%
+    bind_cols(united_cols)
+}
+
+
+#' Write data.frame or tibble to database, with datatype set to appropriate
+#' value for strings longer than default 255 characters
+#'
+#' @param data A data.frame or tibble
+#' @param con A DB connection (only tried with Oracle SQL)
+#' @param table_name Name of new table
+#'
+#' @return Used for side effect only
+#'
+#' @examples
+#' con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#' tib <- tibble(x = rep("long!!", 1000))
+#' tib <- write_table_long_chars(con, "LONG_TABLE")
+write_table_long_chars <- function(data, con, table_name) {
+  field.types = list()
+  
+  iwalk(data, \(x, idx) {
+    if (typeof(x) == "character") {
+      max_chars <- data %>%
+        select(all_of(idx)) %>%
+        # Convert all character columns to UTF-8, this prevents an error in nchar.
+        # https://stackoverflow.com/questions/60906507/
+        # how-to-solve-error-error-in-ncharrownamesm-invalid-multibyte-string-ele
+        mutate(
+          !!sym(idx) := iconv(!!sym(idx), "WINDOWS-1252", "UTF-8", sub = "")
+        ) %>%
+        summarise(max(nchar(!!sym(idx)), na.rm = TRUE)) %>%
+        pull()
+      
+      if (max_chars > 255) {
+        # Need the <<- so that field.types in parent env (i.e. the actual
+        # function env) is updated
+        field.types <<- append(
+          field.types,
+          setNames(glue("varchar2({max_chars * 2})"), idx)
+        )
+      }
+    }
+  })
+  
+  dbWriteTable(
+    con,
+    Id(schema = toupper(con@info$username), table = table_name),
+    data,
+    field.types = field.types
+  )
+}
+
+
+#' Add indexes to an existing table
+#'
+#' @param con A DBI connection
+#' @param table_name Name of table
+#' @param indexes Character vector of column names to index on
+#'
+#' @export Used for side effect only
+#'
+#' @examples
+#' con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#' con %>% add_indexes("EXISTING_TABLE", c("UPRN", "POSTCODE"))
+add_indexes <- function(con, table_name, indexes) {
+  walk(
+    indexes,
+    \(x) dbGetQuery(
+      con,
+      glue("CREATE INDEX {table_name}_{x} ON {table_name}({x});")
+    )
+  )
 }

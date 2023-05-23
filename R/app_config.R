@@ -9,7 +9,7 @@
 #'
 #' @noRd
 app_sys <- function(...) {
-  system.file(..., package = "careHomePrescribing2023")
+  system.file(..., package = "carehomes2")
 }
 
 
