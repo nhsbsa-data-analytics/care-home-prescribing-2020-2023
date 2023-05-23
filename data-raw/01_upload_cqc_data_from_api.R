@@ -144,7 +144,7 @@ cqc_details_df <- cqc_details %>%
     sep = " ",
     na.rm = TRUE
   ) %>% 
-  transmute(
+  mutate(
     uprn = as.numeric(uprn),
     location_id,
     provider_id,
@@ -159,7 +159,7 @@ cqc_details_df <- cqc_details %>%
     residential_home_flag = as.integer(grepl(
       "Residential home", gac_service_types_names
     )),
-    type,
+    # type,
     number_of_beds = as.integer(number_of_beds),
     current_rating = current_ratings_overall_rating,
     key_question_names = current_ratings_overall_key_question_ratings_names,
@@ -168,7 +168,8 @@ cqc_details_df <- cqc_details %>%
     ods_code,
     specialisms,
     regulated_activities_names,
-    gac_service_types = gac_service_types_names
+    gac_service_types = gac_service_types_names,
+    .keep = "none"
   )
 
 gc()

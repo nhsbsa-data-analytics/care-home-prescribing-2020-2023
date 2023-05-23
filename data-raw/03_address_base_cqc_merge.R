@@ -36,11 +36,6 @@ cqc_df = cqc_db %>%
   ) %>% 
   # Set rating to null if multiple present per SLA-postcode
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-  mutate(
-    N_RATING = n_distinct(CURRENT_RATING),
-    CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
-  ) %>% 
-  ungroup() %>%
   collect() %>% # Collected, because function arrange() does not work with dbplyr
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   arrange(TEMP_DECIDER) %>% 
@@ -51,13 +46,6 @@ cqc_df = cqc_db %>%
     UPRN,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    NUMBER_OF_BEDS,
-    CURRENT_RATING,
-    LAST_INSPECTION_DATE,
-    TYPE,
-    KEY_QUESTION_NAMES,
-    KEY_QUESTION_RATINGS,
-    ODS_CODE,
     .direction = "down" # only need down, since we want the last row
   ) %>% 
   # We take last value of each group (equivalent to taking last row since NAs
@@ -68,13 +56,6 @@ cqc_df = cqc_db %>%
     UPRN = last(as.numeric(UPRN), order_by = TEMP_DECIDER),
     NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = TEMP_DECIDER),
     RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER),
-    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER),
-    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER),
-    LAST_INSPECTION_DATE = last(LAST_INSPECTION_DATE, order_by = TEMP_DECIDER),
-    TYPE = last(TYPE, order_by = TEMP_DECIDER),
-    KEY_QUESTION_NAMES = last(KEY_QUESTION_NAMES, order_by = TEMP_DECIDER),
-    KEY_QUESTION_RATINGS = last(KEY_QUESTION_RATINGS, order_by = TEMP_DECIDER),
-    ODS_CODE = last(ODS_CODE, order_by = TEMP_DECIDER),
     .groups = "drop"
   ) %>%
   mutate(
@@ -102,11 +83,6 @@ cqc_attributes_df = cqc_db %>%
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>%
   group_by(UPRN) %>%
-  mutate(
-    N_RATING = n_distinct(CURRENT_RATING),
-    CURRENT_RATING = ifelse(N_RATING > 1, NA, CURRENT_RATING)
-  ) %>%
-  ungroup() %>% 
   collect() %>% # Collected, because function arrange() does not work with dbplyr
   group_by(UPRN) %>%
   arrange(TEMP_DECIDER) %>% 
@@ -117,13 +93,6 @@ cqc_attributes_df = cqc_db %>%
     UPRN,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    NUMBER_OF_BEDS,
-    CURRENT_RATING,
-    LAST_INSPECTION_DATE,
-    TYPE,
-    KEY_QUESTION_NAMES,
-    KEY_QUESTION_RATINGS,
-    ODS_CODE,
     .direction = "down" # only need down, since we want the last row
   ) %>% 
   # We take last value of each group (equivalent to taking last row since NAs
@@ -132,13 +101,6 @@ cqc_attributes_df = cqc_db %>%
     LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER),
     NURSING_HOME_FLAG = last(NURSING_HOME_FLAG, order_by = TEMP_DECIDER),
     RESIDENTIAL_HOME_FLAG = last(RESIDENTIAL_HOME_FLAG, order_by = TEMP_DECIDER),
-    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER),
-    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER),
-    LAST_INSPECTION_DATE = last(LAST_INSPECTION_DATE, order_by = TEMP_DECIDER),
-    TYPE = last(TYPE, order_by = TEMP_DECIDER),
-    KEY_QUESTION_NAMES = last(KEY_QUESTION_NAMES, order_by = TEMP_DECIDER),
-    KEY_QUESTION_RATINGS = last(KEY_QUESTION_RATINGS, order_by = TEMP_DECIDER),
-    ODS_CODE = last(ODS_CODE, order_by = TEMP_DECIDER),
     .groups = "drop"
   )
 
