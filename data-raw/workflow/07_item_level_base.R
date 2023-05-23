@@ -34,6 +34,10 @@ presc_db <- con %>%
 disp_db <- con %>%
   tbl(from = in_schema("DIM", "HS_DY_LEVEL_5_FLAT_DIM"))
 
+# Lazy table from the geography lookup table for appropriate FY
+postcode_db <- con %>%
+  tbl(from = paste0("INT646_POSTCODE_LOOKUP_", stringr::str_extract(fy, "/(\\d+$)", group=1)))
+
 # Get start and end dates
 start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
@@ -268,7 +272,8 @@ fact_join_db = fact_db %>%
                                  "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
   left_join(y = disp_db, by = c("YEAR_MONTH",
                                 "DISP_ID" = "LVL_5_OU",
-                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>% 
+                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
+  left_join(y = postcode_db, by = c("BSA_POSTCODE" = "POSTCODE")) %>%
   mutate(
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome
@@ -351,7 +356,15 @@ fact_join_db = fact_db %>%
     DISP_NM,
     DISP_TRADING_NM,
     DISP_SLA,
-    DISP_POSTCODE
+    DISP_POSTCODE,
+    # Geographic attributes
+    PCD_REGION_CODE,
+    PCD_REGION_NAME,
+    PCD_ICB_CODE,
+    PCD_ICB_NAME,
+    PCD_LAD_CODE,
+    PCD_LAD_NAME,
+    IMD_DECILE
   )
 
 # Part four: save output -------------------------------------------------------
