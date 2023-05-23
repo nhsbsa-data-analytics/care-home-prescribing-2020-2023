@@ -149,6 +149,10 @@ drug_db = drug_db %>%
 # Process prescriber information
 presc_db = presc_db %>% 
   filter(YEAR_MONTH %in% year_month) %>%
+  mutate(
+    CUR_PCN_LTST_NM = case_when(CUR_PCN_LTST_NM=="DUMMY" ~ NA_character_,
+                                TRUE ~ CUR_PCN_LTST_NM)
+    ) %>%
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -165,8 +169,10 @@ presc_db = presc_db %>%
     PRESCRIBER_TYPE = PRESCRIBER_LTST_TYPE,
     PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
-    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
-  )
+    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE,
+    PRESCRIBER_PCN = CUR_PCN_LTST_NM
+    )
+
 
 # Process form fact
 form_db = form_db %>% 
@@ -350,6 +356,7 @@ fact_join_db = fact_db %>%
     PRESCRIBER_SUB_TYPE,
     PRESCRIBER_NM,
     PRESCRIBER_CODE,
+    PRESCRIBER_PCN,
     # Dispenser info
     DISP_CODE,
     DISP_TYPE,

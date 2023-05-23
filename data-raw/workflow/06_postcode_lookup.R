@@ -1,5 +1,3 @@
-#TODO: add PCN
-
 # The script creates a postcode lookup table that
 # correlates with one of the three financial years.
 
@@ -148,6 +146,13 @@ postcode_db %>%
     indexes = "POSTCODE",
     temporary = F
   )
+
+# Grant access
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
