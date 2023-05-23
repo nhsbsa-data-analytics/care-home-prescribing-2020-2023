@@ -52,7 +52,6 @@ theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
 #' that are used to aggregate
 #'
 #' @noRd
-#' @export
 breakdowns <- list(
   "Overall" = c(SUB_BREAKDOWN_NAME = "OVERALL"),
   "Geographical - Region" = c(
@@ -85,7 +84,6 @@ breakdowns <- list(
 #' Extract them from the breakdowns.
 #'
 #' @noRd
-#' @export
 geographys <- breakdowns %>%
   purrr::keep(
     .p = stringr::str_detect(
@@ -108,7 +106,6 @@ geographys <- breakdowns %>%
 #' that are used to aggregate
 #'
 #' @noRd
-#' @export
 bnfs <- list(
   "Chapter" = "CHAPTER_DESCR",
   "Section" = "SECTION_DESCR",
@@ -126,7 +123,6 @@ bnfs <- list(
 #'
 #' @return Modified dataframe
 #' @noRd
-#' @export
 format_data_raw <- function(df, vars) {
   
   # Initially sort the factors
@@ -208,7 +204,6 @@ format_data_raw <- function(df, vars) {
 #'
 #' @return Data URI as a character string.
 #' @noRd
-#' @export
 
 fa_to_png_to_datauri <- function(name, ...) {
   tmpfl <- tempfile(fileext = ".png")
