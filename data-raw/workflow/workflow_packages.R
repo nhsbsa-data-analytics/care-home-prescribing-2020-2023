@@ -10,9 +10,12 @@ pacman::p_load(
   'dbplyr',
   'DBI',
   'tictoc',
-  'parallel',
   'janitor',
   'yaml',
+  'tidyr',
+  'purrr',
+  'glue',
+  'highcharter',
   
   # CQC API data 
   'httr',

@@ -51,6 +51,7 @@ theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
 #' Define the labels of the breakdowns (in order of hierarchy) with the columns
 #' that are used to aggregate
 #'
+#' @noRd
 #' @export
 breakdowns <- list(
   "Overall" = c(SUB_BREAKDOWN_NAME = "OVERALL"),
@@ -83,6 +84,7 @@ breakdowns <- list(
 #'
 #' Extract them from the breakdowns.
 #'
+#' @noRd
 #' @export
 geographys <- breakdowns %>%
   purrr::keep(
@@ -105,6 +107,7 @@ geographys <- breakdowns %>%
 #' Define the labels of the BNF (in order of hierarchy) with the columns
 #' that are used to aggregate
 #'
+#' @noRd
 #' @export
 bnfs <- list(
   "Chapter" = "CHAPTER_DESCR",
@@ -121,7 +124,8 @@ bnfs <- list(
 #' @param df Dataframe
 #' @param vars Grouping variables
 #'
-#' @return
+#' @return Modified dataframe
+#' @noRd
 #' @export
 format_data_raw <- function(df, vars) {
   
@@ -202,7 +206,8 @@ format_data_raw <- function(df, vars) {
 #' @param name fontawsome name
 #' @param vars Grouping variables
 #'
-#' @return
+#' @return Data URI as a character string.
+#' @noRd
 #' @export
 
 fa_to_png_to_datauri <- function(name, ...) {
