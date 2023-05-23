@@ -1,17 +1,18 @@
 
-#' @param none
 #' @description loads/installs all required packages and functions 
+#' @noRd
 load_all_packages_and_functions = function(){
   
   # Source script containing all packages and functions
-  source("R/analysis_packages.R")
-  source("R/workflow_helpers.R")
-  source("R/workflow_production.R")
+  source("data-raw/workflow/workflow_packages.R")
+  source("data-raw/workflow/workflow_helpers.R")
+  source("data-raw/workflow/workflow_production.R")
 }
 
 
 #' @param table_name_db: name of proposed db table
 #' @description deletes a db table if the name is already used
+#' @noRd
 drop_table_if_exists_db = function(table_name_db){
   
   # Drop any existing table beforehand
@@ -23,6 +24,7 @@ drop_table_if_exists_db = function(table_name_db){
 
 #' @param date_field: string in the form 'YYYY-MM-DD'
 #' @description gets numerical year-month from string in date format
+#' @noRd
 get_year_month_from_date = function(date_field){
   
   # Add a zero in fron tof single month integer
@@ -41,6 +43,7 @@ get_year_month_from_date = function(date_field){
 
 #' @param date_field: string in the form 'YYYY-MM-DD'
 #' @description gets date as 8 digit integer
+#' @noRd
 get_integer_from_date = function(x) as.integer(gsub("-", "", x))
 
 
@@ -48,6 +51,7 @@ get_integer_from_date = function(x) as.integer(gsub("-", "", x))
 #' @param  cqc_data: the name of the cqc db table
 #' @param start_date: start date as a char in format 'YYYY-MM-DD'
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
+#' @noRd
 get_cqc_postcodes = function(cqc_data, start_date, end_date){
   
   # Set up connection to the DB
@@ -55,41 +59,41 @@ get_cqc_postcodes = function(cqc_data, start_date, end_date){
   
   # Create a lazy table from the CQC care home table
   cqc_db <- con %>%
-    tbl(from = cqc_data)
+    dplyr::tbl(from = cqc_data)
   
   # Get cqc postcodes to include within later ab plus join
   cqc_postcodes = cqc_db %>% 
-    mutate(
+    dplyr::mutate(
       REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
       DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD")
     ) %>% 
-    filter(
+    dplyr::filter(
       !is.na(UPRN),
       REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
       is.na(DEREGISTRATION_DATE) | 
         DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
     ) %>% 
-    select(POSTCODE_LOCATOR = POSTCODE) %>% 
-    distinct() %>% 
-    collect()
+    dplyr::select(POSTCODE_LOCATOR = POSTCODE) %>% 
+    dplyr::distinct() %>% 
+    dplyr::collect()
   
   # Disconnect now, in case the function crashes due to memory restriction
   DBI::dbDisconnect(con)
   
-  # Assign postcodes to globel env for ab plus script to use
+  # Assign postcodes to global env for ab plus script to use
   assign("cqc_postcodes", cqc_postcodes, envir = globalenv())
 }
 
-# Get single distinct value from select column
+#' @description Get single distinct value from select column
+#' @noRd
 pull_date_string = function(data, string_date){
   
   data %>% 
-    select({{string_date}}) %>% 
-    distinct() %>% 
-    pull()
+    dplyr::select({{string_date}}) %>% 
+    dplyr::distinct() %>% 
+    dplyr::pull()
 }
 
-#' format_postcode_db(df, postcode)
 format_postcode_db <- function(df, postcode) {
   
   # Simple formatting of postcode
@@ -97,6 +101,8 @@ format_postcode_db <- function(df, postcode) {
     dplyr::mutate(POSTCODE_OLD := {{ postcode }})
   
   # Just Process distinct postcodes
+  LEN <- NULL
+  PCD_TEMP <- NULL
   output <- df %>%
     dplyr::select(POSTCODE_OLD, {{ postcode }}) %>%
     dplyr::filter(!is.na({{ postcode }})) %>%
@@ -180,7 +186,9 @@ format_postcode_db <- function(df, postcode) {
   return(df)
 }
 
-#' Merge Two Strings Together Whilst Retaining an Order of Some Kind
+#' @description Merge Two Strings Together Whilst Retaining an Order of Some
+#'   Kind
+#' @noRd
 oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
   
   # Get the unique combinations we want to merge (in case there are duplicates)

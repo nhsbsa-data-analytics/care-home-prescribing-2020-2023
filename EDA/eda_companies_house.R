@@ -1,7 +1,7 @@
 
 # Load/install all required packages and functions
-source("R/analysis_packages.R")
-source("R/workflow_helpers.R")
+source("data-raw/workflow/workflow_packages.R")
+source("data-raw/workflow/workflow_helpers.R")
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")

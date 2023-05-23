@@ -3,10 +3,11 @@
 #' Based on the nhsbsaR highcharter theme, since it returns a list we can edit
 #' it to the specific theme for this shiny app.
 #'
+#' @param hc Highcharts object
 #' @param palette Which colour palette to use from the `nhsbsaR` package.
 #' @param stack Stack option for highcharter.
 #'
-#' @return
+#' @return Highcharts object with theme added.
 #' @export
 theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
   
@@ -50,7 +51,7 @@ theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
 #' Define the labels of the breakdowns (in order of hierarchy) with the columns
 #' that are used to aggregate
 #'
-#' @export
+#' @noRd
 breakdowns <- list(
   "Overall" = c(SUB_BREAKDOWN_NAME = "OVERALL"),
   "Geographical - Region" = c(
@@ -82,7 +83,7 @@ breakdowns <- list(
 #'
 #' Extract them from the breakdowns.
 #'
-#' @export
+#' @noRd
 geographys <- breakdowns %>%
   purrr::keep(
     .p = stringr::str_detect(
@@ -104,7 +105,7 @@ geographys <- breakdowns %>%
 #' Define the labels of the BNF (in order of hierarchy) with the columns
 #' that are used to aggregate
 #'
-#' @export
+#' @noRd
 bnfs <- list(
   "Chapter" = "CHAPTER_DESCR",
   "Section" = "SECTION_DESCR",
@@ -120,8 +121,8 @@ bnfs <- list(
 #' @param df Dataframe
 #' @param vars Grouping variables
 #'
-#' @return
-#' @export
+#' @return Modified dataframe
+#' @noRd
 format_data_raw <- function(df, vars) {
   
   # Initially sort the factors
@@ -155,7 +156,7 @@ format_data_raw <- function(df, vars) {
   if ("BREAKDOWN" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        BREAKDOWN = forcats::fct_relevel(BREAKDOWN, names(breakdowns))
+        BREAKDOWN = forcats::fct_relevel(.data$BREAKDOWN, names(breakdowns))
       )
   }
   
@@ -163,7 +164,7 @@ format_data_raw <- function(df, vars) {
   if ("GEOGRAPHY" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        GEOGRAPHY = forcats::fct_relevel(GEOGRAPHY, names(geographys))
+        GEOGRAPHY = forcats::fct_relevel(.data$GEOGRAPHY, names(geographys))
       )
   }
   
@@ -171,7 +172,7 @@ format_data_raw <- function(df, vars) {
   if ("BNF_LEVEL" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        BNF_LEVEL = forcats::fct_relevel(BNF_LEVEL, names(bnfs))
+        BNF_LEVEL = forcats::fct_relevel(.data$BNF_LEVEL, names(bnfs))
       )
   }
   
@@ -201,8 +202,8 @@ format_data_raw <- function(df, vars) {
 #' @param name fontawsome name
 #' @param vars Grouping variables
 #'
-#' @return
-#' @export
+#' @return Data URI as a character string.
+#' @noRd
 
 fa_to_png_to_datauri <- function(name, ...) {
   tmpfl <- tempfile(fileext = ".png")

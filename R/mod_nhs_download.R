@@ -53,7 +53,7 @@ mod_nhs_download_server <- function(id, filename, export_data) {
     output$download <- downloadHandler(
       filename = filename,
       content = function(file) {
-        write.csv(
+        utils::write.csv(
           # Handle possibility of reactive input
           x = if (is.data.frame(export_data)) export_data else export_data(),
           file = file,
