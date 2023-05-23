@@ -95,8 +95,7 @@ match_db = match_db %>%
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
   filter(
-    # Prescribing retained for all ages
-    #CALC_AGE >= 65L,
+    CALC_AGE >= 65L,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
@@ -203,8 +202,7 @@ disp_db = disp_db %>%
 # Get a single gender and age for the period 
 pat_db <- pat_db %>% 
   filter(
-    # Prescribing retained for all ages
-    #CALC_AGE >= 65L,
+    CALC_AGE >= 65L,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
