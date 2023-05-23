@@ -126,6 +126,15 @@ postcode_db %>%
     temporary = F
   )
 
+# Print that table has been created
+print(paste0("This script has created table: ", table_name))
+
+# Remove vars specific to script
+remove_vars <- setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()
+
 # Disconnect from database
 DBI::dbDisconnect(con)
 
