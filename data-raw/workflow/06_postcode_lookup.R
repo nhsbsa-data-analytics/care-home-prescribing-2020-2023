@@ -1,4 +1,4 @@
-#TODO: add lat/long, add PCN
+#TODO: add PCN
 
 # The script creates a postcode lookup table that
 # correlates with one of the three financial years.
@@ -25,7 +25,7 @@ if (fy == "2020/2021") {
   
 } else if (fy == "2022/2023") {
   
-  # Newer mappings not available yet, need to decide what to do
+  # Newer mappings not available yet, need to decide what to do...
   return(NULL)
   
 }
@@ -49,26 +49,40 @@ geography_db <- con %>%
 postcode_db <- con %>%
   tbl(from = in_schema("DIM", sql("ONS_POSTCODE_DATA_DIM@DWCP.WORLD")))
 
+# Create a lazy table from postcode to lat-long mappings
+postcode_latlong <- con %>%
+  tbl(from = in_schema("DIM", sql("ONS_POSTCODE_LAT_LON_DIM@DWCP.WORLD")))
+
 # Create a lazy table for IMD data
 imd_db <- con %>%
   tbl(from = in_schema("DALL_REF", "ONS_INDEX_OF_MULTIPLE_DEPRIVATION"))
 
 # Get the latest POSTCODE-LSOA mappings within the target FY
-year_month_db <- con %>%
+max_ym <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM")) %>%
   filter(FINANCIAL_YEAR==fy) %>%
-  select(YEAR_MONTH)
+  pull(YEAR_MONTH) %>%
+  max()
 
 postcode_db <- postcode_db %>%
-  inner_join(year_month_db) %>%
+  # Done this way, because a PC may not have an entry in a given FY's update
+  filter(YEAR_MONTH <= max_ym) %>% 
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH) %>%
   addressMatchR::tidy_postcode(POSTCODE)
-# At the time of running (May 2023) the latest YEAR_MONTH = 202211
 
+postcode_latlong <- postcode_latlong %>%
+  filter(YEAR_MONTH <= max_ym) %>%
+  group_by(POSTCODE) %>%
+  window_order(desc(YEAR_MONTH)) %>%
+  mutate(RANK = rank()) %>%
+  filter(RANK == 1) %>%
+  select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE) %>%
+  addressMatchR::tidy_postcode(POSTCODE)
+  
 # Join to the postcode lookup to get NHS Region, ICB and LA based on their mappings to LSOAs
 postcode_db <- postcode_db %>%
   # ICB
@@ -84,7 +98,7 @@ postcode_db <- postcode_db %>%
   # LA
   left_join(
     y = geography_db %>%
-      filter(RELATIONSHIP == LSOA_LAD) %>% # 
+      filter(RELATIONSHIP == LSOA_LAD) %>% 
       select(
         LSOA_CODE = CHILD_ONS_CODE,
         PCD_LAD_CODE = PARENT_ONS_CODE,
@@ -101,6 +115,8 @@ postcode_db <- postcode_db %>%
         PCD_REGION_NAME = PARENT_NAME
       )
   ) %>%
+  # Latitude & Longitude
+  left_join(postcode_latlong) %>%
   # Index of Multiple Deprivation
   left_join(
     y = imd_db %>%
@@ -118,6 +134,8 @@ postcode_db <- postcode_db %>%
     PCD_ICB_NAME,
     PCD_LAD_CODE,
     PCD_LAD_NAME,
+    PCD_LAT,
+    PCD_LONG,
     IMD_DECILE
   )
 
