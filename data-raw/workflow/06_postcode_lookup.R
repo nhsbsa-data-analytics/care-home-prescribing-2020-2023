@@ -8,6 +8,11 @@ if (fy == "2020/2021") {
   # Fill later
   return(NULL)
   
+  LSOA_NHSREG = "LSOA_REG2021"
+  LSOA_ICB = "LSOA_CCG2021" # Check: do we want to use the outdated CCG structure, even though it is appropriate for the time period?
+  LSOA_LAD = "LSOA_LAD2021"
+  TABLE_SUFFIX="2021"
+  
 } else if (fy == "2021/2022") {
   
   LSOA_NHSREG = "LSOA_NHSREG2022"
@@ -20,7 +25,7 @@ if (fy == "2020/2021") {
   
 } else if (fy == "2022/2023") {
   
-  # Fill later
+  # Newer mappings not available yet, need to decide what to do
   return(NULL)
   
 }
