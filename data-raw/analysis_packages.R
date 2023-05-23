@@ -1,6 +1,6 @@
 # Install pacman if necessary
-if (!('pacman' %in% rownames(installed.packages()))) {
-  install.packages('pacman')
+if (!('pacman' %in% rownames(utils::installed.packages()))) {
+  utils::install.packages('pacman')
 }
 
 # Libraries
@@ -8,14 +8,11 @@ pacman::p_load(
   # Global
   'dplyr',
   'dbplyr',
-  'tidyr',
   'DBI',
   'tictoc',
+  'parallel',
   'janitor',
   'yaml',
-  'highcharter',
-  'glue',
-  'purrr',
   
   # CQC API data 
   'httr',
@@ -30,4 +27,3 @@ pacman::p_load(
 # Libraries from github
 pacman::p_load_gh("nhsbsa-data-analytics/nhsbsaR")
 pacman::p_load_gh("nhsbsa-data-analytics/addressMatchR")
-
