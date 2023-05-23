@@ -86,8 +86,6 @@ match_db = match_db %>%
     LOCATION_ID,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    CURRENT_RATING,
-    NUMBER_OF_BEDS,
     AB_DATE,
     CQC_DATE
   )
@@ -321,8 +319,6 @@ fact_join_db = fact_db %>%
     LOCATION_ID,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    NUMBER_OF_BEDS,
-    CURRENT_RATING,
     AB_DATE,
     CQC_DATE,
     # Item info

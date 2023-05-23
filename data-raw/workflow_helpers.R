@@ -271,3 +271,122 @@ tidy_df_single_line_address = function(df, vars){
         )
     )
 }
+
+
+#' Unite columns by specified prefix
+#' 
+#' @description Given a list of new col names expressed as plurals terms, unite
+#'  all columns starting with their singular prefix into a single column, with 
+#'  values being the values of the columns as a comma separated list.
+#'  
+#'  This assumes the plural is the simplest case, an 's'.
+#'
+#' @param data A data.frame or tibble
+#' @param ... The new columns on which to base the unites
+#'
+#' @return The data with unite operations applied
+#' 
+#' @examples
+#' tibble(
+#'   col1 = c("a", "b"), col2 = c("c", "d"),
+#'   foo1 = c("e", "f"), foo2 = c("g", "h")
+#' ) %>% 
+#' unite_to_plural(cols, foos)
+#' 
+#' # A tibble: 2 × 2
+#' #  cols  foos 
+#' #  <chr> <chr>
+#' # 1 a|c   e|g  
+#' # 2 b|d   f|h 
+unite_to_plural <- function(data, ...) {
+  args <- as.character(match.call(expand.dots = FALSE)$`...`)
+  
+  united_cols <- lapply(
+    args,
+    function(x) {
+      tidyr::unite(
+        data %>% select(starts_with(substr(x, 1, nchar(x) - 1))),
+        x,
+        everything(),
+        sep = "|",
+        na.rm = TRUE
+      ) %>% 
+        rename({{x}} := 1)
+    }
+  )
+  
+  data %>%
+    select(-starts_with(substr(args, 1, nchar(args) - 1))) %>%
+    bind_cols(united_cols)
+}
+
+
+#' Write data.frame or tibble to database, with datatype set to appropriate
+#' value for strings longer than default 255 characters
+#'
+#' @param data A data.frame or tibble
+#' @param con A DB connection (only tried with Oracle SQL)
+#' @param table_name Name of new table
+#'
+#' @return Used for side effect only
+#'
+#' @examples
+#' con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#' tib <- tibble(x = rep("long!!", 1000))
+#' tib <- write_table_long_chars(con, "LONG_TABLE")
+write_table_long_chars <- function(data, con, table_name) {
+  field.types = list()
+  
+  iwalk(data, \(x, idx) {
+    if (typeof(x) == "character") {
+      max_chars <- data %>%
+        select(all_of(idx)) %>%
+        # Convert all character columns to UTF-8, this prevents an error in nchar.
+        # https://stackoverflow.com/questions/60906507/
+        # how-to-solve-error-error-in-ncharrownamesm-invalid-multibyte-string-ele
+        mutate(
+          !!sym(idx) := iconv(!!sym(idx), "WINDOWS-1252", "UTF-8", sub = "")
+        ) %>%
+        summarise(max(nchar(!!sym(idx)), na.rm = TRUE)) %>%
+        pull()
+      
+      if (max_chars > 255) {
+        # Need the <<- so that field.types in parent env (i.e. the actual
+        # function env) is updated
+        field.types <<- append(
+          field.types,
+          setNames(glue("varchar2({max_chars * 2})"), idx)
+        )
+      }
+    }
+  })
+  
+  dbWriteTable(
+    con,
+    Id(schema = toupper(con@info$username), table = table_name),
+    data,
+    field.types = field.types
+  )
+}
+
+
+#' Add indexes to an existing table
+#'
+#' @param con A DBI connection
+#' @param table_name Name of table
+#' @param indexes Character vector of column names to index on
+#'
+#' @export Used for side effect only
+#'
+#' @examples
+#' con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#' con %>% add_indexes("EXISTING_TABLE", c("UPRN", "POSTCODE"))
+add_indexes <- function(con, table_name, indexes) {
+  walk(
+    indexes,
+    \(x) dbGetQuery(
+      con,
+      glue("CREATE INDEX {table_name}_{x} ON {table_name}({x});")
+    )
+  )
+}
