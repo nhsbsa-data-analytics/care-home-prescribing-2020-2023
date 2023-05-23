@@ -1,6 +1,5 @@
 # TO DO:
 # Bring new CQC columns added in script 01
-# Populate PARENT_UPRNs in CQC records
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -104,12 +103,20 @@ cqc_attributes_df = cqc_db %>%
 
 # The tables above needed to be processed locally due to inadequate dbplyr translation
 # of the function last() (as of v.2.3.2); these tables are now copied into the DB temporarily to be used
-# as lazy tables downstream; local dfs are removed
+# as lazy tables downstream; temp tables are removed on disconnection from DB; local dfs are removed now
 copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE, overwrite = TRUE)
 cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
 
 copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE, overwrite = TRUE)
 cqc_attributes_db <- con %>% tbl(from = "TEMP_CQC_ATTRIBUTES_DF"); rm(cqc_attributes_df)
+
+# Add PARENT_UPRN to CQC data from ABP data, such that, when we later
+# select one record per SLA (which could come from either CQC or ABP)
+# it would always have PARENT_UPRN
+cqc_db <- cqc_db |> left_join(
+  ab_plus_db |> select(UPRN, PARENT_UPRN),
+  by = "UPRN"
+)
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
