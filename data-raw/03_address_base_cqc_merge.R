@@ -34,7 +34,6 @@ cqc_df = cqc_db %>%
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>% 
-  group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   collect() %>% # Collected, because function arrange() does not work with dbplyr
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   arrange(TEMP_DECIDER) %>% 
