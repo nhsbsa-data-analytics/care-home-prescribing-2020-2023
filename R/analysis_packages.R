@@ -16,6 +16,7 @@ pacman::p_load(
   'yaml',
   'highcharter',
   'glue',
+  'purrr',
   
   # CQC API data 
   'httr',

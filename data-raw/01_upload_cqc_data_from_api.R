@@ -58,6 +58,15 @@ get_cqc_api_location_data <- function(loc_num) {
   data = get_api_content(url) %>% 
     unlist() %>% 
     bind_rows()
+
+  while (ncol(data) <= 2) {
+    Sys.sleep(0.05)
+    
+    data = get_api_content(url) %>% 
+      unlist() %>% 
+      bind_rows()
+  }
+  
   
   # Return data
   return(data)
@@ -103,50 +112,66 @@ cqc_details <- parallel::parLapply(
 # Stop Cluster
 parallel::stopCluster(clust)
 
-# Select care homes project columns of interest
+cqc_details_check <- cqc_details %>% map(\(x) x$locationId)
+cqc_details_check <- cqc_details_check[is.na(cqc_details_check)]
+num_missing_locations <- length(cqc_details_check)
+
+if (num_missing_locations > 0) stop("Missing locations, probably due to timeout!")
+
+# Get current year_month
+download_date <- as.integer(format(today(), "%Y%m%d"))
+
+# Bind all dfs together and apply some transformations
 cqc_details_df <- cqc_details %>%
   bind_rows() %>% 
-  janitor::clean_names() %>%
-  select(
+  janitor::clean_names() %>% 
+  unite_to_plural(
+    specialisms,
+    regulated_activities_names,
+    current_ratings_overall_key_question_ratings_names,
+    current_ratings_overall_key_question_ratings_ratings,
+    gac_service_types_names
+  ) %>% 
+  tidyr::unite(
+    single_line_address,
+    c(
+      name, 
+      postal_address_line1, 
+      postal_address_line2,
+      postal_address_town_city,
+      postal_address_county
+    ),
+    sep = " ",
+    na.rm = TRUE
+  ) %>% 
+  transmute(
+    uprn = as.numeric(uprn),
     location_id,
     provider_id,
-    uprn,
+    last_inspection_date,
     registration_date,
     deregistration_date,
-    last_inspection_date,
-    name,
-    postal_address_line1,
-    postal_address_line2,
-    postal_address_town_city,
-    postal_address_county,
-    postal_code,
+    single_line_address,
+    postcode = toupper(gsub("[^[:alnum:]]", "", postal_code)),
+    nursing_home_flag = as.integer(grepl(
+      "Nursing home", gac_service_types_names
+    )),
+    residential_home_flag = as.integer(grepl(
+      "Residential home", gac_service_types_names
+    )),
     type,
-    number_of_beds,
+    number_of_beds = as.integer(number_of_beds),
     current_rating = current_ratings_overall_rating,
-    starts_with("gac_service_types_name")
-  ) %>% 
-  mutate(
-    # Add the nursing home / residential home flag
-    nursing_home_flag = if_else(
-      if_any(
-        .cols = starts_with("gac"),
-        .fns = ~ grepl(pattern = "Nursing home", x = .x)
-      ),
-      1L,
-      0L
-    ),
-    residential_home_flag = if_else(
-      if_any(
-        .cols = starts_with("gac"),
-        .fns = ~ grepl(pattern = "Residential home", x = .x)
-      ),
-      1L,
-      0L
-    ),
-    # Change type of numeric col
-    number_of_beds = as.integer(number_of_beds)
-  ) %>% 
-  select(-starts_with("gac_service_types_name")); gc()
+    key_question_names = current_ratings_overall_key_question_ratings_names,
+    key_question_ratings = current_ratings_overall_key_question_ratings_ratings,
+    cqc_date = download_date,
+    ods_code,
+    specialisms,
+    regulated_activities_names,
+    gac_service_types = gac_service_types_names
+  )
+
+gc()
 
 # Get provider id vec
 provider_vec = cqc_details_df %>% 
@@ -154,7 +179,7 @@ provider_vec = cqc_details_df %>%
   distinct() %>% 
   pull()
 
-# NOTE: provider info doesn't work in parallel due to cqc api
+# Function to query cqc api
 get_cqc_api_provider_data = function(loc_num){
   
   # Wait
@@ -171,18 +196,63 @@ get_cqc_api_provider_data = function(loc_num){
     unlist() %>% 
     bind_rows()
   
+  while (ncol(data) <= 2) {
+    Sys.sleep(0.05)
+    
+    data = get_api_content(url) %>% 
+      unlist() %>% 
+      bind_rows()
+  }
+  
   # Return data
   return(data)
 }
 
+# Generate appropriate number of cores
+n_cores <- parallel::detectCores() - 2
+
+# Set up parallel
+clust <- parallel::makeCluster(n_cores)
+
+# Export libraries to cluster
+parallel::clusterEvalQ(
+  cl = clust,
+  {
+    library(dplyr); 
+    library(httr);
+    library(jsonlite);
+  }
+)
+
+# Export required objects to cluster
+parallel::clusterExport(
+  cl = clust,
+  varlist = c(
+    "get_api_content",
+    "get_cqc_api_provider_data",
+    "provider_vec"
+  ),
+  envir = environment()
+)
+
 # Print script update
 print("Now downloading CQC API provider data ...")
 
-# With sys.sleep takes ~30 mins
-cqc_details = lapply(
+# Generate cqc details
+cqc_details <- parallel::parLapply(
+  cl = clust, 
   X = 1:length(provider_vec), 
-  FUN = get_cqc_api_provider_data
+  fun = get_cqc_api_provider_data
 )
+
+# Stop Cluster
+parallel::stopCluster(clust)
+
+cqc_details_check <- cqc_details %>% map(\(x) x$locationId)
+cqc_details_check <- cqc_details_check[is.na(cqc_details_check)]
+num_missing_providers <- length(cqc_details_check)
+
+if (num_missing_providers > 0) stop("Missing providers, probably due to timeout!")
 
 # Process the provider data
 cqc_providers_df = cqc_details %>% 
@@ -208,46 +278,8 @@ cqc_providers_df = cqc_details %>%
     provider_last_inspection_date = last_inspection_date
   )
 
-# Get current year_month
-download_date <- as.integer(format(today(), "%Y%m%d"))
-
 # Process the cqc df output, in preparation for matching
 cqc_process_df <- cqc_details_df %>% 
-  rename(postcode = postal_code) %>%
-  # Paste fields together to create single line address
-  tidyr::unite(
-    single_line_address,
-    c(
-      "name", 
-      "postal_address_line1", 
-      "postal_address_line2",
-      "postal_address_town_city",
-      "postal_address_county"
-    ),
-    sep = " ",
-    na.rm = TRUE
-  ) %>% 
-  mutate(
-    # Postcode Cleaning
-    postcode = toupper(gsub("[^[:alnum:]]", "", postcode)),
-    cqc_date = download_date
-  ) %>% 
-  select(
-    uprn,
-    location_id,
-    provider_id,
-    last_inspection_date,
-    registration_date,
-    deregistration_date,
-    single_line_address,
-    postcode,
-    nursing_home_flag,
-    residential_home_flag,
-    type,
-    number_of_beds,
-    current_rating,
-    cqc_date
-  ) %>% 
   left_join(cqc_providers_df, by = "provider_id") %>% 
   tidy_df_single_line_address(single_line_address) %>% 
   tidy_df_single_line_address(provider_sla) %>% 
@@ -266,14 +298,10 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
 
-# Upload to DB with indexes
-con %>%
-  copy_to(
-    df = cqc_process_df,
-    name = table_name,
-    indexes = list(c("LOCATION_ID"), c("UPRN"), c("POSTCODE")),
-    temporary = FALSE
-  )
+# Upload to DB...
+cqc_process_df %>% write_table_long_chars(con, table_name)
+# ...and add indexes
+con %>% add_indexes(table_name, c("LOCATION_ID", "UPRN", "POSTCODE"))
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% lapply(

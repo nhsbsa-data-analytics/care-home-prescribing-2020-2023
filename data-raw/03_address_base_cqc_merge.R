@@ -53,6 +53,11 @@ cqc_df = cqc_db %>%
     RESIDENTIAL_HOME_FLAG,
     NUMBER_OF_BEDS,
     CURRENT_RATING,
+    LAST_INSPECTION_DATE,
+    TYPE,
+    KEY_QUESTION_NAMES,
+    KEY_QUESTION_RATINGS,
+    ODS_CODE,
     .direction = "down" # only need down, since we want the last row
   ) %>% 
   # We take last value of each group (equivalent to taking last row since NAs
@@ -65,6 +70,11 @@ cqc_df = cqc_db %>%
     RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER),
     NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER),
     CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER),
+    LAST_INSPECTION_DATE = last(LAST_INSPECTION_DATE, order_by = TEMP_DECIDER),
+    TYPE = last(TYPE, order_by = TEMP_DECIDER),
+    KEY_QUESTION_NAMES = last(KEY_QUESTION_NAMES, order_by = TEMP_DECIDER),
+    KEY_QUESTION_RATINGS = last(KEY_QUESTION_RATINGS, order_by = TEMP_DECIDER),
+    ODS_CODE = last(ODS_CODE, order_by = TEMP_DECIDER),
     .groups = "drop"
   ) %>%
   mutate(
@@ -109,16 +119,26 @@ cqc_attributes_df = cqc_db %>%
     RESIDENTIAL_HOME_FLAG,
     NUMBER_OF_BEDS,
     CURRENT_RATING,
+    LAST_INSPECTION_DATE,
+    TYPE,
+    KEY_QUESTION_NAMES,
+    KEY_QUESTION_RATINGS,
+    ODS_CODE,
     .direction = "down" # only need down, since we want the last row
   ) %>% 
   # We take last value of each group (equivalent to taking last row since NAs
   # were filled)
   summarise(
-    LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER, na.rm = TRUE),
-    NURSING_HOME_FLAG = last(NURSING_HOME_FLAG, order_by = TEMP_DECIDER, na.rm = TRUE),
-    RESIDENTIAL_HOME_FLAG = last(RESIDENTIAL_HOME_FLAG, order_by = TEMP_DECIDER, na.rm = TRUE),
-    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER, na.rm = TRUE),
-    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER, na.rm = TRUE),
+    LOCATION_ID = last(LOCATION_ID, order_by = TEMP_DECIDER),
+    NURSING_HOME_FLAG = last(NURSING_HOME_FLAG, order_by = TEMP_DECIDER),
+    RESIDENTIAL_HOME_FLAG = last(RESIDENTIAL_HOME_FLAG, order_by = TEMP_DECIDER),
+    NUMBER_OF_BEDS = last(NUMBER_OF_BEDS, order_by = TEMP_DECIDER),
+    CURRENT_RATING = last(CURRENT_RATING, order_by = TEMP_DECIDER),
+    LAST_INSPECTION_DATE = last(LAST_INSPECTION_DATE, order_by = TEMP_DECIDER),
+    TYPE = last(TYPE, order_by = TEMP_DECIDER),
+    KEY_QUESTION_NAMES = last(KEY_QUESTION_NAMES, order_by = TEMP_DECIDER),
+    KEY_QUESTION_RATINGS = last(KEY_QUESTION_RATINGS, order_by = TEMP_DECIDER),
+    ODS_CODE = last(ODS_CODE, order_by = TEMP_DECIDER),
     .groups = "drop"
   )
 

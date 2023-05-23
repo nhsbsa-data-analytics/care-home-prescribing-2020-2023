@@ -89,7 +89,12 @@ match_db = match_db %>%
     CURRENT_RATING,
     NUMBER_OF_BEDS,
     AB_DATE,
-    CQC_DATE
+    CQC_DATE,
+    LAST_INSPECTION_DATE,
+    TYPE,
+    KEY_QUESTION_NAMES,
+    KEY_QUESTION_RATINGS,
+    ODS_CODE
   )
 
 # Filter to elderly patients in 2020/2021 and required columns
@@ -327,6 +332,11 @@ fact_join_db = fact_db %>%
     CURRENT_RATING,
     AB_DATE,
     CQC_DATE,
+    LAST_INSPECTION_DATE,
+    TYPE,
+    KEY_QUESTION_NAMES,
+    KEY_QUESTION_RATINGS,
+    ODS_CODE,
     # Item info
     ITEM_COUNT,
     ITEM_PAY_DR_NIC,
