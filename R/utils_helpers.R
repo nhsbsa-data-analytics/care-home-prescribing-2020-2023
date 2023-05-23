@@ -156,7 +156,7 @@ format_data_raw <- function(df, vars) {
   if ("BREAKDOWN" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        BREAKDOWN = forcats::fct_relevel(BREAKDOWN, names(breakdowns))
+        BREAKDOWN = forcats::fct_relevel(.data$BREAKDOWN, names(breakdowns))
       )
   }
   
@@ -164,7 +164,7 @@ format_data_raw <- function(df, vars) {
   if ("GEOGRAPHY" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        GEOGRAPHY = forcats::fct_relevel(GEOGRAPHY, names(geographys))
+        GEOGRAPHY = forcats::fct_relevel(.data$GEOGRAPHY, names(geographys))
       )
   }
   
@@ -172,7 +172,7 @@ format_data_raw <- function(df, vars) {
   if ("BNF_LEVEL" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        BNF_LEVEL = forcats::fct_relevel(BNF_LEVEL, names(bnfs))
+        BNF_LEVEL = forcats::fct_relevel(.data$BNF_LEVEL, names(bnfs))
       )
   }
   

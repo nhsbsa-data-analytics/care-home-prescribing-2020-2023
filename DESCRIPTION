@@ -22,25 +22,29 @@ Description: This R package has been developed by NHS Business Services Authorit
 License: Apache License (>= 2)
 Imports:
     config,
-    DBI,
     dplyr,
-    dbplyr,
+    fontawesome,
+    forcats,
     golem,
     highcharter,
-    lubridate,
+    htmltools,
+    knitr,
     magrittr,
     nhsbsaR,
-    pacman,
     rlang,
-    shiny,
-    tictoc
+    shiny
 Suggests:
     addressMatchR,
     archive,
+    DBI,
+    dbplyr,
     httr,
     janitor,
     jsonlite,
+    lubridate,
+    pacman,
     readr,
+    tictoc,
     yaml
 Remotes:
     nhsbsa-data-analytics/nhsbsaR
