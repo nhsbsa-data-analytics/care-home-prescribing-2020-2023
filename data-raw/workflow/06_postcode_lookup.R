@@ -1,5 +1,4 @@
-# The script creates a postcode lookup table using the latest
-# available mappings
+# The script creates a postcode lookup table using the latest available mappings
 
 library(dplyr)
 library(dbplyr)
@@ -8,8 +7,9 @@ library(dbplyr)
 # Currently PCD-LSOA mappings are available in the DWCP, but include only the old
 # 2011-LSOA structure. The LSOA structure was updated in 2021 and is entirely different.
 # The mappings from https://geoportal.statistics.gov.uk which feed DALL_REF.ONS_GEOGRAPHY_MAPPING
-# have switched to using the 2021-LSOAs in recent years, so we cannot use the newer LSOA->REG/ICB/LAD mappings.
-# The latest mappings which use the 2011-LSOAs (which we can use) are hard-coded below:
+# have switched to using the 2021-LSOA structure in recent years, so we cannot use the
+# newer LSOA->REG/ICB/LAD mappings.
+# The latest mappings which use the 2011-LSOAs (i.e. usable here) are hard-coded below:
 
 LSOA_NHSREG = "LSOA_NHSREG2022"
 LSOA_ICB = "LSOA_ICB2022"
