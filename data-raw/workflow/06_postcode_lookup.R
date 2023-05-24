@@ -34,13 +34,6 @@ postcode_latlong <- con %>%
 imd_db <- con %>%
   tbl(from = in_schema("DALL_REF", "ONS_INDEX_OF_MULTIPLE_DEPRIVATION"))
 
-# Get the latest POSTCODE-LSOA mappings within the target FY
-max_ym <- con %>%
-  tbl(from = in_schema("DIM", "YEAR_MONTH_DIM")) %>%
-  filter(FINANCIAL_YEAR==fy) %>%
-  pull(YEAR_MONTH) %>%
-  max()
-
 postcode_db <- postcode_db %>%
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
