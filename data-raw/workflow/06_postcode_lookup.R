@@ -1,41 +1,20 @@
-# The script creates a postcode lookup table that
-# correlates with one of the three financial years.
-
-if (fy == "2020/2021") {
-  
-  # Fill later
-  return(NULL)
-  
-  LSOA_NHSREG = "LSOA_REG2021"
-  LSOA_ICB = "LSOA_CCG2021" # Check: do we want to use the outdated CCG structure, even though it is appropriate for the time period?
-  LSOA_LAD = "LSOA_LAD2021"
-  TABLE_SUFFIX="2021"
-  
-} else if (fy == "2021/2022") {
-  
-  LSOA_NHSREG = "LSOA_NHSREG2022"
-  LSOA_ICB = "LSOA_ICB2022"
-  # This mapping is available only up to 2021 at the time of running (May 2023)
-  # Ideally, we'd use the mapping as of 2022, but since that is available, we'll use the 2021 version
-  # Steven says there doesn't appear to be a change from 2021 to 2022: same number of LAD records and same codes
-  LSOA_LAD = "LSOA_LAD2021"
-  TABLE_SUFFIX="2022"
-  
-} else if (fy == "2022/2023") {
-  
-  # Newer mappings not available yet, need to decide what to do...
-  return(NULL)
-  
-}
-
-# Note:
-# IMD Year is hard-coded at 2019 at the moment, since it's updated every 5 years
-
-# Execute the script only if the workflow function calls it for a supported FY
-if (exists("TABLE_SUFFIX")) {
+# The script creates a postcode lookup table using the latest
+# available mappings
 
 library(dplyr)
 library(dbplyr)
+
+# Postcodes are mapped to REG/ICB/LAD mappings via LSOAs
+# Currently PCD-LSOA mappings are available in the DWCP, but include only the old
+# 2011-LSOA structure. The LSOA structure was updated in 2021 and is entirely different.
+# The mappings from https://geoportal.statistics.gov.uk which feed DALL_REF.ONS_GEOGRAPHY_MAPPING
+# have switched to using the 2021-LSOAs in recent years, so we cannot use the newer LSOA->REG/ICB/LAD mappings.
+# The latest mappings which use the 2011-LSOAs (which we can use) are hard-coded below:
+
+LSOA_NHSREG = "LSOA_NHSREG2022"
+LSOA_ICB = "LSOA_ICB2022"
+LSOA_LAD = "LSOA_LAD2021"
+
 
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
@@ -63,8 +42,6 @@ max_ym <- con %>%
   max()
 
 postcode_db <- postcode_db %>%
-  # Done this way, because a PC may not have an entry in a given FY's update
-  filter(YEAR_MONTH <= max_ym) %>% 
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
@@ -73,7 +50,6 @@ postcode_db <- postcode_db %>%
   addressMatchR::tidy_postcode(POSTCODE)
 
 postcode_latlong <- postcode_latlong %>%
-  filter(YEAR_MONTH <= max_ym) %>%
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
@@ -165,7 +141,3 @@ rm(list = remove_vars, remove_vars); gc()
 
 # Disconnect from database
 DBI::dbDisconnect(con)
-
-} else {
-  print("Error: unsupported financial year")
-}

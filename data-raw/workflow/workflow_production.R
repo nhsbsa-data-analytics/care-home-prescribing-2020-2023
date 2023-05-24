@@ -69,12 +69,8 @@ create_care_home_address_match = function(patient_address_data, lookup_address_d
   tictoc::tic(); source("data-raw/workflow/05_address_match.R"); tictoc::toc(); print(Sys.time())
 }
 
-#' @description downloads creates the postcode lookup table in the DB
-#' @param none: date for data generated from Sys.date()
-create_postcode_lookup = function(fy){
-  
-  # Assign function inputs to global env
-  assign("fy", fy, envir = globalenv())
+#' @description creates the postcode lookup table in the DB containing latest available (hard-coded) mappings
+create_postcode_lookup = function(){
   
   # Write postcode lookup table to the DB for the appropriate FY
   tic(); source("data-raw/workflow/06_postcode_lookup.R"); toc(); print(Sys.time())
@@ -84,15 +80,13 @@ create_postcode_lookup = function(fy){
 
 #' @description gets prescription info for matched records
 #' @param match_data: matched address data
-#' @param geo_year: matching financial year for the postcode to geo attributes lookup table in the full format, e.g. "2021/2022"
 #' @noRd
-create_matched_prescription_base_table = function(match_data, form_data, geo_year){
+create_matched_prescription_base_table = function(match_data, form_data){
   
   # Assign function inputs to global env
   assign("match_data", match_data, envir = globalenv())
   assign("form_data", form_data, envir = globalenv())
-  assign("fy", geo_fy, envir = globalenv())
-  
+
   # Get nearest ab plus to end date with cqc postcodes within time frame
   tictoc::tic(); source("data-raw/workflow/07_item_level_base.R"); tictoc::toc(); print(Sys.time())
 }
