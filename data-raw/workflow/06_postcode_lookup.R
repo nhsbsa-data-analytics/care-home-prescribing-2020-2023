@@ -114,7 +114,7 @@ postcode_db <- postcode_db %>%
   )
 
 # Write the table back to the DB with indexes
-table_name = paste0("INT646_POSTCODE_LOOKUP_",TABLE_SUFFIX)
+table_name = "INT646_POSTCODE_LOOKUP"
 drop_table_if_exists_db(table_name)
 postcode_db %>%
   compute(
