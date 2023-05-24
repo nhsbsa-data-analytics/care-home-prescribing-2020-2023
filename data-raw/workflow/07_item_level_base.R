@@ -151,7 +151,8 @@ presc_db = presc_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
   mutate(
     CUR_PCN_LTST_NM = case_when(CUR_PCN_LTST_NM=="DUMMY" ~ NA_character_,
-                                TRUE ~ CUR_PCN_LTST_NM)
+                                TRUE ~ paste0(CUR_PCN_LTST_NM, " (as of ", max(YEAR_MONTH), ")")
+                                )
     ) %>%
   select(
     YEAR_MONTH,
