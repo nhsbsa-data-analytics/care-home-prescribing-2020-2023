@@ -36,7 +36,7 @@ disp_db <- con %>%
 
 # Lazy table from the geography lookup table for appropriate FY
 postcode_db <- con %>%
-  tbl(from = paste0("INT646_POSTCODE_LOOKUP_", stringr::str_extract(fy, "/(\\d+$)", group=1)))
+  tbl(from = "INT646_POSTCODE_LOOKUP")
 
 # Get start and end dates
 start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]

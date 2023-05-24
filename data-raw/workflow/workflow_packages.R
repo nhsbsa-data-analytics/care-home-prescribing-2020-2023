@@ -16,7 +16,6 @@ pacman::p_load(
   'purrr',
   'glue',
   'highcharter',
-  'stringr',
   
   # CQC API data 
   'httr',
