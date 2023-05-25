@@ -34,6 +34,10 @@ presc_db <- con %>%
 disp_db <- con %>%
   tbl(from = in_schema("DIM", "HS_DY_LEVEL_5_FLAT_DIM"))
 
+# Lazy table from the geography lookup table for appropriate FY
+postcode_db <- con %>%
+  tbl(from = "INT646_POSTCODE_LOOKUP")
+
 # Get start and end dates
 start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
@@ -145,6 +149,11 @@ drug_db = drug_db %>%
 # Process prescriber information
 presc_db = presc_db %>% 
   filter(YEAR_MONTH %in% year_month) %>%
+  mutate(
+    CUR_PCN_LTST_NM = case_when(CUR_PCN_LTST_NM=="DUMMY" ~ NA_character_,
+                                TRUE ~ paste0(CUR_PCN_LTST_NM, " (as of ", max(YEAR_MONTH), ")")
+                                )
+    ) %>%
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -161,8 +170,10 @@ presc_db = presc_db %>%
     PRESCRIBER_TYPE = PRESCRIBER_LTST_TYPE,
     PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
-    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
-  )
+    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE,
+    PRESCRIBER_PCN = CUR_PCN_LTST_NM
+    )
+
 
 # Process form fact
 form_db = form_db %>% 
@@ -268,7 +279,9 @@ fact_join_db = fact_db %>%
                                  "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
   left_join(y = disp_db, by = c("YEAR_MONTH",
                                 "DISP_ID" = "LVL_5_OU",
-                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>% 
+                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
+  # Inner join so only prescription forms with an *English* postcode are included
+  inner_join(y = postcode_db, by = c("BSA_POSTCODE" = "POSTCODE")) %>%
   mutate(
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome
@@ -345,13 +358,22 @@ fact_join_db = fact_db %>%
     PRESCRIBER_SUB_TYPE,
     PRESCRIBER_NM,
     PRESCRIBER_CODE,
+    PRESCRIBER_PCN,
     # Dispenser info
     DISP_CODE,
     DISP_TYPE,
     DISP_NM,
     DISP_TRADING_NM,
     DISP_SLA,
-    DISP_POSTCODE
+    DISP_POSTCODE,
+    # Geographic attributes
+    PCD_REGION_CODE,
+    PCD_REGION_NAME,
+    PCD_ICB_CODE,
+    PCD_ICB_NAME,
+    PCD_LAD_CODE,
+    PCD_LAD_NAME,
+    IMD_DECILE
   )
 
 # Part four: save output -------------------------------------------------------

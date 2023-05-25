@@ -36,7 +36,10 @@ create_care_home_address_match(
   parent_uprn_data = "INT646_ABP_20220422"
 )
 
-# 6. Join to fact table and get non ch-postcode records within time frame: 11hr
+# 6. Create postcode lookup table (latest available mappings) for joining in the next step: 2min
+create_postcode_lookup()
+
+# 7. Join to fact table and get non ch-postcode records within time frame: 11hr
 create_matched_prescription_base_table(
   match_data = "INT646_MATCH_20210401_20220331",
   form_data = "INT646_FORMS_20210401_20220331"
