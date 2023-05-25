@@ -83,11 +83,8 @@ writeBin(data, output_filepath)
 # Remove api content and clean
 rm(data); gc()
 
-# Get project directory
-project_dir = getwd()
-
-# Set to temp dir
-setwd(output_dir)
+# Get project directory and set to temp dir
+project_dir = setwd(output_dir)
 
 # Get ab plus csv file names within directory
 temp_dir_files = archive(data_file_name) %>% 
@@ -186,7 +183,7 @@ read_temp_dir_csv = function(index){
       across(.cols = c('UPRN', 'PARENT_UPRN'), as.numeric),
       CH_FLAG = ifelse(CH_FLAG == "RI01", 1L, 0L)
     ) 
-    
+  
   # Create table
   DBI::dbWriteTable(
     conn = con,
@@ -207,7 +204,7 @@ lapply(1:length(temp_dir_files), read_temp_dir_csv); gc()
 
 # Connect to temp table
 ab_plus_db = con %>%
-  tbl(from = table_name_temp) %>% 
+  tbl(from = table_name_temp) %>%
   # SLA creation plus formatting
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
@@ -243,7 +240,11 @@ ab_plus_db %>%
 drop_table_if_exists_db(table_name_temp)
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
@@ -255,7 +256,7 @@ print(paste0("This script has created table: ", table_name))
 setwd(project_dir)
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

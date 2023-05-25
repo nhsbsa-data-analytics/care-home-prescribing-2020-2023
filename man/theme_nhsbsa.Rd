@@ -7,9 +7,14 @@
 theme_nhsbsa(hc, palette = NA, stack = "normal")
 }
 \arguments{
+\item{hc}{Highcharts object}
+
 \item{palette}{Which colour palette to use from the `nhsbsaR` package.}
 
 \item{stack}{Stack option for highcharter.}
+}
+\value{
+Highcharts object with theme added.
 }
 \description{
 Based on the nhsbsaR highcharter theme, since it returns a list we can edit

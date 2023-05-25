@@ -42,11 +42,10 @@ patient_address_db = patient_db %>%
     !is.na(SINGLE_LINE_ADDRESS),
     CALC_AGE >= 65,
     POSTCODE_CH == 1
-    ) %>%
+  ) %>%
   # Add monthly patient count
   group_by(YEAR_MONTH, POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(MONTHLY_PATIENTS = n_distinct(NHS_NO)) %>%
-  # Fully ungroup
   ungroup() %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
@@ -61,7 +60,7 @@ match_db = addressMatchR::calc_match_addresses(
   lookup_df = address_db,
   lookup_postcode_col = "POSTCODE",
   lookup_address_col = "SINGLE_LINE_ADDRESS"
-  )
+)
 
 # Define keyword list for case statements
 care_home_keywords = "CARE HOME|CARE-HOME|NURSING HOME|NURSING-HOME|RESIDENTIAL HOME|RESIDENTIAL-HOME|REST HOME|REST-HOME"
@@ -151,10 +150,10 @@ match_db = match_db %>%
   group_by(UPRN) %>% 
   mutate(
     SINGLE_LINE_ADDRESS_STANDARDISED = max(paste0(SINGLE_LINE_ADDRESS, " ", POSTCODE))
-    ) %>% 
+  ) %>% 
   ungroup() %>% 
   # Ensure 1 uprn per SLA
-  group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>% 
+  group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>%
   mutate(UPRN = max(UPRN)) %>% 
   ungroup() %>% 
   # Get parent uprn info
@@ -174,9 +173,9 @@ patient_match_db <- patient_db %>%
       UPRN_FLAG = 0L,
       CH_FLAG = 0L, 
       MATCH_TYPE = "NO MATCH"
-      )
     )
-  
+  )
+
 # Define table name
 table_name = paste0("INT646_MATCH_", start_date, "_", end_date)
 
@@ -195,16 +194,20 @@ patient_match_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
-# Print created table name output
+# Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

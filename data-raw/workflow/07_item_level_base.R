@@ -26,13 +26,17 @@ form_db <- con %>%
 drug_db <- con %>%
   tbl(from = in_schema("DIM", "CDR_EP_DRUG_BNF_DIM"))
 
-# Lazy table for fact table
+# Lazy table for prescriber table
 presc_db <- con %>%
   tbl(from = in_schema("DIM", "CUR_HS_EP_ORG_UNIT_DIM"))
 
-# Lazy table for fact table
+# Lazy table for dispenser table
 disp_db <- con %>%
   tbl(from = in_schema("DIM", "HS_DY_LEVEL_5_FLAT_DIM"))
+
+# Lazy table from the geography lookup table for appropriate FY
+postcode_db <- con %>%
+  tbl(from = "INT646_POSTCODE_LOOKUP")
 
 # Get start and end dates
 start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
@@ -86,8 +90,6 @@ match_db = match_db %>%
     LOCATION_ID,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    CURRENT_RATING,
-    NUMBER_OF_BEDS,
     AB_DATE,
     CQC_DATE
   )
@@ -95,8 +97,7 @@ match_db = match_db %>%
 # Filter to elderly patients in 2020/2021 and required columns
 fact_db = fact_db %>%
   filter(
-    # Prescribing retained for all ages
-    #CALC_AGE >= 65L,
+    CALC_AGE >= 65L,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
@@ -148,6 +149,11 @@ drug_db = drug_db %>%
 # Process prescriber information
 presc_db = presc_db %>% 
   filter(YEAR_MONTH %in% year_month) %>%
+  mutate(
+    CUR_PCN_LTST_NM = case_when(CUR_PCN_LTST_NM=="DUMMY" ~ NA_character_,
+                                TRUE ~ paste0(CUR_PCN_LTST_NM, " (as of ", max(YEAR_MONTH), ")")
+                                )
+    ) %>%
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -164,8 +170,10 @@ presc_db = presc_db %>%
     PRESCRIBER_TYPE = PRESCRIBER_LTST_TYPE,
     PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
-    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
-  )
+    PRESCRIBER_CODE = PRESCRIBER_LTST_CDE,
+    PRESCRIBER_PCN = CUR_PCN_LTST_NM
+    )
+
 
 # Process form fact
 form_db = form_db %>% 
@@ -187,8 +195,8 @@ disp_db = disp_db %>%
       OOH_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: OOH",
       PRIVATE_DISPENSER_HIST == "Y" ~ "PHARMACY CONTRACTOR: PRIVATE",
       T ~ LVL_5_LTST_TYPE
-      )
-    ) %>% 
+    )
+  ) %>% 
   select(
     YEAR_MONTH,
     LVL_5_OU,
@@ -199,12 +207,11 @@ disp_db = disp_db %>%
     DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
-  
-# Get a single gender and age for the period
+
+# Get a single gender and age for the period 
 pat_db <- pat_db %>% 
   filter(
-    # Prescribing retained for all ages
-    #CALC_AGE >= 65L,
+    CALC_AGE >= 65L,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
@@ -241,6 +248,8 @@ pat_db <- pat_db %>%
       TRUE ~ NA_character_
     ),
     # Add an age band
+    # Will we need a more complex treatment of age/age-band when considering
+    # periods of longer than the initial single year?
     AGE_BAND = case_when(
       AGE == -1 ~ "UNKNOWN",
       AGE < 65 ~ "<65",
@@ -260,8 +269,8 @@ fact_join_db = fact_db %>%
   left_join(y = form_db, by = c("YEAR_MONTH" = "YEAR_MONTH_FORMS", 
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
-                                "PF_ID" = "PF_ID_MATCH")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "PAY_DRUG_RECORD_ID")) %>% 
+                                 "PF_ID" = "PF_ID_MATCH")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
                                  "PRESC_ID_PRNT" = "LVL_5_OU",
@@ -270,7 +279,9 @@ fact_join_db = fact_db %>%
                                  "PRESC_PD_OUPDT" = "PD_OUPDT")) %>% 
   left_join(y = disp_db, by = c("YEAR_MONTH",
                                 "DISP_ID" = "LVL_5_OU",
-                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>% 
+                                "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
+  # Inner join so only prescription forms with an *English* postcode are included
+  inner_join(y = postcode_db, by = c("BSA_POSTCODE" = "POSTCODE")) %>%
   mutate(
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome
@@ -280,17 +291,17 @@ fact_join_db = fact_db %>%
       REGEXP_INSTR(BSA_SLA, global_exclusion_keywords) == 0L &
       REGEXP_INSTR(BSA_SLA, extra_exclusion_keywords) == 0L ~ 1,
       TRUE ~ CH_FLAG
-      ),
+    ),
     MATCH_TYPE = case_when(
       is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
       TRUE ~ MATCH_TYPE
-      ),
+    ),
     #Zeroes for nas after left-join
     AB_FLAG = case_when(is.na(AB_FLAG) ~ 0, T ~ AB_FLAG),
     UPRN_FLAG = case_when(is.na(UPRN_FLAG) ~ 0, T ~ UPRN_FLAG),
     CH_FLAG = case_when(is.na(CH_FLAG) ~ 0, T ~ CH_FLAG),
     MATCH_TYPE = case_when(is.na(MATCH_TYPE) ~ "NO MATCH", T ~ MATCH_TYPE)
-    ) %>%
+  ) %>%
   select(
     # Fact metadata
     YEAR_MONTH,
@@ -321,8 +332,6 @@ fact_join_db = fact_db %>%
     LOCATION_ID,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    NUMBER_OF_BEDS,
-    CURRENT_RATING,
     AB_DATE,
     CQC_DATE,
     # Item info
@@ -349,13 +358,22 @@ fact_join_db = fact_db %>%
     PRESCRIBER_SUB_TYPE,
     PRESCRIBER_NM,
     PRESCRIBER_CODE,
+    PRESCRIBER_PCN,
     # Dispenser info
     DISP_CODE,
     DISP_TYPE,
     DISP_NM,
     DISP_TRADING_NM,
     DISP_SLA,
-    DISP_POSTCODE
+    DISP_POSTCODE,
+    # Geographic attributes
+    PCD_REGION_CODE,
+    PCD_REGION_NAME,
+    PCD_ICB_CODE,
+    PCD_ICB_NAME,
+    PCD_LAD_CODE,
+    PCD_LAD_NAME,
+    IMD_DECILE
   )
 
 # Part four: save output -------------------------------------------------------
@@ -378,16 +396,20 @@ fact_join_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
-# Print created table name output
+# Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()

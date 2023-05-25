@@ -11,8 +11,8 @@ start_year_month = as.integer(substr(start_date, 1, 6))
 end_year_month = as.integer(substr(end_date, 1, 6))
 
 # Modify dates for eps buffer
-eps_start_date = as.Date(start_date, "%Y%m%d") %m-% months(2)
-eps_end_date = (as.Date(end_date, "%Y%m%d")+10) %m+% months(2)
+eps_start_date = ymd(start_date) %m-% months(2)
+eps_end_date = ymd(end_date) %m+% days(10) %m+% months(2)
 
 # Change dates back to integers
 eps_start_date = as.integer(gsub("-", "", eps_start_date))
@@ -30,13 +30,13 @@ paper_db <- con %>%
 fact_db <- con %>%
   tbl(from = in_schema("AML", "PX_FORM_ITEM_ELEM_COMB_FACT"))
 
-# Lazy table for fact table
+# Lazy table for eps table
 eps_db <- con %>%
   tbl(from = in_schema("SCD2", "SCD2_ETP_DY_PAYLOAD_MSG_DATA"))
 
 # Postcodes with a care home
 postcode_db <- con %>%
-  tbl(from = in_schema("ADNSH", address_data))
+  tbl(from = address_data)
 
 # Part one: filter two fact table cuts for eps and paper info ------------------
 
@@ -62,6 +62,7 @@ fact_db = fact_db %>%
     YEAR_MONTH,
     PF_ID,
     NHS_NO,
+    CALC_AGE,
     EPS_PART_DATE,
     EPM_ID,
     # filter vars
@@ -74,7 +75,7 @@ fact_db = fact_db %>%
     PRIVATE_IND,
     IGNORE_FLAG,
     ITEM_COUNT 
-    ) %>% 
+  ) %>% 
   filter(
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
@@ -86,7 +87,7 @@ fact_db = fact_db %>%
     PRIVATE_IND == 0L, # excludes private dispensers
     IGNORE_FLAG == "N", # remove dummy ldp forms
     ITEM_COUNT >= 1 # remove element-level rows
-    ) %>% 
+  ) %>% 
   group_by(
     YEAR_MONTH,
     PF_ID,
@@ -179,17 +180,20 @@ fact_join_db %>%
   )
 
 # Grant access
-DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO MIGAR"))
+c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+  \(x) {
+    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+  }
+) %>% invisible()
 
-# Disconnect from database
+# Disconnect connection to database
 DBI::dbDisconnect(con)
 
-# Print created table name output
+# Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
-remove_vars = setdiff(ls(), keep_vars)
+remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
-   

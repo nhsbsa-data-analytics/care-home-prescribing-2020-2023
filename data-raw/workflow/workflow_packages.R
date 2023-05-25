@@ -1,7 +1,6 @@
-
 # Install pacman if necessary
-if (!('pacman' %in% rownames(installed.packages()))) {
-  install.packages('pacman')
+if (!('pacman' %in% rownames(utils::installed.packages()))) {
+  utils::install.packages('pacman')
 }
 
 # Libraries
@@ -11,9 +10,12 @@ pacman::p_load(
   'dbplyr',
   'DBI',
   'tictoc',
-  'parallel',
   'janitor',
   'yaml',
+  'tidyr',
+  'purrr',
+  'glue',
+  'highcharter',
   
   # CQC API data 
   'httr',
