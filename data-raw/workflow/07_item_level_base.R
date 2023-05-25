@@ -280,7 +280,8 @@ fact_join_db = fact_db %>%
   left_join(y = disp_db, by = c("YEAR_MONTH",
                                 "DISP_ID" = "LVL_5_OU",
                                 "DISP_OUPDT_TYPE" = "LVL_5_OUPDT")) %>%
-  left_join(y = postcode_db, by = c("BSA_POSTCODE" = "POSTCODE")) %>%
+  # Inner join so only prescription forms with an *English* postcode are included
+  inner_join(y = postcode_db, by = c("BSA_POSTCODE" = "POSTCODE")) %>%
   mutate(
     # Apply single keyword logic to addresses that haven't been used in matching, 
     # because they don't share a postcode with a known carehome

@@ -35,11 +35,13 @@ imd_db <- con %>%
   tbl(from = in_schema("DALL_REF", "ONS_INDEX_OF_MULTIPLE_DEPRIVATION"))
 
 postcode_db <- postcode_db %>%
+  filter(COUNTRY_CODE == "E92000001") %>% 
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
-  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH) %>%
+  ungroup() %>% 
+  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) %>%
   addressMatchR::tidy_postcode(POSTCODE)
 
 postcode_latlong <- postcode_latlong %>%
@@ -60,7 +62,8 @@ postcode_db <- postcode_db %>%
         LSOA_CODE = CHILD_ONS_CODE,
         PCD_ICB_CODE = PARENT_ONS_CODE,
         PCD_ICB_NAME = PARENT_NAME
-      )
+      ),
+    by = "LSOA_CODE"
   ) %>%
   # LA
   left_join(
@@ -70,7 +73,8 @@ postcode_db <- postcode_db %>%
         LSOA_CODE = CHILD_ONS_CODE,
         PCD_LAD_CODE = PARENT_ONS_CODE,
         PCD_LAD_NAME = PARENT_NAME
-      )
+      ),
+    by = "LSOA_CODE"
   ) %>%
   # NHS Region
   left_join(
@@ -80,15 +84,17 @@ postcode_db <- postcode_db %>%
         LSOA_CODE = CHILD_ONS_CODE,
         PCD_REGION_CODE = PARENT_ONS_CODE,
         PCD_REGION_NAME = PARENT_NAME
-      )
+      ),
+    by = "LSOA_CODE"
   ) %>%
   # Latitude & Longitude
-  left_join(postcode_latlong) %>%
+  left_join(postcode_latlong, by = "POSTCODE") %>%
   # Index of Multiple Deprivation
   left_join(
     y = imd_db %>%
       filter(IMD_YEAR == 2019) %>%
-      select(LSOA_CODE, IMD_DECILE = INDEX_OF_MULT_DEPRIV_DECILE)
+      select(LSOA_CODE, IMD_DECILE = INDEX_OF_MULT_DEPRIV_DECILE),
+    by = "LSOA_CODE"
   )
 
 # Reorder the columns
@@ -103,6 +109,8 @@ postcode_db <- postcode_db %>%
     PCD_LAD_NAME,
     PCD_LAT,
     PCD_LONG,
+    PCD_NORTHING,
+    PCD_EASTING,
     IMD_DECILE
   )
 
