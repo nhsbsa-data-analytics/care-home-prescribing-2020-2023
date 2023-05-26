@@ -87,7 +87,7 @@ rm(data); gc()
 project_dir = setwd(output_dir)
 
 # Get ab plus csv file names within directory
-csvs = archive(data_file_name) %>% 
+temp_dir_files = archive(data_file_name) %>% 
   select(path) %>% 
   filter(grepl("AddressBasePlus_FULL", path)) %>% 
   pull()
@@ -112,8 +112,93 @@ table_name_temp = paste0(table_name, "_TEMP")
 # Drop table if it exists already
 drop_table_if_exists_db(table_name_temp)
 
+# Read ab plus csv file from directory and process
+read_temp_dir_csv = function(index){
+  
+  # Print index to 
+  print(paste0(index, " out of ", length(temp_dir_files), " files"))
+  
+  # Read in each csv and cast all columns as character
+  data = readr::read_csv(
+    archive_read("ABFLGB_CSV.zip", file = temp_dir_files[index]),
+    col_names = FALSE,
+    col_types = cols(.default = col_character())
+  )
+  
+  # Apply column names from resource doc info
+  names(data) = abp_col_names
+  
+  # Clean ab plus postcode data for binding and join
+  data = data %>% 
+    # Class filter
+    filter(
+      COUNTRY == "E",
+      substr(CLASS, 1, 1) != "L", # Land
+      substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
+      substr(CLASS, 1, 2) != "PS", # Street Record
+      substr(CLASS, 1, 2) != "RC", # Car Park Space
+      substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
+      substr(CLASS, 1, 1) != "Z", # Object of interest
+    ) %>% 
+    # Rename and remove column
+    select(
+      # DPA
+      POST_TOWN,
+      DEP_LOCALITY = DEPENDENT_LOCALITY,
+      DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
+      THOROUGHFARE,
+      DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
+      PO_BOX_NUMBER,
+      BUILDING_NUMBER,
+      BUILDING_NAME,
+      SUB_BUILDING_NAME,
+      RM_ORGANISATION_NAME,
+      DEPARTMENT_NAME,
+      # GEO
+      TOWN_NAME,
+      LOCALITY,
+      STREET_DESCRIPTION,
+      PAO_END_SUFFIX,
+      PAO_END_NUMBER,
+      PAO_START_SUFFIX,
+      PAO_START_NUMBER,
+      PAO_TEXT,
+      SAO_END_SUFFIX,
+      SAO_END_NUMBER,
+      SAO_START_SUFFIX,
+      SAO_START_NUMBER,
+      SAO_TEXT,
+      LA_ORGANISATION,
+      # Other
+      POSTCODE_REMOVE = POSTCODE,
+      POSTCODE = POSTCODE_LOCATOR,
+      UPRN,
+      PARENT_UPRN,
+      CH_FLAG = CLASS
+    ) %>% 
+    # Generate new columns
+    mutate(
+      POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)),
+      EPOCH = ab_plus_epoch_date,
+      across(.cols = c('UPRN', 'PARENT_UPRN'), as.numeric),
+      CH_FLAG = ifelse(CH_FLAG == "RI01", 1L, 0L)
+    ) 
+  
+  # Create table
+  DBI::dbWriteTable(
+    conn = con,
+    name = table_name_temp,
+    value = data,
+    temporary = FALSE,
+    append = TRUE
+  )
+  
+  # Remove data and clean
+  rm(data); gc()
+}
+
 # Process each ab plus file, each of which contain 1m records: 25 mins
-csvs %>% iwalk(process_csv); gc()
+lapply(1:length(temp_dir_files), read_temp_dir_csv); gc()
 
 # Part three: save as db table in order to apply db functions ------------------
 
