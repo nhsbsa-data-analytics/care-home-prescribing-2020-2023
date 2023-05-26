@@ -233,7 +233,8 @@ drop_table_if_exists_db(table_name)
 ab_plus_db %>%
   compute(
     name = table_name,
-    temporary = FALSE
+    temporary = FALSE,
+    indexes = c("UPRN", "PARENT_UPRN", "POSTCODE")
   )
 
 # Drop table if it exists already

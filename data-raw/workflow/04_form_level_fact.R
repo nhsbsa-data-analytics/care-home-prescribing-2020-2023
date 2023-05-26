@@ -172,7 +172,7 @@ drop_table_if_exists_db(table_name)
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
 
-# Write the table back to DALP with indexes
+# Write the table back to DALP
 fact_join_db %>%
   compute(
     name = table_name,

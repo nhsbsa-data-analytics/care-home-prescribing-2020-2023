@@ -302,7 +302,7 @@ drop_table_if_exists_db(table_name)
 # Upload to DB...
 cqc_process_df %>% write_table_long_chars(con, table_name)
 # ...and add indexes
-con %>% add_indexes(table_name, c("LOCATION_ID", "UPRN", "POSTCODE"))
+con %>% add_indexes(table_name, c("UPRN", "POSTCODE"))
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
