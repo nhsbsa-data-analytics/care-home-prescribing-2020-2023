@@ -9,19 +9,26 @@ get_latest_cqc_data = function(){
 
 
 #' @description downloads a single epoch of ab plus closest to end_date
-#' @note this will be supplemented with postcodes from specified cqc data 
-#' @param  cqc_data: the name of the cqc db table
-#' @param start_date: start date as a char in format 'YYYY-MM-DD'
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_ab_plus_supplemented_with_cqc = function(start_date, end_date){
+get_ab_plus_current_epoch = function(end_date){
   
   # Assign function inputs to global env
   assign("end_date", end_date, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
   tictoc::tic(); source("data-raw/workflow/02_upload_ab_data_from_api.R"); tictoc::toc(); print(Sys.time())
-} 
+}
+
+
+#' @description downloads a single epoch of ab plus closest to end_date
+#' @param end_date: end date as a char in format 'YYYY-MM-DD'
+#' @noRd
+get_ab_plus_previous_epochs = function(){
+  
+  # Get additional ab plus epochs
+  tictoc::tic(); source("data-raw/02b_get_additional_ab_epochs.R"); tictoc::toc(); print(Sys.time())
+}
 
 
 #' @description downloads a single epoch of ab plus closest to end_date

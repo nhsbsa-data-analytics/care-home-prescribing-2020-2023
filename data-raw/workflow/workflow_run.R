@@ -11,7 +11,12 @@ keep_vars = c(ls(), 'keep_vars')
 # 1. Get latest cqc data: 0.5hr
 get_latest_cqc_data()
 
-# 2. Get a select ab plus epoch supplemented with cqc-postcode uprn: 0.5hr
+# 2a. Get a select ab plus epoch: 3+ hr
+get_ab_plus_current_epoch(
+  end_date =   "2022-03-31"
+)
+
+# 2b. Get a select ab plus epoch: 3+ hr per epoch
 get_ab_plus_supplemented_with_cqc(
   end_date =   "2022-03-31"
 )

@@ -398,3 +398,95 @@ add_indexes <- function(con, table_name, indexes) {
     )
   )
 }
+
+
+# Read AB+ csvs, filter out irrelevant entries, select columns of interest and
+# apply minimal transformations. Finally append to temporary table in db.
+# NOTE: it relies on following variables being defined:
+#   csvs
+#   abp_col_names
+#   ab_plus_epoch_date
+#   con
+#   table_name_temp
+process_csv = function(csv, index){
+  # Print index to 
+  print(paste0(index, " out of ", length(csvs), " files"))
+  
+  # Read in each csv and cast all columns as character
+  data <- read_csv(
+    csv,
+    col_names = FALSE,
+    col_types = cols(.default = col_character())
+  )
+  
+  # Apply column names from resource doc info
+  names(data) = abp_col_names
+  
+  # Clean ab plus postcode data for binding and join
+  data = data %>% 
+    # Class filter
+    filter(
+      COUNTRY == "E",
+      substr(CLASS, 1, 1) != "L", # Land
+      substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
+      substr(CLASS, 1, 2) != "PS", # Street Record
+      substr(CLASS, 1, 2) != "RC", # Car Park Space
+      substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
+      substr(CLASS, 1, 1) != "Z", # Object of interest
+    ) %>% 
+    # Rename and remove column
+    select(
+      # DPA
+      POST_TOWN,
+      DEP_LOCALITY = DEPENDENT_LOCALITY,
+      DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
+      THOROUGHFARE,
+      DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
+      PO_BOX_NUMBER,
+      BUILDING_NUMBER,
+      BUILDING_NAME,
+      SUB_BUILDING_NAME,
+      RM_ORGANISATION_NAME,
+      DEPARTMENT_NAME,
+      # GEO
+      TOWN_NAME,
+      LOCALITY,
+      STREET_DESCRIPTION,
+      PAO_END_SUFFIX,
+      PAO_END_NUMBER,
+      PAO_START_SUFFIX,
+      PAO_START_NUMBER,
+      PAO_TEXT,
+      SAO_END_SUFFIX,
+      SAO_END_NUMBER,
+      SAO_START_SUFFIX,
+      SAO_START_NUMBER,
+      SAO_TEXT,
+      LA_ORGANISATION,
+      # Other
+      POSTCODE_REMOVE = POSTCODE,
+      POSTCODE = POSTCODE_LOCATOR,
+      UPRN,
+      PARENT_UPRN,
+      CH_FLAG = CLASS
+    ) %>% 
+    # Generate new columns
+    mutate(
+      POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)),
+      EPOCH = ab_plus_epoch_date,
+      across(.cols = c('UPRN', 'PARENT_UPRN'), as.numeric),
+      CH_FLAG = ifelse(CH_FLAG == "RI01", 1L, 0L)
+    ) 
+  
+  # Create table
+  dbWriteTable(
+    conn = con,
+    name = table_name_temp,
+    value = data,
+    temporary = FALSE,
+    append = TRUE
+  )
+  
+  # Remove data and clean
+  rm(data); gc()
+}
