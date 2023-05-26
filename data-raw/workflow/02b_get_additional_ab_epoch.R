@@ -152,7 +152,7 @@ ab_plus_epoch_date <- data_folder %>%
   format("%Y%m%d")
 
 # Define table name
-table_name <- paste0("INT646_ABP2_", ab_plus_epoch_date)
+table_name <- paste0("INT646_ABP_", ab_plus_epoch_date)
 
 # Define temp table name
 table_name_temp <- paste0(table_name, "_TEMP")
@@ -176,7 +176,7 @@ ab_plus_db = con %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
   addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
   addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>% 
-  oracle_merge_strings_edit(
+  nhsbsaR::oracle_merge_strings(
     first_col = "DPA_SINGLE_LINE_ADDRESS",
     second_col = "GEO_SINGLE_LINE_ADDRESS",
     merge_col = "CORE_SINGLE_LINE_ADDRESS"
