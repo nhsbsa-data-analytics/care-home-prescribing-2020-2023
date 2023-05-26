@@ -120,7 +120,7 @@ unlink("archive.zip")
 setwd(data_folder)
 
 # Some epochs have sub-folders, e.g. data1, data2.
-maybe_dirs <- list.dirs(data_folder, full.names = FALSE)[-1]
+maybe_dirs <- list.dirs(full.names = FALSE)[-1]
 if (length(maybe_dirs) > 0) {
   # Loop 2: Attempt to move all files from each sub-folder. If all successful,
   #   remove sub-folder. Otherwise stop running and error with message.
