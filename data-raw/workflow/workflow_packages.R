@@ -17,6 +17,7 @@ pacman::p_load(
   'glue',
   'highcharter',
   'RSelenium',
+  'data.table',
   
   # CQC API data 
   'httr',

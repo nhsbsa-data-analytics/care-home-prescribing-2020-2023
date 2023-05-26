@@ -226,10 +226,14 @@ process_csv = function(csv, index){
   print(paste0(index, " out of ", length(csvs), " files"))
   
   # Read in each csv and cast all columns as character
-  data <- read_csv(
+  # data <- read_csv(
+  #   csv,
+  #   col_names = FALSE,
+  #   col_types = cols(.default = col_character())
+  # )
+  data <- data.table::fread(
     csv,
-    col_names = FALSE,
-    col_types = cols(.default = col_character())
+    colClasses = "character"
   )
   
   # Apply column names from resource doc info
