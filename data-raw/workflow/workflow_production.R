@@ -11,23 +11,26 @@ get_latest_cqc_data = function(){
 #' @description downloads a single epoch of ab plus closest to end_date
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_ab_plus_current_epoch = function(end_date){
+get_ab_plus_latest_epoch = function(end_date){
   
   # Assign function inputs to global env
   assign("end_date", end_date, envir = globalenv())
   
   # Get nearest ab plus to end date with cqc postcodes within time frame
-  tictoc::tic(); source("data-raw/workflow/02_upload_ab_data_from_api.R"); tictoc::toc(); print(Sys.time())
+  tictoc::tic(); source("data-raw/workflow/02a_upload_ab_data_from_api.R"); tictoc::toc(); print(Sys.time())
 }
 
 
 #' @description downloads a single epoch of ab plus closest to end_date
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_ab_plus_previous_epochs = function(){
+get_ab_plus_previous_epoch = function(epoch_year){
   
-  # Get additional ab plus epochs
-  tictoc::tic(); source("data-raw/02b_get_additional_ab_epochs.R"); tictoc::toc(); print(Sys.time())
+  # Assign function inputs to global env
+  assign("epoch_year", epoch_year, envir = globalenv())
+  
+  # Get nearest ab plus to end date with cqc postcodes within time frame
+  tictoc::tic(); source("data-raw/workflow/02b_get_additional_ab_epoch.R"); tictoc::toc(); print(Sys.time())
 }
 
 

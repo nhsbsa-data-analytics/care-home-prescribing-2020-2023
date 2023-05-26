@@ -11,10 +11,9 @@ keep_vars = c(ls(), 'keep_vars')
 # 1. Get latest cqc data: 0.5hr - Run once in first epoch script
 # get_latest_cqc_data()
 
-# 2. Get a select ab plus epoch supplemented with cqc-postcode uprn: 0.5hr
-# Use script 2a
-get_ab_plus_supplemented_with_cqc(
-  end_date =   "2023-03-31"
+# 2. Get latest ab plus epoch: 0.5hr
+get_ab_plus_latest_epoch(
+  end_date = "2023-03-31"
 )
 
 # 3. Merge and process cqc and ab plus: 1 min
