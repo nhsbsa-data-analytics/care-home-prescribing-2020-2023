@@ -11,7 +11,7 @@ get_latest_cqc_data = function(){
 #' @description downloads a single epoch of ab plus closest to end_date
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_ab_plus_latest_epoch = function(end_date){
+get_abp_from_api = function(end_date){
   
   # Assign function inputs to global env
   assign("end_date", end_date, envir = globalenv())
@@ -24,7 +24,7 @@ get_ab_plus_latest_epoch = function(end_date){
 #' @description downloads a single epoch of ab plus closest to end_date
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_ab_plus_previous_epoch = function(epoch_year){
+get_abp_from_os = function(epoch_year){
   
   # Assign function inputs to global env
   assign("epoch_year", epoch_year, envir = globalenv())
