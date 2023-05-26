@@ -12,7 +12,7 @@ keep_vars = c(ls(), 'keep_vars')
 # get_latest_cqc_data()
 
 # 2. Get a select ab plus epoch: 1 hr
-get_ab_plus_previous_epoch(
+get_abp_from_os(
   epoch_year = "2022"
 )
 
