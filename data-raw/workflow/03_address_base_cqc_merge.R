@@ -162,7 +162,7 @@ ab_plus_cqc_db = ab_plus_db %>%
 table_name = gsub('-', '', paste0("INT646_ABP_CQC_", start_date, "_", end_date))
 
 # Drop table if it exists already
-drop_table_if_exists_db(table_name)
+#drop_table_if_exists_db(table_name)
 
 # Print that table has been created
 print("Output being computed to be written back to the db ...")

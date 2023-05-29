@@ -270,7 +270,7 @@ fact_join_db = fact_db %>%
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
                                  "PF_ID" = "PF_ID_MATCH")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "PAY_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
                                  "PRESC_ID_PRNT" = "LVL_5_OU",
@@ -382,7 +382,7 @@ fact_join_db = fact_db %>%
 table_name = paste0("INT646_BASE_", start_date, "_", end_date)
 
 # Remove table if exists
-drop_table_if_exists_db(table_name)
+# drop_table_if_exists_db(table_name)
 
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
