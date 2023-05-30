@@ -395,18 +395,18 @@ fact_join_db %>%
     temporary = FALSE
   )
 
+# Print that table has been created
+print(paste0("This script has created table: ", table_name))
+
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+# c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+#   \(x) {
+#     DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+#   }
+# ) %>% invisible()
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
-
-# Print that table has been created
-print(paste0("This script has created table: ", table_name))
 
 # Remove vars specific to script
 remove_vars <- setdiff(ls(), keep_vars)

@@ -210,11 +210,11 @@ print(paste0("This script has created table: ", table_name))
 drop_table_if_exists_db(table_name_temp)
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% walk(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-)
+# c("MIGAR", "ADNSH", "MAMCP") %>% walk(
+#   \(x) {
+#     DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+#   }
+# )
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

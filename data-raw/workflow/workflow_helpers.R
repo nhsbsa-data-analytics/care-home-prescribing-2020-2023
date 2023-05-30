@@ -212,28 +212,6 @@ add_indexes <- function(con, table_name, indexes) {
   )
 }
 
-# Clean a df address (i.e. a non-db table)
-tidy_df_single_line_address = function(df, vars){
-  
-  df %>% 
-    mutate(
-      # Address cleaning
-      {{vars}} := toupper({{vars}}),
-      {{vars}} := gsub(" & ", " AND ", {{vars}}),
-      {{vars}} := gsub("(\\D)(\\d)", "\\1 \\2", {{vars}}),
-      {{vars}} := gsub("(\\d)(\\D)", "\\1 \\2", {{vars}}),
-      {{vars}} := gsub("[,.();:#''\"]", " ", {{vars}}),
-      {{vars}} := stringr::str_squish({{vars}}),
-      {{vars}} := ifelse(
-        grepl("[0-9] - [0-9]", {{vars}}) == TRUE,
-        gsub(" - ", "-", {{vars}}),
-        {{vars}}
-      )
-    )
-}
-
-
-
 # Read AB+ csvs, filter out irrelevant entries, select columns of interest and
 # apply minimal transformations. Finally append to temporary table in db.
 # NOTE: it relies on following variables being defined:

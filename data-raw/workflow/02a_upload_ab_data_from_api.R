@@ -241,11 +241,11 @@ ab_plus_db %>%
 drop_table_if_exists_db(table_name_temp)
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+# c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
+#   \(x) {
+#     DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
+#   }
+# ) %>% invisible()
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
