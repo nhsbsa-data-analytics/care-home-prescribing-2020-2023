@@ -209,7 +209,17 @@ ab_plus_db = con %>%
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
   addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
-  addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>% 
+  addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS)
+
+ab_plus_db %>%
+  compute(
+    name = table_name_temp,
+    temporary = FALSE,
+    overwrite = TRUE
+  )
+
+ab_plus_db = con %>%
+  tbl(from = table_name_temp) %>%
   nhsbsaR::oracle_merge_strings(
     first_col = "DPA_SINGLE_LINE_ADDRESS",
     second_col = "GEO_SINGLE_LINE_ADDRESS",
