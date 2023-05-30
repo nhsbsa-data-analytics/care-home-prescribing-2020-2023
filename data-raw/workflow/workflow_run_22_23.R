@@ -18,7 +18,7 @@ get_abp_from_api(
 
 # 3. Merge and process cqc and ab plus: 1 min
 create_ab_plus_cqc_data(
-  ab_plus_data = "INT646_ABP_yyyymmdd",
+  ab_plus_data = "INT646_ABP_20230331",
   cqc_data = "INT646_CQC_20230526",
   start_date = "2022-04-01",
   end_date =   "2023-03-31"
@@ -33,7 +33,7 @@ create_form_level_patient_addresses(
 create_care_home_address_match(
   patient_address_data = "INT646_FORMS_20220401_20230331",
   lookup_address_data = "INT646_ABP_CQC_20220401_20230331",
-  parent_uprn_data = "INT646_ABP_yyyymmdd"
+  parent_uprn_data = "INT646_ABP_20230331"
 )
 
 # 6. Create postcode lookup table (latest available mappings) for joining in the next step: 2min
