@@ -106,8 +106,9 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Define table name
 table_name = paste0("INT646_ABP_", ab_plus_epoch_date)
 
-# Define temp table name
+# Define temp table names
 table_name_temp = paste0(table_name, "_TEMP")
+table_name_temp2 = paste0(table_name, "_TEMP2")
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name_temp)
@@ -211,15 +212,16 @@ ab_plus_db = con %>%
   addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
   addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS)
 
+drop_table_if_exists_db(table_name_temp2)
+
 ab_plus_db %>%
   compute(
-    name = table_name_temp,
-    temporary = FALSE,
-    overwrite = TRUE
+    name = table_name_temp2,
+    temporary = FALSE
   )
 
 ab_plus_db = con %>%
-  tbl(from = table_name_temp) %>%
+  tbl(from = table_name_temp2) %>%
   nhsbsaR::oracle_merge_strings(
     first_col = "DPA_SINGLE_LINE_ADDRESS",
     second_col = "GEO_SINGLE_LINE_ADDRESS",
@@ -247,8 +249,9 @@ ab_plus_db %>%
     indexes = c("UPRN", "PARENT_UPRN", "POSTCODE")
   )
 
-# Drop table if it exists already
+# Drop tables if they already exist
 drop_table_if_exists_db(table_name_temp)
+drop_table_if_exists_db(table_name_temp2)
 
 # Grant access
 # c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
