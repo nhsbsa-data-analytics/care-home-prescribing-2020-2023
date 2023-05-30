@@ -168,6 +168,9 @@ csvs %>% iwalk(process_csv)
 # Delete data folder now we are done with it
 unlink(data_folder, recursive = TRUE)
 
+# Move back to project dir from temp dir
+setwd(proj_dir)
+
 # Connect to temp table
 ab_plus_db = con %>%
   tbl(from = table_name_temp) %>%

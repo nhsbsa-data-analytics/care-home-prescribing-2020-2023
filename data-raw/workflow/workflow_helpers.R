@@ -16,8 +16,18 @@ load_all_packages_and_functions = function(){
 drop_table_if_exists_db = function(table_name_db){
   
   # Drop any existing table beforehand
-  if(DBI::dbExistsTable(conn = con, name = table_name_db) == T){
-    DBI::dbRemoveTable(conn = con, name = table_name_db)
+  if(DBI::dbExistsTable(
+    conn = con,
+    name = Id(schema = toupper(con@info$username), table = table_name_db)
+  ) == T
+  ){
+    DBI::dbRemoveTable(
+      conn = con,
+      name = Id(schema = toupper(con@info$username), table = table_name_db)
+    )
+    print("Table dropped")
+  } else {
+    print("Table does not exist")
   }
 }
 
