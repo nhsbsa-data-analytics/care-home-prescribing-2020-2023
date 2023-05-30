@@ -398,3 +398,29 @@ add_indexes <- function(con, table_name, indexes) {
     )
   )
 }
+
+
+#' Coerce compute statements ro run with specified degree of paralllel
+#' 
+#' @param lazy_tbl name of the dbplyr lazy table
+#' @param create_table_name name of user created sql table
+#' @param n the degree of parallelism to enforce
+#' 
+#' @examples compute_with_parallelism(table_db, "INT646_TABLE_DB", 32) 
+# Function to create table from query with specified degree of parallelism
+compute_with_parallelism = function(lazy_tbl, create_table_name, n){
+  
+  # Pull the DB connection
+  db_connection <- lazy_tbl$src$con
+  
+  # Render the sql query as text
+  query = dbplyr::sql_render(lazy_tbl)
+  
+  # Modify query text
+  new_query = paste0(
+    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", query
+  )
+  
+  # Send query to the database
+  DBI::dbSendQuery(conn = db_connection, statement = new_query)
+}
