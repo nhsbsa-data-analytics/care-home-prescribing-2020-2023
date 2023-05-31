@@ -72,7 +72,7 @@ data = data %>%
   # Order variables
   select(COMPANY_SLA, POSTCODE, everything()) %>% 
   # Tidy sla
-  tidy_df_single_line_address(., COMPANY_SLA); gc()
+  addressMatchR::tidy_single_line_address(., COMPANY_SLA); gc()
 
 # Revert back to project dir
 setwd(project_dir)

@@ -16,8 +16,18 @@ load_all_packages_and_functions = function(){
 drop_table_if_exists_db = function(table_name_db){
   
   # Drop any existing table beforehand
-  if(DBI::dbExistsTable(conn = con, name = table_name_db) == T){
-    DBI::dbRemoveTable(conn = con, name = table_name_db)
+  if(DBI::dbExistsTable(
+    conn = con,
+    name = Id(schema = toupper(con@info$username), table = table_name_db)
+  ) == T
+  ){
+    DBI::dbRemoveTable(
+      conn = con,
+      name = Id(schema = toupper(con@info$username), table = table_name_db)
+    )
+    print("Table dropped")
+  } else {
+    print("Table does not exist")
   }
 }
 
@@ -93,193 +103,6 @@ pull_date_string = function(data, string_date){
     dplyr::distinct() %>% 
     dplyr::pull()
 }
-
-format_postcode_db <- function(df, postcode) {
-  
-  # Simple formatting of postcode
-  df <- df %>%
-    dplyr::mutate(POSTCODE_OLD := {{ postcode }})
-  
-  # Just Process distinct postcodes
-  LEN <- NULL
-  PCD_TEMP <- NULL
-  output <- df %>%
-    dplyr::select(POSTCODE_OLD, {{ postcode }}) %>%
-    dplyr::filter(!is.na({{ postcode }})) %>%
-    dplyr::distinct() %>%
-    dplyr::mutate(
-      # Format and split postcode
-      {{ postcode }} := ifelse(nchar({{ postcode }}) == 0, NA, {{ postcode }}),
-      {{ postcode }} := toupper(REGEXP_REPLACE({{ postcode }}, "[^[:alnum:]]", "")),
-      # Length vars to aid below logic
-      LEN = nchar({{ postcode }}),
-      # copy the postcode
-      PCD_TEMP = {{ postcode }},
-      # each potential transposition needs to be handled as a separate if statement
-      # 7 character postcodes : 1st character (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 1, 1) == "5", paste0("S", substr(PCD_TEMP, 2, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 1, 1) == "0", paste0("O", substr(PCD_TEMP, 2, 7)), PCD_TEMP),
-      # 7 character postcodes : 2nd character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 2, 2) == "5", paste0(substr(PCD_TEMP, 1, 1), "S", substr(PCD_TEMP, 3, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 2, 2) == "0", paste0(substr(PCD_TEMP, 1, 1), "O", substr(PCD_TEMP, 3, 7)), PCD_TEMP),
-      # 7 character postcodes : 3rd character  (should be number)
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 3, 3) == "S", paste0(substr(PCD_TEMP, 1, 2), "5", substr(PCD_TEMP, 4, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 3, 3) == "O", paste0(substr(PCD_TEMP, 1, 2), "0", substr(PCD_TEMP, 4, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 3, 3) == "I", paste0(substr(PCD_TEMP, 1, 2), "1", substr(PCD_TEMP, 4, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 3, 3) == "L", paste0(substr(PCD_TEMP, 1, 2), "1", substr(PCD_TEMP, 4, 7)), PCD_TEMP),
-      # 7 character postcodes : 5th character  (should be number)
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 5, 5) == "S", paste0(substr(PCD_TEMP, 1, 4), "5", substr(PCD_TEMP, 6, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 5, 5) == "O", paste0(substr(PCD_TEMP, 1, 4), "0", substr(PCD_TEMP, 6, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 5, 5) == "I", paste0(substr(PCD_TEMP, 1, 4), "1", substr(PCD_TEMP, 6, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 5, 5) == "L", paste0(substr(PCD_TEMP, 1, 4), "1", substr(PCD_TEMP, 6, 7)), PCD_TEMP),
-      # 7 character postcodes : 6th character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 6, 6) == "5", paste0(substr(PCD_TEMP, 1, 5), "S", substr(PCD_TEMP, 7, 7)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 6, 6) == "0", paste0(substr(PCD_TEMP, 1, 5), "O", substr(PCD_TEMP, 7, 7)), PCD_TEMP),
-      # 7 character postcodes : 7th character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 7, 7) == "5", paste0(substr(PCD_TEMP, 1, 6), "S"), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 7 & substr(PCD_TEMP, 7, 7) == "0", paste0(substr(PCD_TEMP, 1, 6), "O"), PCD_TEMP),
-      # 6 character postcodes : 1st character (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 1, 1) == "5", paste0("S", substr(PCD_TEMP, 2, 6)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 1, 1) == "0", paste0("O", substr(PCD_TEMP, 2, 6)), PCD_TEMP),
-      # 6 character postcodes : 4th character  (should be number)
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 4, 4) == "S", paste0(substr(PCD_TEMP, 1, 3), "5", substr(PCD_TEMP, 5, 6)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 4, 4) == "O", paste0(substr(PCD_TEMP, 1, 3), "0", substr(PCD_TEMP, 5, 6)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 4, 4) == "I", paste0(substr(PCD_TEMP, 1, 3), "1", substr(PCD_TEMP, 5, 6)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 4, 4) == "L", paste0(substr(PCD_TEMP, 1, 3), "1", substr(PCD_TEMP, 5, 6)), PCD_TEMP),
-      # 6 character postcodes : 5th character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 5, 5) == "5", paste0(substr(PCD_TEMP, 1, 4), "S", substr(PCD_TEMP, 6, 6)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 5, 5) == "0", paste0(substr(PCD_TEMP, 1, 4), "O", substr(PCD_TEMP, 6, 6)), PCD_TEMP),
-      # 6 character postcodes : 6th character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 6, 6) == "5", paste0(substr(PCD_TEMP, 1, 5), "S"), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 6 & substr(PCD_TEMP, 6, 6) == "0", paste0(substr(PCD_TEMP, 1, 5), "O"), PCD_TEMP),
-      # 5 character postcodes : 1st character (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 1, 1) == "5", paste0("S", substr(PCD_TEMP, 2, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 1, 1) == "0", paste0("O", substr(PCD_TEMP, 2, 5)), PCD_TEMP),
-      # 5 character postcodes : 2nd character  (should be number)
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 2, 2) == "S", paste0(substr(PCD_TEMP, 1, 1), "5", substr(PCD_TEMP, 3, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 2, 2) == "O", paste0(substr(PCD_TEMP, 1, 1), "0", substr(PCD_TEMP, 3, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 2, 2) == "I", paste0(substr(PCD_TEMP, 1, 1), "1", substr(PCD_TEMP, 3, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 2, 2) == "L", paste0(substr(PCD_TEMP, 1, 1), "1", substr(PCD_TEMP, 3, 5)), PCD_TEMP),
-      # 5 character postcodes : 3rd character  (should be number)
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 3, 3) == "S", paste0(substr(PCD_TEMP, 1, 2), "5", substr(PCD_TEMP, 4, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 3, 3) == "O", paste0(substr(PCD_TEMP, 1, 2), "0", substr(PCD_TEMP, 4, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 3, 3) == "I", paste0(substr(PCD_TEMP, 1, 2), "1", substr(PCD_TEMP, 4, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 3, 3) == "L", paste0(substr(PCD_TEMP, 1, 2), "1", substr(PCD_TEMP, 4, 5)), PCD_TEMP),
-      # 5 character postcodes : 4th character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 4, 4) == "5", paste0(substr(PCD_TEMP, 1, 3), "S", substr(PCD_TEMP, 5, 5)), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 4, 4) == "0", paste0(substr(PCD_TEMP, 1, 3), "O", substr(PCD_TEMP, 5, 5)), PCD_TEMP),
-      # 5 character postcodes : 6th character  (should be alpha)
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 5, 5) == "5", paste0(substr(PCD_TEMP, 1, 4), "S"), PCD_TEMP),
-      PCD_TEMP = dplyr::if_else(LEN == 5 & substr(PCD_TEMP, 5, 5) == "0", paste0(substr(PCD_TEMP, 1, 4), "O"), PCD_TEMP),
-      # replace postcode with formatted string
-      {{ postcode }} := PCD_TEMP
-    )
-  
-  
-  # Rejoin back to original data
-  df <- df %>%
-    dplyr::select(-{{ postcode }}) %>%
-    dplyr::left_join(y = output, by = "POSTCODE_OLD") %>%
-    dplyr::select(-c(LEN, POSTCODE_OLD, PCD_TEMP))
-  
-  # Return formatted df
-  return(df)
-}
-
-#' @description Merge Two Strings Together Whilst Retaining an Order of Some
-#'   Kind
-#' @noRd
-oracle_merge_strings_edit <- function(df, first_col, second_col, merge_col) {
-  
-  # Get the unique combinations we want to merge (in case there are duplicates)
-  distinct_df <- df %>%
-    dplyr::distinct(.data[[first_col]], .data[[second_col]])
-  
-  # Process columns (loop over each one as we repeat the processing)
-  col_dfs <- list()
-  for (col in c(first_col, second_col)) {
-    col_dfs[[col]] <- distinct_df %>%
-      # Get the unique values
-      dplyr::distinct(.data[[col]]) %>%
-      # Tokenise
-      nhsbsaR::oracle_unnest_tokens(
-        col = col,
-        drop = FALSE
-      ) %>%
-      # Give each token a rank within the string (e.g. 'CITY-1', 'CITY-2', etc)
-      dplyr::group_by(.data[[col]], TOKEN) %>%
-      dplyr::mutate(TOKEN_RANK = dplyr::row_number(TOKEN_NUMBER)) %>%
-      dplyr::ungroup() %>%
-      # Rename the token number column
-      dplyr::rename("{col}_TOKEN_NUMBER" := TOKEN_NUMBER) %>%
-      # Join back to the unique combinations (handy for full_join later)
-      dplyr::inner_join(y = distinct_df)
-  }
-  
-  # Join the tokenised data together (attempt to join by TOKEN and TOKEN_RANK)
-  distinct_df <-
-    dplyr::full_join(
-      x = col_dfs[[first_col]],
-      y = col_dfs[[second_col]]
-    )
-  
-  # Pull the DB connection
-  db_connection <- df$src$con
-  
-  # Build SQL Query
-  sql_query <- dbplyr::build_sql(
-    con = db_connection,
-    "WITH LT AS
-    (
-      SELECT ",
-    dplyr::sql(first_col), ", ",
-    dplyr::sql(second_col), ", ",
-    dplyr::sql(first_col), "_TOKEN_NUMBER, ",
-    dplyr::sql(second_col), "_TOKEN_NUMBER, ", "
-        TOKEN,
-        COALESCE(", dplyr::sql(first_col), "_TOKEN_NUMBER, ", "LEAD(", dplyr::sql(first_col), "_TOKEN_NUMBER IGNORE NULLS) OVER (PARTITION BY ", dplyr::sql(first_col), ", ", dplyr::sql(second_col), " ORDER BY ", dplyr::sql(second_col), "_TOKEN_NUMBER)) AS LEAD_TOKEN_NUMBER
-      FROM
-        (", dbplyr::sql_render(distinct_df), ")
-    )
-    SELECT ",
-    dplyr::sql(first_col), ", ",
-    dplyr::sql(second_col), ",
-      LISTAGG(TOKEN, ' ') within group (order by LEAD_TOKEN_NUMBER, ", dplyr::sql(second_col), "_TOKEN_NUMBER) as ", dplyr::sql(merge_col), "
-    FROM
-      LT
-    GROUP BY ",
-    dplyr::sql(first_col), ", ",
-    dplyr::sql(second_col)
-  )
-  
-  # Generate merged strings from the query
-  merged_df <- dplyr::tbl(src = db_connection, dplyr::sql(sql_query))
-  
-  # Output the original data with the merged string joined to it
-  df %>%
-    dplyr::left_join(y = merged_df)
-}
-
-# Clean a df address (i.e. a non-db table)
-tidy_df_single_line_address = function(df, vars){
-  
-  df %>% 
-    mutate(
-      # Address cleaning
-      {{vars}} := toupper({{vars}}),
-      {{vars}} := gsub(" & ", " AND ", {{vars}}),
-      {{vars}} := gsub("(\\D)(\\d)", "\\1 \\2", {{vars}}),
-      {{vars}} := gsub("(\\d)(\\D)", "\\1 \\2", {{vars}}),
-      {{vars}} := gsub("[,.();:#''\"]", " ", {{vars}}),
-      {{vars}} := stringr::str_squish({{vars}}),
-      {{vars}} := ifelse(
-        grepl("[0-9] - [0-9]", {{vars}}) == TRUE,
-        gsub(" - ", "-", {{vars}}),
-        {{vars}}
-        )
-    )
-}
-
 
 #' Unite columns by specified prefix
 #' 
@@ -397,4 +220,140 @@ add_indexes <- function(con, table_name, indexes) {
       glue("CREATE INDEX {table_name}_{x} ON {table_name}({x});")
     )
   )
+}
+
+
+# Grant table access to multiple users
+# NOTE: Relies on con being in environment already
+grant_table_access <- function(schemas, table_name) {
+  schemas %>% walk(
+    \(x) {
+      DBI::dbExecute(
+        con, 
+        paste0("GRANT SELECT ON ", table_name, " TO ", x)
+      )
+    }
+  )
+}
+
+
+#' Coerce compute statements ro run with specified degree of parallel
+#' 
+#' @param lazy_tbl name of the dbplyr lazy table
+#' @param create_table_name name of user created sql table
+#' @param n the degree of parallelism to enforce
+#' 
+#' @examples compute_with_parallelism(table_db, "INT646_TABLE_DB", 32) 
+# Function to create table from query with specified degree of parallelism
+compute_with_parallelism = function(lazy_tbl, create_table_name, n){
+  
+  # Pull the DB connection
+  db_connection <- lazy_tbl$src$con
+  
+  # Render the sql query as text
+  query = dbplyr::sql_render(lazy_tbl)
+  
+  # Modify query text
+  new_query = paste0(
+    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", query
+  )
+  
+  # Send query to the database
+  DBI::dbSendQuery(conn = db_connection, statement = new_query)
+}
+
+
+# Read AB+ csvs, filter out irrelevant entries, select columns of interest and
+# apply minimal transformations. Finally append to temporary table in db.
+# NOTE: it relies on following variables being defined:
+#   csvs
+#   abp_col_names
+#   ab_plus_epoch_date
+#   con
+#   table_name_temp
+process_csv = function(csv, index){
+  # Print index to 
+  print(paste0(index, " out of ", length(csvs), " files"))
+  
+  # Read in each csv and cast all columns as character
+  # data <- read_csv(
+  #   csv,
+  #   col_names = FALSE,
+  #   col_types = cols(.default = col_character())
+  # )
+  data <- data.table::fread(
+    csv,
+    colClasses = "character"
+  )
+  
+  # Apply column names from resource doc info
+  names(data) = abp_col_names
+  
+  # Clean ab plus postcode data for binding and join
+  data = data %>% 
+    # Class filter
+    filter(
+      COUNTRY == "E",
+      substr(CLASS, 1, 1) != "L", # Land
+      substr(CLASS, 1, 1) != "O", # Other (Ordnance Survey only)
+      substr(CLASS, 1, 2) != "PS", # Street Record
+      substr(CLASS, 1, 2) != "RC", # Car Park Space
+      substr(CLASS, 1, 2) != "RG", # Lock-Up / Garage / Garage Court
+      substr(CLASS, 1, 1) != "Z", # Object of interest
+    ) %>% 
+    # Rename and remove column
+    select(
+      # DPA
+      POST_TOWN,
+      DEP_LOCALITY = DEPENDENT_LOCALITY,
+      DOU_DEP_LOCALITY = DOUBLE_DEPENDENT_LOCALITY,
+      THOROUGHFARE,
+      DEP_THOROUGHFARE = DEPENDENT_THOROUGHFARE,
+      PO_BOX_NUMBER,
+      BUILDING_NUMBER,
+      BUILDING_NAME,
+      SUB_BUILDING_NAME,
+      RM_ORGANISATION_NAME,
+      DEPARTMENT_NAME,
+      # GEO
+      TOWN_NAME,
+      LOCALITY,
+      STREET_DESCRIPTION,
+      PAO_END_SUFFIX,
+      PAO_END_NUMBER,
+      PAO_START_SUFFIX,
+      PAO_START_NUMBER,
+      PAO_TEXT,
+      SAO_END_SUFFIX,
+      SAO_END_NUMBER,
+      SAO_START_SUFFIX,
+      SAO_START_NUMBER,
+      SAO_TEXT,
+      LA_ORGANISATION,
+      # Other
+      POSTCODE_REMOVE = POSTCODE,
+      POSTCODE = POSTCODE_LOCATOR,
+      UPRN,
+      PARENT_UPRN,
+      CH_FLAG = CLASS
+    ) %>% 
+    # Generate new columns
+    mutate(
+      POSTCODE = toupper(gsub("[^[:alnum:]]", "", POSTCODE)),
+      EPOCH = ab_plus_epoch_date,
+      across(.cols = c('UPRN', 'PARENT_UPRN'), as.numeric),
+      CH_FLAG = ifelse(CH_FLAG == "RI01", 1L, 0L)
+    ) 
+  
+  # Create table
+  dbWriteTable(
+    conn = con,
+    name = table_name_temp,
+    value = data,
+    temporary = FALSE,
+    append = TRUE
+  )
+  
+  # Remove data and clean
+  rm(data); gc()
 }

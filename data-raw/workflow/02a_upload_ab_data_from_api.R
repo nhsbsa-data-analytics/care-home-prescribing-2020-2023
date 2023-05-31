@@ -104,10 +104,11 @@ abp_col_names = names(readr::read_csv(
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Define table name
-table_name = paste0("INT646_ABP2_", ab_plus_epoch_date)
+table_name = paste0("INT646_ABP_", ab_plus_epoch_date)
 
-# Define temp table name
+# Define temp table names
 table_name_temp = paste0(table_name, "_TEMP")
+table_name_temp2 = paste0(table_name, "_TEMP2")
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name_temp)
@@ -209,8 +210,19 @@ ab_plus_db = con %>%
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
   addressMatchR::tidy_single_line_address(col = DPA_SINGLE_LINE_ADDRESS) %>%
-  addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS) %>% 
-  oracle_merge_strings_edit(
+  addressMatchR::tidy_single_line_address(col = GEO_SINGLE_LINE_ADDRESS)
+
+drop_table_if_exists_db(table_name_temp2)
+
+ab_plus_db %>%
+  compute(
+    name = table_name_temp2,
+    temporary = FALSE
+  )
+
+ab_plus_db = con %>%
+  tbl(from = table_name_temp2) %>%
+  nhsbsaR::oracle_merge_strings(
     first_col = "DPA_SINGLE_LINE_ADDRESS",
     second_col = "GEO_SINGLE_LINE_ADDRESS",
     merge_col = "CORE_SINGLE_LINE_ADDRESS"
@@ -233,18 +245,16 @@ drop_table_if_exists_db(table_name)
 ab_plus_db %>%
   compute(
     name = table_name,
-    temporary = FALSE
+    temporary = FALSE,
+    indexes = c("UPRN", "PARENT_UPRN", "POSTCODE")
   )
 
-# Drop table if it exists already
+# Drop tables if they already exist
 drop_table_if_exists_db(table_name_temp)
+drop_table_if_exists_db(table_name_temp2)
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

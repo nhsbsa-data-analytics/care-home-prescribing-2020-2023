@@ -172,19 +172,11 @@ drop_table_if_exists_db(table_name)
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
 
-# Write the table back to DALP with indexes
-fact_join_db %>%
-  compute(
-    name = table_name,
-    temporary = FALSE
-  )
+# Write the table back to DALP
+fact_join_db %>% compute_with_parallelism(table_name, 8)
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
