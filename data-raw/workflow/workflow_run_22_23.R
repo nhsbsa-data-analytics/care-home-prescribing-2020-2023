@@ -11,7 +11,7 @@ keep_vars = c(ls(), 'keep_vars')
 # 1. Get latest cqc data: 0.5hr - Run once in first epoch script
 # get_latest_cqc_data()
 
-# 2. Get latest ab plus epoch: 0.5hr
+# 2. Get latest ab plus epoch: 2hr
 get_abp_from_api(
   end_date = "2023-03-31"
 )
@@ -24,7 +24,7 @@ create_ab_plus_cqc_data(
   end_date =   "2023-03-31"
 )
 
-# 4. Create form level fact for records with a ch-postcode: 8hr
+# 4. Create form level fact for records with a ch-postcode: 6hr
 create_form_level_patient_addresses(
   address_data = "INT646_ABP_CQC_20220401_20230331"
 )
@@ -39,7 +39,7 @@ create_care_home_address_match(
 # 6. Create postcode lookup table (latest available mappings) for joining in the next step: 2min
 # create_postcode_lookup() # Run once in first epoch script
 
-# 7. Join to fact table and get non ch-postcode records within time frame: 11hr
+# 7. Join to fact table and get non ch-postcode records within time frame: 5hr
 create_matched_prescription_base_table(
   match_data = "INT646_MATCH_20220401_20230331",
   form_data = "INT646_FORMS_20220401_20230331"
