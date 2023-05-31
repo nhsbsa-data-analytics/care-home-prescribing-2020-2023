@@ -282,8 +282,8 @@ cqc_providers_df = cqc_details %>%
 # Process the cqc df output, in preparation for matching
 cqc_process_df <- cqc_details_df %>% 
   left_join(cqc_providers_df, by = "provider_id") %>% 
-  tidy_df_single_line_address(single_line_address) %>% 
-  tidy_df_single_line_address(provider_sla) %>% 
+  addressMatchR::tidy_single_line_address(single_line_address) %>% 
+  addressMatchR::tidy_single_line_address(provider_sla) %>% 
   rename_with(toupper)
 
 # Check na count per column
@@ -302,14 +302,10 @@ drop_table_if_exists_db(table_name)
 # Upload to DB...
 cqc_process_df %>% write_table_long_chars(con, table_name)
 # ...and add indexes
-con %>% add_indexes(table_name, c("LOCATION_ID", "UPRN", "POSTCODE"))
+con %>% add_indexes(table_name, c("UPRN", "POSTCODE"))
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

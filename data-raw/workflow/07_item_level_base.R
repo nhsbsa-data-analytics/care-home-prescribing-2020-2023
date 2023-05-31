@@ -270,7 +270,7 @@ fact_join_db = fact_db %>%
                                 "PF_ID" = "PF_ID_FORMS")) %>% 
   left_join(y = match_db, by = c("YEAR_MONTH" = "YEAR_MONTH_MATCH", 
                                  "PF_ID" = "PF_ID_MATCH")) %>% 
-  left_join(y = drug_db, by = c("YEAR_MONTH", "CALC_PREC_DRUG_RECORD_ID")) %>% 
+  left_join(y = drug_db, by = c("YEAR_MONTH", "PAY_DRUG_RECORD_ID")) %>% 
   left_join(y = pat_db, by = c("NHS_NO")) %>% 
   left_join(y = presc_db, by = c("YEAR_MONTH" = "YEAR_MONTH",
                                  "PRESC_ID_PRNT" = "LVL_5_OU",
@@ -388,28 +388,27 @@ drop_table_if_exists_db(table_name)
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP
-fact_join_db %>%
-  compute(
-    name = table_name,
-    indexes = list(c("UPRN_FLAG", "CH_FLAG")),
-    temporary = FALSE
-  )
-
-# Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
-
-# Disconnect connection to database
-DBI::dbDisconnect(con)
+fact_join_db %>% compute_with_parallelism(table_name, 12)
 
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
+# Grant access
+c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
+
+print("Debugging: access granted")
+
+# Disconnect connection to database
+DBI::dbDisconnect(con)
+
+print("Debugging: disconnected")
+
 # Remove vars specific to script
 remove_vars <- setdiff(ls(), keep_vars)
 
+print("Debugging: create remove_vars")
+
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
+
+print("Debugging: remove vars and gc()")
