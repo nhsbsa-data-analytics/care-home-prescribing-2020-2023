@@ -173,11 +173,7 @@ drop_table_if_exists_db(table_name)
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP
-fact_join_db %>%
-  compute(
-    name = table_name,
-    temporary = FALSE
-  )
+fact_join_db %>% compute_with_parallelism(table_name, 8)
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)

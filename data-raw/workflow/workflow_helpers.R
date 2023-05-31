@@ -222,6 +222,47 @@ add_indexes <- function(con, table_name, indexes) {
   )
 }
 
+
+# Grant table access to multiple users
+# NOTE: Relies on con being in environment already
+grant_table_access <- function(schemas, table_name) {
+  schemas %>% walk(
+    \(x) {
+      DBI::dbExecute(
+        con, 
+        paste0("GRANT SELECT ON ", table_name, " TO ", x)
+      )
+    }
+  )
+}
+
+
+#' Coerce compute statements ro run with specified degree of parallel
+#' 
+#' @param lazy_tbl name of the dbplyr lazy table
+#' @param create_table_name name of user created sql table
+#' @param n the degree of parallelism to enforce
+#' 
+#' @examples compute_with_parallelism(table_db, "INT646_TABLE_DB", 32) 
+# Function to create table from query with specified degree of parallelism
+compute_with_parallelism = function(lazy_tbl, create_table_name, n){
+  
+  # Pull the DB connection
+  db_connection <- lazy_tbl$src$con
+  
+  # Render the sql query as text
+  query = dbplyr::sql_render(lazy_tbl)
+  
+  # Modify query text
+  new_query = paste0(
+    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", query
+  )
+  
+  # Send query to the database
+  DBI::dbSendQuery(conn = db_connection, statement = new_query)
+}
+
+
 # Read AB+ csvs, filter out irrelevant entries, select columns of interest and
 # apply minimal transformations. Finally append to temporary table in db.
 # NOTE: it relies on following variables being defined:
@@ -315,17 +356,4 @@ process_csv = function(csv, index){
   
   # Remove data and clean
   rm(data); gc()
-}
-
-# Grant table access to multiple users
-# NOTE: Relies on con being in environment already
-grant_table_access <- function(schemas, table_name) {
-  schemas %>% walk(
-    \(x) {
-      DBI::dbExecute(
-        con, 
-        paste0("GRANT SELECT ON ", table_name, " TO ", x)
-      )
-    }
-  )
 }
