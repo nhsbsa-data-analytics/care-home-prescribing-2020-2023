@@ -399,11 +399,7 @@ fact_join_db %>%
 print(paste0("This script has created table: ", table_name))
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
 print("Debugging: access granted")
 

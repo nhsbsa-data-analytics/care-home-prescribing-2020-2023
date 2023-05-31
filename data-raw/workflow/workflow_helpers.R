@@ -316,3 +316,16 @@ process_csv = function(csv, index){
   # Remove data and clean
   rm(data); gc()
 }
+
+# Grant table access to multiple users
+# NOTE: Relies on con being in environment already
+grant_table_access <- function(schemas, table_name) {
+  schemas %>% walk(
+    \(x) {
+      DBI::dbExecute(
+        con, 
+        paste0("GRANT SELECT ON ", table_name, " TO ", x)
+      )
+    }
+  )
+}

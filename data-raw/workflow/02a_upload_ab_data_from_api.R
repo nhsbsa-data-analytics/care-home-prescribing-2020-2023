@@ -254,11 +254,7 @@ drop_table_if_exists_db(table_name_temp)
 drop_table_if_exists_db(table_name_temp2)
 
 # Grant access
-c("MIGAR", "ADNSH", "MAMCP") %>% lapply(
-  \(x) {
-    DBI::dbExecute(con, paste0("GRANT SELECT ON ", table_name, " TO ", x))
-  }
-) %>% invisible()
+c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
