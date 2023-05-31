@@ -48,3 +48,5 @@ create index int646_i29 on int646_base_20200401_20230321 (fy, bnf_chemical_subst
 create index int646_i30 on int646_base_20200401_20230321 (fy, bnf_chemical_substance, chemical_substance_bnf_descr, pcd_icb_code, pcd_icb_name);
 create index int646_i31 on int646_base_20200401_20230321 (fy, bnf_chemical_substance, chemical_substance_bnf_descr, pcd_lad_code, pcd_lad_name);
 create index int646_i32 on int646_base_20200401_20230321 (fy, bnf_chemical_substance, chemical_substance_bnf_descr, prescriber_pcn);
+
+create index int646_i33 on int646_base_20200401_20230321 (uprn_flag);
