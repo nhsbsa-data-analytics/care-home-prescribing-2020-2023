@@ -50,7 +50,7 @@ Suggests:
     tictoc,
     yaml
 Remotes:
-    nhsbsa-data-analytics/nhsbsaR
+    nhsbsa-data-analytics/nhsbsaR,
     nhsbsa-data-analytics/addressMatchR
 Encoding: UTF-8
 LazyData: true

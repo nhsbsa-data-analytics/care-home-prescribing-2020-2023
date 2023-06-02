@@ -34,8 +34,18 @@ monthly_df = data_db %>%
   ungroup() %>% 
   collect() %>% 
   mutate(TYPE = "MONTHLY") %>% 
-  arrange(TIME)
-
+  arrange(TIME) %>% 
+  mutate(
+    ORDER = TIME,
+    YEAR = substr(TIME, 1, 4),
+    MONTH = substr(TIME, 5, 6),
+    MONTH = ifelse(substr(MONTH,1,1) == "0", substr(MONTH,2,2), substr(MONTH,1,2)),
+    MONTH = month.abb[as.integer(MONTH)],
+    TIME = paste0(YEAR, " - ", MONTH)
+  ) %>% 
+  arrange(ORDER) %>% 
+  select(-c(YEAR, MONTH, ORDER))
+  
 # Bind dfs together
 mod_headline_figures_df = rbind(annual_df, monthly_df)
 
@@ -43,4 +53,4 @@ mod_headline_figures_df = rbind(annual_df, monthly_df)
 usethis::use_data(mod_headline_figures_df, overwrite = TRUE)
 
 # Disconnect from database
-DBI::dbDisconnect(con)
+DBI::dbDisconnect(con); rm(list = ls()); gc()
