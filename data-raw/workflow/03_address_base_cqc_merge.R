@@ -53,6 +53,7 @@ cqc_df = cqc_db %>%
     UPRN = last(as.numeric(UPRN), order_by = TEMP_DECIDER),
     NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = TEMP_DECIDER),
     RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER),
+    CH_FLAG = last(CH_FLAG),
     .groups = "drop"
   ) %>%
   mutate(
@@ -104,11 +105,40 @@ cqc_attributes_df = cqc_db %>%
 # The tables above needed to be processed locally due to inadequate dbplyr translation
 # of the function last() (as of v.2.3.2); these tables are now copied into the DB temporarily to be used
 # as lazy tables downstream; temp tables are removed on disconnection from DB; local dfs are removed now
-copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE, overwrite = TRUE)
-cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
+# copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE, overwrite = TRUE)
+# cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
+# 
+# copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE, overwrite = TRUE)
+# cqc_attributes_db <- con %>% tbl(from = "TEMP_CQC_ATTRIBUTES_DF"); rm(cqc_attributes_df)
 
-copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE, overwrite = TRUE)
-cqc_attributes_db <- con %>% tbl(from = "TEMP_CQC_ATTRIBUTES_DF"); rm(cqc_attributes_df)
+# Despite not having any open connections in SQL Developer, and even after
+# restarting R then restarting Rstudio, I kept getting error:
+# Error in `db_copy_to()`:
+#   ! Can't copy to table "TEMP_CQC_DF"
+# Caused by error in `dplyr::db_write_table()`:
+# ! Can't write table "TEMP_CQC_DF".
+# Caused by error:
+#   ! nanodbc/nanodbc.cpp:1752: HY000: [Oracle][ODBC][Ora]ORA-14452: attempt to create, alter or drop an index on temporary table already in use
+# 
+# <SQL> 'DROP TABLE  "TEMP_CQC_DF"'
+# So I create "permanent" temp tables, later to be dropped
+cqc_table_temp <- "CQC_TEMP"
+con %>% copy_to(
+  cqc_df,
+  name = cqc_table_temp,
+  temporary = FALSE,
+  overwrite = TRUE
+)
+cqc_db <- con %>% tbl(from = cqc_table_temp); rm(cqc_df)
+
+cqc_attr_table_temp <- "CQC_ATTR_TEMP"
+con %>% copy_to(
+  cqc_attributes_df,
+  name = cqc_attr_table_temp,
+  temporary = FALSE,
+  overwrite = TRUE
+)
+cqc_attributes_db <- con %>% tbl(from = cqc_attr_table_temp); rm(cqc_attributes_df)
 
 # Add PARENT_UPRN to CQC data from ABP data, such that, when we later
 # select one record per SLA (which could come from either CQC or ABP)
@@ -154,7 +184,8 @@ ab_plus_cqc_db = ab_plus_db %>%
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
   ) %>% 
-  select(-N_DISTINCT_UPRN)
+  select(-N_DISTINCT_UPRN) #%>% 
+  # personMatchR::format_postcode_db(POSTCODE)
 
 # Part Three: Save as table in dw ----------------------------------------------
 
@@ -174,6 +205,10 @@ ab_plus_cqc_db %>%
     indexes = c("UPRN", "POSTCODE"),
     temporary = FALSE
   )
+
+# Drop temp tables
+drop_table_if_exists_db(cqc_table_temp)
+drop_table_if_exists_db(cqc_attr_table_temp)
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
