@@ -184,7 +184,7 @@ ab_plus_cqc_db = ab_plus_db %>%
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
   ) %>% 
-  select(-N_DISTINCT_UPRN) #%>% 
+  select(-N_DISTINCT_UPRN) %>% 
   personMatchR::format_postcode_db(POSTCODE)
 
 # Part Three: Save as table in dw ----------------------------------------------
