@@ -29,7 +29,7 @@ create_form_level_patient_addresses(
   address_data = "INT646_ABP_CQC_20210401_20220331"
 )
 
-# 5. Match patient details against ch-postcode uprn and process: ~5 mins
+# 5. Match patient details against ch-postcode uprn and process: 0.5hr
 create_care_home_address_match(
   patient_address_data = "INT646_FORMS_20210401_20220331",
   lookup_address_data = "INT646_ABP_CQC_20210401_20220331",
