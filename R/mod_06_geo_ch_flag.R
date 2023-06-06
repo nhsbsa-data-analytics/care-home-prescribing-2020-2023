@@ -944,6 +944,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       expr = {
         req(input$geography)
         req(input$metric)
+        req(input$year)
         
         # Get a nice name for the metric
         nice_metric_name <- switch(
@@ -994,6 +995,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       expr = {
         req(input$geography)
         req(input$metric)
+        req(input$year)
         
         # Get a nice name for the metric
         nice_metric_name <- switch(
@@ -1044,6 +1046,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     download_map_df <- reactive({
       req(input$geography)
       req(input$metric)
+      req(input$year)
       
       nice_metric_name <- switch(
         input$metric,
@@ -1090,7 +1093,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       req(input$geography)
       req(input$metric)
       
-      careHomePrescribingScrollytellR::map_df %>%
+      carehomes2::map_df %>%
         dplyr::filter(GEOGRAPHY == input$geography) %>%
         geojsonsf::sf_geojson() %>%
         jsonlite::fromJSON(simplifyVector = FALSE)
@@ -1100,6 +1103,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     output$map_chart_ch <- highcharter::renderHighchart({
       req(input$geography)
       req(input$metric)
+      req(input$year)
       
       highcharter::highchart() %>%
         highcharter::hc_add_series_map(
@@ -1136,7 +1140,8 @@ mod_06_geo_ch_flag_server <- function(id) {
     output$map_chart_non_ch <- highcharter::renderHighchart({
       req(input$geography)
       req(input$metric)
-      
+      req(input$year)
+      browser()
       highcharter::highchart() %>%
         highcharter::hc_add_series_map(
           df = plot_map_df(),
