@@ -53,6 +53,7 @@ cqc_df = cqc_db %>%
     UPRN = last(as.numeric(UPRN), order_by = TEMP_DECIDER),
     NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = TEMP_DECIDER),
     RESIDENTIAL_HOME_FLAG = last(as.integer(RESIDENTIAL_HOME_FLAG), order_by = TEMP_DECIDER),
+    CH_FLAG = last(CH_FLAG),
     .groups = "drop"
   ) %>%
   mutate(
