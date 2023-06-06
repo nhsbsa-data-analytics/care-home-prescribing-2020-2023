@@ -25,9 +25,9 @@ drop_table_if_exists_db = function(table_name_db){
       conn = con,
       name = Id(schema = toupper(con@info$username), table = table_name_db)
     )
-    print("Table dropped")
+    print(glue("Table dropped: {table_name_db}"))
   } else {
-    print("Table does not exist")
+    print(glue("Table does not exist: {table_name_db}"))
   }
 }
 
@@ -255,7 +255,7 @@ compute_with_parallelism = function(lazy_tbl, create_table_name, n){
   
   # Modify query text
   new_query = paste0(
-    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", query
+    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", "(", query, ")"
   )
   
   # Send query to the database
@@ -351,4 +351,48 @@ process_csv = function(csv, index){
   
   # Remove data and clean
   rm(data); gc()
+}
+
+# modified code from https://github.com/ropensci/RSelenium/issues/221
+getChromeDriverVersion <- function(versions = binman::list_versions("chromedriver")) {
+  if ( xfun::is_unix() ) {
+    chrome_driver_version <- system2(
+      command = ifelse(
+        xfun::is_macos(),
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "google-chrome-stable"
+      ),
+      args = "--version",
+      stdout = TRUE,
+      stderr = TRUE
+    ) %>%
+      stringr::str_extract(pattern = "(?<=Chrome )(\\d+\\.){3}")
+    
+  } else if ( xfun::is_windows() ) {
+    chrome_driver_version <- system2(
+      command = "wmic",
+      args = glue(
+        "datafile where name=\\
+        'C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe' \\
+        get Version /value"
+      ),
+      stdout = TRUE,
+      stderr = TRUE
+    ) %>%
+      stringr::str_extract(pattern = "(?<=Version=)(\\d+\\.){3}")
+    
+  } else rlang::abort(
+      message = 
+        "Your OS couldn't be determined (Linux, macOS, Windows) or is not supported!"
+    )
+  
+  # ... and determine most recent ChromeDriver version matching it
+  chrome_driver_version %>%
+    magrittr::extract(!is.na(.)) %>%
+    stringr::str_replace_all(pattern = "\\.", replacement = "\\\\.") %>%
+    paste0("^",  .) %>%
+    stringr::str_subset(string = dplyr::last(versions)) %>%
+    as.numeric_version() %>%
+    max() %>%
+    as.character()
 }

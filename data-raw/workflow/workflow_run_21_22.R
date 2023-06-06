@@ -8,23 +8,23 @@ keep_vars = c(ls(), 'keep_vars')
 
 # FY 21/22 ---------------------------------------------------------------------
 
-# 1. Get latest cqc data: 0.5hr - Run once in first epoch script
+# 1. Get latest cqc data: ~40 mins - Run once in first epoch script
 # get_latest_cqc_data()
 
-# 2. Get a select ab plus epoch: 1 hr
+# 2. Get a select ab plus epoch: ~130 mins
 get_abp_from_os(
   epoch_year = "2022"
 )
 
-# 3. Merge and process cqc and ab plus: 1 min
+# 3. Merge and process cqc and ab plus: ~2 mins
 create_ab_plus_cqc_data(
   ab_plus_data = "INT646_ABP_20220324",
-  cqc_data = "INT646_CQC_20230526",
+  cqc_data = "INT646_CQC_20230602",
   start_date = "2021-04-01",
   end_date =   "2022-03-31"
 )
 
-# 4. Create form level fact for records with a ch-postcode: 8hr
+# 4. Create form level fact for records with a ch-postcode: ~11hr (parallel 8)
 create_form_level_patient_addresses(
   address_data = "INT646_ABP_CQC_20210401_20220331"
 )

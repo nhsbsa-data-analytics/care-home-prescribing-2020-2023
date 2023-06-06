@@ -42,7 +42,7 @@ postcode_db <- postcode_db %>%
   filter(RANK == 1) %>%
   ungroup() %>% 
   select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) %>%
-  addressMatchR::tidy_postcode(POSTCODE)
+  personMatchR::format_postcode_db(POSTCODE)
 
 postcode_latlong <- postcode_latlong %>%
   group_by(POSTCODE) %>%
@@ -50,7 +50,7 @@ postcode_latlong <- postcode_latlong %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE) %>%
-  addressMatchR::tidy_postcode(POSTCODE)
+  personMatchR::format_postcode_db(POSTCODE)
   
 # Join to the postcode lookup to get NHS Region, ICB and LA based on their mappings to LSOAs
 postcode_db <- postcode_db %>%

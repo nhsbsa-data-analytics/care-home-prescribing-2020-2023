@@ -41,22 +41,22 @@ postcode_db <- con %>%
 # Part one: filter two fact table cuts for eps and paper info ------------------
 
 # Label CH postcodes
-postcode_db = postcode_db %>% 
-  select(POSTCODE) %>% 
-  distinct() %>% 
+postcode_db = postcode_db %>%
+  select(POSTCODE) %>%
+  distinct() %>%
   mutate(POSTCODE_CH = 1)
 
 # Get appropriate year month fields as a table
-year_month = year_month_db %>% 
-  select(YEAR_MONTH) %>% 
+year_month = year_month_db %>%
+  select(YEAR_MONTH) %>%
   filter(
     YEAR_MONTH >= start_year_month,
     YEAR_MONTH <= end_year_month
-  ) %>% 
+  ) %>%
   pull()
 
 # Initial fact table filter
-fact_db = fact_db %>% 
+fact_db = fact_db %>%
   select(
     # Group by vars
     YEAR_MONTH,
@@ -74,9 +74,10 @@ fact_db = fact_db %>%
     OOHC_IND,
     PRIVATE_IND,
     IGNORE_FLAG,
-    ITEM_COUNT 
-  ) %>% 
+    ITEM_COUNT
+  ) %>%
   filter(
+    CALC_AGE >= 65,
     YEAR_MONTH %in% year_month,
     PATIENT_IDENTIFIED == "Y",
     PAY_DA_END == "N", # excludes disallowed items
@@ -87,7 +88,7 @@ fact_db = fact_db %>%
     PRIVATE_IND == 0L, # excludes private dispensers
     IGNORE_FLAG == "N", # remove dummy ldp forms
     ITEM_COUNT >= 1 # remove element-level rows
-  ) %>% 
+  ) %>%
   group_by(
     YEAR_MONTH,
     PF_ID,
@@ -95,13 +96,13 @@ fact_db = fact_db %>%
     CALC_AGE,
     PART_DATE = EPS_PART_DATE,
     EPM_ID
-  ) %>% 
-  summarise() %>% 
+  ) %>%
+  summarise() %>%
   ungroup()
 
 # Process paper info
-paper_db = paper_db %>% 
-  filter(YEAR_MONTH %in% year_month) %>% 
+paper_db = paper_db %>%
+  filter(YEAR_MONTH %in% year_month) %>%
   select(
     YEAR_MONTH,
     PF_ID,
@@ -115,7 +116,7 @@ eps_db = eps_db %>%
   filter(
     PART_DATE >= eps_start_date,
     PART_DATE <= eps_end_date
-  ) %>% 
+  ) %>%
   # Concatenate fields together by a single space for the single line address
   mutate(
     EPS_SINGLE_LINE_ADDRESS = paste(
@@ -135,22 +136,21 @@ eps_db = eps_db %>%
 # Part two: fact join and postcode & SLA tidy ----------------------------------
 
 # Join all tables and clean
-fact_join_db = fact_db %>% 
-  left_join(y = paper_db, by = c("YEAR_MONTH", "PF_ID")) %>% 
-  left_join(y = eps_db, by = c("PART_DATE", "EPM_ID")) %>% 
+fact_join_db = fact_db %>%
+  left_join(y = paper_db, by = c("YEAR_MONTH", "PF_ID")) %>%
+  left_join(y = eps_db, by = c("PART_DATE", "EPM_ID")) %>%
   mutate(
     POSTCODE = coalesce(
-      EPS_POSTCODE, 
+      EPS_POSTCODE,
       PAPER_POSTCODE
     ),
     SINGLE_LINE_ADDRESS = coalesce(
       EPS_SINGLE_LINE_ADDRESS,
       PAPER_SINGLE_LINE_ADDRESS
     )
-  ) %>% 
-  addressMatchR::tidy_postcode(col = POSTCODE) %>%
-  addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>% 
-  left_join(postcode_db, by = "POSTCODE") %>% 
+  ) %>%
+  addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>%
+  left_join(postcode_db, by = "POSTCODE") %>%
   select(
     YEAR_MONTH,
     PF_ID,
@@ -163,20 +163,36 @@ fact_join_db = fact_db %>%
 
 # Part three: stack paper and eps info and save --------------------------------
 
-# Define output table name
-table_name = paste0("INT646_FORMS_", start_date, "_", end_date)
+# Define temp output table name - the postcode format will be done separately on this
+table_name_temp = paste0("INT646_FORMS_TEMP_", start_date, "_", end_date)
 
 # Drop table if it exists already
-drop_table_if_exists_db(table_name)
+drop_table_if_exists_db(table_name_temp)
 
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP
-fact_join_db %>% compute_with_parallelism(table_name, 8)
+fact_join_db %>% compute_with_parallelism(table_name_temp, 32)
+
+fact_db <- con %>%
+  tbl(from = table_name_temp)
+
+table_name = paste0("INT646_FORMS_", start_date, "_", end_date)
+
+# Drop table if it exists already
+drop_table_if_exists_db(table_name)
+
+# Just format postcode
+fact_db %>% 
+  personMatchR::format_postcode_db(POSTCODE) %>% 
+  compute_with_parallelism(table_name, 32)
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
+
+# Drop temp table
+drop_table_if_exists_db(table_name_temp)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

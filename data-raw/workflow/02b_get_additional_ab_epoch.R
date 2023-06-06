@@ -27,7 +27,7 @@ extra_caps <- list(
 # creates in your AppData folder.
 rD <- RSelenium::rsDriver(
   browser = "chrome",
-  chromever = "109.0.5414.74",
+  chromever = getChromeDriverVersion(),
   port = netstat::free_port(),
   verbose = FALSE,
   check = FALSE, # AVDs have restricted access; use TRUE with unrestricted access.
@@ -168,6 +168,10 @@ csvs %>% iwalk(process_csv)
 
 # Delete data folder now we are done with it
 unlink(data_folder, recursive = TRUE)
+
+# Close browser and stop Selenium server
+remDr$close()
+rD[["server"]]$stop()
 
 # Move back to project dir from temp dir
 setwd(proj_dir)
