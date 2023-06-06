@@ -102,26 +102,11 @@ cqc_attributes_df = cqc_db %>%
     .groups = "drop"
   )
 
-# The tables above needed to be processed locally due to inadequate dbplyr translation
-# of the function last() (as of v.2.3.2); these tables are now copied into the DB temporarily to be used
-# as lazy tables downstream; temp tables are removed on disconnection from DB; local dfs are removed now
-# copy_to(con, cqc_df, "TEMP_CQC_DF", temporary = TRUE, overwrite = TRUE)
-# cqc_db <- con %>% tbl(from = "TEMP_CQC_DF"); rm(cqc_df)
-# 
-# copy_to(con, cqc_attributes_df, "TEMP_CQC_ATTRIBUTES_DF", temporary = TRUE, overwrite = TRUE)
-# cqc_attributes_db <- con %>% tbl(from = "TEMP_CQC_ATTRIBUTES_DF"); rm(cqc_attributes_df)
+# The tables above needed to be processed locally due to inadequate dbplyr
+# translation of the function last() (as of v.2.3.2); these tables are now
+# copied into the DB temporarily to be used as lazy tables downstream; temp
+# tables are removed at end of script; local dfs are removed now
 
-# Despite not having any open connections in SQL Developer, and even after
-# restarting R then restarting Rstudio, I kept getting error:
-# Error in `db_copy_to()`:
-#   ! Can't copy to table "TEMP_CQC_DF"
-# Caused by error in `dplyr::db_write_table()`:
-# ! Can't write table "TEMP_CQC_DF".
-# Caused by error:
-#   ! nanodbc/nanodbc.cpp:1752: HY000: [Oracle][ODBC][Ora]ORA-14452: attempt to create, alter or drop an index on temporary table already in use
-# 
-# <SQL> 'DROP TABLE  "TEMP_CQC_DF"'
-# So I create "permanent" temp tables, later to be dropped
 cqc_table_temp <- "CQC_TEMP"
 con %>% copy_to(
   cqc_df,
