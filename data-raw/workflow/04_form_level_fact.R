@@ -150,6 +150,7 @@ fact_join_db = fact_db %>%
     )
   ) %>%
   addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>%
+  addressMatchR::tidy_postcode("POSTCODE") %>% 
   left_join(postcode_db, by = "POSTCODE") %>%
   select(
     YEAR_MONTH,
