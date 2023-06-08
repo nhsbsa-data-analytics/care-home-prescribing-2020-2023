@@ -15,16 +15,28 @@ extra_caps <- list(
 # Create the Selenium driver; netstat::free_port finds an open port, preventing
 # trying to use a busy one. 
 
-# If you get an error, use binman::list_versions("chromedriver") to find latest
-# version of driver. Check your Chrome version with the settings drop down 
-# Help > About Google Chrome in your browser. Use the closest chromedriver
-# version to your Chrome version. If you still get an error, try deleting the
-# LICENSE file from the folder of the chromedriver version you are using. This
-# is a known bug. Can use binman::app_dir("chromedriver") to find the folder.
-
-# If you are in a restricted access environment (such as DALL AVDs), you will
-# need to run this on your local device, then copy over the folder binman
+# FIRST TIME RUN OR OUTDATED DRIVERS
+# The correct version of chromedriver will be determined automatically. Should
+# you get an error, use binman::list_versions("chromedriver") to find the
+# available versions. Check your Chrome version with the settings drop down
+# Help > About Google Chrome in your browser. If your installed version of Chrome
+# is not represented by the chromedriver versions available, you will need to get
+# some updated drivers.
+# If you are in a restricted access environment (such as DALL AVDs), you can run
+# the below code on your unrestricted device, then copy over the folder binman
 # creates in your AppData folder.
+#
+# rD <- RSelenium::rsDriver(
+#   browser = "chrome",
+#   chromever = NULL,
+#   port = netstat::free_port(),
+#   verbose = TRUE, # just to see what is going on...
+#   check = TRUE
+# )
+#
+# If you still get an error, try deleting the LICENSE file from the folder of
+# the chromedriver version you are using. This is a known bug. Can use
+# binman::app_dir("chromedriver") to find the folder.
 rD <- RSelenium::rsDriver(
   browser = "chrome",
   chromever = getChromeDriverVersion(),
@@ -93,7 +105,8 @@ abp_col_names <- read_rds("data-raw/workflow/abp_col_names.rds")
 # Set epoch and table names
 # Loop 4: for each csv...
 #   process it with process_csv() - this creates a table in db with all data
-# Delete the downloaded data
+# Delete the downloaded data and stop Selenium
+# Set working directory back to project directory
 # Connect to new table
 # Create and tidy SLAs with addressMatchR
 # Select columns desired in final epoch table
@@ -154,7 +167,8 @@ ab_plus_epoch_date <- data_folder %>%
 # Define table name
 table_name <- paste0("INT646_ABP_", ab_plus_epoch_date)
 
-# Define temp table name2
+# Define temp table names; this is needed as compute does not support overwrite
+# and we are splitting the SLA tidying and merge strings steps
 table_name_temp <- paste0(table_name, "_TEMP")
 table_name_temp2 <- paste0(table_name, "_TEMP2")
 

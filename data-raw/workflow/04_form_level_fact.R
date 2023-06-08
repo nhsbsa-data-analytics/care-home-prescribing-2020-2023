@@ -173,7 +173,7 @@ drop_table_if_exists_db(table_name_temp)
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP
-fact_join_db %>% compute_with_parallelism(table_name_temp, 32)
+fact_join_db %>% compute_with_parallelism(table_name_temp, 8)
 
 fact_db <- con %>%
   tbl(from = table_name_temp)
