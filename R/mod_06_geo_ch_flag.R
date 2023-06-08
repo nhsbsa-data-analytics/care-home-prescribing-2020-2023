@@ -237,19 +237,17 @@ mod_06_geo_ch_flag_ui <- function(id) {
         nhs_selectInput(
           inputId = ns("geography"),
           label = "Geography",
-          choices = c("Region", "STP/ICS", "Local Authority"),
+          choices = c("Region", "ICB", "Local Authority"),
           full_width = TRUE
         ),
         nhs_selectInput(
           inputId = ns("metric"),
           label = "Metric",
           choices = c(
-            "Drug cost (PPM)" = "SDC_COST_PER_PATIENT_MONTH",
-            "Number of prescription items (PPM)" = "SDC_ITEMS_PER_PATIENT_MONTH",
-            "Number of unique medicines (PPM)" =
-              "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH",
-            "Patients on ten or more unique medicines (PPM)" =
-              "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH"
+            "Drug cost (PPM)" = "COST_PPM",
+            "Number of prescription items (PPM)" = "ITEMS_PPM",
+            "Number of unique medicines (PPM)" = "UNIQ_MEDS_PPM",
+            "Patients on ten or more unique medicines (PPM)" = "PCT_PX_GTE_TEN_PPM"
           ),
           full_width = TRUE
         ),
@@ -872,123 +870,162 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map
     
     # Only interested in care homes and geographical breakdowns
-    map_df <-
-      metrics_by_breakdown_and_ch_flag_df %>%
+    data <- metrics_by_breakdown_and_ch_flag_df %>% 
+      dplyr::filter(grepl("Geographical - ", BREAKDOWN)) %>%
+      dplyr::trasmute(
+        YEAR,
+        GEOGRAPHY = BREAKDOWN,
+        SUB_GEOGRAPHY_NAME = SUB_BREAKDOWN_NAME,
+        SUB_GEOGRAPHY_CODE = SUB_BREAKDOWN_CODE,
+        CH_FLAG,
+        TOTAL_PATIENTS,
+        ITEMS_PPM = SDC_ITEMS_PER_PATIENT_MONTH,
+        COST_PPM = SDC_COST_PER_PATIENT_MONTH,
+        TOTAL_PATIENTS_UNIQ_MED = SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
+        UNIQ_MED_PPM = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
+        PCT_PX_GTE_TEN_PPM = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH,
+        
+      ) %>% 
       dplyr::filter(
         grepl("Geographical - ", BREAKDOWN),
-        CH_FLAG == "Care home"
+        CH_FLAG == 1
       ) %>%
       dplyr::mutate(BREAKDOWN = gsub("Geographical - ", "", BREAKDOWN))
     
-    # Rename the cols
-    map_df <- map_df %>%
-      dplyr::rename(
-        GEOGRAPHY = BREAKDOWN,
-        SUB_GEOGRAPHY_NAME = SUB_BREAKDOWN_NAME,
-        SUB_GEOGRAPHY_CODE = SUB_BREAKDOWN_CODE
-      )
+    # Get a nice name for the metric
+    data_to_ui_name <- c(
+      "SDC_COST_PER_PATIENT_MONTH" = "Drug cost (£)",
+      "SDC_ITEMS_PER_PATIENT_MONTH" = "Number of prescription items",
+      "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH" = "Number of unique medicines",
+      "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" =
+        "Patients on ten or more unique medicines (%)"
+    )
     
-    # Filter the data based on the geography
-    map_geography_df <- reactive({
-      req(input$geography)
-      
-      map_df %>%
-        dplyr::filter(GEOGRAPHY == input$geography)
-    })
+    # # Rename the cols
+    # data <- data %>%
+    #   dplyr::rename(
+    #     GEOGRAPHY = BREAKDOWN,
+    #     SUB_GEOGRAPHY_NAME = SUB_BREAKDOWN_NAME,
+    #     SUB_GEOGRAPHY_CODE = SUB_BREAKDOWN_CODE
+    #   )
     
-    # Pull the metric we are interested in
-    map_metric_df <- reactive({
-      req(input$geography)
-      req(input$metric)
+    fdata <- reactive(data)
+    
+    observe({
+      input$geography
+      input$metric
+      input$year
       
-      map_geography_df() %>%
-        dplyr::mutate(
-          TOTAL_PATIENTS = switch(
-            input$metric,
-            # LHS and RHS do not match choice of metric or col name in data?
-            "PCT_PATIENTS_TEN_OR_MORE" = PATIENTS_TEN_OR_MORE,
-            TOTAL_PATIENTS
+      fdata(
+        data %>%
+          dplyr::filter(GEOGRAPHY == input$geography) %>%
+          dplyr::filter(!is.na(SUB_GEOGRAPHY_NAME)) %>%
+          dplyr::filter(YEAR == input$year) %>%
+          dplyr::transmute(
+            GEOGRAPHY,
+            SUB_GEOGRAPHY_NAME,
+            SUB_GEOGRAPHY_CODE,
+            TOTAL_PATIENTS = switch(
+              input$metric,
+              "PCT_PATIENTS_TEN_OR_MORE" = PATIENTS_TEN_OR_MORE,
+              TOTAL_PATIENTS
+            ),
+            .data[[input$metric]]
           )
-        )
+      )
     })
     
-    # Pull the year we are interested in
-    map_year_df <- reactive({
-      req(input$geography)
-      req(input$metric)
-      req(input$year)
-      
-      map_df %>%
-        dplyr::filter(YEAR == input$year) %>%
-        dplyr::select(
-          GEOGRAPHY,
-          SUB_GEOGRAPHY_NAME,
-          SUB_GEOGRAPHY_CODE,
-          TOTAL_PATIENTS,
-          .data[[input$metric]]
-        )
-    })
+    # # Filter the data based on the geography
+    # map_geography_df <- reactive({
+    #   req(input$geography)
+    #   
+    #   map_df %>%
+    #     dplyr::filter(GEOGRAPHY == input$geography)
+    # })
+    # 
+    # # Pull the metric we are interested in
+    # map_metric_df <- reactive({
+    #   req(input$geography)
+    #   req(input$metric)
+    #   
+    #   map_geography_df() %>%
+    #     dplyr::mutate(
+    #       TOTAL_PATIENTS = switch(
+    #         input$metric,
+    #         # LHS and RHS do not match choice of metric or col name in data?
+    #         "PCT_PATIENTS_TEN_OR_MORE" = PATIENTS_TEN_OR_MORE,
+    #         TOTAL_PATIENTS
+    #       )
+    #     )
+    # })
+    # 
+    # # Pull the year we are interested in
+    # map_year_df <- reactive({
+    #   req(input$geography)
+    #   req(input$metric)
+    #   req(input$year)
+    #   
+    #   map_df %>%
+    #     dplyr::filter(YEAR == input$year) %>%
+    #     dplyr::select(
+    #       GEOGRAPHY,
+    #       SUB_GEOGRAPHY_NAME,
+    #       SUB_GEOGRAPHY_CODE,
+    #       TOTAL_PATIENTS,
+    #       .data[[input$metric]]
+    #     )
+    # })
     
-    # Filter out unknown sub geographies for the plot
-    plot_map_df <- reactive({
-      req(input$geography)
-      req(input$metric)
-      req(input$year)
-      
-      map_metric_df() %>%
-        dplyr::filter(!is.na(SUB_GEOGRAPHY_NAME))
-    })
+    # # Filter out unknown sub geographies for the plot
+    # plot_map_df <- reactive({
+    #   req(input$geography)
+    #   req(input$metric)
+    #   req(input$year)
+    #   
+    #   browser()
+    #   
+    #   map_metric_df() %>%
+    #     dplyr::filter(!is.na(SUB_GEOGRAPHY_NAME))
+    # })
     
     # Create a table to go alongside the map
-    output$map_table_ch <- DT::renderDT(
-      expr = {
-        req(input$geography)
-        req(input$metric)
-        req(input$year)
-        
-        # Get a nice name for the metric
-        nice_metric_name <- switch(
-          input$metric,
-          "SDC_COST_PER_PATIENT_MONTH" = "Drug cost (£)",
-          "SDC_ITEMS_PER_PATIENT_MONTH" = "Number of prescription items",
-          "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH" = "Number of unique medicines",
-          "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" =
-            "Patients on ten or more unique medicines (%)"
+    output$map_table_ch <- DT::renderDT({
+      req(fdata)
+      
+      
+      
+      # Format the table
+      plot_map_df_ <- plot_map_df() %>%
+        dplyr::arrange(desc(.data[[input$metric]])) %>%
+        dplyr::mutate(RANK = dplyr::row_number()) %>%
+        # dplyr::select(
+        #   "<span class='nhsuk-body-s'>Rank</span>" :=
+        #     RANK,
+        #   "<span class='nhsuk-body-s'>{input$geography}</span>" :=
+        #     SUB_GEOGRAPHY_NAME,
+        #   "<span class='nhsuk-body-s'>{nice_metric_name}</span>" :=
+        #     .data[[input$metric]]
+        # ) %>%
+        DT::datatable(
+          escape = FALSE,
+          rownames = FALSE,
+          options = list(
+            dom = "t",
+            scrollCollapse = TRUE,
+            paging = FALSE,
+            scrollY = "350px",
+            overflow = "scroll",
+            tabindex = "0"
+          ),
+          height = "400px",
+          filter = "none"
+        ) %>%
+        DT::formatStyle(columns = 0:3, `font-size` = "14px") %>%
+        DT::formatRound(
+          columns = 3,
+          digits = ifelse(input$metric != "SDC_COST_PER_PATIENT_MONTH", 1, 0)
         )
-        
-        # Format the table
-        plot_map_df_ <- plot_map_df() %>%
-          dplyr::arrange(desc(.data[[input$metric]])) %>%
-          dplyr::mutate(RANK = dplyr::row_number()) %>%
-          dplyr::select(
-            "<span class='nhsuk-body-s'>Rank</span>" :=
-              RANK,
-            "<span class='nhsuk-body-s'>{input$geography}</span>" :=
-              SUB_GEOGRAPHY_NAME,
-            "<span class='nhsuk-body-s'>{nice_metric_name}</span>" :=
-              .data[[input$metric]]
-          ) %>%
-          DT::datatable(
-            escape = FALSE,
-            rownames = FALSE,
-            options = list(
-              dom = "t",
-              scrollCollapse = TRUE,
-              paging = FALSE,
-              scrollY = "350px",
-              overflow = "scroll",
-              tabindex = "0"
-            ),
-            height = "400px",
-            filter = "none"
-          ) %>%
-          DT::formatStyle(columns = 0:3, `font-size` = "14px") %>%
-          DT::formatRound(
-            columns = 3,
-            digits = ifelse(input$metric != "SDC_COST_PER_PATIENT_MONTH", 1, 0)
-          )
-      }
-    )
+    })
     
     # Create a table to go alongside the map
     output$map_table_non_ch <- DT::renderDT(
@@ -1141,7 +1178,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       req(input$geography)
       req(input$metric)
       req(input$year)
-      browser()
+      
       highcharter::highchart() %>%
         highcharter::hc_add_series_map(
           df = plot_map_df(),

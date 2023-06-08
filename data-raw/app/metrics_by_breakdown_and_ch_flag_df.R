@@ -7,18 +7,17 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT615_ITEM_LEVEL_BASE"))
+  tbl(from = "INT646_BASE_20210401_20220331")
 
 # Add a dummy overall column
 fact_db <- fact_db %>%
   mutate(OVERALL = "Overall") # dummy col
 
 # Loop over each breakdown and aggregate
-for (breakdown_name in names(careHomePrescribingScrollytellR::breakdowns)) {
+for (breakdown_name in names(breakdowns)) {
   
   # Extract the breakdown cols
-  breakdown_cols <-
-    careHomePrescribingScrollytellR::breakdowns[[breakdown_name]]
+  breakdown_cols <- breakdowns[[breakdown_name]]
   
   # Group the table
   tmp_db <- fact_db %>%
@@ -175,7 +174,7 @@ metrics_by_breakdown_and_ch_flag_df <- metrics_by_breakdown_and_ch_flag_df %>%
 
 # Format for highcharter
 metrics_by_breakdown_and_ch_flag_df <- metrics_by_breakdown_and_ch_flag_df %>%
-  careHomePrescribingScrollytellR::format_data_raw(
+  format_data_raw(
     c(
       "CH_FLAG",
       "GENDER",
@@ -185,14 +184,14 @@ metrics_by_breakdown_and_ch_flag_df <- metrics_by_breakdown_and_ch_flag_df %>%
     )
   )
 
-# Simulate 3 years of data
-metrics_by_breakdown_and_ch_flag_df <- bind_rows(
-    carehomes2::metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2020-2021"),
-    carehomes2::metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2021-2022"),
-    carehomes2::metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2022-2023")
-  )
+# # Simulate 3 years of data
+# metrics_by_breakdown_and_ch_flag_df <- bind_rows(
+#     metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2020-2021"),
+#     metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2021-2022"),
+#     metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2022-2023")
+#   )
 
-# Add to data-raw/
+# Add to data
 usethis::use_data(metrics_by_breakdown_and_ch_flag_df, overwrite = TRUE)
 
 # Disconnect from database
