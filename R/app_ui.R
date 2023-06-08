@@ -10,9 +10,9 @@ app_ui <- function(request) {
     golem_add_external_resources(),
     # Need this for accessibility
     tags$html(lang = "en"),
-    # Need this for shiny bootstrap dependencies
+    # Need this for shiny bootstrap dependencies TODO: check if needed
     bootstrapLib(),
-    # Your application UI logic
+    # First level UI elements
     nhs_header(),
     br(),
     tags$div(
@@ -26,17 +26,35 @@ app_ui <- function(request) {
           widths = c(2, 10),
           tabPanel(
             title = "Article",
-            mod_markdown_example_ui("markdown_example_ui_1"),
-            mod_chart_example_ui("chart_example_ui_1"),
-            mod_patients_age_gender_ui("patients_age_gender_1")
+            mod_01_headline_figures_ui("headline_figures"),
+            mod_02_patients_age_gender_ui("patients_age_gender"),
+            mod_03_patients_imd_ui("patients_imd"),
+            mod_04_metrics_ch_flag_ui("metrics_ch_flag"),
+            mod_05_metrics_age_gender_ui("metrics_age_gender"),
+            mod_06_geo_ch_flag_ui("geo_ch_flag"),
+            mod_07_geo_ch_flag_monthly_ui("geo_ch_flag_monthly"),
+            mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug")
           ),
-          # Whenever tab button is clicked, windows scroll to the top
-          tags$script(" $(document).ready(function () {
-            $('#maincontent a[data-toggle=\"tab\"]').on('click', function (e) {
-            window.scrollTo(0, 0)
+          tabPanel(
+            title = "Definitions",
+            mod_09_definitions_ui("definitions")
+          ),
+          tabPanel(
+            title = "Methodology",
+            mod_10_methodology_ui("methodology")
+          ),
+          tabPanel(
+            title = "Caveats",
+            mod_11_caveats_ui("caveats")
+          )
+        ),
+        # Move to js file
+        tags$script(" $(document).ready(function () {
+      $('#maincontent a[data-toggle=\"tab\"]').on('click', function (e) {
+         window.scrollTo(0, 0)
             });
-            });")
-        )
+            });"),
+      tags$head(tags$script(src = "survey.js"))
       )
     ),
     br(),
@@ -56,12 +74,36 @@ golem_add_external_resources <- function() {
   add_resource_path(
     "www", app_sys("app/www")
   )
-
+  
   tags$head(
     favicon(),
     bundle_resources(
       path = app_sys("app/www"),
-      app_title = "nhsbsaShinyR"
+      app_title = "Estimated prescribing patterns for care home patients aged 65 years or over"
+    )
+    # Add here other external resources
+    # for example, you can add shinyalert::useShinyalert()
+  )
+}
+
+#' Add external Resources to the Application
+#'
+#' This function is internally used to add external
+#' resources inside the Shiny application.
+#'
+#' @import shiny
+#' @importFrom golem add_resource_path activate_js favicon bundle_resources
+#' @noRd
+golem_add_external_resources <- function() {
+  add_resource_path(
+    "www", app_sys("app/www")
+  )
+  
+  tags$head(
+    favicon(),
+    bundle_resources(
+      path = app_sys("app/www"),
+      app_title = "Estimated prescribing patterns for care home patients aged 65 years or over"
     )
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
