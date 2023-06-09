@@ -8,7 +8,7 @@
 #' @param stack Stack option for highcharter.
 #'
 #' @return Highcharts object with theme added.
-#' @export
+#' @noRd
 theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
   
   # Set the thousands seperator
