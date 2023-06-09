@@ -49,6 +49,7 @@ postcode_latlong <- postcode_latlong %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
+  ungroup() %>%
   select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE) %>%
   personMatchR::format_postcode_db(POSTCODE)
   
@@ -127,6 +128,9 @@ postcode_db %>%
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
+# Disconnect connection to database
+DBI::dbDisconnect(con)
+
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
@@ -135,6 +139,3 @@ remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
-
-# Disconnect from database
-DBI::dbDisconnect(con)

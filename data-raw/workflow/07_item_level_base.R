@@ -396,19 +396,11 @@ print(paste0("This script has created table: ", table_name))
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
-print("Debugging: access granted")
-
 # Disconnect connection to database
 DBI::dbDisconnect(con)
-
-print("Debugging: disconnected")
 
 # Remove vars specific to script
 remove_vars <- setdiff(ls(), keep_vars)
 
-print("Debugging: create remove_vars")
-
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
-
-print("Debugging: remove vars and gc()")
