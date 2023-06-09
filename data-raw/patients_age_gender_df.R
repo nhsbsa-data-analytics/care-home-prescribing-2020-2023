@@ -20,7 +20,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
   
   # Identify geography cols
   geography_cols <-
-    carehomes2::geographys[[geography_name]] %>%
+    geographys[[geography_name]] %>%
     purrr::set_names(
       nm = stringr::str_replace(
         string = names(.),
@@ -58,7 +58,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
 }
 
 patients_by_fy_geo_age_gender_df <- purrr::map(
-  names(carehomes2::geographys),
+  names(geographys),
   patients_by_fy_geo_age_gender_fun
   ) |>
   purrr::list_rbind()
@@ -93,7 +93,7 @@ patients_by_fy_geo_age_gender_df <-
 # Format factors etc and sort
 patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
-  carehomes2::format_data_raw(
+  format_data_raw(
     vars = c("GENDER", "AGE_BAND")
   )
 
