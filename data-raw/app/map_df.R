@@ -4,18 +4,18 @@ library(dplyr)
 map_df <- bind_rows(
   
   # Region
-  sf::read_sf("https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/Regions_December_2022_EN_BUC/FeatureServer/0/query?where=1%3D1&outFields=RGN22CD,RGN22NM&outSR=27700&f=json") %>%
+  sf::read_sf("https://services1.arcgis.com/ESMARspQHYMw9BZ9/ArcGIS/rest/services/NHS_England_Regions_July_2022_EN_BUC_2022/FeatureServer/0/query?where=1%3D1&outFields=NHSER22CD,NHSER22NM&outSR=27700&f=json") %>%
     mutate(GEOGRAPHY = "Region") %>%
     select(
       GEOGRAPHY,
-      SUB_GEOGRAPHY_CODE = RGN22CD,
-      SUB_GEOGRAPHY_NAME = RGN22NM,
+      SUB_GEOGRAPHY_CODE = NHSER22CD,
+      SUB_GEOGRAPHY_NAME = NHSER22NM,
       GEOMETRY = geometry
     ),
   
   # STP
   sf::read_sf("https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/ICB_JUL_2022_EN_BUC_V3/FeatureServer/0/query?where=1%3D1&outFields=ICB22CD,ICB22NM&outSR=27700&f=json") %>%
-    mutate(GEOGRAPHY = "STP/ICS") %>%
+    mutate(GEOGRAPHY = "ICB") %>%
     select(
       GEOGRAPHY,
       SUB_GEOGRAPHY_CODE = ICB22CD,

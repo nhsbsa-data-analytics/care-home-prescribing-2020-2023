@@ -1,9 +1,78 @@
-library(dplyr)
+library(tidyverse)
+library(glue)
 library(dbplyr)
 devtools::load_all()
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+#################
+
+
+PCD <- con %>%
+  tbl(from = "INT646_POSTCODE_LOOKUP") %>% 
+  select(ends_with("CODE"), ends_with("NAME")) %>%
+  distinct() %>%
+  collect()
+
+transform_PCD <- function(data, geography) {
+  data %>%
+    select(starts_with(glue("PCD_{geography}"))) %>%
+    distinct() %>%
+    rename_with(\(x) str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY"))
+}
+
+PCD_list <- list(
+  REGION = PCD %>% transform_PCD("REGION"),
+  ICB    = PCD %>% transform_PCD("ICB"),
+  LAD    = PCD %>% transform_PCD("LAD")
+)
+
+GIS_all <- map_df %>% as_tibble() %>% select(-GEOMETRY)
+
+GIS_list <- list(
+  REGION = GIS_all %>% filter(GEOGRAPHY == "Region"),
+  ICB    = GIS_all %>%
+    filter(GEOGRAPHY == "ICB") %>%
+    mutate(
+      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, "Integrated Care Board", "ICB")
+    ),
+  LAD    = GIS_all %>% filter(GEOGRAPHY == "Local Authority")
+)
+
+# Check sub-geography codes
+
+check_sub_geo_codes <- list(
+  in_GIS_only = map2(
+    GIS_list,
+    PCD_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
+  ),
+  in_PCD_only = map2(
+    PCD_list,
+    GIS_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
+  )
+)
+
+# Check sub-geography names
+
+check_sub_geo_names <- list(
+  in_GIS_only = map2(
+    GIS_list,
+    PCD_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
+  ),
+  in_PCD_only = map2(
+    PCD_list,
+    GIS_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
+  )
+)
+
+
+
+#################
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
@@ -184,12 +253,12 @@ metrics_by_breakdown_and_ch_flag_df <- metrics_by_breakdown_and_ch_flag_df %>%
     )
   )
 
-# # Simulate 3 years of data
-# metrics_by_breakdown_and_ch_flag_df <- bind_rows(
-#     metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2020-2021"),
-#     metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2021-2022"),
-#     metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2022-2023")
-#   )
+# Simulate 3 years of data
+metrics_by_breakdown_and_ch_flag_df <- bind_rows(
+    metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2020-2021"),
+    metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2021-2022"),
+    metrics_by_breakdown_and_ch_flag_df %>% mutate(YEAR = "2022-2023")
+  )
 
 # Add to data
 usethis::use_data(metrics_by_breakdown_and_ch_flag_df, overwrite = TRUE)
