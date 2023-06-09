@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_patients_age_gender_ui <- function(id){
+mod_02_patients_age_gender_ui <- function(id){
   ns <- NS(id)
   tagList(
     h2_tabstop("Title"),
@@ -22,7 +22,7 @@ mod_patients_age_gender_ui <- function(id){
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = names(careHomePrescribing2023::geographys),
+                        choices = names(geographys),
                         full_width = T),
         nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",
@@ -40,7 +40,7 @@ mod_patients_age_gender_ui <- function(id){
 #' patients_age_gender Server Functions
 #'
 #' @noRd 
-mod_patients_age_gender_server <- function(id){
+mod_02_patients_age_gender_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
     
@@ -264,7 +264,7 @@ mod_patients_age_gender_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_patients_age_gender_ui("patients_age_gender_1")
+# mod_02_patients_age_gender_ui("patients_age_gender")
     
 ## To be copied in the server
-# mod_patients_age_gender_server("patients_age_gender_1")
+# mod_02_patients_age_gender_server("patients_age_gender")
