@@ -144,6 +144,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # LHS: Table ---------------------------------------------------------------
     
+    # Pivot table wide for table presentation
     region_table_wide = reactive({
       
       region_df() %>% 
@@ -151,13 +152,14 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::select(Region = GEOGRAPHY_CHILD, `2020/21`, `2021/22`, `2022/23`)
     })
       
-    
+    # Render table with FYs pivoted to columns
     output$region_table = reactable::renderReactable({
       
       reactable::reactable(
         region_table_wide(),
         selection = "single",
         onClick = "select",
+        defaultSelected = 1,
         searchable = TRUE,
         pagination = FALSE,
         striped = TRUE,
@@ -179,13 +181,59 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       )
     })
     
-    region_table_click <- reactive(reactable::getReactableState("region_table", "selected"))
-    
+    # Get reactive row index from row click
+    region_table_click = reactive(
+      reactable::getReactableState("region_table", "selected")
+      )
     
 
+    # Chart 1: FY 2020/21
+    observeEvent(region_table_click(),{
+      
+      # Render table with FYs pivoted to columns
+      output$region_table = reactable::renderReactable({
+        
+        # Ensure select input required
+        req(region_table_click())
+        
+        # Reactable table
+        reactable::reactable(
+          region_table_wide(),
+          selection = "single",
+          onClick = "select",
+          defaultSelected = region_table_click(),
+          searchable = TRUE,
+          pagination = FALSE,
+          striped = TRUE,
+          highlight = TRUE,
+          bordered = TRUE,
+          theme = reactable::reactableTheme(
+            borderColor = "#dfe2e5",
+            stripedColor = "#f6f8fa",
+            highlightColor = "#f0f5f9",
+            searchInputStyle = list(width = "100%"),
+            style = list(fontFamily = "Arial")
+          ),
+          columns = list(
+            `2020/21` = reactable::colDef(maxWidth = 75),
+            `2021/22` = reactable::colDef(maxWidth = 75),
+            `2022/23` = reactable::colDef(maxWidth = 75)
+          )
+          
+        )
+      })
+    })
+    
+    # details = function(index, name){
+    #   request_id <- data()[index, "Request_ID"]
+    #   htmltools::div(
+    #     reactable(random_samples[random_samples$Request_ID == request_id, ])
+    #   )
+    # }
     
     # RHS: 3 charts ------------------------------------------------------------
     
+    # Base table for spline charts
     region_spline = reactive({
       
       region_df() %>%
@@ -205,14 +253,14 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         )
       })
     
-    
-    
+    # Single point series data
     region_point = reactive({
       
       region_spline() %>% 
         dplyr::filter(dplyr::row_number() == region_table_click())
       })
     
+    # Text for spline chart titles
     region_chart_one_text = reactive({
       
       paste0(
@@ -224,70 +272,80 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         region_point()$FY
       )
     })
-
+    
     # Chart 1: FY 2020/21
-    output$region_chart_one = highcharter::renderHighchart({
+    observeEvent(region_table_click(),{
       
-      highcharter::highchart() %>%
-        highcharter::hc_add_series(
-          region_spline(), 
-          "spline", 
-          highcharter::hcaes(index, VALUE), 
-          showInLegend = FALSE,
-          dataLabels = list(
-            enabled = TRUE,
-            format = "{point.label}",
-            style = list(fontSize = "17px", fontFamily = "arial")
-          )
-        ) %>% 
-        highcharter::hc_add_series(
-          region_point(),
-          "scatter",
-          highcharter::hcaes(index, VALUE, color = col),
-          showInLegend = FALSE
+      # Ensure select input required
+      req(region_table_click())
+      
+      # Chart 1: FY 2020/21
+      output$region_chart_one = highcharter::renderHighchart({
+        
+        highcharter::highchart() %>%
+          highcharter::hc_add_series(
+            region_spline(), 
+            "spline", 
+            highcharter::hcaes(index, VALUE), 
+            showInLegend = FALSE,
+            dataLabels = list(
+              enabled = TRUE,
+              format = "{point.label}",
+              style = list(fontSize = "17px", fontFamily = "arial")
+            )
           ) %>% 
-        highcharter::hc_yAxis(min = 0) %>%
-        highcharter::hc_xAxis(categories = rep("", nrow(region_spline())+1)) %>%
-        highcharter::hc_plotOptions(
-          spline = list(
-            marker = list(
-              enabled = FALSE
-            ),
-            states = list(
-              inactive = list(opacity = 1)
-            )
-          ),
-          scatter = list(
-            marker = list(
-              radius = 5,
-              symbol = "circle"
-            ),
-            states = list(
-              inactive = list(opacity = 1)
-            )
-          ),
-          series = list(
-            states = list(
-              hover = list(
+          highcharter::hc_add_series(
+            region_point(),
+            "scatter",
+            highcharter::hcaes(index, VALUE, color = col),
+            showInLegend = FALSE
+          ) %>% 
+          highcharter::hc_yAxis(min = 0) %>%
+          highcharter::hc_xAxis(categories = rep("", nrow(region_spline())+1)) %>%
+          highcharter::hc_plotOptions(
+            spline = list(
+              marker = list(
                 enabled = FALSE
               ),
-              select = list(
-                enabled = FALSE
+              states = list(
+                inactive = list(opacity = 1)
+              )
+            ),
+            scatter = list(
+              marker = list(
+                radius = 5,
+                symbol = "circle"
+              ),
+              states = list(
+                inactive = list(opacity = 1)
+              )
+            ),
+            series = list(
+              states = list(
+                hover = list(
+                  enabled = FALSE
+                ),
+                select = list(
+                  enabled = FALSE
+                )
               )
             )
+          ) %>%
+          highcharter::hc_add_theme(hc_theme_null()) %>%
+          highcharter::hc_tooltip(enabled = FALSE) %>%
+          hc_title(
+            text = region_chart_one_text(),
+            style = list(
+              textAlign = "center",
+              fontSize = "17px",
+              fontFamily = "arial"
+            )
           )
-        ) %>%
-        highcharter::hc_add_theme(hc_theme_null()) %>%
-        highcharter::hc_tooltip(enabled = FALSE) %>%
-        hc_title(
-          text = region_chart_one_text(),
-          style = list(
-            textAlign = "center",
-            fontSize = "17px",
-            fontFamily = "arial"
-          )
-        )
+      })
+      
     })
+
+    
     
     # Chart 2: FY 2020/21
     output$region_chart_two = highcharter::renderHighchart({
