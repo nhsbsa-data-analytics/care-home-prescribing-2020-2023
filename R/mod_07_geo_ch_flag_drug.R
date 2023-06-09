@@ -75,26 +75,26 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         fluidPage(
           # LHS: Single table
           column(
-            6,
-            highcharter::highchartOutput(
-              outputId = "region_table",
-              height = "750px"
+            7,
+            reactable::reactableOutput(
+              outputId = ns("region_table"),
+              height = "600px"
               )
             ),
           # RHS: 3 charts
           column(
-            6,
+            5,
             highcharter::highchartOutput(
               outputId = ns("region_chart_one"), 
-              height = "250px"
+              height = "200px"
             ),
             highcharter::highchartOutput(
               outputId = ns("region_chart_two"), 
-              height = "250px"
+              height = "200px"
             ),
             highcharter::highchartOutput(
               outputId = ns("region_chart_three"), 
-              height = "250px"
+              height = "200px"
             )
             )
           )
@@ -144,141 +144,308 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # LHS: Table ---------------------------------------------------------------
     
-    # Colours for reactable table
-    get_colors = function(df){
+    region_table_wide = reactive({
       
-      # Vector of metric values
-      vec = df %>% select(VALUE) %>% pull()
+      region_df() %>% 
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>% 
+        dplyr::select(Region = GEOGRAPHY_CHILD, `2020/21`, `2021/22`, `2022/23`)
+    })
       
-      # Normalised values
-      normalized = (vec - min(vec)) / (max(vec) - min(vec))
-      
-      # Colour scale
-      color_ramp <-  rgb(colorRamp(
-        c("white", nhsbsaR::palette_nhsbsa()[1]))(normalized), maxColorValue=255
-        )
-    }
     
-    # Generate colours
-    region_col = get_colors(region_df())
-
-    
-    # Reactable table
-    reactable(
-      bar_one %>% select(PCD_LAD_NAME, FY2021, FY2022, FY2023) %>% rename(`Local Authority` = PCD_LAD_NAME),
-      filterable = T,
-      pagination = F,
-      selection = "single",
-      columns = list(
-        
-        FY2021 = colDef(
-          style = JS("function(rowInfo, column, state) {
-        const { showColors, fy1_colors } = state.meta
-        if (showColors) {
-          return { backgroundColor: fy1_colors[rowInfo.index] }
-        }
-      }")
+    output$region_table = reactable::renderReactable({
+      
+      reactable::reactable(
+        region_table_wide(),
+        selection = "single",
+        onClick = "select",
+        searchable = TRUE,
+        pagination = FALSE,
+        striped = TRUE,
+        highlight = TRUE,
+        bordered = TRUE,
+        theme = reactable::reactableTheme(
+          borderColor = "#dfe2e5",
+          stripedColor = "#f6f8fa",
+          highlightColor = "#f0f5f9",
+          searchInputStyle = list(width = "100%"),
+          style = list(fontFamily = "Arial")
         ),
-        
-        FY2022 = colDef(
-          style = JS("function(rowInfo, column, state) {
-        const { showColors, fy2_colors } = state.meta
-        if (showColors) {
-          return { backgroundColor: fy2_colors[rowInfo.index] }
-        }
-      }")
-        ),
-        
-        FY2023 = colDef(
-          style = JS("function(rowInfo, column, state) {
-        const { showColors, fy3_colors } = state.meta
-        if (showColors) {
-          return { backgroundColor: fy3_colors[rowInfo.index] }
-        }
-      }")
+        columns = list(
+          `2020/21` = reactable::colDef(maxWidth = 75),
+          `2021/22` = reactable::colDef(maxWidth = 75),
+          `2022/23` = reactable::colDef(maxWidth = 75)
         )
-      ),
-      meta = list(
-        fy1_colors = a,
-        fy2_colors = b,
-        fy3_colors = c,
-        showColors = TRUE
+        
       )
-    )
+    })
     
+    region_table_click <- reactive(reactable::getReactableState("region_table", "selected"))
+    
+    
+
     
     # RHS: 3 charts ------------------------------------------------------------
     
+    region_spline = reactive({
+      
+      region_df() %>%
+        dplyr::filter(FY == "2020/21") %>% 
+        dplyr::arrange(VALUE) %>% 
+        dplyr::mutate(index = dplyr::row_number()) %>%
+        dplyr::arrange(desc(VALUE)) %>% 
+        dplyr::mutate(rank = dplyr::row_number()) %>% 
+        dplyr::mutate(col =  "#f7a35c") %>% 
+        dplyr::mutate(
+          label = dplyr::case_when(
+            rank == 1 ~ as.character(VALUE),
+            index == 1 ~ as.character(VALUE),
+            rank == region_table_click() ~ as.character(VALUE),
+            TRUE ~ ""
+          )
+        )
+      })
+    
+    
+    
+    region_point = reactive({
+      
+      region_spline() %>% 
+        dplyr::filter(dplyr::row_number() == region_table_click())
+      })
+    
+    region_chart_one_text = reactive({
+      
+      paste0(
+        "<b>Ranked ",
+        region_point()$rank,
+        " / ",
+        nrow(region_spline()),
+        " in ",
+        region_point()$FY
+      )
+    })
+
     # Chart 1: FY 2020/21
     output$region_chart_one = highcharter::renderHighchart({
-      region_df() %>% 
-        dplyr::filter(FY == "2021/22") %>% 
-        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE))
+      
+      highcharter::highchart() %>%
+        highcharter::hc_add_series(
+          region_spline(), 
+          "spline", 
+          highcharter::hcaes(index, VALUE), 
+          showInLegend = FALSE,
+          dataLabels = list(
+            enabled = TRUE,
+            format = "{point.label}",
+            style = list(fontSize = "17px", fontFamily = "arial")
+          )
+        ) %>% 
+        highcharter::hc_add_series(
+          region_point(),
+          "scatter",
+          highcharter::hcaes(index, VALUE, color = col),
+          showInLegend = FALSE
+          ) %>% 
+        highcharter::hc_yAxis(min = 0) %>%
+        highcharter::hc_xAxis(categories = rep("", nrow(region_spline())+1)) %>%
+        highcharter::hc_plotOptions(
+          spline = list(
+            marker = list(
+              enabled = FALSE
+            ),
+            states = list(
+              inactive = list(opacity = 1)
+            )
+          ),
+          scatter = list(
+            marker = list(
+              radius = 5,
+              symbol = "circle"
+            ),
+            states = list(
+              inactive = list(opacity = 1)
+            )
+          ),
+          series = list(
+            states = list(
+              hover = list(
+                enabled = FALSE
+              ),
+              select = list(
+                enabled = FALSE
+              )
+            )
+          )
+        ) %>%
+        highcharter::hc_add_theme(hc_theme_null()) %>%
+        highcharter::hc_tooltip(enabled = FALSE) %>%
+        hc_title(
+          text = region_chart_one_text(),
+          style = list(
+            textAlign = "center",
+            fontSize = "17px",
+            fontFamily = "arial"
+          )
+        )
     })
     
     # Chart 2: FY 2020/21
     output$region_chart_two = highcharter::renderHighchart({
       region_df() %>% 
         dplyr::filter(FY == "2021/22") %>% 
-        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE))
+        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE)) %>% 
+        highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>% 
+        highcharter::hc_yAxis(min = 0)
     })
     
     # Chart 3: FY 2020/21
     output$region_chart_three = highcharter::renderHighchart({
       region_df() %>% 
         dplyr::filter(FY == "2022/23") %>% 
-        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE))
+        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE)) %>% 
+        highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>% 
+        highcharter::hc_yAxis(min = 0)
     })
     
   })
 }
 
 
-df = carehomes2::mod_geo_ch_flag_drug_df %>% 
-  dplyr::filter(
-    GEOGRAPHY_PARENT == "PCD_REGION_NAME",
-    BNF_PARENT == "CHAPTER_DESCR",
-    METRIC == "PROP_ITEMS",
-    BNF_CHILD == "Appliances"
+
+# reactable::reactable(
+#   df_two %>% dplyr::inner_join(df_bar),
+#   selection = "single",
+#   onClick = "select",
+#   searchable = TRUE,
+#   pagination = FALSE,
+#   striped = TRUE,
+#   highlight = TRUE,
+#   bordered = TRUE,
+#   theme = reactable::reactableTheme(
+#     borderColor = "#dfe2e5",
+#     stripedColor = "#f6f8fa",
+#     highlightColor = "#f0f5f9",
+#     searchInputStyle = list(width = "100%"),
+#     style = list(fontFamily = "Arial")
+#   ),
+#   columns = list(
+#     Trend = reactable::colDef(cell = function(value, index){
+#       sparkline::sparkline(
+#         df_bar$Trend[[index]],
+#         #chartRangeMin = min_val,
+#         spotRadius = 0
+#       )
+#     }),
+#     `2020/21` = reactable::colDef(maxWidth = 75),
+#     `2021/22` = reactable::colDef(maxWidth = 75),
+#     `2022/23` = reactable::colDef(maxWidth = 75),
+#     Trend = reactable::colDef(maxWidth = 40)
+#   )
+# )
+
+
+
+
+point = df_two %>%
+  dplyr::select(Region, `2020/21`) %>%
+  dplyr::arrange(`2020/21`) %>%
+  dplyr::mutate(index = dplyr::row_number()) %>%
+  dplyr::arrange(desc(`2020/21`)) %>%
+  dplyr::mutate(rank = dplyr::row_number()) %>%
+  dplyr::mutate(col =  "#f7a35c") %>% 
+  dplyr::mutate(
+    label = dplyr::case_when(
+      dplyr::row_number() == 1 ~ as.character(`2020/21`),
+      dplyr::row_number() == nrow(.) ~ as.character(`2020/21`),
+      Region == "South East" ~ as.character(`2020/21`),
+      TRUE ~ ""
+    )
   )
 
-df_two = df %>% 
-  tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>% 
-  dplyr::select(Region = GEOGRAPHY_CHILD, `2020/21`, `2021/22`, `2022/23`)
+sub_point = point %>%
+  dplyr::filter(Region == "South East")
 
-df_bar = df %>% 
-  dplyr::arrange(FY) %>% 
-  dplyr::group_by(Region = GEOGRAPHY_CHILD) %>% 
-  dplyr::summarise(Trend = list(VALUE))
 
-min_val = min(df$VALUE)
 
-reactable::reactable(
-  df_two %>% dplyr::inner_join(df_bar),
-  selection = "single",
-  onClick = "select",
-  searchable = TRUE,
-  pagination = FALSE,
-  striped = TRUE,
-  highlight = TRUE,
-  bordered = TRUE,
-  theme = reactable::reactableTheme(
-    borderColor = "#dfe2e5",
-    stripedColor = "#f6f8fa",
-    highlightColor = "#f0f5f9",
-    searchInputStyle = list(width = "100%"),
-    style = list(fontFamily = "Arial")
-  ),
-  columns = list(
-    Trend = reactable::colDef(cell = function(value, index){
-      sparkline::sparkline(
-        df_bar$Trend[[index]],
-        chartRangeMin = min_val,
-        spotRadius = 0
-        )
-    })
-  )
+
+
+text = paste0(
+  "<br><br><br><b>Ranked ",
+  sub_point$rank,
+  " / ",
+  nrow(point),
+  " ",
+  names(point)[1],
+  "s in ",
+  names(point[2]),
+  "</b>"
 )
+
+highchart() %>%
+  hc_add_series(
+    point2,
+    "spline",
+    hcaes(index, `2020/21`),
+    showInLegend = FALSE,
+    dataLabels = list(
+      enabled = TRUE,
+      format = "{point.label}",
+      style = list(fontSize = "30px", fontFamily = "arial")
+      )
+    ) %>%
+  hc_add_series(
+    sub_point,
+    "scatter",
+    hcaes(index, `2020/21`, color = col),
+    showInLegend = FALSE
+    ) %>% 
+  hc_yAxis(min = 0) %>%
+  hc_xAxis(categories = rep("", nrow(point)+1)) %>% 
+  hc_plotOptions(
+      spline = list(
+        marker = list(
+          enabled = FALSE
+        ),
+        states = list(
+          inactive = list(opacity = 1)
+        )
+      ),
+      scatter = list(
+        marker = list(
+          radius = 15,
+          symbol = "circle"
+        ),
+        states = list(
+          inactive = list(opacity = 1)
+        )
+      ),
+      series = list(
+        states = list(
+          hover = list(
+            enabled = FALSE
+          ),
+          select = list(
+            enabled = FALSE
+            )
+          )
+        )
+      ) %>%
+  hc_tooltip(enabled = FALSE) %>% 
+  hc_title(
+    text = text,
+    style = list(
+      textAlign = "center",
+      fontSize = "30px",
+      fontFamily = "arial"
+    )
+  )
+
+
+
+
+  
+
+
 
 # Colours for reactable table
 # get_colors = function(df){
@@ -300,3 +467,4 @@ reactable::reactable(
 
 ## To be copied in the server
 # mod_07_geo_ch_flag_drug_server("geo_ch_flag_drug")
+  
