@@ -80,12 +80,12 @@ breakdowns <- list(
 )
 
 
-#' Define the geographys
+#' Define the geographies
 #'
 #' Extract them from the breakdowns.
 #'
 #' @noRd
-geographys <- breakdowns %>%
+geographies <- breakdowns %>%
   purrr::keep(
     .p = stringr::str_detect(
       string = names(.),
@@ -131,7 +131,8 @@ format_data_raw <- function(df, vars) {
     dplyr::arrange(
       dplyr::across(
         dplyr::any_of(
-          c("FY",
+          c(
+            "FY",
             "YEAR_MONTH",
             "SUB_BREAKDOWN_NAME",
             "SUB_GEOGRAPHY_NAME",
@@ -165,7 +166,7 @@ format_data_raw <- function(df, vars) {
   if ("GEOGRAPHY" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        GEOGRAPHY = forcats::fct_relevel(.data$GEOGRAPHY, names(geographys))
+        GEOGRAPHY = forcats::fct_relevel(.data$GEOGRAPHY, names(geographies))
       )
   }
   
@@ -182,7 +183,8 @@ format_data_raw <- function(df, vars) {
     dplyr::arrange(
       dplyr::across(
         dplyr::any_of(
-          c("FY",
+          c(
+            "FY",
             "YEAR_MONTH",
             "BREAKDOWN",
             "SUB_BREAKDOWN_NAME",
