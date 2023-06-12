@@ -105,7 +105,8 @@ patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " \\(as of \\d{6}\\)$")) |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " PCN$")) |>
-    mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " ICB$"))
+    mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " ICB$")) |>
+    mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, "^NHS "))
   
 
 # Add to data/
