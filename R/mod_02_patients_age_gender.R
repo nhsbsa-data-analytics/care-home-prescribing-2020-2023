@@ -35,7 +35,7 @@ mod_02_patients_age_gender_ui <- function(id){
         style = "font-size: 9pt;",
         "This excludes less than 1% of patients where the gender was unknown or where statistical disclosure control has been applied."
       ),
-      mod_nhs_download_ui(id = ns("download_patients_by_fy_geo_age_gender_chart"))
+      mod_nhs_download_ui(id = ns("patients_by_geo_age_gender_at_specific_fy_and_subgeo_download"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
     
@@ -229,42 +229,43 @@ mod_02_patients_age_gender_server <- function(id){
     # })
 
     # Swap NAs for "c" for data download and subset columns
-    # patients_by_geography_and_gender_and_age_band_download_df <- reactive({
-    #   req(input$fy)
-    #   req(input$geography)
-    #   req(input$sub_geography)
-    # 
-    #   patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-    #     dplyr::mutate(
-    #       SDC_TOTAL_PATIENTS = ifelse(
-    #         test = is.na(SDC_TOTAL_PATIENTS),
-    #         yes = "c",
-    #         no = as.character(SDC_TOTAL_PATIENTS)
-    #       ),
-    #       SDC_PCT_PATIENTS = ifelse(
-    #         test = is.na(SDC_PCT_PATIENTS),
-    #         yes = "c",
-    #         no = as.character(SDC_PCT_PATIENTS)
-    #       )
-    #     ) %>%
-    #     dplyr::select(-c(TOTAL_PATIENTS, PCT_PATIENTS)) %>%
-    #     dplyr::rename(
-    #       Geography = GEOGRAPHY,
-    #       `Sub geography` = SUB_GEOGRAPHY_CODE,
-    #       `Sub geography name` = SUB_GEOGRAPHY_NAME,
-    #       `Age band` = AGE_BAND,
-    #       Gender = GENDER,
-    #       `Number of patients` = SDC_TOTAL_PATIENTS,
-    #       `Percentage of patients` = SDC_PCT_PATIENTS
-    #     )
-    # })
-    # 
-    # # Add a download button
-    # mod_nhs_download_server(
-    #   id = "download_patients_by_geography_and_gender_and_age_band_chart",
-    #   filename = "patients_by_geography_and_gender_and_age_band_chart.csv",
-    #   export_data = patients_by_geography_and_gender_and_age_band_download_df
-    # )
+    patients_by_geo_age_gender_at_specific_fy_and_subgeo_download_df <- reactive({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
+
+      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::mutate(
+          SDC_TOTAL_PATIENTS = ifelse(
+            test = is.na(SDC_TOTAL_PATIENTS),
+            yes = "c",
+            no = as.character(SDC_TOTAL_PATIENTS)
+          ),
+          SDC_PCT_PATIENTS = ifelse(
+            test = is.na(SDC_PCT_PATIENTS),
+            yes = "c",
+            no = as.character(SDC_PCT_PATIENTS)
+          )
+        ) %>%
+        dplyr::select(-c(TOTAL_PATIENTS, PCT_PATIENTS)) %>%
+        dplyr::rename(
+          `Financial year` = FY,
+          Geography = GEOGRAPHY,
+          `Sub geography` = SUB_GEOGRAPHY_CODE,
+          `Sub geography name` = SUB_GEOGRAPHY_NAME,
+          `Age band` = AGE_BAND,
+          Gender = GENDER,
+          `Number of patients` = SDC_TOTAL_PATIENTS,
+          `Percentage of patients` = SDC_PCT_PATIENTS
+        )
+    })
+
+    # Add a download button
+    mod_nhs_download_server(
+      id = "patients_by_geo_age_gender_at_specific_fy_and_subgeo_download",
+      filename = "patients_by_geography_and_gender_and_age_band_chart.csv",
+      export_data = patients_by_geo_age_gender_at_specific_fy_and_subgeo_download_df
+    )
 
     # Filter out unknown genders for the plot and format
     patients_by_fy_geo_age_gender_plot_df <- reactive({
