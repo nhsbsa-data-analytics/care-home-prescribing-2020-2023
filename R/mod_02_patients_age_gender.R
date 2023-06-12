@@ -58,7 +58,7 @@ mod_02_patients_age_gender_server <- function(id){
       dplyr::filter(!is.na(GENDER))
      
     # Filter the data based on the FY and the geography
-    patients_by_fy_geo_age_gender_at_specific_geo_df <- reactive({
+    patients_by_geo_age_gender_at_specific_fy_and_geo_df <- reactive({
       req(input$geography)
 
       patients_by_fy_geo_age_gender_df %>%
@@ -71,13 +71,13 @@ mod_02_patients_age_gender_server <- function(id){
     # Update the list of choices for sub geography from the non NA rows in the
     # geography dataframe
     observeEvent(
-      eventExpr = patients_by_fy_geo_age_gender_at_specific_geo_df(),
+      eventExpr = patients_by_geo_age_gender_at_specific_fy_and_geo_df(),
       handlerExpr = {
         freezeReactiveValue(input, "sub_geography")
         updateSelectInput(
           inputId = "sub_geography",
           choices =
-            patients_by_fy_geo_age_gender_at_specific_geo_df()$SUB_GEOGRAPHY_NAME %>%
+            patients_by_geo_age_gender_at_specific_fy_and_geo_df()$SUB_GEOGRAPHY_NAME %>%
             na.omit() %>%
             unique()
         )
@@ -85,12 +85,12 @@ mod_02_patients_age_gender_server <- function(id){
     )
 
     # Filter the data based on the sub geography
-    patients_by_fy_geo_age_gender_at_specific_subgeo_df <- reactive({
+    patients_by_geo_age_gender_at_specific_fy_and_subgeo_df <- reactive({
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
 
-      patients_by_fy_geo_age_gender_at_specific_geo_df() %>%
+      patients_by_geo_age_gender_at_specific_fy_and_geo_df() %>%
         dplyr::filter(
           SUB_GEOGRAPHY_NAME == input$sub_geography
           )
@@ -102,7 +102,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$geography)
       req(input$sub_geography)
 
-      patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::summarise(max(SDC_TOTAL_PATIENTS, na.rm = TRUE)) %>%
         dplyr::pull()
     })
@@ -113,7 +113,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$geography)
       req(input$sub_geography)
 
-      patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::summarise(TOTAL_PATIENTS = sum(TOTAL_PATIENTS, na.rm = TRUE)) %>%
         dplyr::mutate(
           SDC_TOTAL_PATIENTS = ifelse(
@@ -133,7 +133,7 @@ mod_02_patients_age_gender_server <- function(id){
 
       # Get the total female patients
       female_patients_df <-
-        patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+        patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::summarise(
           TOTAL_FEMALE_PATIENTS =
             sum(ifelse(!is.na(GENDER) & GENDER == "Female", TOTAL_PATIENTS, 0)),
@@ -171,7 +171,7 @@ mod_02_patients_age_gender_server <- function(id){
 
       # Get the total elderly female patients
       elderly_female_patients_df <-
-        patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+        patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::summarise(
           TOTAL_ELDERLY_FEMALE_PATIENTS = sum(
             ifelse(
@@ -215,7 +215,7 @@ mod_02_patients_age_gender_server <- function(id){
     #   req(input$geography)
     #   req(input$sub_geography)
     # 
-    #   patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+    #   patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
     #     dplyr::filter(is.na(GENDER)) %>%
     #     # Format number
     #     dplyr::mutate(
@@ -234,7 +234,7 @@ mod_02_patients_age_gender_server <- function(id){
     #   req(input$geography)
     #   req(input$sub_geography)
     # 
-    #   patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+    #   patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
     #     dplyr::mutate(
     #       SDC_TOTAL_PATIENTS = ifelse(
     #         test = is.na(SDC_TOTAL_PATIENTS),
@@ -272,7 +272,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$geography)
       req(input$sub_geography)
 
-      patients_by_fy_geo_age_gender_at_specific_subgeo_df() %>%
+      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::filter(!is.na(GENDER)) %>%
         # Negate male values so the butterfly chart works
         dplyr::mutate(
