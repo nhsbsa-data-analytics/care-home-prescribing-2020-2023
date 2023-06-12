@@ -57,12 +57,15 @@ mod_02_patients_age_gender_server <- function(id){
       patients_by_fy_geo_age_gender_df %>%
       dplyr::filter(!is.na(GENDER))
      
-    # Filter the data based on the geography
+    # Filter the data based on the FY and the geography
     patients_by_fy_geo_age_gender_at_specific_geo_df <- reactive({
       req(input$geography)
 
       patients_by_fy_geo_age_gender_df %>%
-        dplyr::filter(GEOGRAPHY == input$geography)
+        dplyr::filter(
+          FY == input$fy,
+          GEOGRAPHY == input$geography
+          )
     })
 
     # Update the list of choices for sub geography from the non NA rows in the
@@ -81,7 +84,7 @@ mod_02_patients_age_gender_server <- function(id){
       }
     )
 
-    # Filter the data based on the fy and sub geography
+    # Filter the data based on the sub geography
     patients_by_fy_geo_age_gender_at_specific_subgeo_df <- reactive({
       req(input$fy)
       req(input$geography)
@@ -89,7 +92,6 @@ mod_02_patients_age_gender_server <- function(id){
 
       patients_by_fy_geo_age_gender_at_specific_geo_df() %>%
         dplyr::filter(
-          FY == input$fy,
           SUB_GEOGRAPHY_NAME == input$sub_geography
           )
     })
