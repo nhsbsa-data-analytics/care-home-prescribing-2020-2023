@@ -73,10 +73,11 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         
         # First column with 1 long table
         fluidPage(
+          
           # LHS: Single table
           column(
             7,
-            reactable::reactableOutput(
+            DT::DTOutput(
               outputId = ns("region_table"),
               height = "600px"
               )
@@ -114,6 +115,98 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
     
+    # Helper functions ---------------------------------------------------------
+    
+    # One: get df
+    spline_chart_data = function(df, fy){
+      
+      df %>%
+        dplyr::rename_at(fy, ~"VALUE") %>%
+        dplyr::arrange(VALUE) %>%
+        dplyr::mutate(
+          index = dplyr::row_number(),
+          rank = rev(dplyr::row_number()),
+          total = max(rank),
+          col =  "#f7a35c",
+          label = dplyr::case_when(
+            rank == 1 ~ as.character(VALUE),
+            index == 1 ~ as.character(VALUE),
+            GEOGRAPHY_CHILD == selected_region() ~ as.character(VALUE),
+            TRUE ~ ""
+          ),
+          text = paste0("<b>Ranked ", rank, " / ", total, " in ", fy)
+        )
+    }
+    
+    # Two: spline chart
+    spline_chart_plot = function(df){
+      
+      highcharter::highchart() %>%
+        highcharter::hc_add_series(
+          df,
+          "spline",
+          highcharter::hcaes(index, VALUE),
+          showInLegend = FALSE,
+          dataLabels = list(
+            enabled = TRUE,
+            format = "{point.label}",
+            style = list(fontSize = "18px", fontFamily = "arial")
+          )
+        ) %>% 
+        highcharter::hc_add_series(
+          df %>%  dplyr::filter(GEOGRAPHY_CHILD == selected_region()),
+          "scatter",
+          highcharter::hcaes(index, VALUE, color = col),
+          showInLegend = FALSE
+        ) %>%
+        highcharter::hc_yAxis(min = 0) %>%
+        highcharter::hc_xAxis(categories = rep("", nrow(df)+1)) %>%
+        highcharter::hc_plotOptions(
+          spline = list(
+            marker = list(
+              enabled = FALSE
+            ),
+            states = list(
+              inactive = list(opacity = 1)
+            )
+          ),
+          scatter = list(
+            marker = list(
+              radius = 5,
+              symbol = "circle"
+            ),
+            states = list(
+              inactive = list(opacity = 1)
+            )
+          ),
+          series = list(
+            states = list(
+              hover = list(
+                enabled = FALSE
+              ),
+              select = list(
+                enabled = FALSE
+              )
+            )
+          )
+        ) %>%
+        highcharter::hc_add_theme(hc_theme_null()) %>%
+        highcharter::hc_tooltip(enabled = FALSE) %>%
+        hc_title(
+          text = df %>%  
+            dplyr::filter(GEOGRAPHY_CHILD == selected_region()) %>% 
+            dplyr::select(text) %>% 
+            dplyr::pull(),
+          style = list(
+            textAlign = "center",
+            fontSize = "17px",
+            fontFamily = "arial"
+          )
+        )
+    }
+    
+    # Select Inputs ------------------------------------------------------------
+    
     # The mod df if filtered by select input 1
     input_region_filter = reactive({
       carehomes2::mod_geo_ch_flag_drug_df %>% 
@@ -139,231 +232,115 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       # Filter by selected bnf child and arrange values
       input_region_filter() %>% 
         dplyr::filter(BNF_CHILD == input$input_region_bnf_child) %>% 
-        dplyr::arrange(VALUE)
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+        dplyr::select(
+          GEOGRAPHY_CHILD,
+          `20/21` = `2020/21`, 
+          `21/22` = `2021/22`, 
+          `22/23` = `2022/23`
+          ) %>%
+        dplyr::arrange(GEOGRAPHY_CHILD) 
     })
     
     # LHS: Table ---------------------------------------------------------------
     
-    # Pivot table wide for table presentation
-    region_table_wide = reactive({
+    # Initial table
+    output$region_table = DT::renderDT({
       
-      region_df() %>% 
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>% 
-        dplyr::select(Region = GEOGRAPHY_CHILD, `2020/21`, `2021/22`, `2022/23`)
-    })
-      
-    # Render table with FYs pivoted to columns
-    output$region_table = reactable::renderReactable({
-      
-      reactable::reactable(
-        region_table_wide(),
-        selection = "single",
-        onClick = "select",
-        defaultSelected = 1,
-        searchable = TRUE,
-        pagination = FALSE,
-        striped = TRUE,
-        highlight = TRUE,
-        bordered = TRUE,
-        theme = reactable::reactableTheme(
-          borderColor = "#dfe2e5",
-          stripedColor = "#f6f8fa",
-          highlightColor = "#f0f5f9",
-          searchInputStyle = list(width = "100%"),
-          style = list(fontFamily = "Arial")
-        ),
-        columns = list(
-          `2020/21` = reactable::colDef(maxWidth = 75),
-          `2021/22` = reactable::colDef(maxWidth = 75),
-          `2022/23` = reactable::colDef(maxWidth = 75)
-        )
-        
-      )
-    })
-    
-    # Get reactive row index from row click
-    region_table_click = reactive(
-      reactable::getReactableState("region_table", "selected")
-      )
-    
-
-    # Chart 1: FY 2020/21
-    observeEvent(region_table_click(),{
-      
-      # Render table with FYs pivoted to columns
-      output$region_table = reactable::renderReactable({
-        
-        # Ensure select input required
-        req(region_table_click())
-        
-        # Reactable table
-        reactable::reactable(
-          region_table_wide(),
-          selection = "single",
-          onClick = "select",
-          defaultSelected = region_table_click(),
-          searchable = TRUE,
-          pagination = FALSE,
-          striped = TRUE,
-          highlight = TRUE,
-          bordered = TRUE,
-          theme = reactable::reactableTheme(
-            borderColor = "#dfe2e5",
-            stripedColor = "#f6f8fa",
-            highlightColor = "#f0f5f9",
-            searchInputStyle = list(width = "100%"),
-            style = list(fontFamily = "Arial")
-          ),
-          columns = list(
-            `2020/21` = reactable::colDef(maxWidth = 75),
-            `2021/22` = reactable::colDef(maxWidth = 75),
-            `2022/23` = reactable::colDef(maxWidth = 75)
+      DT::datatable(
+        data = region_df() %>% dplyr::rename_at("GEOGRAPHY_CHILD", ~"Region"),
+        escape = FALSE,
+        rownames = FALSE,
+        selection = list(mode = "single", target = "row", selected = 1, nrow = 1, ncol = 1),
+        options = list(
+          scrollCollapse = TRUE,
+          paging = FALSE,
+          scrollY = "350px",
+          overflow = "scroll"
           )
-          
-        )
-      })
+        )%>%
+        DT::formatStyle(columns = 1:4, `font-size` = "14px", `width` = "6px")
     })
     
-    # details = function(index, name){
-    #   request_id <- data()[index, "Request_ID"]
-    #   htmltools::div(
-    #     reactable(random_samples[random_samples$Request_ID == request_id, ])
-    #   )
-    # }
+    # now we can get the row/rowname as follows:
+    selected_region <- reactive({
+      region_df() %>% 
+        dplyr::filter(dplyr::row_number() == input$region_table_rows_selected) %>% 
+        dplyr::select(GEOGRAPHY_CHILD) %>% 
+        dplyr::pull()
+    }) 
+    
+    # Chart 1: FY 2020/21
+    # observeEvent(region_table_click(),{
+    #   
+    #   # Render table with FYs pivoted to columns
+    #   output$region_table = reactable::renderReactable({
+    #     
+    #     # Ensure select input required
+    #     req(region_table_click())
+    #     
+    #     # Reactable table
+    #     region_df() %>% 
+    #       tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>% 
+    #       dplyr::select(Region = GEOGRAPHY_CHILD, `2020/21`, `2021/22`, `2022/23`) %>% 
+    #       dplyr::arrange(Region) %>% 
+    #       reactable::reactable(
+    #         selection = "single",
+    #         onClick = "select",
+    #         defaultSelected = region_table_click(),
+    #         searchable = TRUE,
+    #         pagination = FALSE,
+    #         striped = TRUE,
+    #         highlight = TRUE,
+    #         bordered = TRUE,
+    #         theme = reactable::reactableTheme(
+    #           borderColor = "#dfe2e5",
+    #           stripedColor = "#f6f8fa",
+    #           highlightColor = "#f0f5f9",
+    #           searchInputStyle = list(width = "100%"),
+    #           style = list(fontFamily = "Arial")
+    #         ),
+    #         columns = list(
+    #           `2020/21` = reactable::colDef(maxWidth = 75),
+    #           `2021/22` = reactable::colDef(maxWidth = 75),
+    #           `2022/23` = reactable::colDef(maxWidth = 75)
+    #       )
+    #     )
+    #   })
+    # })
     
     # RHS: 3 charts ------------------------------------------------------------
     
-    # Base table for spline charts
-    region_spline = reactive({
-      
-      region_df() %>%
-        dplyr::filter(FY == "2020/21") %>% 
-        dplyr::arrange(VALUE) %>% 
-        dplyr::mutate(index = dplyr::row_number()) %>%
-        dplyr::arrange(desc(VALUE)) %>% 
-        dplyr::mutate(rank = dplyr::row_number()) %>% 
-        dplyr::mutate(col =  "#f7a35c") %>% 
-        dplyr::mutate(
-          label = dplyr::case_when(
-            rank == 1 ~ as.character(VALUE),
-            index == 1 ~ as.character(VALUE),
-            rank == region_table_click() ~ as.character(VALUE),
-            TRUE ~ ""
-          )
-        )
+    #Base table for spline charts
+    region_spline_one = reactive({
+      spline_chart_data(region_df(), "20/21")
       })
-    
-    # Single point series data
-    region_point = reactive({
-      
-      region_spline() %>% 
-        dplyr::filter(dplyr::row_number() == region_table_click())
-      })
-    
-    # Text for spline chart titles
-    region_chart_one_text = reactive({
-      
-      paste0(
-        "<b>Ranked ",
-        region_point()$rank,
-        " / ",
-        nrow(region_spline()),
-        " in ",
-        region_point()$FY
-      )
-    })
-    
-    # Chart 1: FY 2020/21
-    observeEvent(region_table_click(),{
-      
-      # Ensure select input required
-      req(region_table_click())
-      
-      # Chart 1: FY 2020/21
-      output$region_chart_one = highcharter::renderHighchart({
-        
-        highcharter::highchart() %>%
-          highcharter::hc_add_series(
-            region_spline(), 
-            "spline", 
-            highcharter::hcaes(index, VALUE), 
-            showInLegend = FALSE,
-            dataLabels = list(
-              enabled = TRUE,
-              format = "{point.label}",
-              style = list(fontSize = "17px", fontFamily = "arial")
-            )
-          ) %>% 
-          highcharter::hc_add_series(
-            region_point(),
-            "scatter",
-            highcharter::hcaes(index, VALUE, color = col),
-            showInLegend = FALSE
-          ) %>% 
-          highcharter::hc_yAxis(min = 0) %>%
-          highcharter::hc_xAxis(categories = rep("", nrow(region_spline())+1)) %>%
-          highcharter::hc_plotOptions(
-            spline = list(
-              marker = list(
-                enabled = FALSE
-              ),
-              states = list(
-                inactive = list(opacity = 1)
-              )
-            ),
-            scatter = list(
-              marker = list(
-                radius = 5,
-                symbol = "circle"
-              ),
-              states = list(
-                inactive = list(opacity = 1)
-              )
-            ),
-            series = list(
-              states = list(
-                hover = list(
-                  enabled = FALSE
-                ),
-                select = list(
-                  enabled = FALSE
-                )
-              )
-            )
-          ) %>%
-          highcharter::hc_add_theme(hc_theme_null()) %>%
-          highcharter::hc_tooltip(enabled = FALSE) %>%
-          hc_title(
-            text = region_chart_one_text(),
-            style = list(
-              textAlign = "center",
-              fontSize = "17px",
-              fontFamily = "arial"
-            )
-          )
-      })
-      
+
+    #Chart 1: FY 2020/21
+    output$region_chart_one = highcharter::renderHighchart({
+      spline_chart_plot(region_spline_one())
     })
 
     
     
     # Chart 2: FY 2020/21
     output$region_chart_two = highcharter::renderHighchart({
-      region_df() %>% 
-        dplyr::filter(FY == "2021/22") %>% 
-        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE)) %>% 
-        highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>% 
-        highcharter::hc_yAxis(min = 0)
+      region_df() %>%
+        #dplyr::filter(FY == "2021/22") %>%
+        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, `21/22`)) %>%
+        highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>%
+        highcharter::hc_yAxis(min = 0) %>%
+        highcharter::hc_title(text = selected_region())
     })
     
     # Chart 3: FY 2020/21
-    output$region_chart_three = highcharter::renderHighchart({
-      region_df() %>% 
-        dplyr::filter(FY == "2022/23") %>% 
-        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, VALUE)) %>% 
-        highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>% 
-        highcharter::hc_yAxis(min = 0)
-    })
+    # output$region_chart_three = highcharter::renderHighchart({
+    #   region_df() %>% 
+    #     #dplyr::filter(FY == "2022/23") %>% 
+    #     highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, `22/23`)) %>% 
+    #     highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>% 
+    #     highcharter::hc_yAxis(min = 0)
+    # })
     
   })
 }
@@ -404,106 +381,92 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
 
 
 
-point = df_two %>%
-  dplyr::select(Region, `2020/21`) %>%
-  dplyr::arrange(`2020/21`) %>%
-  dplyr::mutate(index = dplyr::row_number()) %>%
-  dplyr::arrange(desc(`2020/21`)) %>%
-  dplyr::mutate(rank = dplyr::row_number()) %>%
-  dplyr::mutate(col =  "#f7a35c") %>% 
-  dplyr::mutate(
-    label = dplyr::case_when(
-      dplyr::row_number() == 1 ~ as.character(`2020/21`),
-      dplyr::row_number() == nrow(.) ~ as.character(`2020/21`),
-      Region == "South East" ~ as.character(`2020/21`),
-      TRUE ~ ""
-    )
-  )
+#---------------------------------
 
-sub_point = point %>%
-  dplyr::filter(Region == "South East")
-
-
-
-
-
-text = paste0(
-  "<br><br><br><b>Ranked ",
-  sub_point$rank,
-  " / ",
-  nrow(point),
-  " ",
-  names(point)[1],
-  "s in ",
-  names(point[2]),
-  "</b>"
-)
-
-highchart() %>%
-  hc_add_series(
-    point2,
-    "spline",
-    hcaes(index, `2020/21`),
-    showInLegend = FALSE,
-    dataLabels = list(
-      enabled = TRUE,
-      format = "{point.label}",
-      style = list(fontSize = "30px", fontFamily = "arial")
-      )
-    ) %>%
-  hc_add_series(
-    sub_point,
-    "scatter",
-    hcaes(index, `2020/21`, color = col),
-    showInLegend = FALSE
-    ) %>% 
-  hc_yAxis(min = 0) %>%
-  hc_xAxis(categories = rep("", nrow(point)+1)) %>% 
-  hc_plotOptions(
-      spline = list(
-        marker = list(
-          enabled = FALSE
-        ),
-        states = list(
-          inactive = list(opacity = 1)
-        )
-      ),
-      scatter = list(
-        marker = list(
-          radius = 15,
-          symbol = "circle"
-        ),
-        states = list(
-          inactive = list(opacity = 1)
-        )
-      ),
-      series = list(
-        states = list(
-          hover = list(
-            enabled = FALSE
-          ),
-          select = list(
-            enabled = FALSE
-            )
-          )
-        )
-      ) %>%
-  hc_tooltip(enabled = FALSE) %>% 
-  hc_title(
-    text = text,
-    style = list(
-      textAlign = "center",
-      fontSize = "30px",
-      fontFamily = "arial"
-    )
-  )
+# a = carehomes2::mod_geo_ch_flag_drug_df %>% 
+#   dplyr::filter(
+#     GEOGRAPHY_PARENT == "PCD_REGION_NAME",
+#     BNF_PARENT == "CHAPTER_DESCR",
+#     METRIC == "PROP_ITEMS"
+#   )
+# 
+#   
+#   # Filter by selected bnf child and arrange values
+# b = a %>% 
+#     dplyr::filter(BNF_CHILD == "Appliances") %>% 
+#     tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+#     dplyr::select(
+#       GEOGRAPHY_CHILD,
+#       `20/21` = `2020/21`, 
+#       `21/22` = `2021/22`, 
+#       `22/23` = `2022/23`
+#     ) %>%
+#     dplyr::arrange(GEOGRAPHY_CHILD)
+# 
+# c = b %>% 
+#   dplyr::rename(VALUE = `20/21`) %>%
+#   dplyr::arrange(VALUE) %>%
+#   dplyr::mutate(
+#     index = dplyr::row_number(),
+#     rank = rev(dplyr::row_number()),
+#     total = max(rank),
+#     col =  "#f7a35c",
+#     label = dplyr::case_when(
+#       rank == 1 ~ as.character(VALUE),
+#       index == 1 ~ as.character(VALUE),
+#       GEOGRAPHY_CHILD == "Midlands" ~ paste0(GEOGRAPHY_CHILD, ": ", VALUE),
+#       TRUE ~ ""
+#     ),
+#     text = paste0("Ranked ", index, " / ", rank, " in 20/21")
+#   )
 
 
 
 
-  
 
 
+# library(shiny)
+# library(reactable)
+# 
+# ui <- fluidPage(
+#   reactableOutput("table")
+# )
+# 
+# server <- function(input, output, session) {
+#   # Reactive values
+#   selectedRow <- reactiveVal(NULL)
+#   
+#   # Render the reactable component
+#   output$table <- renderReactable({
+#     reactable(
+#       iris,
+#       selection = "single",
+#       defaultSorted = "Sepal.Length",
+#       defaultSortOrder = "asc",
+#       defaultPageSize = 10,
+#       highlight = TRUE,
+#       defaultSelected = selectedRow()
+#     )
+#   })
+#   
+#   # Update the selected row
+#   observeEvent(input$table_selected, {
+#     selectedRow(input$table_selected)
+#   })
+#   
+#   # Update the reactable when sorting or filtering occurs
+#   observeEvent(input$table_sorting, {
+#     selectedRowIndex <- which(reactableData()$data$Sepal.Length == selectedRow())
+#     updateReactable(session, "table", selected = selectedRowIndex)
+#   })
+#   
+#   observeEvent(input$table_filtering, {
+#     selectedRowIndex <- which(reactableData()$data$Sepal.Length == selectedRow())
+#     updateReactable(session, "table", selected = selectedRowIndex)
+#   })
+# }
+# 
+# shinyApp(ui, server)
 
 # Colours for reactable table
 # get_colors = function(df){
@@ -525,4 +488,26 @@ highchart() %>%
 
 ## To be copied in the server
 # mod_07_geo_ch_flag_drug_server("geo_ch_flag_drug")
+
+
+
+# server <- function(input, output,session) {
+#   
+#   # the reactive where we filter/sort/modify the data
+#   reactive_df <- reactive({
+#     mtcars[order(mtcars$cyl),]
+#   })
+#   
+#   # This datatable uses the reactive directly, so no more modifications
+#   output$table <- DT::renderDataTable({
+#     DT::datatable(reactive_df())
+#   })
+#   
+#   # now we can get the row/rowname as follows:
+#   output$selectedcar <- renderText({
+#     paste0(rownames(reactive_df())[input$table_rows_selected], collapse = ", ")
+#   }) 
+# } 
+
+
   
