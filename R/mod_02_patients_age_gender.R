@@ -30,11 +30,7 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
-      tags$text(
-        class = "highcharts-caption",
-        style = "font-size: 9pt;",
-        "This excludes less than 1% of patients where the gender was unknown or where statistical disclosure control has been applied."
-      ),
+      shiny::htmlOutput(outputId = ns("pct_excluded_patients")),
       mod_nhs_download_ui(id = ns("patients_by_geo_age_gender_at_specific_fy_and_subgeo_download"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
@@ -48,6 +44,46 @@ mod_02_patients_age_gender_ui <- function(id){
 mod_02_patients_age_gender_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    
+    # % of excluded patients for the chart label from source df that didn't exclude them yet
+    pct_excluded_patients <- reactive({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
+      
+      t <- patients_by_fy_geo_age_gender_df |> 
+      dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
+      dplyr::summarise(
+        EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER) | is.na(SDC_TOTAL_PATIENTS), TOTAL_PATIENTS, 0)),
+        TOTAL_PATIENTS = sum(TOTAL_PATIENTS),
+        .groups = "drop"
+      ) |>
+      dplyr::mutate(PCT_EXCLUDED_PATIENTS = (EXCLUDED_PATIENTS/TOTAL_PATIENTS*100) |> janitor::round_half_up(1)) |>
+      # Extract % for the selected sub-geography
+      dplyr::filter(
+        FY == input$fy,
+        GEOGRAPHY == input$geography,
+        SUB_GEOGRAPHY_NAME == input$sub_geography
+      ) |>
+      dplyr::pull(PCT_EXCLUDED_PATIENTS)
+      
+      if (t < 1) "less than 1" else t
+      
+    })
+    
+    output$pct_excluded_patients <- renderUI({
+      
+      tags$text(
+        class = "highcharts-caption",
+        style = "font-size: 9pt;",
+
+          paste0("This excludes ",
+                 pct_excluded_patients(),
+                 "% of patients where the gender was unknown or where statistical disclosure control has been applied.")
+
+      )
+      
+    })
     
     
     # Patients by geography and gender and age band chart
