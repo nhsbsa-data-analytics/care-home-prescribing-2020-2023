@@ -40,10 +40,10 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
               inputId = ns("input_region_metric"),
               label = "Metric",
               choices = c(
-                "Proportion of Items" = "PROP_ITEMS",
-                "Proportion of Cost" = "PROP_NIC",
-                "Items PPM" = "PPM_ITEMS",
-                "Cost PPM" = "PPM_COST"
+                "% of Total Annual Number of Prescription Items" = "PROP_ITEMS",
+                "% of Total Annual Drug Cost" = "PROP_NIC",
+                "Number of Prescription Items (PPM)" = "PPM_ITEMS",
+                "Drug Cost (PPM)" = "PPM_COST"
               ),
               full_width = TRUE
             ),
@@ -129,19 +129,16 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           total = max(rank),
           col =  "#f7a35c",
           label = dplyr::case_when(
-            rank == 1 ~ as.character(VALUE),
-            index == 1 ~ as.character(VALUE),
-            GEOGRAPHY_CHILD == selected_region() ~ as.character(VALUE),
+            GEOGRAPHY_CHILD == selected_region() ~ paste0(fy, ":  ", VALUE),
             TRUE ~ ""
-          ),
-          text = paste0("<b>Ranked ", rank, " / ", total, " in ", fy)
+          )
         )
     }
     
     # Two: spline chart
-    spline_chart_plot = function(df){
+    spline_chart_plot = function(df, top_plot = FALSE){
       
-      highcharter::highchart() %>%
+      hc = highcharter::highchart() %>%
         highcharter::hc_add_series(
           df,
           "spline",
@@ -150,7 +147,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           dataLabels = list(
             enabled = TRUE,
             format = "{point.label}",
-            style = list(fontSize = "18px", fontFamily = "arial")
+            style = list(fontSize = "16px", fontFamily = "arial")
           )
         ) %>% 
         highcharter::hc_add_series(
@@ -159,8 +156,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           highcharter::hcaes(index, VALUE, color = col),
           showInLegend = FALSE
         ) %>%
-        highcharter::hc_yAxis(min = 0) %>%
-        highcharter::hc_xAxis(categories = rep("", nrow(df)+1)) %>%
+        highcharter::hc_yAxis(min = 0, max = max(df$VALUE)) %>%
+        highcharter::hc_xAxis(categories = c(rep("", nrow(df)), nrow(df))) %>%
         highcharter::hc_plotOptions(
           spline = list(
             marker = list(
@@ -180,6 +177,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
             )
           ),
           series = list(
+            animation = FALSE,
             states = list(
               hover = list(
                 enabled = FALSE
@@ -190,19 +188,24 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
             )
           )
         ) %>%
-        highcharter::hc_add_theme(hc_theme_null()) %>%
-        highcharter::hc_tooltip(enabled = FALSE) %>%
-        hc_title(
-          text = df %>%  
-            dplyr::filter(GEOGRAPHY_CHILD == selected_region()) %>% 
-            dplyr::select(text) %>% 
-            dplyr::pull(),
-          style = list(
-            textAlign = "center",
-            fontSize = "17px",
-            fontFamily = "arial"
+        highcharter::hc_tooltip(enabled = FALSE) %>% 
+        highcharter::hc_chart(borderColor = "grey", borderWidth = 0.3)
+      
+      # Add a title if required
+      if(top_plot){
+        hc = hc %>% 
+          highcharter::hc_title(
+            text = paste0("<b>", df$GEOGRAPHY_CHILD[1], "</b>"),
+            style = list(
+              textAlign = "center",
+              fontSize = "18px",
+              fontFamily = "arial"
+            )
           )
-        )
+      }
+      
+      hc
+        
     }
     
     # Select Inputs ------------------------------------------------------------
@@ -251,6 +254,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         data = region_df() %>% dplyr::rename_at("GEOGRAPHY_CHILD", ~"Region"),
         escape = FALSE,
         rownames = FALSE,
+        #selection = list(mode = "single"),
         selection = list(mode = "single", target = "row", selected = 1, nrow = 1, ncol = 1),
         options = list(
           scrollCollapse = TRUE,
@@ -311,37 +315,35 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # RHS: 3 charts ------------------------------------------------------------
     
-    #Base table for spline charts
+    # Region spline chart data
     region_spline_one = reactive({
       spline_chart_data(region_df(), "20/21")
       })
+    
+    region_spline_two = reactive({
+      spline_chart_data(region_df(), "21/22")
+    })
+    
+    region_spline_three = reactive({
+      spline_chart_data(region_df(), "22/23")
+    })
 
-    #Chart 1: FY 2020/21
+    # Region spline chart plots
     output$region_chart_one = highcharter::renderHighchart({
-      spline_chart_plot(region_spline_one())
+      spline_chart_plot(region_spline_one(), top_plot = TRUE)
     })
-
     
-    
-    # Chart 2: FY 2020/21
     output$region_chart_two = highcharter::renderHighchart({
-      region_df() %>%
-        #dplyr::filter(FY == "2021/22") %>%
-        highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, `21/22`)) %>%
-        highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>%
-        highcharter::hc_yAxis(min = 0) %>%
-        highcharter::hc_title(text = selected_region())
+      spline_chart_plot(region_spline_two())
+      
     })
     
-    # Chart 3: FY 2020/21
-    # output$region_chart_three = highcharter::renderHighchart({
-    #   region_df() %>% 
-    #     #dplyr::filter(FY == "2022/23") %>% 
-    #     highcharter::hchart(., "spline", highcharter::hcaes(GEOGRAPHY_CHILD, `22/23`)) %>% 
-    #     highcharter::hc_xAxis(categories = rep("", nrow(region_df()))) %>% 
-    #     highcharter::hc_yAxis(min = 0)
-    # })
+    output$region_chart_three = highcharter::renderHighchart({
+      spline_chart_plot(region_spline_three())
+    })
     
+    
+
   })
 }
 
