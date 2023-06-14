@@ -106,7 +106,8 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Define table name
 table_name = paste0("INT646_ABP_", ab_plus_epoch_date)
 
-# Define temp table names
+# Define temp table names; this is needed as compute does not support overwrite
+# and we are splitting the SLA tidying and merge strings steps
 table_name_temp = paste0(table_name, "_TEMP")
 table_name_temp2 = paste0(table_name, "_TEMP2")
 
@@ -249,7 +250,7 @@ ab_plus_db %>%
     indexes = c("UPRN", "PARENT_UPRN", "POSTCODE")
   )
 
-# Drop tables if they already exist
+# Drop intermediate tables now the final table is done
 drop_table_if_exists_db(table_name_temp)
 drop_table_if_exists_db(table_name_temp2)
 

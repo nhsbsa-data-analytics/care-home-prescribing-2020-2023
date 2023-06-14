@@ -125,6 +125,10 @@ remDr$findElement(using = "link text", value = "Download")$
 Sys.sleep(5)
 while(length(list.files(pattern = ".crdownload") > 0)) Sys.sleep(1)
 
+# Close browser and stop Selenium server now the data is downloaded
+remDr$close()
+rD[["server"]]$stop()
+
 # Extract the archive then immediately delete it
 unzip("archive.zip")
 unlink("archive.zip")
@@ -183,15 +187,11 @@ csvs %>% iwalk(process_csv)
 # Delete data folder now we are done with it
 unlink(data_folder, recursive = TRUE)
 
-# Close browser and stop Selenium server
-remDr$close()
-rD[["server"]]$stop()
-
 # Move back to project dir from temp dir
 setwd(proj_dir)
 
 # Connect to temp table
-ab_plus_db = con %>%
+ab_plus_db <- con %>%
   tbl(from = table_name_temp) %>%
   # SLA creation plus formatting
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
@@ -207,7 +207,7 @@ ab_plus_db %>%
     temporary = FALSE
   )
 
-ab_plus_db = con %>%
+ab_plus_db <- con %>%
   tbl(from = table_name_temp2) %>%
   nhsbsaR::oracle_merge_strings(
     first_col = "DPA_SINGLE_LINE_ADDRESS",
@@ -239,7 +239,7 @@ ab_plus_db %>%
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
-# Drop tables if they already exist
+# Drop intermediate tables now the final table is done
 drop_table_if_exists_db(table_name_temp)
 drop_table_if_exists_db(table_name_temp2)
 
