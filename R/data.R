@@ -33,11 +33,11 @@
 #'
 #' @docType data
 #' @keywords datasets
-#' @name metrics_by_breakdown_and_ch_flag_df
-#' @usage data(metrics_by_breakdown_and_ch_flag_df)
+#' @name metrics_by_geo_and_ch_flag_df
+#' @usage data(metrics_by_geo_and_ch_flag_df)
 #' @format A data frame with 784 rows and 22 variables
 #' 
-NULL
+"metrics_by_geo_and_ch_flag_df"
 
 #' GIS data for boundaries at Region, STP/ICS and Local Authority level
 #'
@@ -59,4 +59,4 @@ NULL
 #' @usage data(map_df)
 #' @format A \code{sf} object, with 4 fields
 #' 
-NULL
+"map_df"

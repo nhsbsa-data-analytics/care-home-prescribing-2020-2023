@@ -1,4 +1,10 @@
+# Initial setup -----------------------------------------------------------
+
 library(dplyr)
+
+# Data prep ---------------------------------------------------------------
+
+## Download and combine data ----------------------------------------------
 
 # All BUC boundary files @ CRS 27700
 map_df <- bind_rows(
@@ -34,6 +40,14 @@ map_df <- bind_rows(
     ) %>%
     filter(substr(SUB_GEOGRAPHY_CODE, 1, 1) == "E")
 )
+
+## Clean data -------------------------------------------------------------
+
+# Replace non-ascii chars in CRS
+sf::st_crs(map_df)$wkt <- sf::st_crs(map_df)$wkt %>%
+  stringr::str_replace_all("°", "\u00B0")
+
+## Save ------------------------------------------------------------------
 
 # Add to data
 usethis::use_data(map_df, overwrite = TRUE)

@@ -42,7 +42,9 @@ and prevent them fading in / out) */
   top:0;
 }
 @media (max-width:800px){
-    .col-sm-2 {
-      position:inherit;
+  .col-sm-2 {
+    position:inherit;
+  }
 }
-}
+
+

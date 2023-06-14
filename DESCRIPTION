@@ -26,16 +26,22 @@ License: Apache License (>= 2)
 Imports:
     config,
     dplyr,
+    DT,
     fontawesome,
     forcats,
+    geojsonsf,
     golem,
     highcharter,
     htmltools,
+    jsonlite,
     knitr,
     magrittr,
     nhsbsaR,
+    readr,
     rlang,
-    shiny
+    shiny,
+    tidyr,
+    viridisLite
 Suggests:
     addressMatchR,
     archive,
@@ -43,10 +49,10 @@ Suggests:
     dbplyr,
     httr,
     janitor,
-    jsonlite,
     lubridate,
     pacman,
-    readr,
+    sf,
+    stringr,
     tictoc,
     yaml
 Remotes:

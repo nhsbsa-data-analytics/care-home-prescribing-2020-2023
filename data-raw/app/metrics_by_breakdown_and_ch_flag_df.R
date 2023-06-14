@@ -95,7 +95,6 @@ base_db <- base_db %>%
 
 # Aggregate by a geography
 metrics_by_geo_and_ch_flag <- function(geography_name) {
-  browser()
   # Identify geography cols
   geography_cols <- geographies[[geography_name]] %>%
     purrr::set_names(
@@ -145,7 +144,7 @@ metrics_by_geo_and_ch_flag <- function(geography_name) {
         )
       ),
       UNIQUE_MEDICINES_PER_PATIENT_MONTH = mean(UNIQUE_MEDICINES),
-      TOTAL_PATIENTS_TEN_OR_MORE = n_distinct(
+      TOTAL_PATIENTS_TEN_OR_MORE = n_distinct( # For SDC
         ifelse(
           test = UNIQUE_MEDICINES >= 10,
           yes = NHS_NO,
@@ -182,7 +181,6 @@ metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
     ),
     # All years, months and CH flags
     FY,
-    YEAR_MONTH,
     CH_FLAG,
     fill = list(
       TOTAL_PATIENTS = 0L,
@@ -240,11 +238,12 @@ metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   select(-SDC)
 
 ### Format ----------------------------------------------------------------
-metrics_by_breakdown_and_ch_flag_df <- metrics_by_breakdown_and_ch_flag_df %>%
-  format_data_raw("CH_FLAG")
+metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
+  format_data_raw("CH_FLAG") %>% 
+  suppressWarnings() # We do not have Overall and PCN in this data
 
 ### Save ------------------------------------------------------------------
-usethis::use_data(metrics_by_breakdown_and_ch_flag_df, overwrite = TRUE)
+usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
 
 ### Cleanup ---------------------------------------------------------------
 DBI::dbDisconnect(con)
