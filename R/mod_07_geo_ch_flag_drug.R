@@ -475,13 +475,13 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_PARENT == input$input_lad_bnf_parent,
           BNF_CHILD == input$input_lad_bnf_child,
           METRIC == input$input_lad_metric
-        ) %>%
+        ) %>% 
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
           GEOGRAPHY_CHILD,
-          `20/21` = `2020/21`, 
-          `21/22` = `2021/22`, 
+          `20/21` = `2020/21`,
+          `21/22` = `2021/22`,
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
@@ -514,18 +514,11 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           rownames = FALSE,
           selection = list(mode = "single", target = "row", selected = df_select),
           options = list(
+            dom = "ft",
             scrollCollapse = TRUE,
             paging = FALSE,
             scrollY = "350px",
-            overflow = "scroll",
-            rowCallback = JS(
-              "function(row, data) {",
-              "  if (row === 50) {",  # Set the initial view at row index 10
-              "    var table = $('#myTable').DataTable();",
-              "    table.row(row).scrollTo();",
-              "  }",
-              "}"
-            )
+            overflow = "scroll"
           )
         ) %>%
         DT::formatStyle(columns = 1:4, `font-size` = "14px", `width` = "4px")
