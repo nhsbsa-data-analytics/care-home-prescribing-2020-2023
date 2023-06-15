@@ -22,15 +22,15 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
       # Overall Mod heading
       heading = "... ABC ...",
       
-      # 4 Tabs for differing geographies
+      # 3 Tabs for differing geographies
       tabsetPanel(
         type = "tabs",
         
-        # Tab 1: Region
+        # Tab 1: Region --------------------------------------------------------
         tabPanel(
-          title = "Region Comparison",
+          title = "Region",
           br(),
-          h4_tabstop("... XYZ ..."),
+          h4_tabstop("... Region ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
@@ -39,25 +39,15 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             nhs_selectInput(
               inputId = ns("input_region_metric"),
               label = "Metric",
-              choices = c(
-                "% of Total Annual Number of Prescription Items" = "PROP_ITEMS",
-                "% of Total Annual Drug Cost" = "PROP_NIC",
-                "Number of Prescription Items (PPM)" = "PPM_ITEMS",
-                "Drug Cost (PPM)" = "PPM_COST"
-              ),
+              choices = unique(carehomes2::mod_geo_ch_flag_drug_df$METRIC),
               full_width = TRUE
-            ),
+              ),
             
             # Input 2: BNF Parent
             nhs_selectInput(
               inputId = ns("input_region_bnf_parent"),
               label = "BNF Level",
-              choices = c(
-                "Chapter" = "CHAPTER_DESCR",
-                "Section" = "SECTION_DESCR",
-                "Paragraph" = "PARAGRAPH_DESCR",
-                "Chemical Substance" = "CHEMICAL_SUBSTANCE_BNF_DESCR"
-                ),
+              choices = unique(carehomes2::mod_geo_ch_flag_drug_df$BNF_PARENT),
               full_width = TRUE
               ),
             
@@ -79,7 +69,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             7,
             DT::DTOutput(
               outputId = ns("region_table"),
-              height = "600px"
+              height = "525px"
               )
             ),
           # RHS: 3 charts
@@ -87,16 +77,146 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             5,
             highcharter::highchartOutput(
               outputId = ns("region_chart_one"), 
-              height = "200px"
+              height = "175px"
             ),
             highcharter::highchartOutput(
               outputId = ns("region_chart_two"), 
-              height = "200px"
+              height = "175px"
             ),
             highcharter::highchartOutput(
               outputId = ns("region_chart_three"), 
-              height = "200px"
+              height = "175px"
             )
+            )
+          )
+        ),
+        
+        # Tab 2: ICB -----------------------------------------------------------
+        tabPanel(
+          title = "ICB",
+          br(),
+          h4_tabstop("... ICB ..."),
+          
+          # 3 select-inputs per tab
+          nhs_grid_3_col(
+            
+            # Input 1: Metric
+            nhs_selectInput(
+              inputId = ns("input_icb_metric"),
+              label = "Metric",
+              choices = unique(carehomes2::mod_geo_ch_flag_drug_df$METRIC),
+              full_width = TRUE
+            ),
+            
+            # Input 2: BNF Parent
+            nhs_selectInput(
+              inputId = ns("input_icb_bnf_parent"),
+              label = "BNF Level",
+              choices = unique(carehomes2::mod_geo_ch_flag_drug_df$BNF_PARENT),
+              full_width = TRUE
+            ),
+            
+            # Input 3: BNF Child
+            nhs_selectInput(
+              inputId = ns("input_icb_bnf_child"),
+              label = "BNF Type",
+              choices = NULL,
+              full_width = TRUE
+            )
+            
+          ),
+          
+          # First column with 1 long table
+          fluidPage(
+            
+            # LHS: Single table
+            column(
+              7,
+              DT::DTOutput(
+                outputId = ns("icb_table"),
+                height = "525px"
+              )
+            ),
+            # RHS: 3 charts
+            column(
+              5,
+              highcharter::highchartOutput(
+                outputId = ns("icb_chart_one"), 
+                height = "175px"
+              ),
+              highcharter::highchartOutput(
+                outputId = ns("icb_chart_two"), 
+                height = "175px"
+              ),
+              highcharter::highchartOutput(
+                outputId = ns("icb_chart_three"), 
+                height = "175px"
+              )
+            )
+          )
+        ),
+        
+        # Tab 3: Local Authority -----------------------------------------------
+        tabPanel(
+          title = "Local Authority",
+          br(),
+          h4_tabstop("... Local Authority ..."),
+          
+          # 3 select-inputs per tab
+          nhs_grid_3_col(
+            
+            # Input 1: Metric
+            nhs_selectInput(
+              inputId = ns("input_lad_metric"),
+              label = "Metric",
+              choices = unique(carehomes2::mod_geo_ch_flag_drug_df$METRIC),
+              full_width = TRUE
+            ),
+            
+            # Input 2: BNF Parent
+            nhs_selectInput(
+              inputId = ns("input_lad_bnf_parent"),
+              label = "BNF Level",
+              choices = unique(carehomes2::mod_geo_ch_flag_drug_df$BNF_PARENT),
+              full_width = TRUE
+            ),
+            
+            # Input 3: BNF Child
+            nhs_selectInput(
+              inputId = ns("input_lad_bnf_child"),
+              label = "BNF Type",
+              choices = NULL,
+              full_width = TRUE
+            )
+            
+          ),
+          
+          # First column with 1 long table
+          fluidPage(
+            
+            # LHS: Single table
+            column(
+              7,
+              DT::DTOutput(
+                outputId = ns("lad_table"),
+                height = "525px"
+              )
+            ),
+            # RHS: 3 charts
+            column(
+              5,
+              highcharter::highchartOutput(
+                outputId = ns("lad_chart_one"), 
+                height = "175px"
+              ),
+              highcharter::highchartOutput(
+                outputId = ns("lad_chart_two"), 
+                height = "175px"
+              ),
+              highcharter::highchartOutput(
+                outputId = ns("lad_chart_three"), 
+                height = "175px"
+              )
             )
           )
         )
@@ -117,10 +237,13 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # Helper functions ---------------------------------------------------------
     
-    # One: get df
-    spline_chart_data = function(df, fy){
+    # One: spline chart
+    spline_chart_plot = function(df, df_select, fy, top_plot = FALSE, bottom_plot = FALSE){
       
-      df %>%
+      # Shared y axis max value across all 3 plots
+      y_axis_max_val = max(c(df$`20/21`, df$`21/22`, df$`22/23`))
+      
+      df = df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
         dplyr::arrange(VALUE) %>%
         dplyr::mutate(
@@ -129,14 +252,10 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           total = max(rank),
           col =  "#f7a35c",
           label = dplyr::case_when(
-            GEOGRAPHY_CHILD == selected_region() ~ paste0(fy, ":  ", VALUE),
+            GEOGRAPHY_CHILD == df_select ~ paste0(fy, ":   ", VALUE),
             TRUE ~ ""
           )
         )
-    }
-    
-    # Two: spline chart
-    spline_chart_plot = function(df, top_plot = FALSE){
       
       hc = highcharter::highchart() %>%
         highcharter::hc_add_series(
@@ -151,12 +270,12 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           )
         ) %>% 
         highcharter::hc_add_series(
-          df %>%  dplyr::filter(GEOGRAPHY_CHILD == selected_region()),
+          df %>%  dplyr::filter(GEOGRAPHY_CHILD == df_select),
           "scatter",
           highcharter::hcaes(index, VALUE, color = col),
           showInLegend = FALSE
         ) %>%
-        highcharter::hc_yAxis(min = 0, max = max(df$VALUE)) %>%
+        highcharter::hc_yAxis(min = 0, max = y_axis_max_val) %>%
         highcharter::hc_xAxis(categories = c(rep("", nrow(df)), nrow(df))) %>%
         highcharter::hc_plotOptions(
           spline = list(
@@ -195,7 +314,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       if(top_plot){
         hc = hc %>% 
           highcharter::hc_title(
-            text = paste0("<b>", df$GEOGRAPHY_CHILD[1], "</b>"),
+            text = paste0("<b>", df_select, "</b>"),
             style = list(
               textAlign = "center",
               fontSize = "18px",
@@ -204,312 +323,337 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           )
       }
       
+      # Add x-axis text if required
+      if(bottom_plot){
+        hc = hc %>% 
+          highcharter::hc_xAxis(
+            title = list(
+              text = paste0("<b>", df$GEOGRAPHY_PARENT[1], " Order</b>"),
+              style = list(
+                textAlign = "center",
+                fontSize = "18px",
+                fontFamily = "arial",
+                color = "black",
+                fontWeight = "bold"
+              )
+            )
+          )
+      }
       hc
-        
     }
     
     # Select Inputs ------------------------------------------------------------
     
-    # The mod df if filtered by select input 1
-    input_region_filter = reactive({
+    # BNF lookup to speed up filtering
+    region_lookup = reactive({
       carehomes2::mod_geo_ch_flag_drug_df %>% 
-        dplyr::filter(
-          GEOGRAPHY_PARENT == "PCD_REGION_NAME",
-          BNF_PARENT == input$input_region_bnf_parent,
-          METRIC == input$input_region_metric
-        )
+        dplyr::filter(GEOGRAPHY_PARENT == "Region") %>% 
+        dplyr::select(BNF_PARENT, BNF_CHILD) %>% 
+        dplyr::distinct() %>% 
+        dplyr::arrange(BNF_CHILD)
     })
     
-    # Observe the filtered mod df
-    observeEvent(input_region_filter(), {
-      choices = unique(input_region_filter()$BNF_CHILD)
+    # BNF lookup to speed up filtering
+    icb_lookup = reactive({
+      carehomes2::mod_geo_ch_flag_drug_df %>% 
+        dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>% 
+        dplyr::select(BNF_PARENT, BNF_CHILD) %>% 
+        dplyr::distinct() %>% 
+        dplyr::arrange(BNF_CHILD)
+    })
+    
+    # BNF lookup to speed up filtering
+    lad_lookup = reactive({
+      carehomes2::mod_geo_ch_flag_drug_df %>% 
+        dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>% 
+        dplyr::select(BNF_PARENT, BNF_CHILD) %>% 
+        dplyr::distinct() %>% 
+        dplyr::arrange(BNF_CHILD)
+    })
+    
+    # Region: observe bnf parent choice
+    observeEvent(input$input_region_bnf_parent, {
+
+      choices = region_lookup() %>% 
+        dplyr::filter(BNF_PARENT == input$input_region_bnf_parent) %>% 
+        dplyr::select(BNF_CHILD) %>% 
+        dplyr::pull()
+      
       updateSelectInput(inputId = "input_region_bnf_child", choices = choices)
     })
     
-    # Parent df to create 3 spline charts
+    # Region: observe icb parent choice
+    observeEvent(input$input_icb_bnf_parent, {
+
+      choices = icb_lookup() %>% 
+        dplyr::filter(BNF_PARENT == input$input_icb_bnf_parent) %>% 
+        dplyr::select(BNF_CHILD) %>% 
+        dplyr::pull()
+
+      updateSelectInput(inputId = "input_icb_bnf_child", choices = choices)
+    })
+    
+    # Region: observe lad parent choice
+    observeEvent(input$input_lad_bnf_parent, {
+
+      choices = lad_lookup() %>% 
+        dplyr::filter(BNF_PARENT == input$input_lad_bnf_parent) %>% 
+        dplyr::select(BNF_CHILD) %>% 
+        dplyr::pull()
+
+      updateSelectInput(inputId = "input_lad_bnf_child", choices = choices)
+    })
+    
+    # Initial df from select inputs --------------------------------------------
+    
+    # Region: df after 4 initial filters applied
     region_df = reactive({
       
       # Ensure select input required
       req(input$input_region_bnf_child)
+      req(input$input_region_bnf_parent)
+      req(input$input_region_metric)
       
-      # Filter by selected bnf child and arrange values
-      input_region_filter() %>% 
-        dplyr::filter(BNF_CHILD == input$input_region_bnf_child) %>% 
+      # Filter, pivot an rename
+      carehomes2::mod_geo_ch_flag_drug_df %>% 
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "Region",
+          BNF_PARENT == input$input_region_bnf_parent,
+          BNF_CHILD == input$input_region_bnf_child,
+          METRIC == input$input_region_metric
+        ) %>% 
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
+          GEOGRAPHY_PARENT,
           GEOGRAPHY_CHILD,
           `20/21` = `2020/21`, 
           `21/22` = `2021/22`, 
           `22/23` = `2022/23`
-          ) %>%
-        dplyr::arrange(GEOGRAPHY_CHILD) 
+        ) %>%
+        dplyr::arrange(GEOGRAPHY_CHILD)
     })
     
-    # LHS: Table ---------------------------------------------------------------
+    # Icb: df after 4 initial filters applied
+    icb_df = reactive({
+      
+      # Ensure select input required
+      req(input$input_icb_bnf_child)
+      req(input$input_icb_bnf_parent)
+      req(input$input_icb_metric)
+      
+      # Filter, pivot an rename
+      carehomes2::mod_geo_ch_flag_drug_df %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "ICB",
+          BNF_PARENT == input$input_icb_bnf_parent,
+          BNF_CHILD == input$input_icb_bnf_child,
+          METRIC == input$input_icb_metric
+        ) %>%
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+        dplyr::select(
+          GEOGRAPHY_PARENT,
+          GEOGRAPHY_CHILD,
+          `20/21` = `2020/21`, 
+          `21/22` = `2021/22`, 
+          `22/23` = `2022/23`
+        ) %>%
+        dplyr::arrange(GEOGRAPHY_CHILD)
+    })
     
-    # Initial table
+    # Lad: df after 4 initial filters applied
+    lad_df = reactive({
+      
+      # Ensure select input required
+      req(input$input_lad_bnf_child)
+      req(input$input_lad_bnf_parent)
+      req(input$input_lad_metric)
+      
+      # Filter, pivot an rename
+      carehomes2::mod_geo_ch_flag_drug_df %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "Local Authority",
+          BNF_PARENT == input$input_lad_bnf_parent,
+          BNF_CHILD == input$input_lad_bnf_child,
+          METRIC == input$input_lad_metric
+        ) %>%
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+        dplyr::select(
+          GEOGRAPHY_PARENT,
+          GEOGRAPHY_CHILD,
+          `20/21` = `2020/21`, 
+          `21/22` = `2021/22`, 
+          `22/23` = `2022/23`
+        ) %>%
+        dplyr::arrange(GEOGRAPHY_CHILD)
+    })
+    
+    # LHS: Initial table ------------------------------------------------------
+    
+    # 3 x Default row select
+    index_region = reactiveVal(1)
+    index_icb = reactiveVal(1)
+    index_lad = reactiveVal(1)
+    
+    # Function for each table
+    geo_table = function(df, df_select, geo_name){
+
+      df %>%
+        dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
+        dplyr::select(-GEOGRAPHY_PARENT) %>%
+        dplyr::rename_with(
+          \(cols) purrr::map_vec(
+            cols,
+            \(col) {
+              span(class = "nhsuk-body-s", style = "font-size: 14px;", col) %>%
+                as.character()
+            }
+          )
+        ) %>%
+        DT::datatable(
+          escape = FALSE,
+          rownames = FALSE,
+          selection = list(mode = "single", target = "row", selected = df_select),
+          options = list(
+            scrollCollapse = TRUE,
+            paging = FALSE,
+            scrollY = "350px",
+            overflow = "scroll",
+            rowCallback = JS(
+              "function(row, data) {",
+              "  if (row === 50) {",  # Set the initial view at row index 10
+              "    var table = $('#myTable').DataTable();",
+              "    table.row(row).scrollTo();",
+              "  }",
+              "}"
+            )
+          )
+        ) %>%
+        DT::formatStyle(columns = 1:4, `font-size` = "14px", `width` = "4px")
+    }
+    
+    # Region: Initial table
     output$region_table = DT::renderDT({
       
-      DT::datatable(
-        data = region_df() %>% dplyr::rename_at("GEOGRAPHY_CHILD", ~"Region"),
-        escape = FALSE,
-        rownames = FALSE,
-        #selection = list(mode = "single"),
-        selection = list(mode = "single", target = "row", selected = 1, nrow = 1, ncol = 1),
-        options = list(
-          scrollCollapse = TRUE,
-          paging = FALSE,
-          scrollY = "350px",
-          overflow = "scroll"
-          )
-        )%>%
-        DT::formatStyle(columns = 1:4, `font-size` = "14px", `width` = "6px")
+      # Ensure select input required
+      req(input$input_region_bnf_child)
+      req(input$input_region_bnf_parent)
+      req(input$input_region_metric)
+      
+      # Plot table
+      geo_table(region_df(), index_region(), "Region")
     })
     
-    # now we can get the row/rowname as follows:
+    # Icb: Initial table
+    output$icb_table = DT::renderDT({
+      
+      # Ensure select input required
+      req(input$input_icb_bnf_child)
+      req(input$input_icb_bnf_parent)
+      req(input$input_icb_metric)
+      
+      # Plot table
+      geo_table(icb_df(), index_icb(), "ICB")
+    })
+    
+    # LA: Initial table
+    output$lad_table = DT::renderDT({
+      
+      # Ensure select input required
+      req(input$input_lad_bnf_child)
+      req(input$input_lad_bnf_parent)
+      req(input$input_lad_metric)
+      
+      # Plot table
+      geo_table(lad_df(), index_lad(), "Local Authority")
+    })
+    
+    # LHS: table affects -------------------------------------------------------
+    
+    # Region: Observe and retain row select index
+    observeEvent(input$region_table_rows_selected, {
+      index_region(input$region_table_rows_selected)
+    })
+    
+    # Icb: Observe and retain row select index
+    observeEvent(input$icb_table_rows_selected, {
+      index_icb(input$icb_table_rows_selected)
+    })
+    
+    # Lad: Observe and retain row select index
+    observeEvent(input$lad_table_rows_selected, {
+      index_lad(input$lad_table_rows_selected)
+    })
+
+    # Region: get selected row category name
     selected_region <- reactive({
       region_df() %>% 
-        dplyr::filter(dplyr::row_number() == input$region_table_rows_selected) %>% 
+        dplyr::filter(dplyr::row_number() == index_region()) %>% 
         dplyr::select(GEOGRAPHY_CHILD) %>% 
         dplyr::pull()
     }) 
     
-    # Chart 1: FY 2020/21
-    # observeEvent(region_table_click(),{
-    #   
-    #   # Render table with FYs pivoted to columns
-    #   output$region_table = reactable::renderReactable({
-    #     
-    #     # Ensure select input required
-    #     req(region_table_click())
-    #     
-    #     # Reactable table
-    #     region_df() %>% 
-    #       tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>% 
-    #       dplyr::select(Region = GEOGRAPHY_CHILD, `2020/21`, `2021/22`, `2022/23`) %>% 
-    #       dplyr::arrange(Region) %>% 
-    #       reactable::reactable(
-    #         selection = "single",
-    #         onClick = "select",
-    #         defaultSelected = region_table_click(),
-    #         searchable = TRUE,
-    #         pagination = FALSE,
-    #         striped = TRUE,
-    #         highlight = TRUE,
-    #         bordered = TRUE,
-    #         theme = reactable::reactableTheme(
-    #           borderColor = "#dfe2e5",
-    #           stripedColor = "#f6f8fa",
-    #           highlightColor = "#f0f5f9",
-    #           searchInputStyle = list(width = "100%"),
-    #           style = list(fontFamily = "Arial")
-    #         ),
-    #         columns = list(
-    #           `2020/21` = reactable::colDef(maxWidth = 75),
-    #           `2021/22` = reactable::colDef(maxWidth = 75),
-    #           `2022/23` = reactable::colDef(maxWidth = 75)
-    #       )
-    #     )
-    #   })
-    # })
+    # Icb: get selected row category name
+    selected_icb <- reactive({
+      icb_df() %>% 
+        dplyr::filter(dplyr::row_number() == index_icb()) %>% 
+        dplyr::select(GEOGRAPHY_CHILD) %>% 
+        dplyr::pull()
+    }) 
+    
+    # Lad: get selected row category name
+    selected_lad <- reactive({
+      lad_df() %>% 
+        dplyr::filter(dplyr::row_number() == index_lad()) %>% 
+        dplyr::select(GEOGRAPHY_CHILD) %>% 
+        dplyr::pull()
+    }) 
     
     # RHS: 3 charts ------------------------------------------------------------
     
-    # Region spline chart data
-    region_spline_one = reactive({
-      spline_chart_data(region_df(), "20/21")
-      })
-    
-    region_spline_two = reactive({
-      spline_chart_data(region_df(), "21/22")
-    })
-    
-    region_spline_three = reactive({
-      spline_chart_data(region_df(), "22/23")
-    })
-
-    # Region spline chart plots
+    # Region charts
     output$region_chart_one = highcharter::renderHighchart({
-      spline_chart_plot(region_spline_one(), top_plot = TRUE)
+      spline_chart_plot(region_df(), selected_region(), "20/21", top_plot = TRUE)
     })
     
     output$region_chart_two = highcharter::renderHighchart({
-      spline_chart_plot(region_spline_two())
-      
+      spline_chart_plot(region_df(), selected_region(), "21/22")
     })
     
     output$region_chart_three = highcharter::renderHighchart({
-      spline_chart_plot(region_spline_three())
+      spline_chart_plot(region_df(), selected_region(), "22/23", bottom_plot = TRUE)
     })
     
+    # Icb charts
+    output$icb_chart_one = highcharter::renderHighchart({
+      spline_chart_plot(icb_df(), selected_icb(), "20/21", top_plot = TRUE)
+    })
     
-
+    output$icb_chart_two = highcharter::renderHighchart({
+      spline_chart_plot(icb_df(), selected_icb(), "21/22")
+    })
+    
+    output$icb_chart_three = highcharter::renderHighchart({
+      spline_chart_plot(icb_df(), selected_icb(), "22/23", bottom_plot = TRUE)
+    })
+    
+    # Lad charts
+    output$lad_chart_one = highcharter::renderHighchart({
+      spline_chart_plot(lad_df(), selected_lad(), "20/21", top_plot = TRUE)
+    })
+    
+    output$lad_chart_two = highcharter::renderHighchart({
+      spline_chart_plot(lad_df(), selected_lad(), "21/22")
+    })
+    
+    output$lad_chart_three = highcharter::renderHighchart({
+      spline_chart_plot(lad_df(), selected_lad(), "22/23", bottom_plot = TRUE)
+    })
   })
 }
 
-
-
-# reactable::reactable(
-#   df_two %>% dplyr::inner_join(df_bar),
-#   selection = "single",
-#   onClick = "select",
-#   searchable = TRUE,
-#   pagination = FALSE,
-#   striped = TRUE,
-#   highlight = TRUE,
-#   bordered = TRUE,
-#   theme = reactable::reactableTheme(
-#     borderColor = "#dfe2e5",
-#     stripedColor = "#f6f8fa",
-#     highlightColor = "#f0f5f9",
-#     searchInputStyle = list(width = "100%"),
-#     style = list(fontFamily = "Arial")
-#   ),
-#   columns = list(
-#     Trend = reactable::colDef(cell = function(value, index){
-#       sparkline::sparkline(
-#         df_bar$Trend[[index]],
-#         #chartRangeMin = min_val,
-#         spotRadius = 0
-#       )
-#     }),
-#     `2020/21` = reactable::colDef(maxWidth = 75),
-#     `2021/22` = reactable::colDef(maxWidth = 75),
-#     `2022/23` = reactable::colDef(maxWidth = 75),
-#     Trend = reactable::colDef(maxWidth = 40)
-#   )
-# )
-
-
-
-
-#---------------------------------
-
-# a = carehomes2::mod_geo_ch_flag_drug_df %>% 
-#   dplyr::filter(
-#     GEOGRAPHY_PARENT == "PCD_REGION_NAME",
-#     BNF_PARENT == "CHAPTER_DESCR",
-#     METRIC == "PROP_ITEMS"
-#   )
-# 
-#   
-#   # Filter by selected bnf child and arrange values
-# b = a %>% 
-#     dplyr::filter(BNF_CHILD == "Appliances") %>% 
-#     tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
-#     dplyr::select(
-#       GEOGRAPHY_CHILD,
-#       `20/21` = `2020/21`, 
-#       `21/22` = `2021/22`, 
-#       `22/23` = `2022/23`
-#     ) %>%
-#     dplyr::arrange(GEOGRAPHY_CHILD)
-# 
-# c = b %>% 
-#   dplyr::rename(VALUE = `20/21`) %>%
-#   dplyr::arrange(VALUE) %>%
-#   dplyr::mutate(
-#     index = dplyr::row_number(),
-#     rank = rev(dplyr::row_number()),
-#     total = max(rank),
-#     col =  "#f7a35c",
-#     label = dplyr::case_when(
-#       rank == 1 ~ as.character(VALUE),
-#       index == 1 ~ as.character(VALUE),
-#       GEOGRAPHY_CHILD == "Midlands" ~ paste0(GEOGRAPHY_CHILD, ": ", VALUE),
-#       TRUE ~ ""
-#     ),
-#     text = paste0("Ranked ", index, " / ", rank, " in 20/21")
-#   )
-
-
-
-
-
-
-# library(shiny)
-# library(reactable)
-# 
-# ui <- fluidPage(
-#   reactableOutput("table")
-# )
-# 
-# server <- function(input, output, session) {
-#   # Reactive values
-#   selectedRow <- reactiveVal(NULL)
-#   
-#   # Render the reactable component
-#   output$table <- renderReactable({
-#     reactable(
-#       iris,
-#       selection = "single",
-#       defaultSorted = "Sepal.Length",
-#       defaultSortOrder = "asc",
-#       defaultPageSize = 10,
-#       highlight = TRUE,
-#       defaultSelected = selectedRow()
-#     )
-#   })
-#   
-#   # Update the selected row
-#   observeEvent(input$table_selected, {
-#     selectedRow(input$table_selected)
-#   })
-#   
-#   # Update the reactable when sorting or filtering occurs
-#   observeEvent(input$table_sorting, {
-#     selectedRowIndex <- which(reactableData()$data$Sepal.Length == selectedRow())
-#     updateReactable(session, "table", selected = selectedRowIndex)
-#   })
-#   
-#   observeEvent(input$table_filtering, {
-#     selectedRowIndex <- which(reactableData()$data$Sepal.Length == selectedRow())
-#     updateReactable(session, "table", selected = selectedRowIndex)
-#   })
-# }
-# 
-# shinyApp(ui, server)
-
-# Colours for reactable table
-# get_colors = function(df){
-#   
-#   # Vector of metric values
-#   vec = df %>% dplyr::select(VALUE) %>% dplyr::pull()
-#   
-#   # Normalised values
-#   normalized = (vec - min(vec)) / (max(vec) - min(vec))
-#   
-#   # Colour scale
-#   color_ramp <-  rgb(colorRamp(
-#     c("white", nhsbsaR::palette_nhsbsa()[1]))(normalized), maxColorValue=255
-#   )
-# }
 
 ## To be copied in the UI
 # mod_07_geo_ch_flag_drug_ui("geo_ch_flag_drug")
 
 ## To be copied in the server
 # mod_07_geo_ch_flag_drug_server("geo_ch_flag_drug")
-
-
-
-# server <- function(input, output,session) {
-#   
-#   # the reactive where we filter/sort/modify the data
-#   reactive_df <- reactive({
-#     mtcars[order(mtcars$cyl),]
-#   })
-#   
-#   # This datatable uses the reactive directly, so no more modifications
-#   output$table <- DT::renderDataTable({
-#     DT::datatable(reactive_df())
-#   })
-#   
-#   # now we can get the row/rowname as follows:
-#   output$selectedcar <- renderText({
-#     paste0(rownames(reactive_df())[input$table_rows_selected], collapse = ", ")
-#   }) 
-# } 
-
-
-  
