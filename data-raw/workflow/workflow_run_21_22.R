@@ -2,7 +2,7 @@
 source("data-raw/workflow/workflow_packages.R")
 source("data-raw/workflow/workflow_helpers.R")
 source("data-raw/workflow/workflow_production.R")
-b <- Sys.time()
+
 # Specify variables to retain at end of each script
 keep_vars = c(ls(), 'keep_vars')
 
@@ -24,12 +24,12 @@ create_ab_plus_cqc_data(
   end_date =   "2022-03-31"
 )
 
-# 4. Create form level fact for records with a ch-postcode: ~11hr
+# 4. Create form level fact for records with a ch-postcode: ~11-14hr
 create_form_level_patient_addresses(
   address_data = "INT646_ABP_CQC_20210401_20220331"
 )
 
-# 5. Match patient details against ch-postcode uprn and process: 0.5hr
+# 5. Match patient details against ch-postcode uprn and process: ~30-40 mins
 create_care_home_address_match(
   patient_address_data = "INT646_FORMS_20210401_20220331",
   lookup_address_data = "INT646_ABP_CQC_20210401_20220331",
@@ -39,13 +39,8 @@ create_care_home_address_match(
 # 6. Create postcode lookup table (latest available mappings) for joining in the next step: ~5 min
 # create_postcode_lookup() # Run once in first epoch script
 
-b <- Sys.time()
-print(paste0(b, ": Starting step 7..."))
-# 7. Join to fact table and get non ch-postcode records within time frame: 11hr
+# 7. Join to fact table and get non ch-postcode records within time frame: ~15-17hr
 create_matched_prescription_base_table(
   match_data = "INT646_MATCH_20210401_20220331",
   form_data = "INT646_FORMS_20210401_20220331"
 )
-e <- Sys.time()
-print(paste0(e, ": Step 7 finished"))
-print(paste0("Step 7 took ", format(as.numeric(e - b), digits = 3)))
