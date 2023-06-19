@@ -27,18 +27,17 @@
 #' @docType data
 #' @keywords datasets
 #' @name metrics_by_geo_and_ch_flag
-#' @usage data(metrics_by_geo_and_ch_flag)
+#' @usage carehomes2::metrics_by_geo_and_ch_flag
 #' @format A data frame with 784 rows and 22 variables
 #' 
 "metrics_by_geo_and_ch_flag"
 
-#' \code{geojson} data for boundaries at Region, ICB and Local Authority level
+#' GIS data for boundaries at Region, ICB and Local Authority level
 #'
-#' \itemize{
-#'   \item GEOGRAPHY. Names: one of Region, ICB or Local Authority
-#'   \item SUB_GEOGRAPHY_CODE. region or organisation code
-#'   \item SUB_GEOGRAPHY_NAME. region or organisation name
-#'   \item GEOMETRY. boundary polygons
+#'  \itemize{
+#'     \item Region. \code{Featurecollection} of 7 \code{Feature}s
+#'     \item ICB. \code{Featurecollection} of 42 \code{Feature}s
+#'     \item Local Authority. \code{Featurecollection} of 309 \code{Feature}s
 #' }
 #'
 #' @source { Data and Advanced Analytics Team at NHS BSA, using data from the
@@ -47,13 +46,8 @@
 #' @docType data
 #' @keywords datasets
 #' @name geo_data
-#' @usage data(geo_data)
-#' @format A named \code{list}:
-#'   \itemize{
-#'     \item Region. 7 rows of geojson data
-#'     \item ICB x rows of geojson data
-#'     \item Local Authority x rows of geojson data
-#'   }
-#'   
+#' @usage carehomes2::geo_data
+#' @format A named \code{list}, created from \href{https://geojson.org/}{geojson}
+#'   using \code{jsonlite::fromJSON(simplifyVector = FALSE)}
 #' 
 "geo_data"
