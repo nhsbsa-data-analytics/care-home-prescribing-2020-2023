@@ -73,7 +73,6 @@ check_sub_geo_names <- list(
   )
 ) %>% print()
 
-
 # Data prep ---------------------------------------------------------------
 
 ## Setup ------------------------------------------------------------------
@@ -152,13 +151,12 @@ aggregate_by_geo <- function(geography_name) {
 
 ## Process ----------------------------------------------------------------
 
-### Create local df -------------------------------------------------------
-metrics_by_geo_and_ch_flag_df <- names(geographies)[2] %>% #:4] %>% 
+### Collect data ----------------------------------------------------------
+metrics_by_geo_and_ch_flag_df <- names(geographies)[2:4] %>% 
   purrr::map(aggregate_by_geo) %>%
   purrr::list_rbind()
 
-
-### Complete  -------------------------------------------------------------
+### Complete --------------------------------------------------------------
 metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df %>%
   tidyr::complete(
     # Only geographies that already exist
@@ -167,7 +165,7 @@ metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df %>%
       SUB_GEOGRAPHY_CODE,
       SUB_GEOGRAPHY_NAME
     ),
-    # All years, months and CH flags
+    # All years and CH flags
     FY,
     CH_FLAG,
     fill = list(
@@ -180,7 +178,6 @@ metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df %>%
       PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = NA_real_
     )
   )
-
 
 ### Statistical disclosure control ----------------------------------------
 metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
@@ -253,8 +250,8 @@ metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
   )
   
 
-### Save ------------------------------------------------------------------
+## Save -------------------------------------------------------------------
 usethis::use_data(metrics_by_geo_and_ch_flag, overwrite = TRUE)
 
-### Cleanup ---------------------------------------------------------------
+## Cleanup ----------------------------------------------------------------
 DBI::dbDisconnect(con)

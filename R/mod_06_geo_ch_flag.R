@@ -132,22 +132,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Pre-process data ----------------------------------------------------
     
     # Keep only relevant columns
-    data <- carehomes2::metrics_by_geo_and_ch_flag # %>% 
-      # dplyr::transmute(
-      #   .data$FY,
-      #   .data$GEOGRAPHY,
-      #   .data$SUB_GEOGRAPHY_NAME,
-      #   .data$SUB_GEOGRAPHY_CODE,
-      #   CH_FLAG = as.logical(.data$CH_FLAG),
-      #   TOTAL_PATIENTSSDC_TOTAL_PATIENTS,
-      #   ITEMS_PPM = .data$SDC_ITEMS_PER_PATIENT_MONTH,
-      #   COST_PPM = .data$SDC_COST_PER_PATIENT_MONTH,
-      #   TOTAL_PATIENTS_UNIQ_MED = .data$SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
-      #   UNIQ_MEDS_PPM = .data$SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
-      #   TOTAL_PATIENTS_GTE_TEN = .data$SDC_TOTAL_PATIENTS_TEN_OR_MORE,
-      #   PCT_PX_GTE_TEN_PPM = .data$SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH
-      # ) %>% 
-      # dplyr::filter(!is.na(.data$SUB_GEOGRAPHY_NAME))
+    data <- carehomes2::metrics_by_geo_and_ch_flag
     
     # Reactive data -------------------------------------------------------
     

@@ -1,22 +1,22 @@
-#' Aggregated prescribing data, with breakdowns by geography, demography,
-#' gender, age band and carehome type
+#' Aggregated prescribing data broken down by geography and carehome or
+#' non-carehome
 #'
 #' \itemize{
 #'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
 #'   \item GEOGRAPHY. Region, ICB or Local Authority
 #'   \item SUB_GEOGRAPHY_CODE. region or organisational codes
 #'   \item SUB_GEOGRAPHY_NAME. name in breakdown
-#'   \item CH_FLAG. values apply to Carehomes, \code{TRUE} or \code{FALSE}
+#'   \item CH_FLAG. do metrics apply to carehomes?, \code{TRUE} or \code{FALSE}
 #'   \item TOTAL_PATIENTS.number of distinct patients
-#'   \item ITEMS_PPM. average number of distinct items per patient per month
-#'   \item COST_PPM. average cost of items per patient per month
-#'   \item TOTAL_PATIENTS_UNIQ_MED. total unique medicines
-#'   \item UNIQ_MEDS_PPM. average number of unique medicines per patient per 
-#'     month
-#'   \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10 or more
-#'     unique medicines
-#'   \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10 or more 
-#'     unique medicines per month
+#'   \item ITEMS_PPM. mean number of distinct items per patient per month
+#'   \item COST_PPM. mean cost of items per patient per month
+#'   \item TOTAL_PATIENTS_UNIQ_MED. total patients on more than 1 unique medicines
+#'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient on more than
+#'     1 unique medicine per month
+#'   \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10+ unique
+#'     medicines
+#'   \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10+ unique
+#'     medicines per month
 #' }
 #'
 #' @source { Data and Advanced Analytics Team at NHS BSA, using
