@@ -1,8 +1,11 @@
 # Initial setup -----------------------------------------------------------
 
-library(tidyverse)
-library(glue)
+library(dplyr)
 library(dbplyr)
+library(tidyr)
+library(stringr)
+library(glue)
+library(purrr)
 devtools::load_all()
 
 # Set up connection to DALP
@@ -13,16 +16,19 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 ## Setup ------------------------------------------------------------------
 
 PCD <- con %>%
-  tbl(from = "INT646_POSTCODE_LOOKUP") %>% 
+  tbl(from = "INT646_POSTCODE_LOOKUP") %>%
   select(ends_with("CODE"), ends_with("NAME")) %>%
   distinct() %>%
   collect()
 
 transform_PCD <- function(data, geography) {
   data %>%
-    select(starts_with(glue("PCD_{geography}"))) %>%
+    select(starts_with(glue("PCD_{geography}"))) %>% 
     distinct() %>%
-    rename_with(\(x) str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY"))
+    rename_with(
+      \(x) str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY")
+    ) %>%
+    filter(!is.na(SUB_GEOGRAPHY_NAME))
 }
 
 PCD_list <- list(
@@ -31,19 +37,7 @@ PCD_list <- list(
   LAD    = PCD %>% transform_PCD("LAD")
 )
 
-GIS_all <- map_df %>% as_tibble() %>% select(-GEOMETRY)
-
-GIS_list <- list(
-  REGION = GIS_all %>% filter(GEOGRAPHY == "Region"),
-  ICB    = GIS_all %>%
-    filter(GEOGRAPHY == "ICB") %>%
-    mutate(
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, "Integrated Care Board", "ICB"),
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " the ", " The "),
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " of ", " Of "),
-    ),
-  LAD    = GIS_all %>% filter(GEOGRAPHY == "Local Authority")
-)
+GIS_list <- geo_data_validation
 
 # Check sub-geography codes and names match exactly between PCD and GIS; you
 # should get character(0) for in_GIS_only and NA or character(0) for in_PCD_only
@@ -80,7 +74,6 @@ check_sub_geo_names <- list(
 ) %>% print()
 
 
-
 # Data prep ---------------------------------------------------------------
 
 ## Setup ------------------------------------------------------------------
@@ -89,12 +82,8 @@ check_sub_geo_names <- list(
 base_db <- con %>%
   tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
-# Add a dummy overall column - we keep CH and non-CH records for mod 06
-base_db <- base_db %>%
-  mutate(OVERALL = "Overall")
-
 # Aggregate by a geography
-metrics_by_geo_and_ch_flag <- function(geography_name) {
+aggregate_by_geo <- function(geography_name) {
   # Identify geography cols
   geography_cols <- geographies[[geography_name]] %>%
     purrr::set_names(
@@ -121,11 +110,9 @@ metrics_by_geo_and_ch_flag <- function(geography_name) {
       TOTAL_COST = sum(ITEM_PAY_DR_NIC * 0.01),
       UNIQUE_MEDICINES = n_distinct(
         ifelse(
-          test = substr(BNF_CHEMICAL_SUBSTANCE, 1, 2) %in%
-            c(01, 02, 03, 04, 06, 07, 08, 09, 10),
-            # c(paste0("0", as.character(1:9)), "10"),
-          yes = CHEMICAL_SUBSTANCE_BNF_DESCR,
-          no = NA_character_
+          as.integer(substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)) %in% c(1:4, 6:10),
+          CHEMICAL_SUBSTANCE_BNF_DESCR,
+          NA_character_
         )
       )
     ) %>%
@@ -138,40 +125,41 @@ metrics_by_geo_and_ch_flag <- function(geography_name) {
       # Unique medicines
       TOTAL_PATIENTS_UNIQUE_MEDICINES = n_distinct(
         ifelse(
-          test = UNIQUE_MEDICINES > 1,
-          yes = NHS_NO,
-          NA
+          UNIQUE_MEDICINES > 1,
+          NHS_NO,
+          NA_integer_
         )
       ),
       UNIQUE_MEDICINES_PER_PATIENT_MONTH = mean(UNIQUE_MEDICINES),
       TOTAL_PATIENTS_TEN_OR_MORE = n_distinct( # For SDC
         ifelse(
-          test = UNIQUE_MEDICINES >= 10,
-          yes = NHS_NO,
-          NA
+          UNIQUE_MEDICINES >= 10,
+          NHS_NO,
+          NA_integer_
         )
       )
     ) %>%
     ungroup() %>%
     mutate(
       PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
-        test = TOTAL_PATIENTS_UNIQUE_MEDICINES == 0,
-        yes = NA_real_,
-        no = TOTAL_PATIENTS_TEN_OR_MORE / TOTAL_PATIENTS_UNIQUE_MEDICINES * 100
+        TOTAL_PATIENTS_UNIQUE_MEDICINES == 0,
+        NA_real_,
+        TOTAL_PATIENTS_TEN_OR_MORE / TOTAL_PATIENTS_UNIQUE_MEDICINES * 100
       )
     ) %>%
-    nhsbsaR::collect_with_parallelism(32)
+    nhsbsaR::collect_with_parallelism(8)
 }
 
 ## Process ----------------------------------------------------------------
 
 ### Create local df -------------------------------------------------------
-metrics_by_geo_and_ch_flag_df <- names(geographies)[2:4] %>% 
-  purrr::map(metrics_by_geo_and_ch_flag) %>%
+metrics_by_geo_and_ch_flag_df <- names(geographies)[2] %>% #:4] %>% 
+  purrr::map(aggregate_by_geo) %>%
   purrr::list_rbind()
 
+
 ### Complete  -------------------------------------------------------------
-metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
+metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df %>%
   tidyr::complete(
     # Only geographies that already exist
     tidyr::nesting(
@@ -193,8 +181,9 @@ metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
     )
   )
 
+
 ### Statistical disclosure control ----------------------------------------
-metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
+metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
   mutate(
     SDC = ifelse(TOTAL_PATIENTS %in% 1:4, TRUE, FALSE),
     SDC_TOTAL_PATIENTS = ifelse(
@@ -237,13 +226,35 @@ metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   ) %>%
   select(-SDC)
 
+
 ### Format ----------------------------------------------------------------
-metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
+metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
+  mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
+  filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
   format_data_raw("CH_FLAG") %>% 
   suppressWarnings() # We do not have Overall and PCN in this data
 
+
+### Keep only relevant columns / rename -----------------------------------
+metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>% 
+  dplyr::transmute(
+    FY,
+    GEOGRAPHY,
+    SUB_GEOGRAPHY_NAME,
+    SUB_GEOGRAPHY_CODE,
+    CH_FLAG,
+    TOTAL_PATIENTS = SDC_TOTAL_PATIENTS,
+    ITEMS_PPM = SDC_ITEMS_PER_PATIENT_MONTH,
+    COST_PPM = SDC_COST_PER_PATIENT_MONTH,
+    TOTAL_PATIENTS_UNIQ_MED = SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
+    UNIQ_MEDS_PPM = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
+    TOTAL_PATIENTS_GTE_TEN = SDC_TOTAL_PATIENTS_TEN_OR_MORE,
+    PCT_PX_GTE_TEN_PPM = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH
+  )
+  
+
 ### Save ------------------------------------------------------------------
-usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
+usethis::use_data(metrics_by_geo_and_ch_flag, overwrite = TRUE)
 
 ### Cleanup ---------------------------------------------------------------
 DBI::dbDisconnect(con)

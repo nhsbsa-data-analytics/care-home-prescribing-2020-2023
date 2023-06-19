@@ -24,7 +24,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
       "region, local authority and ICB."
     ),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient month for older care home patients in England by geography (2020/21)",
+      heading = "Estimated average prescribing metrics per patient month for 
+                 older care home patients in England by geography",
       div(
         class = "nhsuk-grid-row",
         div(
@@ -122,34 +123,31 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Map metric column names to download data names
     dl_data_metric_names <- c(
-      COST_PPM           = "Drug cost ppm",
+      COST_PPM           = "Drug cost ppm (\u00A3)",
       ITEMS_PPM          = "Number of prescription items ppm",
       UNIQ_MEDS_PPM      = "Number of unique medicines ppm",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm"
+      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)"
     )
     
     # Pre-process data ----------------------------------------------------
     
     # Keep only relevant columns
-    data <- carehomes2::metrics_by_geo_and_ch_flag_df %>% 
-      dplyr::transmute(
-        .data$FY,
-        .data$GEOGRAPHY,
-        .data$SUB_GEOGRAPHY_NAME,
-        .data$SUB_GEOGRAPHY_CODE,
-        CH_FLAG = as.logical(.data$CH_FLAG),
-        TOTAL_PATIENTS = .data$SDC_TOTAL_PATIENTS,
-        ITEMS_PPM = .data$SDC_ITEMS_PER_PATIENT_MONTH,
-        COST_PPM = .data$SDC_COST_PER_PATIENT_MONTH,
-        TOTAL_PATIENTS_UNIQ_MED = .data$SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
-        UNIQ_MEDS_PPM = .data$SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
-        TOTAL_PATIENTS_GTE_TEN = .data$SDC_TOTAL_PATIENTS_TEN_OR_MORE,
-        PCT_PX_GTE_TEN_PPM = .data$SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH
-      )
-    
-    map_list <- carehomes2::map_df %>%
-      geojsonsf::sf_geojson() %>%
-      jsonlite::fromJSON(simplifyVector = FALSE)
+    data <- carehomes2::metrics_by_geo_and_ch_flag # %>% 
+      # dplyr::transmute(
+      #   .data$FY,
+      #   .data$GEOGRAPHY,
+      #   .data$SUB_GEOGRAPHY_NAME,
+      #   .data$SUB_GEOGRAPHY_CODE,
+      #   CH_FLAG = as.logical(.data$CH_FLAG),
+      #   TOTAL_PATIENTSSDC_TOTAL_PATIENTS,
+      #   ITEMS_PPM = .data$SDC_ITEMS_PER_PATIENT_MONTH,
+      #   COST_PPM = .data$SDC_COST_PER_PATIENT_MONTH,
+      #   TOTAL_PATIENTS_UNIQ_MED = .data$SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
+      #   UNIQ_MEDS_PPM = .data$SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
+      #   TOTAL_PATIENTS_GTE_TEN = .data$SDC_TOTAL_PATIENTS_TEN_OR_MORE,
+      #   PCT_PX_GTE_TEN_PPM = .data$SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH
+      # ) %>% 
+      # dplyr::filter(!is.na(.data$SUB_GEOGRAPHY_NAME))
     
     # Reactive data -------------------------------------------------------
     
@@ -157,8 +155,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       data %>%
         dplyr::filter(
           .data$GEOGRAPHY == "Region",
-          .data$FY == "2020/21",
-          !is.na(.data$SUB_GEOGRAPHY_NAME)
+          .data$FY == "2020/21"
         ) %>% 
         dplyr::transmute(
           .data$GEOGRAPHY,
@@ -170,13 +167,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         )
     )
     
-    map_data <- reactiveVal({
-      ml <- map_list
-      ml$features <- 
-        ml$features[which(sapply(ml$features, \(x) x$properties$GEOGRAPHY == "Region"))]
-      
-      ml
-    })
+    map_data <- reactiveVal(carehomes2::geo_data$Region)
     
     observe({
       input$geography
@@ -187,8 +178,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         data %>%
           dplyr::filter(
             .data$GEOGRAPHY == input$geography,
-            .data$FY == input$fy,
-            !is.na(.data$SUB_GEOGRAPHY_NAME)
+            .data$FY == input$fy
           ) %>% 
           dplyr::transmute(
             .data$GEOGRAPHY,
@@ -204,13 +194,7 @@ mod_06_geo_ch_flag_server <- function(id) {
           )
       })
       
-      map_data({
-        ml <- map_list
-        ml$features <- 
-          ml$features[which(sapply(ml$features, \(x) x$properties$GEOGRAPHY == input$geography))]
-        
-        ml
-      })
+      map_data(carehomes2::geo_data[[input$geography]])
     })
     
     # Output functions ----------------------------------------------------
@@ -317,7 +301,8 @@ mod_06_geo_ch_flag_server <- function(id) {
             tabindex = "0"
           ),
           height = "400px",
-          filter = "none"
+          filter = "none",
+          selection = "none"
         ) %>%
         DT::formatStyle(columns = 1:4, `font-size` = "12px") %>%
         DT::formatRound(
@@ -374,12 +359,18 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Download buttons
     mod_nhs_download_server(
       id = "download_data_ch",
-      filename = "data_ch.csv",
+      filename = function() glue::glue(
+        "Carehome {dl_data_metric_names[input$metric]} ",
+        "{input$fy %>% stringr::str_replace('/', '-')}.csv"
+      ),
       export_data = create_download_data(fdata(), "Carehome")
     )
     mod_nhs_download_server(
       id = "download_data_non_ch",
-      filename = "data_non_ch.csv",
+      filename = function() glue::glue(
+        "Non-carehome {dl_data_metric_names[input$metric]} ",
+        "{input$fy %>% stringr::str_replace('/', '-')}.csv"
+      ),
       export_data = create_download_data(fdata(), "Non-carehome")
     )
   })
