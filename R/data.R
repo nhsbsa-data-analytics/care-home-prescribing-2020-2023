@@ -1,5 +1,5 @@
-#' Aggregated prescribing data broken down by geography and carehome or
-#' non-carehome
+#' Aggregated prescribing data broken down by financial year, geography and 
+#' carehome or non-carehome
 #'
 #' \itemize{
 #'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
