@@ -3,28 +3,23 @@
 \docType{data}
 \name{geo_data}
 \alias{geo_data}
-\title{\code{geojson} data for boundaries at Region, ICB and Local Authority level}
+\title{GIS data for boundaries at Region, ICB and Local Authority level}
 \format{
-A named \code{list}:
-  \itemize{
-    \item Region. 7 rows of geojson data
-    \item ICB x rows of geojson data
-    \item Local Authority x rows of geojson data
-  }
+A named \code{list}, created from \href{https://geojson.org/}{geojson}
+  using \code{jsonlite::fromJSON(simplifyVector = FALSE)}
 }
 \source{
 { Data and Advanced Analytics Team at NHS BSA, using data from the
   API provided by \href{https://www.arcgis.com/index.html}{ArcGIS} }
 }
 \usage{
-data(geo_data)
+carehomes2::geo_data
 }
 \description{
 \itemize{
-  \item GEOGRAPHY. Names: one of Region, ICB or Local Authority
-  \item SUB_GEOGRAPHY_CODE. region or organisation code
-  \item SUB_GEOGRAPHY_NAME. region or organisation name
-  \item GEOMETRY. boundary polygons
+    \item Region. \code{Featurecollection} of 7 \code{Feature}s
+    \item ICB. \code{Featurecollection} of 42 \code{Feature}s
+    \item Local Authority. \code{Featurecollection} of 309 \code{Feature}s
 }
 }
 \keyword{datasets}

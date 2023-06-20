@@ -129,9 +129,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)"
     )
     
-    # Pre-process data ----------------------------------------------------
-    
-    # Keep only relevant columns
+    # Base data -----------------------------------------------------------
     data <- carehomes2::metrics_by_geo_and_ch_flag
     
     # Reactive data -------------------------------------------------------
@@ -224,17 +222,13 @@ mod_06_geo_ch_flag_server <- function(id) {
         highcharter::hc_colorAxis(
           min = color_axis_limits$min,
           max = color_axis_limits$max,
-          minColor = substr(min(viridisLite::plasma(n = 2)), 0, 7),
-          maxColor = substr(max(viridisLite::plasma(n = 2)), 0, 7),
           stops = list(
-            c(0, "#0D0887"),
-            c(0.17, "#CC4678"),
-            c(1, "#F0F921")
+            c(0, "#313695"),
+            c(0.5, "#ffffbf"),
+            c(1, "#a50026")
           )
         ) %>% 
-        highcharter::hc_title(
-          text = paste0(ch_status)
-        )
+        highcharter::hc_title(text = ch_status)
     }
     
     # Create datatable
@@ -269,7 +263,11 @@ mod_06_geo_ch_flag_server <- function(id) {
                 substr(col, 3, 7),
                 col
               )
-              span(class = "nhsuk-body-s", style = "font-size: 12px;", short_col_name) %>%
+              span(
+                class = "nhsuk-body-s",
+                style = "font-size: 12px;",
+                short_col_name
+              ) %>%
                 as.character()
             }
           )
@@ -298,7 +296,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create download data
     create_download_data <- function(data, 
-                                  ch_status = c("Carehome", "Non-carehome")) {
+                                     ch_status = c("Carehome", "Non-carehome")) {
       ifelse(
         ch_status == "Carehome",
         data <- data %>% dplyr::filter(.data$CH_FLAG),

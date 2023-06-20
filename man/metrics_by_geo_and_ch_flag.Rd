@@ -3,8 +3,8 @@
 \docType{data}
 \name{metrics_by_geo_and_ch_flag}
 \alias{metrics_by_geo_and_ch_flag}
-\title{Aggregated prescribing data, with breakdowns by geography, demography,
-gender, age band and carehome type}
+\title{Aggregated prescribing data broken down by financial year, geography and 
+carehome or non-carehome}
 \format{
 A data frame with 784 rows and 22 variables
 }
@@ -15,7 +15,7 @@ A data frame with 784 rows and 22 variables
   data in combination with internal data }
 }
 \usage{
-data(metrics_by_geo_and_ch_flag)
+carehomes2::metrics_by_geo_and_ch_flag
 }
 \description{
 \itemize{
@@ -23,17 +23,17 @@ data(metrics_by_geo_and_ch_flag)
   \item GEOGRAPHY. Region, ICB or Local Authority
   \item SUB_GEOGRAPHY_CODE. region or organisational codes
   \item SUB_GEOGRAPHY_NAME. name in breakdown
-  \item CH_FLAG. values apply to Carehomes, \code{TRUE} or \code{FALSE}
+  \item CH_FLAG. do metrics apply to carehomes?, \code{TRUE} or \code{FALSE}
   \item TOTAL_PATIENTS.number of distinct patients
-  \item ITEMS_PPM. average number of distinct items per patient per month
-  \item COST_PPM. average cost of items per patient per month
-  \item TOTAL_PATIENTS_UNIQ_MED. total unique medicines
-  \item UNIQ_MEDS_PPM. average number of unique medicines per patient per 
-    month
-  \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10 or more
-    unique medicines
-  \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10 or more 
-    unique medicines per month
+  \item ITEMS_PPM. mean number of distinct items per patient per month
+  \item COST_PPM. mean cost of items per patient per month
+  \item TOTAL_PATIENTS_UNIQ_MED. total patients on more than 1 unique medicines
+  \item UNIQ_MEDS_PPM. mean number of unique medicines per patient on more than
+    1 unique medicine per month
+  \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10+ unique
+    medicines
+  \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10+ unique
+    medicines per month
 }
 }
 \keyword{datasets}

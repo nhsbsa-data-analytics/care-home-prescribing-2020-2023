@@ -249,7 +249,6 @@ metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
     PCT_PX_GTE_TEN_PPM = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH
   )
   
-
 ## Save -------------------------------------------------------------------
 usethis::use_data(metrics_by_geo_and_ch_flag, overwrite = TRUE)
 
