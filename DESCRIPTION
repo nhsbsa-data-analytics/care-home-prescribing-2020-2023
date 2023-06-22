@@ -43,6 +43,20 @@ Imports:
     rlang,
     shiny,
     tidyr
+Suggests:
+    addressMatchR,
+    archive,
+    DBI,
+    dbplyr,
+    httr,
+    janitor,
+    jsonlite,
+    lubridate,
+    pacman,
+    pkgload,
+    readr,
+    tictoc,
+    yaml
 Remotes:
     nhsbsa-data-analytics/addressMatchR
     nhsbsa-data-analytics/nhsbsaR
