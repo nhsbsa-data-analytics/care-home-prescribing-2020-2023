@@ -245,25 +245,6 @@ mod_02_patients_age_gender_server <- function(id){
         dplyr::pull(SDC_PCT_ELDERLY_FEMALE_PATIENTS)
     })
 
-    # Pull the number of NA gender patients
-    # patients_with_na_gender <- reactive({
-    #   req(input$fy)
-    #   req(input$geography)
-    #   req(input$sub_geography)
-    # 
-    #   patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-    #     dplyr::filter(is.na(GENDER)) %>%
-    #     # Format number
-    #     dplyr::mutate(
-    #       SDC_TOTAL_PATIENTS = ifelse(
-    #         test = is.na(SDC_TOTAL_PATIENTS),
-    #         yes = "c",
-    #         no = as.character(SDC_TOTAL_PATIENTS)
-    #       )
-    #     ) %>%
-    #     dplyr::pull(SDC_TOTAL_PATIENTS)
-    # })
-
     # Swap NAs for "c" for data download and subset columns
     patients_by_geo_age_gender_at_specific_fy_and_subgeo_download_df <- reactive({
       req(input$fy)
