@@ -7,7 +7,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
     p(
       "Care home patients aged 65 years or over received an estimated",
       tags$b("35 million"), "prescription items at a cost of",
-      tags$b("£324 million"), "during 2020/21."
+      tags$b("\u00A3324 million"), "during 2020/21."
     ),
     p(
       "This represents 7% of the total primary care drug spend for ",
@@ -55,7 +55,9 @@ mod_04_metrics_ch_type_ui <- function(id) {
       "provided at nursing homes to cater for patients with more complex needs."
     ),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient month for care home and non-care home patients aged 65 years or over in England by geography, age band or gender (2020/21)",
+      heading = "Estimated average prescribing metrics per patient month for
+        care home and non-care home patients aged 65 years or over in England by
+        geography, age band or gender (2020/21 to 2022/23)",
       div(
         class = "nhsuk-grid-row",
         div(class = "nhsuk-grid-column-one-quarter"),
@@ -102,11 +104,8 @@ mod_04_metrics_ch_type_ui <- function(id) {
         style = "font-size: 9pt",
         "Where the number of patients is less than 5 the data has been redacted."
       ),
-      nhs_grid_2_col(
-        mod_nhs_download_ui(
+      mod_nhs_download_ui(
           id = ns("download_data")
-        ),
-        div()
       )
     )
   )
@@ -115,16 +114,8 @@ mod_04_metrics_ch_type_ui <- function(id) {
 mod_04_metrics_ch_type_server <- function(id) {
   moduleServer(id, function(input, output, session) {
 
-    # Metric name mappings----------------------------------------------
+    # Metric and UI mappings-----------------------------------------------
 
-    # Map CH_TYPE to UI ch type names
-    # ui_ch_type_names <- list(
-    #   CH_FLAG     = "Carehome",
-    #   NH_FLAG     = "Nursing Home",
-    #   RH_FLAG     = "Residential Home",
-    #   NON_CH_FLAG = "Non-carehome"
-    # )
-    
     # Map FY to UI color
     ui_fy_colors <- list(
       `2020/21` = NHSRtheme::get_nhs_colours("DarkBlue"),
@@ -138,22 +129,6 @@ mod_04_metrics_ch_type_server <- function(id) {
       ITEMS_PPM          = "Number of prescription items",
       UNIQ_MEDS_PPM      = "Number of unique medicines",
       PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines (%)"
-    )
-    
-    # Map metric column names to tooltip metric names
-    metric_tooltips <- c(
-      COST_PPM           = "<b>Drug cost:</b> \u00A3{point.value}",
-      ITEMS_PPM          = "<b>Number of prescription items:</b> {point.value:.1f}",
-      UNIQ_MEDS_PPM      = "<b>Number of unique medicines:</b> {point.value:.1f}",
-      PCT_PX_GTE_TEN_PPM = "<b>Patients on 10+ unique medicines:</b> {point.value:.1f}%"
-    )
-    
-    # Map metric column names to download data names
-    dl_data_metric_names <- c(
-      COST_PPM           = "Drug cost ppm (\u00A3)",
-      ITEMS_PPM          = "Number of prescription items ppm",
-      UNIQ_MEDS_PPM      = "Number of unique medicines ppm",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)"
     )
     
     # Reactive data -------------------------------------------------------
@@ -173,59 +148,6 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Output functions ----------------------------------------------------
     
-    # Create map
-    create_map <- function(data,
-                           map_data,
-                           ch_status = c("Carehome", "Non-carehome")) {
-      # Note that the final displayed limits will not exactly match the min and
-      # max values - highcharts will pick appropriate numbers close to the limits
-      color_axis_limits <- list(
-        min = data[[input$metric]] %>% min(na.rm = TRUE),
-        max = data[[input$metric]] %>% max(na.rm = TRUE)
-      )
-      
-      ifelse(
-        ch_status == "Carehome",
-        data <- data %>% dplyr::filter(.data$CH_FLAG),
-        data <- data %>% dplyr::filter(!.data$CH_FLAG)
-      )
-      
-      highcharter::highchart() %>%
-        highcharter::hc_add_series_map(
-          df = data,
-          map = map_data,
-          joinBy = "SUB_GEOGRAPHY_CODE",
-          value = input$metric,
-          tooltip = list(
-            headerFormat = "",
-            pointFormat = paste0(
-              "<b>", input$geography, ":</b> {point.SUB_GEOGRAPHY_NAME}<br>",
-              metric_tooltips[input$metric]
-            )
-          )
-        ) %>%
-        nhsbsaR::theme_nhsbsa_highchart() %>%
-        highcharter::hc_mapNavigation(
-          enabled = TRUE,
-          enableMouseWheelZoom = TRUE,
-          enableDoubleClickZoom = TRUE
-        ) %>%
-        highcharter::hc_colorAxis(
-          min = color_axis_limits$min,
-          max = color_axis_limits$max,
-          minColor = substr(min(viridisLite::plasma(n = 2)), 0, 7),
-          maxColor = substr(max(viridisLite::plasma(n = 2)), 0, 7),
-          stops = list(
-            c(0, "#0D0887"),
-            c(0.17, "#CC4678"),
-            c(1, "#F0F921")
-          )
-        ) %>% 
-        highcharter::hc_title(
-          text = paste0(ch_status)
-        )
-    }
-    
     # Create chart
     create_chart <- function(data, 
                              ch_type = c(
@@ -237,7 +159,7 @@ mod_04_metrics_ch_type_server <- function(id) {
       ch_type <- match.arg(ch_type)
       
       data <- data %>% 
-        dplyr::filter(CH_TYPE == ch_type) %>% 
+        dplyr::filter(.data$CH_TYPE == ch_type) %>% 
         dplyr::mutate(
           color = ui_fy_colors[.data$FY] %>%
             unlist() %>%
@@ -248,13 +170,16 @@ mod_04_metrics_ch_type_server <- function(id) {
       y_max <- carehomes2::metrics_by_ch_type[[input$metric]] %>%
         max(na.rm = TRUE)
       
-      data %>%
+      x <- rlang::sym("FY")
+      color <- rlang::sym("color")
+      
+      data %>% 
         highcharter::hchart(
           type = "column",
           highcharter::hcaes(
-            x = FY,
-            y = !!rlang::sym(input$metric),
-            color = color
+            x = !!x,
+            y = !!input$metric,
+            color = !!color
           )
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
@@ -270,67 +195,7 @@ mod_04_metrics_ch_type_server <- function(id) {
           min = 0,
           max = y_max
         ) %>%
-        highcharter::hc_tooltip(shared = TRUE) %>%
         highcharter::hc_title(text = ch_type)
-    }
-    
-    # Create datatable
-    create_datatable <- function(ch_status = c("Carehome", "Non-carehome")) {
-      ifelse(
-        ch_status == "Carehome",
-        data <- data %>% dplyr::filter(.data$CH_FLAG),
-        data <- data %>% dplyr::filter(!.data$CH_FLAG)
-      )
-      
-      data %>%
-        dplyr::filter(
-          .data$GEOGRAPHY == input$geography,
-          !is.na(.data$SUB_GEOGRAPHY_NAME)
-        ) %>% 
-        dplyr::select(
-          .data$FY,
-          !!rlang::sym(input$geography) := .data$SUB_GEOGRAPHY_NAME,
-          .data[[input$metric]]
-        ) %>%
-        tidyr::pivot_wider(
-          names_from = .data$FY,
-          values_from = .data[[input$metric]]
-        ) %>% 
-        dplyr::arrange(.data[[input$geography]]) %>%
-        dplyr::rename_with(
-          \(cols) purrr::map_vec(
-            cols,
-            \(col) {
-              short_col_name <- ifelse(
-                startsWith(col, "20"),
-                substr(col, 3, 7),
-                col
-              )
-              span(class = "nhsuk-body-s", style = "font-size: 12px;", short_col_name) %>%
-                as.character()
-            }
-          )
-        ) %>%
-        DT::datatable(
-          escape = FALSE,
-          rownames = FALSE,
-          options = list(
-            dom = "ft",
-            scrollCollapse = TRUE,
-            paging = FALSE,
-            scrollY = "350px",
-            overflow = "scroll",
-            tabindex = "0"
-          ),
-          height = "400px",
-          filter = "none",
-          selection = "none"
-        ) %>%
-        DT::formatStyle(columns = 1:4, `font-size` = "12px") %>%
-        DT::formatRound(
-          columns = 2:4,
-          digits = ifelse(input$metric != "COST_PPM", 1, 0)
-        )
     }
     
     # Create download data
@@ -350,13 +215,13 @@ mod_04_metrics_ch_type_server <- function(id) {
             .default = .data$PCT_PX_GTE_TEN_PPM %>% as.character()
           )
         ) %>% 
-        arrange(CH_TYPE, FY) %>%
+        dplyr::arrange(.data$CH_TYPE, .data$FY) %>%
         dplyr::rename(
           `Financial year` = .data$FY,
           `Carehome type` = .data$CH_TYPE,
           `Total patients` = .data$TOTAL_PATIENTS,
           `Number of prescription items ppm` = .data$ITEMS_PPM,
-          `Drug cost ppm (£)` = .data$COST_PPM,
+          "Drug cost ppm (\u00A3)" := .data$COST_PPM,
           `Number of unique medicines ppm` = .data$UNIQ_MEDS_PPM,
           `Total patients on 10+ unique medicines` = .data$TOTAL_PATIENTS_GTE_TEN,
           `Patients on 10+ unique medicines ppm (%)` = .data$PCT_PX_GTE_TEN_PPM
@@ -379,7 +244,7 @@ mod_04_metrics_ch_type_server <- function(id) {
       create_chart(fdata(), "Residential Home")
     )
     
-    # Download buttons
+    # Download button
     mod_nhs_download_server(
       id = "download_data",
       filename = "Selected Prescribing Metrics by Carehome Type.csv",
@@ -387,4 +252,3 @@ mod_04_metrics_ch_type_server <- function(id) {
     )
   })
 }
-

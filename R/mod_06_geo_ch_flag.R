@@ -129,13 +129,10 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)"
     )
     
-    # Base data -----------------------------------------------------------
-    data <- carehomes2::metrics_by_geo_and_ch_flag
-    
     # Reactive data -------------------------------------------------------
     
     fdata <- reactiveVal(
-      data %>%
+      carehomes2::metrics_by_geo_and_ch_flag %>%
         dplyr::filter(
           .data$GEOGRAPHY == "Region",
           .data$FY == "2020/21"
@@ -158,7 +155,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       input$fy
       
       fdata({
-        data %>%
+        carehomes2::metrics_by_geo_and_ch_flag %>%
           dplyr::filter(
             .data$GEOGRAPHY == input$geography,
             .data$FY == input$fy
@@ -235,8 +232,8 @@ mod_06_geo_ch_flag_server <- function(id) {
     create_datatable <- function(ch_status = c("Carehome", "Non-carehome")) {
       ifelse(
         ch_status == "Carehome",
-        data <- data %>% dplyr::filter(.data$CH_FLAG),
-        data <- data %>% dplyr::filter(!.data$CH_FLAG)
+        data <- carehomes2::metrics_by_geo_and_ch_flag %>% dplyr::filter(.data$CH_FLAG),
+        data <- carehomes2::metrics_by_geo_and_ch_flag %>% dplyr::filter(!.data$CH_FLAG)
       )
       
       data %>%

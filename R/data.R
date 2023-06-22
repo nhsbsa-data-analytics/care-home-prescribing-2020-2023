@@ -27,10 +27,40 @@
 #' @docType data
 #' @keywords datasets
 #' @name metrics_by_geo_and_ch_flag
-#' @usage carehomes2::metrics_by_geo_and_ch_flag
-#' @format A data frame with 784 rows and 22 variables
+#' @usage data(metrics_by_geo_and_ch_flag)
+#' @format A data frame with 2148 rows and 12 variables
 #' 
 "metrics_by_geo_and_ch_flag"
+
+#' Aggregated prescribing data broken down by financial year and carehome type
+#'
+#' \itemize{
+#'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
+#'   \item CH_TYPE. one of Carehome, Non-carehome, Nursing Home, Residential Home
+#'   \item TOTAL_PATIENTS.number of distinct patients
+#'   \item ITEMS_PPM. mean number of distinct items per patient per month
+#'   \item COST_PPM. mean cost of items per patient per month
+#'   \item TOTAL_PATIENTS_UNIQ_MED. total patients on more than 1 unique medicines
+#'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient on more than
+#'     1 unique medicine per month
+#'   \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10+ unique
+#'     medicines
+#'   \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10+ unique
+#'     medicines per month
+#' }
+#'
+#' @source { Data and Advanced Analytics Team at NHS BSA, using
+#'   \href{https://www.cqc.org.uk/about-us/transparency/using-cqc-data}{CQC} and
+#'   \href{https://beta.ordnancesurvey.co.uk/products/addressbase-plus}{AddressBase+}
+#'   data in combination with internal data }
+#'
+#' @docType data
+#' @keywords datasets
+#' @name metrics_by_ch_type
+#' @usage data(metrics_by_ch_type)
+#' @format A data frame with 12 rows and 8 variables
+#' 
+"metrics_by_ch_type"
 
 #' GIS data for boundaries at Region, ICB and Local Authority level
 #'
@@ -46,7 +76,7 @@
 #' @docType data
 #' @keywords datasets
 #' @name geo_data
-#' @usage carehomes2::geo_data
+#' @usage data(geo_data)
 #' @format A named \code{list}, created from \href{https://geojson.org/}{geojson}
 #'   using \code{jsonlite::fromJSON(simplifyVector = FALSE)}
 #' 

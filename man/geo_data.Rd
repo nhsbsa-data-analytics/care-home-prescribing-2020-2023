@@ -13,7 +13,7 @@ A named \code{list}, created from \href{https://geojson.org/}{geojson}
   API provided by \href{https://www.arcgis.com/index.html}{ArcGIS} }
 }
 \usage{
-carehomes2::geo_data
+data(geo_data)
 }
 \description{
 \itemize{
