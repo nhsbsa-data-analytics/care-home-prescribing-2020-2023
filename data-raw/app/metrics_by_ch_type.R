@@ -3,76 +3,11 @@
 library(dplyr)
 library(dbplyr)
 library(tidyr)
-library(stringr)
-library(glue)
-library(purrr)
 devtools::load_all()
-
-# Data validation ---------------------------------------------------------
-
-
-## Setup ------------------------------------------------------------------
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# PCD <- con %>%
-#   tbl(from = "INT646_POSTCODE_LOOKUP") %>%
-#   select(ends_with("CODE"), ends_with("NAME")) %>%
-#   distinct() %>%
-#   collect()
-# 
-# transform_PCD <- function(data, geography) {
-#   data %>%
-#     select(starts_with(glue("PCD_{geography}"))) %>% 
-#     distinct() %>%
-#     rename_with(
-#       \(x) str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY")
-#     ) %>%
-#     filter(!is.na(SUB_GEOGRAPHY_NAME))
-# }
-# 
-# PCD_list <- list(
-#   REGION = PCD %>% transform_PCD("REGION"),
-#   ICB    = PCD %>% transform_PCD("ICB"),
-#   LAD    = PCD %>% transform_PCD("LAD")
-# )
-# 
-# GIS_list <- geo_data_validation
-# 
-# # Check sub-geography codes and names match exactly between PCD and GIS; you
-# # should get character(0) for in_GIS_only and NA or character(0) for in_PCD_only
-# 
-# ## Check sub-geography codes ----------------------------------------------
-# 
-# check_sub_geo_codes <- list(
-#   in_GIS_only = map2(
-#     GIS_list,
-#     PCD_list,
-#     \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
-#   ),
-#   in_PCD_only = map2(
-#     PCD_list,
-#     GIS_list,
-#     \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
-#   )
-# ) %>% print()
-# 
-# 
-# ## Check sub-geography names ----------------------------------------------
-# 
-# check_sub_geo_names <- list(
-#   in_GIS_only = map2(
-#     GIS_list,
-#     PCD_list,
-#     \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
-#   ),
-#   in_PCD_only = map2(
-#     PCD_list,
-#     GIS_list,
-#     \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
-#   )
-# ) %>% print()
 
 # Data prep ---------------------------------------------------------------
 
@@ -89,7 +24,7 @@ base_db <- con %>%
 metrics_by_ch_type_df <- base_db
 
 metrics_by_ch_type <- metrics_by_ch_type_df %>% 
-  dplyr::transmute(
+  transmute(
     FY,
     YEAR_MONTH,
     CH_FLAG = CH_FLAG,
@@ -164,12 +99,6 @@ metrics_by_ch_type <- metrics_by_ch_type_df %>%
   ) %>%
   nhsbsaR::collect_with_parallelism(8)
   
-# metrics_by_ch_type <- bind_rows(
-#   metrics_by_ch_type,
-#   metrics_by_ch_type %>% mutate(FY = "2021/22"),
-#   metrics_by_ch_type %>% mutate(FY = "2022/23")
-# )
-
 ### Complete --------------------------------------------------------------
 metrics_by_ch_type_complete <- metrics_by_ch_type %>% 
   tidyr::complete(
@@ -231,17 +160,9 @@ metrics_by_ch_type <- metrics_by_ch_type %>%
   select(-SDC)
 
 
-### Format ----------------------------------------------------------------
-# metrics_by_ch_type <- metrics_by_ch_type %>%
-#   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
-#   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
-#   format_data_raw("CH_FLAG") %>% 
-#   suppressWarnings() # We do not have Overall and PCN in this data
-
-
 ### Keep only relevant columns / rename -----------------------------------
 metrics_by_ch_type <- metrics_by_ch_type %>% 
-  dplyr::transmute(
+  transmute(
     FY,
     CH_TYPE,
     TOTAL_PATIENTS = SDC_TOTAL_PATIENTS,
