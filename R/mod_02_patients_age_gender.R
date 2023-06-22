@@ -251,7 +251,8 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$geography)
       req(input$sub_geography)
 
-      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+      #patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+      patients_by_fy_geo_age_gender_df %>% # Download entire df with all FYs and geo levels
         dplyr::mutate(
           SDC_TOTAL_PATIENTS = ifelse(
             test = is.na(SDC_TOTAL_PATIENTS),
