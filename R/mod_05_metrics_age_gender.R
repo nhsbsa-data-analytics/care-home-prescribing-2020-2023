@@ -176,7 +176,7 @@ output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHi
       
     highcharter::hc_legend(
       squareSymbol = T,
-      symbolWidth = 0.1,
+      symbolWidth = 0.1, # Hide line through symbols
       itemStyle = list(textDecoration = "none")
     )
     
