@@ -36,60 +36,52 @@ get_geo_bnf_prop = function(index){
   
   # Limit to top 50 bnf_child across all years & geographies, for *each metric*
   join_fact = fact_db %>% 
-    rename(BNF_CHILD := {{ bnf }}) %>% 
-    group_by(BNF_CHILD) %>%
+    filter(CH_FLAG == 1) %>% 
+    group_by({{ bnf }}) %>%
     summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>% 
     ungroup() %>% 
     slice_max(
       TOTAL_ITEMS,
       n = 50
     ) %>% 
-    select(BNF_CHILD) %>% 
+    select({{ bnf }}) %>% 
     collect()
   
   # Total metric generation plus join
   df = fact_db %>% 
-    rename(
-      GEOGRAPHY_CHILD := {{ geo }},
-      BNF_CHILD := {{ bnf }}
-    ) %>% 
-    filter(!is.na(GEOGRAPHY_CHILD)) %>% 
-    group_by(
-      FY,
-      GEOGRAPHY_CHILD,
-      BNF_CHILD
-    ) %>%
+    filter(
+      CH_FLAG == 1,
+      !is.na({{ geo }})
+      ) %>% 
+    group_by(FY, {{ geo }}, {{ bnf }}) %>%
     summarise(
       ITEMS = sum(ITEM_COUNT),
       NIC = sum(ITEM_PAY_DR_NIC) / 100
-    ) %>%
+      ) %>%
     mutate(
       TOTAL_ITEMS = sum(ITEMS),
       TOTAL_NIC = sum(NIC),
       PROP_ITEMS = round((ITEMS / TOTAL_ITEMS) * 100, 2),
       PROP_NIC = round((NIC / TOTAL_NIC) * 100, 2)
-    ) %>%
+      ) %>%
     ungroup() %>%
     collect() %>% 
+    inner_join(join_fact) %>% 
     transmute(
       FY,
       GEOGRAPHY_PARENT = rlang::as_string(geo),
-      GEOGRAPHY_CHILD,
+      GEOGRAPHY_CHILD := {{ geo }},
       BNF_PARENT = rlang::as_string(bnf),
-      BNF_CHILD,
+      BNF_CHILD := {{ bnf }},
       PROP_ITEMS,
       PROP_NIC
-    ) %>% 
+      ) %>% 
     tidyr::pivot_longer(
       c('PROP_ITEMS', 'PROP_NIC'),
       names_to = "METRIC",
       values_to = "VALUE"
-    ) %>% 
-    inner_join(
-      join_fact,
-      by = "BNF_CHILD"
-    )
-  
+      )
+    
   # Expand grid an left_join for all permutations
   expand.grid(
     FY = unique(df$FY),
@@ -117,56 +109,63 @@ get_geo_bnf_ppm = function(index){
   
   # Limit to top20 bnf_child across all years & geographies, for *each metric*
   join_fact = fact_db %>% 
-    rename(BNF_CHILD := {{ bnf }}) %>% 
-    group_by(BNF_CHILD) %>%
+    filter(CH_FLAG == 1) %>% 
+    group_by({{ bnf }}) %>%
     summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>% 
     slice_max(
       TOTAL_ITEMS,
       n = 50
     ) %>% 
-    select(BNF_CHILD) %>% 
-    collect()
+    ungroup() %>% 
+    select({{ bnf }})
   
   # Distinct months of presc per nhs_no and FY
   pat_months = fact_db %>% 
-    group_by(FY, NHS_NO) %>% 
-    summarise(N_MONTHS = n_distinct(YEAR_MONTH)) %>% 
-    ungroup()
+    filter(
+      CH_FLAG == 1,
+      !is.na({{ geo }})
+    ) %>% 
+    group_by(FY, YEAR_MONTH, NHS_NO, {{ geo }}) %>% 
+    summarise() %>% 
+    ungroup() %>% 
+    cross_join(join_fact)
   
   # Generate output
-  df = fact_db %>% 
-    rename(
-      GEOGRAPHY_CHILD := {{ geo }},
-      BNF_CHILD := {{ bnf }}
-    ) %>% 
-    filter(!is.na(GEOGRAPHY_CHILD)) %>% 
-    group_by(FY, NHS_NO, GEOGRAPHY_CHILD, BNF_CHILD) %>% 
+  pat_info = fact_db %>% 
+    filter(!is.na(PCD_LAD_NAME)) %>% 
+    group_by(FY, YEAR_MONTH, NHS_NO, {{ geo }}, {{ bnf }}) %>% 
     summarise(
       ITEMS = sum(ITEM_COUNT),
       NIC = sum(ITEM_PAY_DR_NIC) / 100
     ) %>%
-    ungroup() %>% 
-    left_join(
-      pat_months,
-      by = c("FY", "NHS_NO")
-    ) %>% 
+    ungroup()
+  
+  # Output
+  pat_months %>% 
+    left_join(pat_info) %>% 
     mutate(
-      PPM_ITEMS = round(ITEMS / N_MONTHS, 2),
-      PPM_NIC = round(NIC / N_MONTHS, 2)
+      ITEMS = ifelse(is.na(ITEMS), 0, ITEMS),
+      NIC = ifelse(is.na(NIC), 0, NIC)
     ) %>% 
-    group_by(FY, GEOGRAPHY_CHILD, BNF_CHILD) %>% 
+    group_by(FY, NHS_NO, {{ geo }}, {{ bnf }}) %>% 
     summarise(
-      PPM_ITEMS = round(mean(PPM_ITEMS), 2),
-      PPM_NIC = round(mean(PPM_NIC), 2)
+      ITEMS = mean(ITEMS),
+      NIC = mean(NIC)
+    ) %>% 
+    ungroup() %>% 
+    group_by(FY, {{ geo }}, {{ bnf }}) %>% 
+    summarise(
+      PPM_ITEMS = round(mean(ITEMS), 2),
+      PPM_NIC = round(mean(NIC), 2)
     ) %>% 
     ungroup() %>% 
     collect() %>% 
     transmute(
       FY,
       GEOGRAPHY_PARENT = rlang::as_string(geo),
-      GEOGRAPHY_CHILD,
+      GEOGRAPHY_CHILD := {{ geo }},
       BNF_PARENT = rlang::as_string(bnf),
-      BNF_CHILD,
+      BNF_CHILD := {{ bnf }},
       PPM_ITEMS,
       PPM_NIC
     ) %>% 
@@ -174,26 +173,10 @@ get_geo_bnf_ppm = function(index){
       c('PPM_ITEMS', 'PPM_NIC'),
       names_to = "METRIC",
       values_to = "VALUE"
-    ) %>% 
-    inner_join(
-      join_fact,
-      by = "BNF_CHILD"
     )
-  
-  # Expand grid an left_join for all permutations
-  expand.grid(
-    FY = unique(df$FY),
-    GEOGRAPHY_PARENT = unique(df$GEOGRAPHY_PARENT),
-    GEOGRAPHY_CHILD = unique(df$GEOGRAPHY_CHILD),
-    BNF_PARENT = unique(df$BNF_PARENT),
-    BNF_CHILD = unique(df$BNF_CHILD),
-    METRIC = unique(df$METRIC)
-    ) %>% 
-    left_join(df) %>% 
-    mutate(VALUE = ifelse(is.na(VALUE), 0, VALUE))
 }
 
-# Get ppm results
+# Get ppm results: ~20 mins
 ppm_results = lapply(1:nrow(all_levels), get_geo_bnf_ppm) %>% bind_rows()
 
 # Part Three: bind results and save --------------------------------------------
@@ -201,6 +184,14 @@ ppm_results = lapply(1:nrow(all_levels), get_geo_bnf_ppm) %>% bind_rows()
 # Bind both both outputs
 mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>% 
   mutate(
+    GEOGRAPHY_CHILD = case_when(
+      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bNHS\\b ", "", GEOGRAPHY_CHILD),
+      TRUE ~ GEOGRAPHY_CHILD
+    ),
+    GEOGRAPHY_CHILD = case_when(
+      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bICB\\b", "", GEOGRAPHY_CHILD),
+      TRUE ~ GEOGRAPHY_CHILD
+    ),
     GEOGRAPHY_PARENT = case_when(
       GEOGRAPHY_PARENT == "PCD_REGION_NAME" ~ "Region",
       GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ "ICB",
@@ -231,3 +222,5 @@ usethis::use_data(mod_geo_ch_flag_drug_df, overwrite = TRUE)
 
 # Disconnect
 DBI::dbDisconnect(con); rm(list = ls()); gc()
+
+#-------------------------------------------------------------------------------
