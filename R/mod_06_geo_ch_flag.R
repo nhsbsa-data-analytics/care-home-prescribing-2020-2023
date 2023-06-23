@@ -46,7 +46,10 @@ mod_06_geo_ch_flag_ui <- function(id) {
               "Drug cost (PPM)" = "COST_PPM",
               "Number of prescription items (PPM)" = "ITEMS_PPM",
               "Number of unique medicines (PPM)" = "UNIQ_MEDS_PPM",
-              "Patients on 10+ unique medicines (PPM)" = "PCT_PX_GTE_TEN_PPM"
+              "Patients on 6+ unique medicines (PPM)" = "PCT_PX_GTE_SIX_PPM",
+              "Patients on 10+ unique medicines (PPM)" = "PCT_PX_GTE_TEN_PPM",
+              "Patients with ACB 6+ (PPM)" = "PCT_PX_ACB_6_PPM",
+              "Patients with DAMN 2+ (PPM)" = "PCT_PX_DAMN_PPM"
             ),
             full_width = TRUE
           )
@@ -110,7 +113,10 @@ mod_06_geo_ch_flag_server <- function(id) {
       COST_PPM           = "Drug cost (\u00A3)",
       ITEMS_PPM          = "Number of prescription items",
       UNIQ_MEDS_PPM      = "Number of unique medicines",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines (%)"
+      PCT_PX_GTE_SIX_PPM = "Patients on 6+ unique medicines (%)",
+      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines (%)",
+      PCT_PX_ACB_6_PPM   = "Patients with ACB 6+ (%)",
+      PCT_PX_DAMN_PPM    = "Patients with DAMN 2+ (%)"
     )
     
     # Map metric column names to tooltip metric names
@@ -118,15 +124,22 @@ mod_06_geo_ch_flag_server <- function(id) {
       COST_PPM           = "<b>Drug cost:</b> \u00A3{point.value}",
       ITEMS_PPM          = "<b>Number of prescription items:</b> {point.value:.1f}",
       UNIQ_MEDS_PPM      = "<b>Number of unique medicines:</b> {point.value:.1f}",
-      PCT_PX_GTE_TEN_PPM = "<b>Patients on 10+ unique medicines:</b> {point.value:.1f}%"
+      PCT_PX_GTE_SIX_PPM = "<b>Patients on 6+ unique medicines:</b> {point.value:.1f}%",
+      PCT_PX_GTE_TEN_PPM = "<b>Patients on 10+ unique medicines:</b> {point.value:.1f}%",
+      PCT_PX_ACB_6_PPM   = "<b>Patients with ACB 6+:</b> {point.value:.1f}%",
+      PCT_PX_DAMN_PPM    = "<b>Patients with DAMN 2+:</b> {point.value:.1f}%"
     )
     
     # Map metric column names to download data names
+    # TODO: Add new metrics
     dl_data_metric_names <- c(
       COST_PPM           = "Drug cost ppm (\u00A3)",
       ITEMS_PPM          = "Number of prescription items ppm",
       UNIQ_MEDS_PPM      = "Number of unique medicines ppm",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)"
+      PCT_PX_GTE_SIX_PPM = "Patients on 6+ unique medicines ppm (%)",
+      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)",
+      PCT_PX_ACB_6_PPM   = "Patients with ACB 6+ ppm (%)",
+      PCT_PX_DAMN_PPM    = "Patients with DAMN 2+ ppm (%)"
     )
     
     # Reactive data -------------------------------------------------------
@@ -166,6 +179,7 @@ mod_06_geo_ch_flag_server <- function(id) {
             .data$SUB_GEOGRAPHY_CODE,
             TOTAL_PATIENTS = switch(
               input$metric,
+              "PCT_PX_GTE_SIX_PPM" = .data$TOTAL_PATIENTS_GTE_SIX,
               "PCT_PX_GTE_TEN_PPM" = .data$TOTAL_PATIENTS_GTE_TEN,
               .data$TOTAL_PATIENTS
             ),
@@ -232,8 +246,8 @@ mod_06_geo_ch_flag_server <- function(id) {
     create_datatable <- function(ch_status = c("Carehome", "Non-carehome")) {
       ifelse(
         ch_status == "Carehome",
-        data <- carehomes2::metrics_by_geo_and_ch_flag %>% dplyr::filter(.data$CH_FLAG),
-        data <- carehomes2::metrics_by_geo_and_ch_flag %>% dplyr::filter(!.data$CH_FLAG)
+        data <- dplyr::filter(carehomes2::metrics_by_geo_and_ch_flag, .data$CH_FLAG),
+        data <- dplyr::filter(carehomes2::metrics_by_geo_and_ch_flag, !.data$CH_FLAG)
       )
       
       data %>%

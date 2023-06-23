@@ -35,7 +35,20 @@ metrics_by_ch_type <- metrics_by_ch_type_df %>%
     ITEM_COUNT,
     ITEM_PAY_DR_NIC,
     BNF_CHEMICAL_SUBSTANCE,
-    CHEMICAL_SUBSTANCE_BNF_DESCR
+    CHEMICAL_SUBSTANCE_BNF_DESCR,
+    ACB_CAT = case_when(
+      BNF_CHEMICAL_SUBSTANCE %in% acb1_drugs ~ 1,
+      BNF_CHEMICAL_SUBSTANCE %in% acb2_drugs ~ 2,
+      BNF_CHEMICAL_SUBSTANCE %in% acb3_drugs ~ 3,
+      TRUE ~ 0
+    ),
+    DAMN_FLAG = case_when(
+      REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^100101') > 0 ~ 1,
+      REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205051') > 0 ~ 1,
+      REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205052') > 0 ~ 1,
+      BNF_CHEMICAL_SUBSTANCE %in% other_drug_vec ~ 1,
+      TRUE ~ 0
+    )
   ) %>%
   pivot_longer(
     ends_with("FLAG"),
@@ -64,8 +77,19 @@ metrics_by_ch_type <- metrics_by_ch_type_df %>%
         CHEMICAL_SUBSTANCE_BNF_DESCR,
         NA_character_
       )
+    ),
+    ACB_6 = case_when( 
+      (1 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 1])) + 
+        (2 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 2])) + 
+        (3 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 3])) >= 6 ~ 1,
+      TRUE ~ 0
+    ),
+    DAMN = case_when(
+      n_distinct(BNF_CHEMICAL_SUBSTANCE[DAMN_FLAG == 1]) >= 2 ~ 1,
+      TRUE ~ 0
     )
   ) %>%
+  ungroup() %>% 
   group_by(FY, CH_TYPE) %>%
   summarise(
     # Items and cost
@@ -81,9 +105,32 @@ metrics_by_ch_type <- metrics_by_ch_type_df %>%
       )
     ),
     UNIQUE_MEDICINES_PER_PATIENT_MONTH = mean(UNIQUE_MEDICINES),
+    TOTAL_PATIENTS_SIX_OR_MORE = n_distinct( # For SDC
+      ifelse(
+        UNIQUE_MEDICINES >= 6,
+        NHS_NO,
+        NA_integer_
+      )
+    ),
     TOTAL_PATIENTS_TEN_OR_MORE = n_distinct( # For SDC
       ifelse(
         UNIQUE_MEDICINES >= 10,
+        NHS_NO,
+        NA_integer_
+      )
+    ),
+    # ACB
+    TOTAL_PATIENTS_ACB_6 = n_distinct(
+      ifelse(
+        ACB_6 == 1,
+        NHS_NO,
+        NA_integer_
+      )
+    ),
+    # DAMN
+    TOTAL_PATIENTS_DAMN = n_distinct(
+      ifelse(
+        DAMN == 1,
         NHS_NO,
         NA_integer_
       )
@@ -91,10 +138,25 @@ metrics_by_ch_type <- metrics_by_ch_type_df %>%
   ) %>%
   ungroup() %>%
   mutate(
+    PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_UNIQUE_MEDICINES == 0,
+      NA_real_,
+      TOTAL_PATIENTS_SIX_OR_MORE / TOTAL_PATIENTS_UNIQUE_MEDICINES * 100
+    ),
     PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
       TOTAL_PATIENTS_UNIQUE_MEDICINES == 0,
       NA_real_,
       TOTAL_PATIENTS_TEN_OR_MORE / TOTAL_PATIENTS_UNIQUE_MEDICINES * 100
+    ),
+    PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_ACB_6 == 0,
+      NA_real_,
+      TOTAL_PATIENTS_ACB_6 / TOTAL_PATIENTS * 100
+    ),
+    PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_DAMN == 0,
+      NA_real_,
+      TOTAL_PATIENTS_DAMN / TOTAL_PATIENTS * 100
     )
   ) %>%
   nhsbsaR::collect_with_parallelism(8)
@@ -110,8 +172,14 @@ metrics_by_ch_type_complete <- metrics_by_ch_type %>%
       COST_PER_PATIENT_MONTH = NA_real_,
       TOTAL_PATIENTS_UNIQUE_MEDICINES = 0L,
       UNIQUE_MEDICINES_PER_PATIENT_MONTH = NA_real_,
+      TOTAL_PATIENTS_SIX_OR_MORE = 0L,
+      PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = NA_real_,
       TOTAL_PATIENTS_TEN_OR_MORE = 0L,
-      PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = NA_real_
+      PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = NA_real_,
+      TOTAL_PATIENTS_ACB_6 = 0L,
+      PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = NA_real_,
+      TOTAL_PATIENTS_DAMN = 0L,
+      PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = NA_real_
     )
   )
 
@@ -145,6 +213,17 @@ metrics_by_ch_type <- metrics_by_ch_type %>%
       NA_integer_,
       janitor::round_half_up(UNIQUE_MEDICINES_PER_PATIENT_MONTH, 1)
     ),
+    SDC = ifelse(TOTAL_PATIENTS_SIX_OR_MORE %in% 1:4, TRUE, FALSE),
+    SDC_TOTAL_PATIENTS_SIX_OR_MORE = ifelse(
+      SDC,
+      NA_integer_,
+      round(TOTAL_PATIENTS_SIX_OR_MORE, -1) # rounding to nearest 10; where are our rules for SDC?
+    ),
+    SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
+      SDC,
+      NA_integer_,
+      janitor::round_half_up(PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH, 1)
+    ),
     SDC = ifelse(TOTAL_PATIENTS_TEN_OR_MORE %in% 1:4, TRUE, FALSE),
     SDC_TOTAL_PATIENTS_TEN_OR_MORE = ifelse(
       SDC,
@@ -155,6 +234,28 @@ metrics_by_ch_type <- metrics_by_ch_type %>%
       SDC,
       NA_integer_,
       janitor::round_half_up(PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH, 1)
+    ),
+    SDC = ifelse(TOTAL_PATIENTS_ACB_6 %in% 1:4, TRUE, FALSE),
+    SDC_TOTAL_PATIENTS_ACB_6 = ifelse(
+      SDC,
+      NA_integer_,
+      round(SDC_TOTAL_PATIENTS_ACB_6, -1) # rounding to nearest 10; where are our rules for SDC?
+    ),
+    SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
+      SDC,
+      NA_integer_,
+      janitor::round_half_up(PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH, 1)
+    ),
+    SDC = ifelse(TOTAL_PATIENTS_DAMN %in% 1:4, TRUE, FALSE),
+    SDC_TOTAL_PATIENTS_DAMN = ifelse(
+      SDC,
+      NA_integer_,
+      round(SDC_TOTAL_PATIENTS_DAMN, -1) # rounding to nearest 10; where are our rules for SDC?
+    ),
+    SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
+      SDC,
+      NA_integer_,
+      janitor::round_half_up(PCT_PATIENTS_DAMN_PER_PATIENT_MONTH, 1)
     )
   ) %>%
   select(-SDC)
@@ -168,9 +269,16 @@ metrics_by_ch_type <- metrics_by_ch_type %>%
     TOTAL_PATIENTS = SDC_TOTAL_PATIENTS,
     ITEMS_PPM = SDC_ITEMS_PER_PATIENT_MONTH,
     COST_PPM = SDC_COST_PER_PATIENT_MONTH,
+    TOTAL_PATIENTS_UNIQ_MED = SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
     UNIQ_MEDS_PPM = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
+    TOTAL_PATIENTS_GTE_SIX = SDC_TOTAL_PATIENTS_SIX_OR_MORE,
+    PCT_PX_GTE_SIX_PPM = SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH,
     TOTAL_PATIENTS_GTE_TEN = SDC_TOTAL_PATIENTS_TEN_OR_MORE,
-    PCT_PX_GTE_TEN_PPM = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH
+    PCT_PX_GTE_TEN_PPM = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH,
+    TOTAL_PATIENTS_ACB_6 = SDC_TOTAL_PATIENTS_ACB_6,
+    PCT_PX_ACB_6_PPM = SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH,
+    TOTAL_PATIENTS_DAMN = SDC_TOTAL_PATIENTS_DAMN,
+    PCT_PX_DAMN_PPM = SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH
   )
   
 ## Save -------------------------------------------------------------------

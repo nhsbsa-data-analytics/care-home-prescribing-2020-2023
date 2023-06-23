@@ -13,10 +13,22 @@
 #'   \item TOTAL_PATIENTS_UNIQ_MED. total patients on more than 1 unique medicines
 #'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient on more than
 #'     1 unique medicine per month
-#'   \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10+ unique
+#'   \item TOTAL_PATIENTS_GTE_SIX. total number of patients prescribed 6+ unique
 #'     medicines
-#'   \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10+ unique
+#'   \item PCT_PX_GTE_SIX_PPM. percentage of patients prescribed 6+ unique
 #'     medicines per month
+#'   \item TOTAL_PATIENTS_GTE_TEN. total number of patients prescribed 10+ unique
+#'     medicines
+#'   \item PCT_PX_GTE_TEN_PPM. percentage of patients prescribed 10+ unique
+#'     medicines per month
+#'   \item TOTAL_PATIENTS_ACB_6. total number of patients with an anticholinergic
+#'     score of 6+
+#'   \item PCT_PX_ACB_6_PPM. percentage of patients with an anticholinergic
+#'     score of 6+
+#'   \item TOTAL_PATIENTS_DAMN. total number of patients prescribed 2 or more 
+#'     medicines likely to cause kidney injury
+#'   \item PCT_PX_ACB_6_PPM. percentage of patients prescribed 2 or more medicines
+#'     likely to cause kidney injury
 #' }
 #'
 #' @source { Data and Advanced Analytics Team at NHS BSA, using
@@ -28,7 +40,7 @@
 #' @keywords datasets
 #' @name metrics_by_geo_and_ch_flag
 #' @usage data(metrics_by_geo_and_ch_flag)
-#' @format A data frame with 2148 rows and 12 variables
+#' @format A data frame with 2148 rows and 18 variables
 #' 
 "metrics_by_geo_and_ch_flag"
 
@@ -43,10 +55,22 @@
 #'   \item TOTAL_PATIENTS_UNIQ_MED. total patients on more than 1 unique medicines
 #'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient on more than
 #'     1 unique medicine per month
-#'   \item TOTAL_PATIENTS_GTE_TEN total number of patients prescribed 10+ unique
+#'   \item TOTAL_PATIENTS_GTE_SIX. total number of patients prescribed 6+ unique
 #'     medicines
-#'   \item PCT_PX_GTE_TEN_PPM percentage of patients prescribed 10+ unique
+#'   \item PCT_PX_GTE_SIX_PPM. percentage of patients prescribed 6+ unique
 #'     medicines per month
+#'   \item TOTAL_PATIENTS_GTE_TEN. total number of patients prescribed 10+ unique
+#'     medicines
+#'   \item PCT_PX_GTE_TEN_PPM. percentage of patients prescribed 10+ unique
+#'     medicines per month
+#'   \item TOTAL_PATIENTS_ACB_6. total number of patients with an anticholinergic
+#'     score of 6+
+#'   \item PCT_PX_ACB_6_PPM. percentage of patients with an anticholinergic
+#'     score of 6+
+#'   \item TOTAL_PATIENTS_DAMN. total number of patients prescribed 2 or more 
+#'     medicines likely to cause kidney injury
+#'   \item PCT_PX_ACB_6_PPM. percentage of patients prescribed 2 or more medicines
+#'     likely to cause kidney injury
 #' }
 #'
 #' @source { Data and Advanced Analytics Team at NHS BSA, using
@@ -58,7 +82,7 @@
 #' @keywords datasets
 #' @name metrics_by_ch_type
 #' @usage data(metrics_by_ch_type)
-#' @format A data frame with 12 rows and 8 variables
+#' @format A data frame with 12 rows and 15 variables
 #' 
 "metrics_by_ch_type"
 
