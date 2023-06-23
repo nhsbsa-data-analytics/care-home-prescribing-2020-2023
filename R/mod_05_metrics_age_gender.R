@@ -37,29 +37,38 @@ mod_05_metrics_age_gender_server <- function(id){
   moduleServer(id, function(input, output, session){
     ns <- session$ns
     
-    # Manually define the icons
-    female_ch <- fa_to_png_to_datauri(
-      name = "female",
-      width = 10,
-      fill = "#003087"
-    )
-    female_non_ch <- fa_to_png_to_datauri(
-      name = "female",
-      width = 10,
-      fill = "#768692"
-    )
-    male_ch <- fa_to_png_to_datauri(
-      name = "male",
-      width = 8,
-      fill = "#003087"
-    )
-    male_non_ch <- fa_to_png_to_datauri(
-      name = "male",
-      width = 8,
-      fill = "#768692"
-    )
     
-    # Create chart
+# Define colours outside the chart
+ch_col = NHSRtheme::get_nhs_colours()["Orange"]
+non_ch_col = NHSRtheme::get_nhs_colours()["DarkBlue"]
+
+symbol_scaling = 1.4
+    
+# Manually define the icons
+female_ch <- fa_to_png_to_datauri(
+  name = "venus",
+  width = 9*symbol_scaling,
+  fill = ch_col
+  )
+female_non_ch <- fa_to_png_to_datauri(
+  name = "venus",
+  width = 9*symbol_scaling,
+  fill = non_ch_col
+)
+male_ch <- fa_to_png_to_datauri(
+  name = "mars",
+  width = 11*symbol_scaling,
+  fill = ch_col
+)
+male_non_ch <- fa_to_png_to_datauri(
+  name = "mars",
+  width = 11*symbol_scaling,
+  fill = non_ch_col
+)
+    
+
+    
+# Create chart
 output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHighchart({
     req(input$gender_and_age_band_and_ch_flag_metric)
     req(input$fy)
@@ -75,7 +84,7 @@ output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHi
             y = .data[[input$gender_and_age_band_and_ch_flag_metric]]
           ),
           name = "Care home - Female",
-          color = "#003087",
+          color = ch_col,
           marker = list(
             symbol = stringr::str_glue("url({data_uri})", data_uri = female_ch),
             radius = 2
@@ -91,7 +100,7 @@ output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHi
             y = .data[[input$gender_and_age_band_and_ch_flag_metric]]
           ),
           name = "Care home - Male",
-          color = "#003087",
+          color = ch_col,
           marker = list(
             symbol = stringr::str_glue("url({data_uri})", data_uri = male_ch),
             radius = 2
@@ -107,7 +116,7 @@ output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHi
             y = .data[[input$gender_and_age_band_and_ch_flag_metric]]
           ),
           name = "Non-care home - Female",
-          color = "#768692",
+          color = non_ch_col,
           marker = list(
             symbol = stringr::str_glue("url({data_uri})", data_uri = female_non_ch),
             radius = 2
@@ -123,7 +132,7 @@ output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHi
           y = .data[[input$gender_and_age_band_and_ch_flag_metric]]
         ),
         name = "Non-care home - Male",
-        color = "#768692",
+        color = non_ch_col,
         marker = list(
           symbol = stringr::str_glue("url({data_uri})", data_uri = male_non_ch),
           radius = 2
@@ -163,7 +172,13 @@ output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHi
                            "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = "%"),
       valuePrefix = switch(input$gender_and_age_band_and_ch_flag_metric,
                            "SDC_COST_PER_PATIENT_MONTH" = "£")
-      )
+      ) |>
+      
+    highcharter::hc_legend(
+      squareSymbol = T,
+      symbolWidth = 0.1,
+      itemStyle = list(textDecoration = "none")
+    )
     
     })
 
