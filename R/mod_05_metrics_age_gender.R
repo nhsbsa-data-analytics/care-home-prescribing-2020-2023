@@ -14,10 +14,9 @@ mod_05_metrics_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
                         choices = c(
-                          "Drug cost (PPM)" = "SDC_COST_PER_PATIENT_MONTH"
-                          # One metric for now during development
-                          #"Number of prescription items (PPM)" = "SDC_ITEMS_PER_PATIENT_MONTH",
-                          #"Number of unique medicines (PPM)" = "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH",
+                          "Drug cost (PPM)" = "SDC_COST_PER_PATIENT_MONTH",
+                          "Number of prescription items (PPM)" = "SDC_ITEMS_PER_PATIENT_MONTH",
+                          "Number of unique medicines (PPM)" = "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH"
                           #"Patients on ten or more unique medicines (PPM)" = "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH"
                           ),
                         full_width = T)
