@@ -23,7 +23,7 @@ mod_05_metrics_age_gender_ui <- function(id){
         ),
       highcharter::highchartOutput(outputId = ns("metrics_by_gender_and_age_band_and_ch_flag_chart"), height = "350px"),
       shiny::htmlOutput(outputId = ns("pct_excluded_patients")),
-      #mod_nhs_download_ui(id = ns("download_metrics_by_gender_and_age_band_and_ch_flag_chart"))
+      mod_nhs_download_ui(id = ns("download_metrics_by_gender_and_age_band_and_ch_flag_chart"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
     
@@ -69,6 +69,41 @@ mod_05_metrics_age_gender_server <- function(id){
       )
       
     })
+    
+    
+    
+    # Swap NAs for "c" for data download and subset columns
+    metrics_by_gender_and_age_band_and_ch_flag_download_df <- 
+      
+      metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
+      dplyr::filter(!is.na(GENDER)) |>
+      dplyr::mutate(
+        SDC_COST_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_COST_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_COST_PER_PATIENT_MONTH)
+        ),
+        # Same for all metrics....
+        CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")
+      ) |>
+      dplyr::arrange(FY, GENDER, AGE_BAND, CH_FLAG) |>
+       dplyr::select(
+        `Financial year` = FY,
+         Gender = GENDER,
+        `Age band` = AGE_BAND,
+        `Care home flag` = CH_FLAG,
+        `Drug cost ppm` = SDC_COST_PER_PATIENT_MONTH,
+        `Number of prescription items ppm` = SDC_ITEMS_PER_PATIENT_MONTH,
+        `Number of unique medicines ppm` = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH
+      )
+
+    # Add a download button
+    mod_nhs_download_server(
+      id = "download_metrics_by_gender_and_age_band_and_ch_flag_chart",
+      filename = "metrics_by_gender_and_age_band_and_ch_flag.csv",
+      export_data = metrics_by_gender_and_age_band_and_ch_flag_download_df
+    )
+    
     
     
     # Define colours outside the chart
