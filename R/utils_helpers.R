@@ -66,7 +66,7 @@ breakdowns <- list(
     SUB_BREAKDOWN_CODE = "PCD_LAD_CODE",
     SUB_BREAKDOWN_NAME = "PCD_LAD_NAME"
   ),
-  "Geographical - PCN" = c(SUB_BREAKDOWN_NAME = "PRESCRIBER_PCN"),
+  # "Geographical - PCN" = c(SUB_BREAKDOWN_NAME = "PRESCRIBER_PCN"),
   "Demographical - Gender" = c(SUB_BREAKDOWN_NAME = "GENDER"),
   "Demographical - Age Band" = c(SUB_BREAKDOWN_NAME = "AGE_BAND"),
   "Additional - Gender and Age Band" = c(
