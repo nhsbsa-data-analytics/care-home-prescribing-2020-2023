@@ -28,7 +28,7 @@ app_ui <- function(request) {
             title = "Article",
             mod_01_headline_figures_ui("headline_figures"),
             #mod_02_patients_age_gender_ui("patients_age_gender"),
-            #mod_03_patients_imd_ui("patients_imd"),
+            mod_03_patients_imd_ui("patients_imd"),
             #mod_04_metrics_ch_flag_ui("metrics_ch_flag"),
             #mod_05_metrics_age_gender_ui("metrics_age_gender"),
             #mod_06_geo_ch_flag_ui("geo_ch_flag"),
