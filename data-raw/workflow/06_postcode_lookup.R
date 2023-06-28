@@ -42,15 +42,16 @@ postcode_db <- postcode_db %>%
   filter(RANK == 1) %>%
   ungroup() %>% 
   select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) %>%
-  addressMatchR::tidy_postcode(POSTCODE)
+  personMatchR::format_postcode_db(POSTCODE)
 
 postcode_latlong <- postcode_latlong %>%
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
+  ungroup() %>%
   select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE) %>%
-  addressMatchR::tidy_postcode(POSTCODE)
+  personMatchR::format_postcode_db(POSTCODE)
   
 # Join to the postcode lookup to get NHS Region, ICB and LA based on their mappings to LSOAs
 postcode_db <- postcode_db %>%
@@ -127,6 +128,9 @@ postcode_db %>%
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
+# Disconnect connection to database
+DBI::dbDisconnect(con)
+
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
 
@@ -135,6 +139,3 @@ remove_vars <- setdiff(ls(), keep_vars)
 
 # Remove objects and clean environment
 rm(list = remove_vars, remove_vars); gc()
-
-# Disconnect from database
-DBI::dbDisconnect(con)

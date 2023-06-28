@@ -8,7 +8,7 @@
 #' @param stack Stack option for highcharter.
 #'
 #' @return Highcharts object with theme added.
-#' @export
+#' @noRd
 theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
   
   # Set the thousands seperator
@@ -58,14 +58,15 @@ breakdowns <- list(
     SUB_BREAKDOWN_CODE = "PCD_REGION_CODE",
     SUB_BREAKDOWN_NAME = "PCD_REGION_NAME"
   ),
-  "Geographical - STP/ICS" = c(
-    SUB_BREAKDOWN_CODE = "PCD_STP_CODE",
-    SUB_BREAKDOWN_NAME = "PCD_STP_NAME"
+  "Geographical - ICB" = c(
+    SUB_BREAKDOWN_CODE = "PCD_ICB_CODE",
+    SUB_BREAKDOWN_NAME = "PCD_ICB_NAME"
   ),
   "Geographical - Local Authority" = c(
     SUB_BREAKDOWN_CODE = "PCD_LAD_CODE",
     SUB_BREAKDOWN_NAME = "PCD_LAD_NAME"
   ),
+  "Geographical - PCN" = c(SUB_BREAKDOWN_NAME = "PRESCRIBER_PCN"),
   "Demographical - Gender" = c(SUB_BREAKDOWN_NAME = "GENDER"),
   "Demographical - Age Band" = c(SUB_BREAKDOWN_NAME = "AGE_BAND"),
   "Additional - Gender and Age Band" = c(
@@ -130,7 +131,7 @@ format_data_raw <- function(df, vars) {
     dplyr::arrange(
       dplyr::across(
         dplyr::any_of(
-          c(
+          c("FY",
             "YEAR_MONTH",
             "SUB_BREAKDOWN_NAME",
             "SUB_GEOGRAPHY_NAME",
@@ -146,7 +147,7 @@ format_data_raw <- function(df, vars) {
     dplyr::mutate(
       dplyr::across(
         .cols = dplyr::any_of(
-          c("YEAR_MONTH", "SUB_BREAKDOWN_NAME", "SUB_GEOGRAPHY_NAME")
+          c("FY", "YEAR_MONTH", "SUB_BREAKDOWN_NAME", "SUB_GEOGRAPHY_NAME")
         ),
         .fns = ~ forcats::fct_relevel(.x, "Overall")
       )
@@ -181,7 +182,7 @@ format_data_raw <- function(df, vars) {
     dplyr::arrange(
       dplyr::across(
         dplyr::any_of(
-          c(
+          c("FY",
             "YEAR_MONTH",
             "BREAKDOWN",
             "SUB_BREAKDOWN_NAME",
