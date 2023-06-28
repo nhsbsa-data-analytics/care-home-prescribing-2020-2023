@@ -16,8 +16,11 @@ mod_05_metrics_age_gender_ui <- function(id){
                         choices = c(
                           "Drug cost (PPM)" = "SDC_COST_PER_PATIENT_MONTH",
                           "Number of prescription items (PPM)" = "SDC_ITEMS_PER_PATIENT_MONTH",
-                          "Number of unique medicines (PPM)" = "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH"
-                          #"Patients on ten or more unique medicines (PPM)" = "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH"
+                          "Number of unique medicines (PPM)" = "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH",
+                          "Patient-months with 6+ unique medicines (%)" = "SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH",
+                          "Patient-months with 10+ unique medicines (%)" = "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH",
+                          "Patient-months with ACB of 6+ (%)" = "SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH",
+                          "Patient-months with 2+ DAMN medicines (%)" = "SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH"
                           ),
                         full_width = T)
         ),
@@ -72,7 +75,7 @@ mod_05_metrics_age_gender_server <- function(id){
     
     
     
-    # Swap NAs for "c" for data download and subset columns
+    # Swap NAs for "c" for data download and tidy the table
     metrics_by_gender_and_age_band_and_ch_flag_download_df <- 
       
       metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
@@ -83,7 +86,36 @@ mod_05_metrics_age_gender_server <- function(id){
           yes = "c",
           no = as.character(SDC_COST_PER_PATIENT_MONTH)
         ),
-        # Same for all metrics....
+        SDC_ITEMS_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_ITEMS_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_ITEMS_PER_PATIENT_MONTH)
+        ),
+        SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH)
+        ),
+        SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH)
+        ),
+        SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH)
+        ),
+        SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH)
+        ),
+        SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
+          test = is.na(SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH),
+          yes = "c",
+          no = as.character(SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH)
+        ),
         CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")
       ) |>
       dplyr::arrange(FY, GENDER, AGE_BAND, CH_FLAG) |>
@@ -94,7 +126,11 @@ mod_05_metrics_age_gender_server <- function(id){
         `Care home flag` = CH_FLAG,
         `Drug cost ppm` = SDC_COST_PER_PATIENT_MONTH,
         `Number of prescription items ppm` = SDC_ITEMS_PER_PATIENT_MONTH,
-        `Number of unique medicines ppm` = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH
+        `Number of unique medicines ppm` = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
+        `Patient-months with 6+ unique medicines (%)` = SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH,
+        `Patient-months with 10+ unique medicines (%)` = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH,
+        `Patient-months with ACB of 6+ (%)` = SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH,
+        `Patient-months with 2+ DAMN medicines (%)` = SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH
       )
 
     # Add a download button
@@ -110,15 +146,15 @@ mod_05_metrics_age_gender_server <- function(id){
     ch_col = NHSRtheme::get_nhs_colours()["Orange"]
     non_ch_col = NHSRtheme::get_nhs_colours()["DarkBlue"]
 
+    # Define icons outside the chart
     symbol_scaling = 1.4
     
-    # Manually define the icons
     female_ch <- fa_to_png_to_datauri(name = "venus", width = 9 * symbol_scaling, fill = ch_col)
     female_non_ch <- fa_to_png_to_datauri(name = "venus", width = 9 * symbol_scaling, fill = non_ch_col)
     male_ch <- fa_to_png_to_datauri(name = "mars", width = 11 * symbol_scaling, fill = ch_col)
     male_non_ch <- fa_to_png_to_datauri(name = "mars", width = 11 * symbol_scaling, fill = non_ch_col)
     
-    # Create chart
+    # Create the chart
     output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHighchart({
         req(input$gender_and_age_band_and_ch_flag_metric)
         req(input$fy)
@@ -198,11 +234,15 @@ mod_05_metrics_age_gender_server <- function(id){
           switch(input$gender_and_age_band_and_ch_flag_metric,
                 "SDC_COST_PER_PATIENT_MONTH" = "Drug cost (£)",
                 "SDC_ITEMS_PER_PATIENT_MONTH" = "Number of prescription items",
-                 "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH" = "Number of unique medicines",
-                "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = "Patients on ten or more unique medicines (%)")
+                "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH" = "Number of unique medicines",
+                "SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH" = "Patient-months with 6+ unique medicines (%)",
+                "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = "Patient-months with 10+ unique medicines (%)",
+                "SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH" = "Patient-months with ACB of 6+ (%)",
+                "SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH" = "Patient-months with 2+ DAMN medicines (%)"
                   )
                 )
-              ) |>
+              )
+            ) |>
       
         highcharter::hc_xAxis(
           title = list(text = "Patient Age Band"),
@@ -210,16 +250,23 @@ mod_05_metrics_age_gender_server <- function(id){
           ) |>
       
         highcharter::hc_tooltip(
-          shared = TRUE,
-          useHTML = TRUE,
+          shared = T,
+          useHTML = T,
           valueDecimals = switch(input$gender_and_age_band_and_ch_flag_metric,
-                                "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = 1,
-                                "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH" = 1,
-                                "SDC_ITEMS_PER_PATIENT_MONTH" = 1),
-          # valueDecimals = 1,
+                                 "SDC_COST_PER_PATIENT_MONTH" = 0,
+                                 "SDC_ITEMS_PER_PATIENT_MONTH" = 1,
+                                 "SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH" = 1,
+                                 "SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH" = 1,
+                                 "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = 1,
+                                 "SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH" = 1,
+                                 "SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH" = 1
+                                 ),
           headerFormat = "<b> {point.value:.1f} </b>",
           valueSuffix = switch(input$gender_and_age_band_and_ch_flag_metric,
-                              "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = "%"),
+                              "SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH" = "%",
+                              "SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH" = "%",
+                              "SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH" = "%",
+                              "SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH" = "%"),
           valuePrefix = switch(input$gender_and_age_band_and_ch_flag_metric,
                               "SDC_COST_PER_PATIENT_MONTH" = "£")
           ) |>
