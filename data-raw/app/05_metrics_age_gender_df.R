@@ -45,8 +45,8 @@ metrics_by_age_gender_and_ch_flag_df <- base_db |>
     TOTAL_COST = sum(ITEM_PAY_DR_NIC / 100),
     UNIQUE_MEDICINES = n_distinct(
       ifelse(substr(BNF_CHEMICAL_SUBSTANCE, 1, 2) %in% c(01, 02, 03, 04, 06, 07, 08, 09, 10),
-             yes = CHEMICAL_SUBSTANCE_BNF_DESCR,
-             no = NA_character_)
+             CHEMICAL_SUBSTANCE_BNF_DESCR,
+             NA_character_)
       ),
     ACB_6 = case_when( 
         (1 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 1])) + 
