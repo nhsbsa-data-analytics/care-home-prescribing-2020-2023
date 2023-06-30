@@ -46,7 +46,8 @@ mod_03_patients_imd_ui <- function(id) {
         paste0(
           "IMD deciles were attributed to care home address based on their postcode. ",
           "Every distinct patient that recieved a prescription form from a care homw off given IMD decile contributed to their total. ",
-          "If patients moved between care homes they could potentially be counted in multiple IMD decile total distinct patient counts." 
+          "If patients moved between care homes they could potentially be counted in multiple IMD decile total distinct patient counts. ",
+          "Only 10 prescription forms across the three financial years could not be attributed an IMD Decile."
         )
       ),
       
@@ -93,7 +94,7 @@ mod_03_patients_imd_server <- function(id, export_data) {
     mod_nhs_download_server(
       id = "download_patients_imd_chart",
       filename = "patient_imd.csv",
-      export_data = carehomes2::mod_patient_by_imd_df
+      export_data = carehomes2::mod_patients_by_imd_df
     )
   })
 }

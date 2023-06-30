@@ -12,8 +12,8 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
-      "Demographic estimates for care home patients aged 65 years or over ",
-      "receiving prescriptions"
+      "Prescribing metrics for care home residents aged 65 or over, ",
+      "for specific BNF areas by geography"
     ),
     
     # Overall nhs card
@@ -75,6 +75,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
           # RHS: 3 charts
           column(
             5,
+            shiny::htmlOutput(outputId = ns("region_title")),
             highcharter::highchartOutput(
               outputId = ns("region_chart_one"), 
               height = "175px"
@@ -86,14 +87,16 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             highcharter::highchartOutput(
               outputId = ns("region_chart_three"), 
               height = "175px"
-            )
+            ),
+            shiny::htmlOutput(outputId = ns("region_axis"))
             ),
           
           # Chart caption
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to select one of the 7 regions."
+            "Click on a row to select one of the 7 regions. Only the top 50 elements by total item count per BNF level are presented. ",
+            "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
           ),
           
           # Data download option
@@ -152,6 +155,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             # RHS: 3 charts
             column(
               5,
+              shiny::htmlOutput(outputId = ns("icb_title")),
               highcharter::highchartOutput(
                 outputId = ns("icb_chart_one"), 
                 height = "175px"
@@ -163,7 +167,8 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
               highcharter::highchartOutput(
                 outputId = ns("icb_chart_three"), 
                 height = "175px"
-              )
+              ),
+              shiny::htmlOutput(outputId = ns("icb_axis"))
             ),
             
             # Chart caption
@@ -229,6 +234,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             # RHS: 3 charts
             column(
               5,
+              shiny::htmlOutput(outputId = ns("lad_title")),
               highcharter::highchartOutput(
                 outputId = ns("lad_chart_one"), 
                 height = "175px"
@@ -240,7 +246,8 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
               highcharter::highchartOutput(
                 outputId = ns("lad_chart_three"), 
                 height = "175px"
-              )
+              ),
+              shiny::htmlOutput(outputId = ns("lad_axis"))
             ),
             
             # Chart caption
@@ -268,7 +275,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Helper functions ---------------------------------------------------------
 
     # One: spline chart
-    spline_chart_plot = function(df, df_select, fy, top_plot = FALSE, bottom_plot = FALSE){
+    spline_chart_plot = function(df, df_select, fy, prefix, suffix, bottom_plot = FALSE){
 
       # Shared y axis max value across all 3 plots
       y_axis_max_val = max(df$`20/21`, df$`21/22`, df$`22/23`)
@@ -283,7 +290,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           total = max(rank),
           col =  "#f7a35c",
           label = dplyr::case_when(
-            GEOGRAPHY_CHILD == df_select ~ paste0(fy, ":   ", VALUE),
+            GEOGRAPHY_CHILD == df_select ~ paste0(fy, ":   ", prefix, VALUE, suffix),
             TRUE ~ ""
           )
         )
@@ -307,8 +314,12 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           highcharter::hcaes(index, VALUE, color = col),
           showInLegend = FALSE
         ) %>%
-        highcharter::hc_yAxis(min = 0, max = y_axis_max_val) %>%
-        highcharter::hc_xAxis(categories = c(rep("", max(df$index)), max(df$index))) %>%
+        highcharter::hc_yAxis(
+          min = 0, 
+          max = y_axis_max_val,
+          labels = list(format = "{value:.2f}")
+          ) %>%
+        highcharter::hc_xAxis(categories = c(rep("", max(df$index)+1))) %>%
         highcharter::hc_plotOptions(
           spline = list(
             marker = list(
@@ -340,36 +351,15 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           )
         ) %>%
         highcharter::hc_tooltip(enabled = FALSE) %>%
-        highcharter::hc_chart(borderColor = "grey", borderWidth = 0.3)
-
-      # Add a title if required
-      if(top_plot){
-        hc = hc %>%
-          highcharter::hc_title(
-            text = paste0("<b>", df_select, "</b>"),
-            style = list(
-              textAlign = "center",
-              fontSize = "15px",
-              fontFamily = "arial"
-            )
-          )
-      }
-
-      # Add x-axis text if required
+        theme_nhsbsa()
+      
+      # Only caption if botttom chart
       if(bottom_plot){
         hc = hc %>%
-          highcharter::hc_xAxis(
-            title = list(
-              text = paste0("<b>", df$GEOGRAPHY_PARENT[1], " Order</b>"),
-              style = list(
-                textAlign = "center",
-                fontSize = "15px",
-                fontFamily = "arial",
-                color = "black",
-                fontWeight = "bold"
-              )
-            )
-          )
+          highcharter::hc_credits(enabled = TRUE)
+      }else{
+        hc = hc %>%
+          highcharter::hc_credits(enabled = FALSE)
       }
       hc
     }
@@ -437,6 +427,23 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     })
 
     # Initial df from select inputs --------------------------------------------
+    
+    # Metrics
+    p1 = "% of Total Annual Number of Prescription Items"
+    p2 = "% of Total Annual Drug Cost"
+    c1 = "Drug Cost (PPM)"
+    
+    # Pound sign for pound metrics
+    region_prefix = reactive({ifelse(input$input_region_metric == c1, "£", "")})
+    region_suffix = reactive({ifelse(input$input_region_metric %in% c(p1,p2), "%", "")})
+    
+    # Pound sign for pound metrics
+    icb_prefix = reactive({ifelse(input$input_icb_metric == c1, "£", "")})
+    icb_suffix = reactive({ifelse(input$input_icb_metric %in% c(p1,p2), "%", "")})
+    
+    # Pound sign for pound metrics
+    lad_prefix = reactive({ifelse(input$input_lad_metric == c1, "£", "")})
+    lad_suffix = reactive({ifelse(input$input_lad_metric %in% c(p1,p2), "%", "")})
 
     # Region: df after 4 initial filters applied
     region_df = reactive({
@@ -522,8 +529,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # LHS: Initial table ------------------------------------------------------
 
     # Function for each table
-    geo_table = function(df, df_select, geo_name){
-
+    geo_table = function(df, df_select, geo_name, prefix, suffix){
+      
       df %>%
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
@@ -539,9 +546,9 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           borderless = TRUE,
           columns = list(
             .selection = reactable::colDef(width = 15),
-            `20/21` = reactable::colDef(width = 60),
-            `21/22` = reactable::colDef(width = 60),
-            `22/23` = reactable::colDef(width = 60)
+            `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix)),
+            `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix)),
+            `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix))
           ),
           style = list(fontSize = "14px", fontFamily = "Arial"),
           theme = reactable::reactableTheme(stripedColor = "#f8f8f8")
@@ -572,7 +579,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_region_metric)
 
       # Plot table
-      geo_table(region_df(), index_region(), "Region")
+      geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix())
     })
 
     # Icb: Initial table
@@ -584,7 +591,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_icb_metric)
 
       # Plot table
-      geo_table(icb_df(), index_icb(), "ICB")
+      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix())
     })
 
     # LA: Initial table
@@ -596,7 +603,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_lad_metric)
 
       # Plot table
-      geo_table(lad_df(), index_lad(), "Local Authority")
+      geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix())
     })
     
     # LHS: table affects -------------------------------------------------------
@@ -624,55 +631,151 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::select(GEOGRAPHY_CHILD) %>%
         dplyr::pull()
     })
+    
+    # Create chart titles from selection
+    output$region_title = renderUI({
+      
+      # Ensure select input required
+      req(index_region())
+      
+      # Region name text
+      tags$div(
+        style = "text-align: center;",
+        tags$text(
+          style = "font-weight: bold; font-size: 12pt;", 
+          selected_region()
+        )
+      )
+    })
+    
+    # Create chart titles from selection
+    output$icb_title = renderUI({
+      
+      # Ensure select input required
+      req(index_icb())
+      
+      # Region name text
+      tags$div(
+        style = "text-align: center;",
+        tags$text(
+          style = "font-weight: bold; font-size: 12pt;", 
+          selected_icb()
+        )
+      )
+    })
+    
+    # Create chart titles from selection
+    output$lad_title = renderUI({
+      
+      # Ensure select input required
+      req(index_lad())
+      
+      # Region name text
+      tags$div(
+        style = "text-align: center;",
+        tags$text(
+          style = "font-weight: bold; font-size: 12pt;", 
+          selected_lad()
+        )
+      )
+    })
+    
+    # Region bottom axis text
+    output$region_axis = renderUI({
+      
+      # Require region row select
+      req(index_region())
+      
+      # Region axiss text
+      tags$div(
+        style = "text-align: center;",
+        tags$text(
+          style = "font-weight: bold; font-size: 12pt;", 
+          "Region Order (out of 8)"
+        )
+      )
+    })
+    
+    # ICB bottom axis text
+    output$icb_axis = renderUI({
+      
+      # Require region row select
+      req(index_icb())
+      
+      # Region axiss text
+      tags$div(
+        style = "text-align: center;",
+        tags$text(
+          style = "font-weight: bold; font-size: 12pt;", 
+          "ICB Order (out of 42)"
+        )
+      )
+    })
+    
+    # LA bottom axis text
+    output$lad_axis = renderUI({
+      
+      # Require region row select
+      req(index_lad())
+      
+      # Region axiss text
+      tags$div(
+        style = "text-align: center;",
+        tags$text(
+          style = "font-weight: bold; font-size: 12pt;", 
+          "Local Authority Order (out of 308)"
+        )
+      )
+    })
 
     # RHS: 3 charts ------------------------------------------------------------
 
     # Region charts
     output$region_chart_one = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "20/21", top_plot = TRUE)
+      spline_chart_plot(region_df(), selected_region(), "20/21", region_prefix(), region_suffix())
     })
 
     output$region_chart_two = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "21/22")
+      spline_chart_plot(region_df(), selected_region(), "21/22", region_prefix(), region_suffix())
     })
 
     output$region_chart_three = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "22/23", bottom_plot = TRUE)
+      spline_chart_plot(region_df(), selected_region(), "22/23", region_prefix(), region_suffix(), bottom_plot = TRUE)
     })
 
     # Icb charts
     output$icb_chart_one = highcharter::renderHighchart({
       req(index_icb())
-      spline_chart_plot(icb_df(), selected_icb(), "20/21", top_plot = TRUE)
+      spline_chart_plot(icb_df(), selected_icb(), "20/21", icb_prefix(), icb_suffix())
     })
 
     output$icb_chart_two = highcharter::renderHighchart({
       req(index_icb())
-      spline_chart_plot(icb_df(), selected_icb(), "21/22")
+      spline_chart_plot(icb_df(), selected_icb(), "21/22", icb_prefix(), icb_suffix())
     })
 
     output$icb_chart_three = highcharter::renderHighchart({
       req(index_icb())
-      spline_chart_plot(icb_df(), selected_icb(), "22/23", bottom_plot = TRUE)
+      spline_chart_plot(icb_df(), selected_icb(), "22/23", icb_prefix(), icb_suffix(), bottom_plot = TRUE)
     })
 
     # Lad charts
     output$lad_chart_one = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "20/21", top_plot = TRUE)
+      spline_chart_plot(lad_df(), selected_lad(), "20/21", lad_prefix(), lad_suffix())
     })
 
     output$lad_chart_two = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "21/22")
+      spline_chart_plot(lad_df(), selected_lad(), "21/22", lad_prefix(), lad_suffix())
     })
 
     output$lad_chart_three = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "22/23", bottom_plot = TRUE)
+      spline_chart_plot(lad_df(), selected_lad(), "22/23", lad_prefix(), lad_suffix(), bottom_plot = TRUE)
     })
     
     # Downloads ----------------------------------------------------------------

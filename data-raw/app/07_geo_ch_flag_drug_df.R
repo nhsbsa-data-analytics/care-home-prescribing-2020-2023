@@ -8,7 +8,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  dplyr::tbl(from = in_schema("ADNSH", "INT646_CH_BASE_20200401_20230331"))
+  dplyr::tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
 # All level permutations
 all_levels = cross_join(
@@ -132,7 +132,8 @@ get_geo_bnf_ppm = function(index){
   
   # Generate output
   pat_info = fact_db %>% 
-    filter(!is.na(PCD_LAD_NAME)) %>% 
+    # There are 17 records without a postcode and no geographic information
+    filter(!is.na(IMD_DECILE)) %>% 
     group_by(FY, YEAR_MONTH, NHS_NO, {{ geo }}, {{ bnf }}) %>% 
     summarise(
       ITEMS = sum(ITEM_COUNT),

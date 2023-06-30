@@ -8,7 +8,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_CH_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
   
 # Count care home patients in each decile
 mod_patients_by_imd_df <- fact_db %>%
@@ -37,5 +37,3 @@ usethis::use_data(mod_patients_by_imd_df, overwrite = TRUE)
 
 # Disconnect
 DBI::dbDisconnect(con); rm(list = ls()); gc()
-
-#-------------------------------------------------------------------------------

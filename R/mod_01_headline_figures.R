@@ -11,8 +11,7 @@ mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
-      "Demographic estimates for care home patients aged 65 years or over ",
-      "receiving prescriptions"
+      "Demographic estimates for care home patients aged 65 years or over receiving prescriptions"
     ),
     # Chart One
     
@@ -24,7 +23,7 @@ mod_01_headline_figures_ui <- function(id) {
         inputId = ns("metric"),
         label = "Metric",
         choices = c(
-          "Distinct Patients" = "PATS",
+          "Patient Count" = "PATS",
           "Total Items" = "ITEMS",
           "Total Cost (£)" = "NIC"
         ),
@@ -39,7 +38,7 @@ mod_01_headline_figures_ui <- function(id) {
           4,
           highcharter::highchartOutput(
             outputId = ns("headline_annual_chart"),
-            height = "350px"
+            height = "317px"
             )
           ),
         
@@ -117,7 +116,8 @@ mod_01_headline_figures_server <- function(id, export_data) {
               "NIC" = "<b>Total Cost: </b> £{point.METRIC:,.0f}"
             )
           )
-        )
+        ) %>% 
+        theme_nhsbsa()
     })
     
     # Monthly Chart
@@ -150,7 +150,8 @@ mod_01_headline_figures_server <- function(id, export_data) {
               "NIC" = "<b>Total Cost: </b> £{point.METRIC:,.0f}"
               )
             )
-          )
+          ) %>% 
+        theme_nhsbsa()
     })
     
     # Add a download button

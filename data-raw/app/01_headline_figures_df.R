@@ -8,10 +8,11 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from year month dim table in DWCP
 data_db <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_CH_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
 # Annual data df
 annual_df = data_db %>% 
+  filter(CH_FLAG == 1) %>% 
   group_by(TIME = FY) %>% 
   summarise(
     PATS = round(n_distinct(NHS_NO), -2),
@@ -25,6 +26,7 @@ annual_df = data_db %>%
   
 # Monthly data df
 monthly_df = data_db %>% 
+  filter(CH_FLAG == 1) %>% 
   group_by(TIME = YEAR_MONTH) %>% 
   summarise(
     PATS = round(n_distinct(NHS_NO), -2),
