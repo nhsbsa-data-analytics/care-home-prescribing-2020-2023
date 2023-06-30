@@ -36,7 +36,9 @@ Imports:
     nhsbsaR,
     rlang,
     shiny,
-    purrr
+    purrr,
+    reactable,
+    janitor
 Suggests:
     addressMatchR,
     archive,
@@ -52,7 +54,7 @@ Suggests:
     yaml
 Remotes:
     nhsbsa-data-analytics/nhsbsaR,
-    nhsbsa-data-analytics/addressMatchR
+    nhsbsa-data-analytics/addressMatchR,
     nhs-r-community/NHSRtheme
 Encoding: UTF-8
 LazyData: true

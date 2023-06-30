@@ -10,4 +10,3 @@ golem::document_and_reload()
 
 # Run the application
 carehomes2::run_app()
-
