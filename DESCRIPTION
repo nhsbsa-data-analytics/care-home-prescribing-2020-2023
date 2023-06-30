@@ -35,7 +35,8 @@ Imports:
     magrittr,
     nhsbsaR,
     rlang,
-    shiny
+    shiny,
+    purrr
 Suggests:
     addressMatchR,
     archive,
