@@ -175,7 +175,8 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 42 ICBs."
+              "Click on a row to select one of the 42 ICBs. Only the top 50 elements by total item count per BNF level are presented. ",
+              "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
             ),
             
             # Data download option
@@ -254,7 +255,8 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 308 Local Authorities."
+              "Click on a row to select one of the 308 Local Authorities. Only the top 50 elements by total item count per BNF level are presented. ",
+              "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
             ),
             
             # Data download option
