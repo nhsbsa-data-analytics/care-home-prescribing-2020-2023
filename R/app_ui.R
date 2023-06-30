@@ -30,7 +30,7 @@ app_ui <- function(request) {
             #mod_02_patients_age_gender_ui("patients_age_gender"),
             #mod_03_patients_imd_ui("patients_imd"),
             #mod_04_metrics_ch_flag_ui("metrics_ch_flag"),
-            mod_05_metrics_age_gender_ui("metrics_age_gender")
+            mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_02_patients_age_gender_ui("patients_age_gender"),
             #mod_03_patients_imd_ui("patients_imd"),
             #mod_04_metrics_ch_flag_ui("metrics_ch_flag"),
