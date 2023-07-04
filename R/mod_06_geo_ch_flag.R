@@ -138,7 +138,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Reactive data -------------------------------------------------------
     
     fdata <- reactive(
-      carehomes2::metrics_by_geo_and_ch_flag %>%
+      carehomes2::metrics_by_geo_and_ch_flag_df %>%
         dplyr::filter(
           .data$GEOGRAPHY == input$geography,
           .data$FY == input$fy
@@ -303,7 +303,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create download data (all data)
     create_download_data_all <- function() {
-      temp <- carehomes2::metrics_by_geo_and_ch_flag %>%
+      temp <- carehomes2::metrics_by_geo_and_ch_flag_df %>%
         dplyr::mutate(
           # Use TOTAL_PATIENTS for non-% metrics...
           dplyr::across(
@@ -350,7 +350,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Datatables
     output$table <- DT::renderDT(
-      create_datatable(carehomes2::metrics_by_geo_and_ch_flag)
+      create_datatable(carehomes2::metrics_by_geo_and_ch_flag_df)
     )
     
     # Download buttons

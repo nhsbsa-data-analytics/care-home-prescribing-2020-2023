@@ -117,7 +117,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
             )
           )
         ) %>% 
-        theme_nhsbsa()
+        nhsbsaR::theme_nhsbsa_highchart()
     })
     
     # Monthly Chart
@@ -151,7 +151,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
               )
             )
           ) %>% 
-        theme_nhsbsa()
+        nhsbsaR::theme_nhsbsa_highchart()
     })
     
     # Add a download button

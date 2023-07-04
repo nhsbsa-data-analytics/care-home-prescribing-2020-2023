@@ -3,6 +3,7 @@
 \docType{data}
 \name{metrics_by_geo_and_ch_flag}
 \alias{metrics_by_geo_and_ch_flag}
+\alias{metrics_by_geo_and_ch_flag_df}
 \title{Aggregated prescribing data broken down by financial year, geography and 
 carehome or non-carehome}
 \format{
@@ -15,7 +16,7 @@ A data frame with 2148 rows and 20 variables
   data in combination with internal data }
 }
 \usage{
-data(metrics_by_geo_and_ch_flag)
+data(metrics_by_geo_and_ch_flag_df)
 }
 \description{
 \itemize{

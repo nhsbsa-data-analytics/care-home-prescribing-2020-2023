@@ -43,10 +43,10 @@
 #' @docType data
 #' @keywords datasets
 #' @name metrics_by_geo_and_ch_flag
-#' @usage data(metrics_by_geo_and_ch_flag)
+#' @usage data(metrics_by_geo_and_ch_flag_df)
 #' @format A data frame with 2148 rows and 20 variables
 #' 
-"metrics_by_geo_and_ch_flag"
+"metrics_by_geo_and_ch_flag_df"
 
 
 #' Aggregated prescribing data broken down by financial year and carehome type
@@ -90,10 +90,10 @@
 #' @docType data
 #' @keywords datasets
 #' @name metrics_by_ch_type
-#' @usage data(metrics_by_ch_type)
+#' @usage data(metrics_by_ch_type_df)
 #' @format A data frame with 12 rows and 17 variables
 #' 
-"metrics_by_ch_type"
+"metrics_by_ch_type_df"
 
 
 #' GIS data for boundaries at Region, ICB and Local Authority level

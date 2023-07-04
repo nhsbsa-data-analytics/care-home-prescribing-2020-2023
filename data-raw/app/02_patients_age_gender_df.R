@@ -22,7 +22,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
   
   # Identify geography cols
   geography_cols <-
-    geographys[[geography_name]] %>%
+    geographies[[geography_name]] %>%
     purrr::set_names(
       nm = stringr::str_replace(
         string = names(.),
@@ -60,7 +60,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
 }
 
 patients_by_fy_geo_age_gender_df <- purrr::map(
-  names(geographys),
+  names(geographies),
   patients_by_fy_geo_age_gender_fun
   ) |>
   purrr::list_rbind()

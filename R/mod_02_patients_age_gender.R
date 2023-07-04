@@ -22,7 +22,7 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = names(geographys),
+                        choices = names(geographies),
                         full_width = T),
         nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",
@@ -329,7 +329,7 @@ mod_02_patients_age_gender_server <- function(id){
               group = GENDER
             )
           ) %>%
-          theme_nhsbsa(palette = "gender") %>%
+          nhsbsaR::theme_nhsbsa_highchart(palette = "gender") %>%
           highcharter::hc_annotations(
             list(
               labels = list(

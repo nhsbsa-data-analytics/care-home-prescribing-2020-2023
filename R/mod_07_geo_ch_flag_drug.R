@@ -353,7 +353,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           )
         ) %>%
         highcharter::hc_tooltip(enabled = FALSE) %>%
-        theme_nhsbsa()
+        nhsbsaR::theme_nhsbsa_highchart()
       
       # Only caption if botttom chart
       if(bottom_plot){

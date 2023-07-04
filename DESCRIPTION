@@ -41,6 +41,7 @@ Imports:
     purrr,
     reactable,
     rlang,
+    rsvg,
     shiny,
     tidyr
 Suggests:
@@ -50,7 +51,6 @@ Suggests:
     dbplyr,
     glue,
     httr,
-    janitor,
     jsonlite,
     lubridate,
     pacman,

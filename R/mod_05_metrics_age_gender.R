@@ -225,7 +225,7 @@ mod_05_metrics_age_gender_server <- function(id){
             ),
             icon = male_non_ch) |>
       
-        theme_nhsbsa(stack = NA) |>
+        nhsbsaR::theme_nhsbsa_highchart(stack = NA) |>
       
         highcharter::hc_yAxis(
           min = 0,

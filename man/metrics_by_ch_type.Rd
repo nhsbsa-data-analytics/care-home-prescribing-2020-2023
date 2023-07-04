@@ -3,6 +3,7 @@
 \docType{data}
 \name{metrics_by_ch_type}
 \alias{metrics_by_ch_type}
+\alias{metrics_by_ch_type_df}
 \title{Aggregated prescribing data broken down by financial year and carehome type}
 \format{
 A data frame with 12 rows and 17 variables
@@ -14,7 +15,7 @@ A data frame with 12 rows and 17 variables
   data in combination with internal data }
 }
 \usage{
-data(metrics_by_ch_type)
+data(metrics_by_ch_type_df)
 }
 \description{
 \itemize{

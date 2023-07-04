@@ -153,7 +153,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Reactive data -------------------------------------------------------
     
     fdata <- reactive(
-      carehomes2::metrics_by_ch_type %>%
+      carehomes2::metrics_by_ch_type_df %>%
         dplyr::mutate(
           .data$FY,
           .data$CH_TYPE,
@@ -183,7 +183,7 @@ mod_04_metrics_ch_type_server <- function(id) {
         )
       
       # Get max of metric to use a common y-axis range
-      y_max <- carehomes2::metrics_by_ch_type[[input$metric]] %>%
+      y_max <- carehomes2::metrics_by_ch_type_df[[input$metric]] %>%
         max(na.rm = TRUE)
       
       x <- rlang::sym("FY")
@@ -217,7 +217,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Create download data
     create_download_data <- function() {
-      temp <- carehomes2::metrics_by_ch_type %>%
+      temp <- carehomes2::metrics_by_ch_type_df %>%
         dplyr::mutate(
           # Use TOTAL_PATIENTS for non-% metrics...
           dplyr::across(

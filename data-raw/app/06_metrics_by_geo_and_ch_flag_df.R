@@ -159,9 +159,7 @@ metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   suppressWarnings() # We do not have Overall and PCN in this data
 
 ## Save -------------------------------------------------------------------
-metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df
-
-usethis::use_data(metrics_by_geo_and_ch_flag, overwrite = TRUE)
+usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
 
 # Cleanup -----------------------------------------------------------------
 DBI::dbDisconnect(con)
