@@ -32,12 +32,14 @@ Imports:
     golem,
     highcharter,
     htmltools,
+    janitor,
     knitr,
     magrittr,
     nhsbsaR,
     NHSRtheme,
     openxlsx,
     purrr,
+    reactable,
     rlang,
     shiny,
     tidyr
@@ -58,11 +60,12 @@ Suggests:
     tictoc,
     yaml
 Remotes:
-    nhsbsa-data-analytics/addressMatchR
-    nhsbsa-data-analytics/nhsbsaR
+    nhsbsa-data-analytics/nhsbsaR,
+    nhsbsa-data-analytics/addressMatchR,
     nhs-r-community/NHSRtheme
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
-Depends: 
+Depends:
     R (>= 4.3)
+

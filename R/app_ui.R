@@ -26,26 +26,25 @@ app_ui <- function(request) {
           widths = c(2, 10),
           tabPanel(
             title = "Article",
-            # mod_01_headline_figures_ui("headline_figures"),
-            # mod_02_patients_age_gender_ui("patients_age_gender"),
-            # mod_03_patients_imd_ui("patients_imd"),
-            mod_04_metrics_ch_type_ui("metrics_ch_type"),
-            # mod_05_metrics_age_gender_ui("metrics_age_gender"),
+            mod_01_headline_figures_ui("headline_figures"),
+            mod_02_patients_age_gender_ui("patients_age_gender"),
+            mod_03_patients_imd_ui("patients_imd"),
+            mod_04_metrics_ch_flag_ui("metrics_ch_flag"),
+            mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_06_geo_ch_flag_ui("geo_ch_flag"),
-            # mod_07_geo_ch_flag_monthly_ui("geo_ch_flag_monthly"),
-            # mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug")
+            mod_07_geo_ch_flag_drug_ui("geo_ch_flag_drug")
           ),
           tabPanel(
-            title = "Definitions",
-            # mod_09_definitions_ui("definitions")
+            title = "Definitions"#,
+            #mod_09_definitions_ui("definitions")
           ),
           tabPanel(
-            title = "Methodology",
-            # mod_10_methodology_ui("methodology")
+            title = "Methodology"#,
+            #mod_10_methodology_ui("methodology")
           ),
           tabPanel(
-            title = "Caveats",
-            # mod_11_caveats_ui("caveats")
+            title = "Caveats"#,
+            #mod_11_caveats_ui("caveats")
           )
         ),
         # Move to js file
@@ -54,7 +53,7 @@ app_ui <- function(request) {
          window.scrollTo(0, 0)
             });
             });"),
-      tags$head(tags$script(src = "survey.js"))
+      #tags$head(tags$script(src = "survey.js"))
       )
     ),
     br(),

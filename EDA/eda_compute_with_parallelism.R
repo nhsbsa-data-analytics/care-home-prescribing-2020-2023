@@ -60,12 +60,15 @@ compute_with_parallelism = function(lazy_tbl, create_table_name, n){
   
   # Modify query text
   new_query = paste0(
-    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", query
+    "CREATE TABLE ", create_table_name, " AS SELECT /*+ PARALLEL(", n, ") */ * FROM ", "(", query, ")"
   )
   
   # Send query to the database
   DBI::dbSendQuery(conn = db_connection, statement = new_query)
 }
+
+# Drop table and try again
+drop_table_if_exists_db("INT646_ABC")
 
 # Test time taken for function to run with 2 parallel: 1623 secs ( mins)
 tic(); compute_with_parallelism(match_db, "INT646_ABC", 2); toc()
@@ -75,6 +78,9 @@ drop_table_if_exists_db("INT646_ABC")
 
 # Test time taken for function to run with 16 parallel: 1419 secs (24 mins)
 tic(); compute_with_parallelism(match_db, "INT646_ABC", 16); toc()
+
+# Drop table and try again
+drop_table_if_exists_db("INT646_ABC")
 
 # Conclusion: the code runs with the intended of parallelism, as intended
 # However, the lack of performance in this instance are perhaps use case specific
