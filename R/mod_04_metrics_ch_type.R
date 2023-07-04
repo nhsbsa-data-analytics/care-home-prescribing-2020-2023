@@ -234,7 +234,7 @@ mod_04_metrics_ch_type_server <- function(id) {
               # The 'middle' is the substring w/o leading "PCT_" or trailing "_PPM"
               middle <- gsub("PCT_|_PPM", "", dplyr::cur_column())
               # Get vector of associated total column for test
-              tot_vec <- dplyr::cur_data() %>% pull(paste0("TOTAL_", middle))
+              tot_vec <- dplyr::cur_data() %>% dplyr::pull(paste0("TOTAL_", middle))
               dplyr::if_else(
                 is.na(.x) & tot_vec > 0,
                 "c",
