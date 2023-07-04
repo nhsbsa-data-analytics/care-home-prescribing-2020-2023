@@ -60,43 +60,46 @@ mod_04_metrics_ch_type_ui <- function(id) {
         geography, age band or gender (2020/21 to 2022/23)",
       div(
         class = "nhsuk-grid-row",
-        div(class = "nhsuk-grid-column-one-quarter"),
         div(
-          class = "nhsuk-grid-column-one-half",
+          class = "nhsuk-grid-column-two-thirds",
           nhs_selectInput(
             inputId = ns("metric"),
             label = "Metric",
             choices = c(
-              "Drug cost (PPM)" = "COST_PPM",
-              "Number of prescription items (PPM)" = "ITEMS_PPM",
-              "Number of unique medicines (PPM)" = "UNIQ_MEDS_PPM",
-              "Patients on 10+ unique medicines (PPM)" = "PCT_PX_GTE_TEN_PPM"
+              "Drug cost MPPM (\u00A3)" = "COST_PPM",
+              "Number of prescription items MPPM" = "ITEMS_PPM",
+              "Number of unique medicines MPPM" = "UNIQ_MEDS_PPM",
+              "Patients on 6+ unique medicines MPPM (%)" = "PCT_PATIENTS_GTE_SIX_PPM",
+              "Patients on 10+ unique medicines MPPM (%)" = "PCT_PATIENTS_GTE_TEN_PPM",
+              "Patients with ACB 6+ MPPM (%)" = "PCT_PATIENTS_ACB_6_PPM",
+              "Patients with DAMN 2+ MPPM (%)" = "PCT_PATIENTS_DAMN_PPM",
+              "Number of unique fall-risk medicines MPPM" = "UNIQ_MEDS_FALLS_PPM",
+              "Patients on 3+ unique falls-risk medicines MPPM (%)" = "PCT_PATIENTS_FALLS_PPM"
             ),
             full_width = TRUE
           )
-        ),
-        div(class = "nhsuk-grid-column-one-quarter")
-      ),
-      div(
-        class = "nhsuk-grid-row",
-        div(
-          class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_ch"))
-        ),
-        div(
-          class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_non_ch"))
         )
       ),
       div(
         class = "nhsuk-grid-row",
         div(
           class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_nh"))
+          highcharter::highchartOutput(ns("chart_ch"), height = "250px")
         ),
         div(
           class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_rh"))
+          highcharter::highchartOutput(ns("chart_non_ch"), height = "250px")
+        )
+      ),
+      div(
+        class = "nhsuk-grid-row",
+        div(
+          class = "nhsuk-grid-column-one-half",
+          highcharter::highchartOutput(ns("chart_nh"), height = "250px")
+        ),
+        div(
+          class = "nhsuk-grid-column-one-half",
+          highcharter::highchartOutput(ns("chart_rh"), height = "250px")
         )
       ),
       tags$text(
@@ -104,9 +107,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
         style = "font-size: 9pt",
         "Where the number of patients is less than 5 the data has been redacted."
       ),
-      mod_nhs_download_ui(
-          id = ns("download_data")
-      )
+      mod_nhs_download_ui(id = ns("download_data"))
     )
   )
 }
@@ -124,25 +125,40 @@ mod_04_metrics_ch_type_server <- function(id) {
     )
     
     # Map metric column names to UI metric names
-    ui_metric_names <- list(
-      COST_PPM           = "Drug cost (\u00A3)",
-      ITEMS_PPM          = "Number of prescription items",
-      UNIQ_MEDS_PPM      = "Number of unique medicines",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines (%)"
+    ui_metric_names <- c(
+      COST_PPM                 = "Drug cost MPPM (\u00A3)",
+      ITEMS_PPM                = "Number of prescription items MPPM",
+      UNIQ_MEDS_PPM            = "Number of unique medicines MPPM",
+      PCT_PATIENTS_GTE_SIX_PPM = "Patients on 6+ unique medicines MPPM (%)",
+      PCT_PATIENTS_GTE_TEN_PPM = "Patients on 10+ unique medicines MPPM (%)",
+      PCT_PATIENTS_ACB_6_PPM   = "Patients with ACB 6+ MPPM (%)",
+      PCT_PATIENTS_DAMN_PPM    = "Patients with DAMN 2+ MPPM (%)",
+      UNIQ_MEDS_FALLS_PPM      = "Number of unique fall-risk medicines MPPM",
+      PCT_PATIENTS_FALLS_PPM   = "Patients on 3+ unique fall-risk medicines MPPM (%)"
+    )
+    
+    # Map all column names to download data names
+    dl_col_names <- c(
+      rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
+      "Financial year"                             = "FY",
+      "Carehome type"                              = "CH_TYPE",
+      "Total patients"                             = "TOTAL_PATIENTS",
+      "Patients on 6+ unique medicines"            = "TOTAL_PATIENTS_GTE_SIX",
+      "Patients on 10+ unique medicines"           = "TOTAL_PATIENTS_GTE_TEN",
+      "Patients with ACB 6+"                       = "TOTAL_PATIENTS_ACB_6",
+      "Patients with DAMN 2+"                      = "TOTAL_PATIENTS_DAMN",
+      "Patients on 3+ unique fall-risk medicines"  = "TOTAL_PATIENTS_FALLS"
     )
     
     # Reactive data -------------------------------------------------------
     
     fdata <- reactive(
       carehomes2::metrics_by_ch_type %>%
-        dplyr::transmute(
+        dplyr::mutate(
           .data$FY,
           .data$CH_TYPE,
-          TOTAL_PATIENTS = dplyr::case_when(
-            input$metric == "PCT_PX_GTE_TEN_PPM" ~ .data$TOTAL_PATIENTS_GTE_TEN,
-            .default = .data$TOTAL_PATIENTS
-          ),
-          .data[[input$metric]]
+          .data[[input$metric]],
+          .keep = "none"
         )
     )
     
@@ -180,7 +196,8 @@ mod_04_metrics_ch_type_server <- function(id) {
             x = !!x,
             y = !!input$metric,
             color = !!color
-          )
+          ),
+          name = ui_metric_names[[input$metric]]
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_xAxis(
@@ -200,32 +217,34 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Create download data
     create_download_data <- function() {
-      carehomes2::metrics_by_ch_type %>% 
+      temp <- carehomes2::metrics_by_ch_type %>%
         dplyr::mutate(
+          # Use TOTAL_PATIENTS for non-% metrics...
           dplyr::across(
-            c(.data$ITEMS_PPM, .data$COST_PPM, .data$UNIQ_MEDS_PPM),
+            dplyr::matches("^(?!PCT_).*_PPM$", perl = TRUE),
             \(x) dplyr::if_else(
               is.na(x) & .data$TOTAL_PATIENTS > 0,
               "c",
               as.character(x)
             )
           ),
-          PCT_PX_GTE_TEN_PPM = dplyr::case_when(
-            is.na(.data$PCT_PX_GTE_TEN_PPM) & .data$TOTAL_PATIENTS > 0 ~ "c",
-            .default = .data$PCT_PX_GTE_TEN_PPM %>% as.character()
+          # ...but the associated TOTAL_PATIENTS_{X} column for % metrics
+          dplyr::across(
+            dplyr::matches("^(PCT_).*_PPM$", perl = TRUE), ~ {
+              # The 'middle' is the substring w/o leading "PCT_" or trailing "_PPM"
+              middle <- gsub("PCT_|_PPM", "", dplyr::cur_column())
+              # Get vector of associated total column for test
+              tot_vec <- dplyr::cur_data() %>% pull(paste0("TOTAL_", middle))
+              dplyr::if_else(
+                is.na(.x) & tot_vec > 0,
+                "c",
+                as.character(.x)
+              )
+            }
           )
         ) %>% 
-        dplyr::arrange(.data$CH_TYPE, .data$FY) %>%
-        dplyr::rename(
-          `Financial year` = .data$FY,
-          `Carehome type` = .data$CH_TYPE,
-          `Total patients` = .data$TOTAL_PATIENTS,
-          `Number of prescription items ppm` = .data$ITEMS_PPM,
-          "Drug cost ppm (\u00A3)" := .data$COST_PPM,
-          `Number of unique medicines ppm` = .data$UNIQ_MEDS_PPM,
-          `Total patients on 10+ unique medicines` = .data$TOTAL_PATIENTS_GTE_TEN,
-          `Patients on 10+ unique medicines ppm (%)` = .data$PCT_PX_GTE_TEN_PPM
-        )
+        dplyr::arrange(.data$FY, .data$CH_TYPE) %>%
+        dplyr::rename(dl_col_names)
     }
     
     # Outputs -------------------------------------------------------------
@@ -247,7 +266,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Download button
     mod_nhs_download_server(
       id = "download_data",
-      filename = "Selected Prescribing Metrics by Carehome Type.csv",
+      filename = "Selected Prescribing Metrics by Carehome Type.xlsx",
       export_data = create_download_data()
     )
   })

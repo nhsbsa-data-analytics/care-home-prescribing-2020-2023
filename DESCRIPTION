@@ -29,7 +29,6 @@ Imports:
     DT,
     fontawesome,
     forcats,
-    glue,
     golem,
     highcharter,
     htmltools,
@@ -37,9 +36,8 @@ Imports:
     magrittr,
     nhsbsaR,
     NHSRtheme,
-    pkgload,
+    openxlsx,
     purrr,
-    readr,
     rlang,
     shiny,
     tidyr
@@ -48,12 +46,15 @@ Suggests:
     archive,
     DBI,
     dbplyr,
+    glue,
     httr,
     janitor,
     jsonlite,
     lubridate,
     pacman,
+    pkgload,
     readr,
+    stringr,
     tictoc,
     yaml
 Remotes:
@@ -64,4 +65,4 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.2.3
 Depends: 
-    R (>= 2.10)
+    R (>= 4.3)

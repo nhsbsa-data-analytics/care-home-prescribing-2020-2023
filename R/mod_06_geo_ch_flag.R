@@ -29,7 +29,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
       div(
         class = "nhsuk-grid-row",
         div(
-          class = "nhsuk-grid-column-one-quarter",
+          class = "nhsuk-grid-column-one-third",
           nhs_selectInput(
             inputId = ns("geography"),
             label = "Geography",
@@ -38,24 +38,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
           )
         ),
         div(
-          class = "nhsuk-grid-column-one-half",
-          nhs_selectInput(
-            inputId = ns("metric"),
-            label = "Metric",
-            choices = c(
-              "Drug cost (PPM)" = "COST_PPM",
-              "Number of prescription items (PPM)" = "ITEMS_PPM",
-              "Number of unique medicines (PPM)" = "UNIQ_MEDS_PPM",
-              "Patients on 6+ unique medicines (PPM)" = "PCT_PX_GTE_SIX_PPM",
-              "Patients on 10+ unique medicines (PPM)" = "PCT_PX_GTE_TEN_PPM",
-              "Patients with ACB 6+ (PPM)" = "PCT_PX_ACB_6_PPM",
-              "Patients with DAMN 2+ (PPM)" = "PCT_PX_DAMN_PPM"
-            ),
-            full_width = TRUE
-          )
-        ),
-        div(
-          class = "nhsuk-grid-column-one-quarter",
+          class = "nhsuk-grid-column-one-third",
           nhs_selectInput(
             inputId = ns("fy"),
             label = "Financial Year",
@@ -68,37 +51,39 @@ mod_06_geo_ch_flag_ui <- function(id) {
           )
         )
       ),
-      nhs_grid_2_col(
-        highcharter::highchartOutput(
-          outputId = ns("map_ch"),
-          height = "500px"
-        ),
-        highcharter::highchartOutput(
-          outputId = ns("map_non_ch"),
-          height = "500px"
+      div(
+        class = "nhsuk-grid-row",
+        div(
+          class = "nhsuk-grid-column-two-thirds",
+          nhs_selectInput(
+            inputId = ns("metric"),
+            label = "Metric",
+            choices = c(
+              "Drug cost MPPM (\u00A3)" = "COST_PPM",
+              "Number of prescription items MPPM" = "ITEMS_PPM",
+              "Number of unique medicines MPPM" = "UNIQ_MEDS_PPM",
+              "Patients on 6+ unique medicines MPPM (%)" = "PCT_PATIENTS_GTE_SIX_PPM",
+              "Patients on 10+ unique medicines MPPM (%)" = "PCT_PATIENTS_GTE_TEN_PPM",
+              "Patients with ACB 6+ MPPM (%)" = "PCT_PATIENTS_ACB_6_PPM",
+              "Patients with DAMN 2+ MPPM (%)" = "PCT_PATIENTS_DAMN_PPM",
+              "Number of unique fall-risk medicines MPPM" = "UNIQ_MEDS_FALLS_PPM",
+              "Patients on 3+ unique falls-risk medicines MPPM (%)" = "PCT_PATIENTS_FALLS_PPM"
+            ),
+            full_width = TRUE
+          )
         )
       ),
       nhs_grid_2_col(
-        DT::DTOutput(
-          outputId = ns("table_ch")
-        ),
-        DT::DTOutput(
-          outputId = ns("table_non_ch")
-        )
+        highcharter::highchartOutput(ns("map_ch"), height = "500px"),
+        highcharter::highchartOutput(ns("map_non_ch"), height = "500px")
       ),
+      div(DT::DTOutput(ns("table"))),
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
         "Where the number of patients is less than 5 the data has been redacted."
       ),
-      nhs_grid_2_col(
-        mod_nhs_download_ui(
-          id = ns("download_data_ch")
-        ),
-        mod_nhs_download_ui(
-          id = ns("download_data_non_ch")
-        )
-      )
+      mod_nhs_download_ui(ns("download_data"))
     )
   )
 }
@@ -110,86 +95,75 @@ mod_06_geo_ch_flag_server <- function(id) {
 
     # Map metric column names to UI metric names
     ui_metric_names <- c(
-      COST_PPM           = "Drug cost (\u00A3)",
-      ITEMS_PPM          = "Number of prescription items",
-      UNIQ_MEDS_PPM      = "Number of unique medicines",
-      PCT_PX_GTE_SIX_PPM = "Patients on 6+ unique medicines (%)",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines (%)",
-      PCT_PX_ACB_6_PPM   = "Patients with ACB 6+ (%)",
-      PCT_PX_DAMN_PPM    = "Patients with DAMN 2+ (%)"
+      COST_PPM                 = "Drug cost MPPM (\u00A3)",
+      ITEMS_PPM                = "Number of prescription items MPPM",
+      UNIQ_MEDS_PPM            = "Number of unique medicines MPPM",
+      PCT_PATIENTS_GTE_SIX_PPM = "Patients on 6+ unique medicines MPPM (%)",
+      PCT_PATIENTS_GTE_TEN_PPM = "Patients on 10+ unique medicines MPPM (%)",
+      PCT_PATIENTS_ACB_6_PPM   = "Patients with ACB 6+ MPPM (%)",
+      PCT_PATIENTS_DAMN_PPM    = "Patients with DAMN 2+ MPPM (%)",
+      UNIQ_MEDS_FALLS_PPM      = "Number of unique fall-risk medicines MPPM",
+      PCT_PATIENTS_FALLS_PPM   = "Patients on 3+ unique fall-risk medicines MPPM (%)"
     )
     
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
-      COST_PPM           = "<b>Drug cost:</b> \u00A3{point.value}",
-      ITEMS_PPM          = "<b>Number of prescription items:</b> {point.value:.1f}",
-      UNIQ_MEDS_PPM      = "<b>Number of unique medicines:</b> {point.value:.1f}",
-      PCT_PX_GTE_SIX_PPM = "<b>Patients on 6+ unique medicines:</b> {point.value:.1f}%",
-      PCT_PX_GTE_TEN_PPM = "<b>Patients on 10+ unique medicines:</b> {point.value:.1f}%",
-      PCT_PX_ACB_6_PPM   = "<b>Patients with ACB 6+:</b> {point.value:.1f}%",
-      PCT_PX_DAMN_PPM    = "<b>Patients with DAMN 2+:</b> {point.value:.1f}%"
+      COST_PPM                 = "<b>Drug cost MPPM:</b> \u00A3{point.value}",
+      ITEMS_PPM                = "<b>Number of prescription items MPPM:</b> {point.value:.1f}",
+      UNIQ_MEDS_PPM            = "<b>Number of unique medicines MPPM:</b> {point.value:.1f}",
+      PCT_PATIENTS_GTE_SIX_PPM = "<b>Patients on 6+ unique medicines MPPM:</b> {point.value:.1f}%",
+      PCT_PATIENTS_GTE_TEN_PPM = "<b>Patients on 10+ unique medicines MPPM:</b> {point.value:.1f}%",
+      PCT_PATIENTS_ACB_6_PPM   = "<b>Patients with ACB 6+ MPPM:</b> {point.value:.1f}%",
+      PCT_PATIENTS_DAMN_PPM    = "<b>Patients with DAMN 2+ MPPM:</b> {point.value:.1f}%",
+      UNIQ_MEDS_FALLS_PPM      = "<b>Number of unique fall-risk medicines MPPM</b> {point.value:.1f}",
+      PCT_PATIENTS_FALLS_PPM   = "<b>Patients on 3+ unique fall-risk medicines MPPM</b> {point.value:.1f}%"
     )
     
-    # Map metric column names to download data names
-    # TODO: Add new metrics
-    dl_data_metric_names <- c(
-      COST_PPM           = "Drug cost ppm (\u00A3)",
-      ITEMS_PPM          = "Number of prescription items ppm",
-      UNIQ_MEDS_PPM      = "Number of unique medicines ppm",
-      PCT_PX_GTE_SIX_PPM = "Patients on 6+ unique medicines ppm (%)",
-      PCT_PX_GTE_TEN_PPM = "Patients on 10+ unique medicines ppm (%)",
-      PCT_PX_ACB_6_PPM   = "Patients with ACB 6+ ppm (%)",
-      PCT_PX_DAMN_PPM    = "Patients with DAMN 2+ ppm (%)"
+    # Map all column names to download data names
+    dl_col_names <- c(
+      rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
+      "Financial year"                             = "FY",
+      "Geography"                                  = "GEOGRAPHY",
+      "Sub-geography code"                         = "SUB_GEOGRAPHY_CODE",
+      "Sub-geography name"                         = "SUB_GEOGRAPHY_NAME",
+      "Carehome Status"                            = "CH_FLAG",
+      "Total patients"                             = "TOTAL_PATIENTS",
+      "Patients on 6+ unique medicines"            = "TOTAL_PATIENTS_GTE_SIX",
+      "Patients on 10+ unique medicines"           = "TOTAL_PATIENTS_GTE_TEN",
+      "Patients with ACB 6+"                       = "TOTAL_PATIENTS_ACB_6",
+      "Patients with DAMN 2+"                      = "TOTAL_PATIENTS_DAMN",
+      "Patients on 3+ unique fall-risk medicines"  = "TOTAL_PATIENTS_FALLS"
     )
     
     # Reactive data -------------------------------------------------------
     
-    fdata <- reactiveVal(
+    fdata <- reactive(
       carehomes2::metrics_by_geo_and_ch_flag %>%
         dplyr::filter(
-          .data$GEOGRAPHY == "Region",
-          .data$FY == "2020/21"
+          .data$GEOGRAPHY == input$geography,
+          .data$FY == input$fy
         ) %>% 
-        dplyr::transmute(
+        dplyr::mutate(
           .data$GEOGRAPHY,
           .data$SUB_GEOGRAPHY_NAME,
           .data$SUB_GEOGRAPHY_CODE,
-          .data$TOTAL_PATIENTS,
-          .data$COST_PPM,
-          .data$CH_FLAG
+          # Think this is not needed if going with the full data download option?
+          # TOTAL_PATIENTS = switch(
+          #   input$metric,
+          #   "PCT_PATIENTS_GTE_SIX_PPM" = .data$TOTAL_PATIENTS_GTE_SIX,
+          #   "PCT_PATIENTS_GTE_TEN_PPM" = .data$TOTAL_PATIENTS_GTE_TEN,
+          #   "PCT_PATIENTS_ACB_6_PPM"   = .data$TOTAL_PATIENTS_ACB_6,
+          #   "PCT_PATIENTS_ACB_DAMN"    = .data$TOTAL_PATIENTS_DAMN,
+          #   "PCT_PATIENTS_FALLS"       = .data$TOTAL_PATIENTS_FALLS,
+          #   .data$TOTAL_PATIENTS
+          # ),
+          .data[[input$metric]],
+          .data$CH_FLAG,
+          .keep = "none"
         )
     )
     
-    map_data <- reactiveVal(carehomes2::geo_data$Region)
-    
-    observe({
-      input$geography
-      input$metric
-      input$fy
-      
-      fdata({
-        carehomes2::metrics_by_geo_and_ch_flag %>%
-          dplyr::filter(
-            .data$GEOGRAPHY == input$geography,
-            .data$FY == input$fy
-          ) %>% 
-          dplyr::transmute(
-            .data$GEOGRAPHY,
-            .data$SUB_GEOGRAPHY_NAME,
-            .data$SUB_GEOGRAPHY_CODE,
-            TOTAL_PATIENTS = switch(
-              input$metric,
-              "PCT_PX_GTE_SIX_PPM" = .data$TOTAL_PATIENTS_GTE_SIX,
-              "PCT_PX_GTE_TEN_PPM" = .data$TOTAL_PATIENTS_GTE_TEN,
-              .data$TOTAL_PATIENTS
-            ),
-            .data[[input$metric]],
-            .data$CH_FLAG
-          )
-      })
-      
-      map_data(carehomes2::geo_data[[input$geography]])
-    })
+    map_data <- reactive(carehomes2::geo_data[[input$geography]])
     
     # Output functions ----------------------------------------------------
     
@@ -217,10 +191,12 @@ mod_06_geo_ch_flag_server <- function(id) {
           joinBy = "SUB_GEOGRAPHY_CODE",
           value = input$metric,
           tooltip = list(
+            useHTML = TRUE,
             headerFormat = "",
             pointFormat = paste0(
-              "<b>", input$geography, ":</b> {point.SUB_GEOGRAPHY_NAME}<br>",
-              metric_tooltips[input$metric]
+              tags$b(input$geography, ": "), "{point.SUB_GEOGRAPHY_NAME}",
+              tags$br(),
+              metric_tooltips[input$metric] %>% unname()
             )
           )
         ) %>%
@@ -243,41 +219,38 @@ mod_06_geo_ch_flag_server <- function(id) {
     }
     
     # Create datatable
-    create_datatable <- function(ch_status = c("Carehome", "Non-carehome")) {
-      ifelse(
-        ch_status == "Carehome",
-        data <- dplyr::filter(carehomes2::metrics_by_geo_and_ch_flag, .data$CH_FLAG),
-        data <- dplyr::filter(carehomes2::metrics_by_geo_and_ch_flag, !.data$CH_FLAG)
-      )
-      
+    create_datatable <- function(data) {
       data %>%
-        dplyr::filter(
-          .data$GEOGRAPHY == input$geography,
-          !is.na(.data$SUB_GEOGRAPHY_NAME)
-        ) %>% 
-        dplyr::select(
+        dplyr::filter(.data$GEOGRAPHY == input$geography) %>% 
+        dplyr::mutate(
           .data$FY,
+          CH_FLAG = dplyr::case_match(
+            .data$CH_FLAG,
+            TRUE  ~ "CH",
+            FALSE ~ "NCH"
+          ),
           !!rlang::sym(input$geography) := .data$SUB_GEOGRAPHY_NAME,
-          .data[[input$metric]]
+          .data[[input$metric]],
+          .keep = "none"
         ) %>%
         tidyr::pivot_wider(
-          names_from = .data$FY,
-          values_from = .data[[input$metric]]
+          names_from = dplyr::all_of(c("FY", "CH_FLAG")),
+          values_from = .data[[input$metric]],
+          names_sep = " "
         ) %>% 
         dplyr::arrange(.data[[input$geography]]) %>%
+        dplyr::relocate(
+          dplyr::ends_with("CH"),
+          .before = dplyr::ends_with("NCH")
+        ) %>% 
         dplyr::rename_with(
           \(cols) purrr::map_vec(
             cols,
             \(col) {
-              short_col_name <- ifelse(
-                startsWith(col, "20"),
-                substr(col, 3, 7),
-                col
-              )
               span(
                 class = "nhsuk-body-s",
                 style = "font-size: 12px;",
-                short_col_name
+                col
               ) %>%
                 as.character()
             }
@@ -298,38 +271,71 @@ mod_06_geo_ch_flag_server <- function(id) {
           filter = "none",
           selection = "none"
         ) %>%
-        DT::formatStyle(columns = 1:4, `font-size` = "12px") %>%
+        DT::formatStyle(columns = 1:7, `font-size` = "12px") %>%
         DT::formatRound(
-          columns = 2:4,
+          columns = 2:7,
           digits = ifelse(input$metric != "COST_PPM", 1, 0)
         )
     }
     
-    # Create download data
-    create_download_data <- function(data, 
-                                     ch_status = c("Carehome", "Non-carehome")) {
-      ifelse(
-        ch_status == "Carehome",
-        data <- data %>% dplyr::filter(.data$CH_FLAG),
-        data <- data %>% dplyr::filter(!.data$CH_FLAG)
-      )
-      
-      data %>% 
+    # Create download data (subset by active selections)
+    # create_download_data <- function(data, 
+    #                                  ch_status = c("Carehome", "Non-carehome")) {
+    #   ifelse(
+    #     ch_status == "Carehome",
+    #     data <- data %>% dplyr::filter(.data$CH_FLAG),
+    #     data <- data %>% dplyr::filter(!.data$CH_FLAG)
+    #   )
+    #   data %>% 
+    #     dplyr::mutate(
+    #       Geography = .data$GEOGRAPHY,
+    #       `Sub geography name` = .data$SUB_GEOGRAPHY_NAME,
+    #       `Sub geography code` = .data$SUB_GEOGRAPHY_CODE,
+    #       `Total patients`     = .data$TOTAL_PATIENTS,
+    #       !!rlang::sym(ui_metric_names[input$metric]) := ifelse(
+    #         is.na(.data[[input$metric]]) & .data$TOTAL_PATIENTS > 0,
+    #         "c",
+    #         as.character(.data[[input$metric]])
+    #       ),
+    #       .keep = "none"
+    #     )
+    # }
+    
+    # Create download data (all data)
+    create_download_data_all <- function() {
+      temp <- carehomes2::metrics_by_geo_and_ch_flag %>%
         dplyr::mutate(
-          "{input$metric}" := ifelse(
-            is.na(.data[[input$metric]]) & .data$TOTAL_PATIENTS > 0,
-            "c",
-            as.character(.data[[input$metric]])
+          # Use TOTAL_PATIENTS for non-% metrics...
+          dplyr::across(
+            dplyr::matches("^(?!PCT_).*_PPM$", perl = TRUE),
+            \(x) dplyr::if_else(
+              is.na(x) & .data$TOTAL_PATIENTS > 0,
+              "c",
+              as.character(x)
+            )
+          ),
+          # ...but the associated TOTAL_PATIENTS_{X} column for % metrics
+          dplyr::across(
+            dplyr::matches("^(PCT_).*_PPM$", perl = TRUE), ~ {
+              # The 'middle' is the substring w/o leading "PCT_" or trailing "_PPM"
+              middle <- gsub("PCT_|_PPM", "", dplyr::cur_column())
+              # Get vector of associated total column for test
+              tot_vec <- dplyr::cur_data() %>% pull(paste0("TOTAL_", middle))
+              dplyr::if_else(
+                is.na(.x) & tot_vec > 0,
+                "c",
+                as.character(.x)
+              )
+            }
           )
+        ) %>% 
+        dplyr::arrange(
+          .data$FY,
+          .data$GEOGRAPHY,
+          .data$SUB_GEOGRAPHY_NAME,
+          dplyr::desc(.data$CH_FLAG)
         ) %>%
-        dplyr::select(-.data$CH_FLAG) %>%
-        dplyr::rename(
-          Geography = .data$GEOGRAPHY,
-          `Sub geography name` = .data$SUB_GEOGRAPHY_NAME,
-          `Sub geography code` = .data$SUB_GEOGRAPHY_CODE,
-          `Total patients`     = .data$TOTAL_PATIENTS,
-          !!rlang::sym(dl_data_metric_names[input$metric]) := input$metric
-        )
+        dplyr::rename(dl_col_names)
     }
     
     # Outputs -------------------------------------------------------------
@@ -343,29 +349,15 @@ mod_06_geo_ch_flag_server <- function(id) {
     )
     
     # Datatables
-    output$table_ch <- DT::renderDT(
-      create_datatable("Carehome")
-    )
-    output$table_non_ch <- DT::renderDT(
-      create_datatable("Non-carehome")
+    output$table <- DT::renderDT(
+      create_datatable(carehomes2::metrics_by_geo_and_ch_flag)
     )
     
     # Download buttons
     mod_nhs_download_server(
-      id = "download_data_ch",
-      filename = function() glue::glue(
-        "Carehome {dl_data_metric_names[input$metric]} ",
-        "{input$fy %>% stringr::str_replace('/', '-')}.csv"
-      ),
-      export_data = create_download_data(fdata(), "Carehome")
-    )
-    mod_nhs_download_server(
-      id = "download_data_non_ch",
-      filename = function() glue::glue(
-        "Non-carehome {dl_data_metric_names[input$metric]} ",
-        "{input$fy %>% stringr::str_replace('/', '-')}.csv"
-      ),
-      export_data = create_download_data(fdata(), "Non-carehome")
+      id = "download_data",
+      filename = "Selected Prescribing Metrics by Geography and Carehome Status.xlsx",
+      export_data = create_download_data_all()
     )
   })
 }

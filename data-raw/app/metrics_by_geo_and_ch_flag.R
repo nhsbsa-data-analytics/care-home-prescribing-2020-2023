@@ -23,7 +23,7 @@ PCD <- con %>%
 
 transform_PCD <- function(data, geography) {
   data %>%
-    select(starts_with(glue("PCD_{geography}"))) %>% 
+    select(starts_with(glue("PCD_{geography}"))) %>%
     distinct() %>%
     rename_with(
       \(x) str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY")
@@ -39,8 +39,8 @@ PCD_list <- list(
 
 GIS_list <- geo_data_validation
 
-# Check sub-geography codes and names match exactly between PCD and GIS; you
-# should get character(0) for in_GIS_only and NA or character(0) for in_PCD_only
+# Check sub-geography codes and names match exactly between PCD and GIS; script
+# will stop if not
 
 ## Check sub-geography codes ----------------------------------------------
 
@@ -55,8 +55,15 @@ check_sub_geo_codes <- list(
     GIS_list,
     \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
   )
-) %>% print()
+)
 
+stopifnot(
+  "Some difference in geo codes: check `check_sub_geo_codes`"= {
+    character(0) == check_sub_geo_codes %>%
+      map(unique) %>%
+      map(unique)
+  }
+)
 
 ## Check sub-geography names ----------------------------------------------
 
@@ -71,7 +78,15 @@ check_sub_geo_names <- list(
     GIS_list,
     \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
   )
-) %>% print()
+)
+
+stopifnot(
+  "Some difference in geo names: check `check_sub_geo_names`"= {
+    character(0) == check_sub_geo_names %>%
+      map(unique) %>%
+      map(unique)
+  }
+)
 
 # Data prep ---------------------------------------------------------------
 
@@ -85,286 +100,69 @@ base_db <- con %>%
 aggregate_by_geo <- function(geography_name) {
   # Identify geography cols
   geography_cols <- geographies[[geography_name]] %>%
-    purrr::set_names(
-      nm = stringr::str_replace(
+    set_names(
+      nm = str_replace(
         string = names(.),
         pattern = "BREAKDOWN",
         replacement = "GEOGRAPHY"
       )
     )
   
-  # Group the table
-  base_db %>%
-    mutate(
-      ACB_CAT = case_when(
-        BNF_CHEMICAL_SUBSTANCE %in% acb1_drugs ~ 1,
-        BNF_CHEMICAL_SUBSTANCE %in% acb2_drugs ~ 2,
-        BNF_CHEMICAL_SUBSTANCE %in% acb3_drugs ~ 3,
-        TRUE ~ 0
-      ),
-      DAMN_FLAG = case_when(
-        REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^100101') > 0 ~ 1,
-        REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205051') > 0 ~ 1,
-        REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205052') > 0 ~ 1,
-        BNF_CHEMICAL_SUBSTANCE %in% other_drug_vec ~ 1,
-        TRUE ~ 0
-      )
-    ) %>% 
-    group_by(
-      FY,
-      YEAR_MONTH,
-      GEOGRAPHY = geography_name,
-      across(all_of(unname(geography_cols))),
-      CH_FLAG,
-      NHS_NO
-    ) %>%
-    rename(!!!geography_cols) %>%
-    summarise(
-      TOTAL_ITEMS = sum(ITEM_COUNT),
-      TOTAL_COST = sum(ITEM_PAY_DR_NIC * 0.01),
-      UNIQUE_MEDICINES = n_distinct(
-        ifelse(
-          as.integer(substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)) %in% c(1:4, 6:10),
-          CHEMICAL_SUBSTANCE_BNF_DESCR,
-          NA_character_
-        )
-      ),
-      ACB_6 = case_when( 
-        (1 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 1])) + 
-        (2 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 2])) + 
-        (3 * n_distinct(BNF_CHEMICAL_SUBSTANCE[ACB_CAT == 3])) >= 6 ~ 1,
-        TRUE ~ 0
-      ),
-      DAMN = case_when(
-        n_distinct(BNF_CHEMICAL_SUBSTANCE[DAMN_FLAG == 1]) >= 2 ~ 1,
-        TRUE ~ 0
-      )
-    ) %>%
-    ungroup() %>%
-    group_by(
-      FY,
-      GEOGRAPHY,
-      across(all_of(unname(geography_cols))),
-      CH_FLAG
-    ) %>%
-    summarise(
-      # Items and cost
-      TOTAL_PATIENTS = n_distinct(NHS_NO), # For SDC
-      ITEMS_PER_PATIENT_MONTH = mean(TOTAL_ITEMS),
-      COST_PER_PATIENT_MONTH = mean(TOTAL_COST),
-      # Unique medicines
-      TOTAL_PATIENTS_UNIQUE_MEDICINES = n_distinct(
-        ifelse(
-          UNIQUE_MEDICINES > 1,
-          NHS_NO,
-          NA_integer_
-        )
-      ),
-      UNIQUE_MEDICINES_PER_PATIENT_MONTH = mean(UNIQUE_MEDICINES),
-      TOTAL_PATIENTS_SIX_OR_MORE = n_distinct( # For SDC
-        ifelse(
-          UNIQUE_MEDICINES >= 6,
-          NHS_NO,
-          NA_integer_
-        )
-      ),
-      TOTAL_PATIENTS_TEN_OR_MORE = n_distinct( # For SDC
-        ifelse(
-          UNIQUE_MEDICINES >= 10,
-          NHS_NO,
-          NA_integer_
-        )
-      ),
-      # ACB
-      TOTAL_PATIENTS_ACB_6 = n_distinct(
-        ifelse(
-          ACB_6 == 1,
-          NHS_NO,
-          NA_integer_
-        )
-      ),
-      # DAMN
-      TOTAL_PATIENTS_DAMN = n_distinct(
-        ifelse(
-          DAMN == 1,
-          NHS_NO,
-          NA_integer_
-        )
-      )
-    ) %>%
-    ungroup() %>% 
-    mutate(
-      PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
-        TOTAL_PATIENTS_UNIQUE_MEDICINES == 0,
-        NA_real_,
-        TOTAL_PATIENTS_SIX_OR_MORE / TOTAL_PATIENTS_UNIQUE_MEDICINES * 100
-      ),
-      PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
-        TOTAL_PATIENTS_UNIQUE_MEDICINES == 0,
-        NA_real_,
-        TOTAL_PATIENTS_TEN_OR_MORE / TOTAL_PATIENTS_UNIQUE_MEDICINES * 100
-      ),
-      PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
-        TOTAL_PATIENTS_ACB_6 == 0,
-        NA_real_,
-        TOTAL_PATIENTS_ACB_6 / TOTAL_PATIENTS * 100
-      ),
-      PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
-        TOTAL_PATIENTS_DAMN == 0,
-        NA_real_,
-        TOTAL_PATIENTS_DAMN / TOTAL_PATIENTS * 100
-      )
-    ) %>%
-    nhsbsaR::collect_with_parallelism(8)
+  get_metrics(
+    base_db %>% mutate(GEOGRAPHY = geography_name),
+    first_grouping = c(
+      "FY",
+      "YEAR_MONTH",
+      "GEOGRAPHY",
+      unname(geography_cols),
+      "CH_FLAG",
+      "NHS_NO"
+    ),
+    second_grouping = c(
+      "FY",
+      "GEOGRAPHY",
+      unname(geography_cols),
+      "CH_FLAG"
+    ),
+    comp_fill = list(
+      TOTAL_PATIENTS = 0L,
+      ITEMS_PPM = NA_real_,
+      COST_PPM = NA_real_,
+      UNIQ_MEDS_PPM = NA_real_,
+      PATIENTS_GTE_SIX = 0L,
+      PCT_PATIENTS_GTE_SIX_PPM = NA_real_,
+      PATIENTS_GTE_TEN = 0L,
+      PCT_PATIENTS_GTE_TEN_PPM = NA_real_,
+      PATIENTS_ACB_6 = 0L,
+      PCT_PATIENTS_ACB_6_PPM = NA_real_,
+      PATIENTS_DAMN = 0L,
+      PCT_PATIENTS_DAMN_PPM = NA_real_,
+      UNIQ_MEDS_FALLS_PPM = NA_real_,
+      PATIENTS_FALLS = 0L,
+      PCT_PATIENTS_FALLS_PPM = NA_real_
+    ),
+    nest_cols = c("GEOGRAPHY", unname(geography_cols))
+  ) %>% 
+    rename(!!!geography_cols)
 }
 
 ## Process ----------------------------------------------------------------
+metrics_by_geo_and_ch_flag_df <- names(geographies)[2:4] %>% 
+  map(aggregate_by_geo) %>%
+  list_rbind()
 
-### Collect data ----------------------------------------------------------
-metrics_by_geo_and_ch_flag_df <- names(geographies)[2] %>% 
-  purrr::map(aggregate_by_geo) %>%
-  purrr::list_rbind()
-
-### Complete --------------------------------------------------------------
-metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df %>%
-  tidyr::complete(
-    # Only geographies that already exist
-    tidyr::nesting(
-      GEOGRAPHY,
-      SUB_GEOGRAPHY_CODE,
-      SUB_GEOGRAPHY_NAME
-    ),
-    # All years and CH flags
-    FY,
-    CH_FLAG,
-    fill = list(
-      TOTAL_PATIENTS = 0L,
-      ITEMS_PER_PATIENT_MONTH = NA_real_,
-      COST_PER_PATIENT_MONTH = NA_real_,
-      TOTAL_PATIENTS_UNIQUE_MEDICINES = 0L,
-      UNIQUE_MEDICINES_PER_PATIENT_MONTH = NA_real_,
-      TOTAL_PATIENTS_SIX_OR_MORE = 0L,
-      PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = NA_real_,
-      TOTAL_PATIENTS_TEN_OR_MORE = 0L,
-      PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = NA_real_,
-      TOTAL_PATIENTS_ACB_6 = 0L,
-      PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = NA_real_,
-      TOTAL_PATIENTS_DAMN = 0L,
-      PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = NA_real_
-    )
-  )
-
-### Statistical disclosure control ----------------------------------------
-metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
-  mutate(
-    SDC = ifelse(TOTAL_PATIENTS %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS = ifelse(
-      SDC,
-      NA_integer_,
-      round(TOTAL_PATIENTS, -1) # rounding to nearest 10; where are our rules for SDC?
-    ),
-    SDC_ITEMS_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(ITEMS_PER_PATIENT_MONTH, 1)
-    ),
-    SDC_COST_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(COST_PER_PATIENT_MONTH)
-    ),
-    SDC = ifelse(TOTAL_PATIENTS_UNIQUE_MEDICINES %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES = ifelse(
-      SDC,
-      NA_integer_,
-      round(TOTAL_PATIENTS_UNIQUE_MEDICINES, -1) # rounding to nearest 10; where are our rules for SDC?
-    ),
-    SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(UNIQUE_MEDICINES_PER_PATIENT_MONTH, 1)
-    ),
-    SDC = ifelse(TOTAL_PATIENTS_SIX_OR_MORE %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_SIX_OR_MORE = ifelse(
-      SDC,
-      NA_integer_,
-      round(TOTAL_PATIENTS_SIX_OR_MORE, -1) # rounding to nearest 10; where are our rules for SDC?
-    ),
-    SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH, 1)
-    ),
-    SDC = ifelse(TOTAL_PATIENTS_TEN_OR_MORE %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_TEN_OR_MORE = ifelse(
-      SDC,
-      NA_integer_,
-      round(TOTAL_PATIENTS_TEN_OR_MORE, -1) # rounding to nearest 10; where are our rules for SDC?
-    ),
-    SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH, 1)
-    ),
-    SDC = ifelse(TOTAL_PATIENTS_ACB_6 %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_ACB_6 = ifelse(
-      SDC,
-      NA_integer_,
-      round(SDC_TOTAL_PATIENTS_ACB_6, -1) # rounding to nearest 10; where are our rules for SDC?
-    ),
-    SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH, 1)
-    ),
-    SDC = ifelse(TOTAL_PATIENTS_DAMN %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_DAMN = ifelse(
-      SDC,
-      NA_integer_,
-      round(SDC_TOTAL_PATIENTS_DAMN, -1) # rounding to nearest 10; where are our rules for SDC?
-    ),
-    SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
-      SDC,
-      NA_integer_,
-      janitor::round_half_up(PCT_PATIENTS_DAMN_PER_PATIENT_MONTH, 1)
-    )
-  ) %>%
-  select(-SDC)
-
-
-### Format ----------------------------------------------------------------
-metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>%
+## Format -----------------------------------------------------------------
+metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
   format_data_raw("CH_FLAG") %>% 
   suppressWarnings() # We do not have Overall and PCN in this data
 
-
-### Keep only relevant columns / rename -----------------------------------
-metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag %>% 
-  dplyr::transmute(
-    FY,
-    GEOGRAPHY,
-    SUB_GEOGRAPHY_NAME,
-    SUB_GEOGRAPHY_CODE,
-    CH_FLAG,
-    TOTAL_PATIENTS = SDC_TOTAL_PATIENTS,
-    ITEMS_PPM = SDC_ITEMS_PER_PATIENT_MONTH,
-    COST_PPM = SDC_COST_PER_PATIENT_MONTH,
-    TOTAL_PATIENTS_UNIQ_MED = SDC_TOTAL_PATIENTS_UNIQUE_MEDICINES,
-    UNIQ_MEDS_PPM = SDC_UNIQUE_MEDICINES_PER_PATIENT_MONTH,
-    TOTAL_PATIENTS_GTE_SIX = SDC_TOTAL_PATIENTS_SIX_OR_MORE,
-    PCT_PX_GTE_SIX_PPM = SDC_PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH,
-    TOTAL_PATIENTS_GTE_TEN = SDC_TOTAL_PATIENTS_TEN_OR_MORE,
-    PCT_PX_GTE_TEN_PPM = SDC_PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH,
-    TOTAL_PATIENTS_ACB_6 = SDC_TOTAL_PATIENTS_ACB_6,
-    PCT_PX_ACB_6_PPM = SDC_PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH,
-    TOTAL_PATIENTS_DAMN = SDC_TOTAL_PATIENTS_DAMN,
-    PCT_PX_DAMN_PPM = SDC_PCT_PATIENTS_DAMN_PER_PATIENT_MONTH
-  )
-  
 ## Save -------------------------------------------------------------------
+metrics_by_geo_and_ch_flag <- metrics_by_geo_and_ch_flag_df
+
 usethis::use_data(metrics_by_geo_and_ch_flag, overwrite = TRUE)
 
-## Cleanup ----------------------------------------------------------------
+# Cleanup -----------------------------------------------------------------
 DBI::dbDisconnect(con)
+rm(list = ls())
