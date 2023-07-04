@@ -202,7 +202,7 @@ get_metrics <- function(init_db,
       TOTAL_PATIENTS = ifelse(
         SDC,
         NA_integer_,
-        round(TOTAL_PATIENTS, -1)
+        janitor::round_half_up(TOTAL_PATIENTS, -1)
       ),
       ITEMS_PPM = ifelse(
         SDC,
@@ -223,7 +223,7 @@ get_metrics <- function(init_db,
       PATIENTS_GTE_SIX = ifelse(
         SDC,
         NA_integer_,
-        round(PATIENTS_GTE_SIX, -1)
+        janitor::round_half_up(PATIENTS_GTE_SIX, -1)
       ),
       PCT_PATIENTS_GTE_SIX_PPM = ifelse(
         SDC,
@@ -234,7 +234,7 @@ get_metrics <- function(init_db,
       PATIENTS_GTE_TEN = ifelse(
         SDC,
         NA_integer_,
-        round(PATIENTS_GTE_TEN, -1)
+        janitor::round_half_up(PATIENTS_GTE_TEN, -1)
       ),
       PCT_PATIENTS_GTE_TEN_PPM = ifelse(
         SDC,
@@ -245,7 +245,7 @@ get_metrics <- function(init_db,
       PATIENTS_ACB_6 = ifelse(
         SDC,
         NA_integer_,
-        round(PATIENTS_ACB_6, -1)
+        janitor::round_half_up(PATIENTS_ACB_6, -1)
       ),
       PCT_PATIENTS_ACB_6_PPM = ifelse(
         SDC,
@@ -256,7 +256,7 @@ get_metrics <- function(init_db,
       PATIENTS_DAMN = ifelse(
         SDC,
         NA_integer_,
-        round(PATIENTS_DAMN, -1)
+        janitor::round_half_up(PATIENTS_DAMN, -1)
       ),
       PCT_PATIENTS_DAMN_PPM = ifelse(
         SDC,
@@ -273,7 +273,7 @@ get_metrics <- function(init_db,
       PATIENTS_FALLS = ifelse(
         SDC,
         NA_integer_,
-        round(PATIENTS_FALLS, -1)
+        janitor::round_half_up(PATIENTS_FALLS, -1)
       ),
       PCT_PATIENTS_FALLS_PPM = ifelse(
         SDC,
@@ -284,8 +284,11 @@ get_metrics <- function(init_db,
     select(-SDC)
   
   # Get names of % metrics cols
-  pct_cols <- out %>% select(starts_with("PCT")) %>% names()
+  pct_cols <- out %>%
+    select(starts_with("PCT")) %>%
+    names()
   
+  # Reorder columns so TOTAL_* precedes the PCT_* col
   pct_cols %>%
     walk(
       \(x) {

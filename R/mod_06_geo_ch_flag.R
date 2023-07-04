@@ -5,40 +5,13 @@ mod_06_geo_ch_flag_ui <- function(id) {
     h2(
       "Estimated prescribing patterns for care home patients aged 65 years or over"
     ),
-    p(tags$b("Geography")),
-    p(
-      tags$b(
-        "The London region has the highest estimated average prescribing ",
-        "costs and volumes per patient month."
-      )
-    ),
-    p(
-      "The London region features the highest average rate per patient month ",
-      "on all four prescribing metrics and South West is lowest. There is ",
-      "considerable variation per patient month by ICB and local authority ",
-      "across metrics, with high pockets in several London and some West ",
-      "Midland ICBs and local authorities."
-    ),
-    p(
-      "Each of the metrics can be explored in the chart and table below by ",
-      "region, local authority and ICB."
-    ),
     nhs_card(
       heading = "Estimated average prescribing metrics per patient month for 
                  older care home patients in England by geography",
       div(
         class = "nhsuk-grid-row",
         div(
-          class = "nhsuk-grid-column-one-third",
-          nhs_selectInput(
-            inputId = ns("geography"),
-            label = "Geography",
-            choices = c("Region", "ICB", "Local Authority"),
-            full_width = TRUE
-          )
-        ),
-        div(
-          class = "nhsuk-grid-column-one-third",
+          class = "nhsuk-grid-column-one-half",
           nhs_selectInput(
             inputId = ns("fy"),
             label = "Financial Year",
@@ -49,12 +22,21 @@ mod_06_geo_ch_flag_ui <- function(id) {
             ),
             full_width = TRUE
           )
+        ),
+        div(
+          class = "nhsuk-grid-column-one-half",
+          nhs_selectInput(
+            inputId = ns("geography"),
+            label = "Geography",
+            choices = c("Region", "ICB", "Local Authority"),
+            full_width = TRUE
+          )
         )
       ),
       div(
         class = "nhsuk-grid-row",
         div(
-          class = "nhsuk-grid-column-two-thirds",
+          class = "nhsuk-grid-column-full",
           nhs_selectInput(
             inputId = ns("metric"),
             label = "Metric",
@@ -220,6 +202,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create datatable
     create_datatable <- function(data) {
+      browser()
       data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>% 
         dplyr::mutate(
@@ -250,7 +233,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               span(
                 class = "nhsuk-body-s",
                 style = "font-size: 12px;",
-                col
+                col # gsub("_NCH", " ", gsub("_CH", "", col))
               ) %>%
                 as.character()
             }

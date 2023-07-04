@@ -4,56 +4,6 @@ mod_04_metrics_ch_type_ui <- function(id) {
     h2(
       "Estimated prescribing patterns for care home patients aged 65 years or over"
     ),
-    p(
-      "Care home patients aged 65 years or over received an estimated",
-      tags$b("35 million"), "prescription items at a cost of",
-      tags$b("\u00A3324 million"), "during 2020/21."
-    ),
-    p(
-      "This represents 7% of the total primary care drug spend for ",
-      "patients aged 65 years or over during 2020/21."
-    ),
-    p(
-      tags$b(
-        "The estimated average monthly drug cost for care home patients ",
-        "aged 65 years or over is around twice that for non-care home patients ",
-        "aged 65 years or over who received prescriptions."
-      )
-    ),
-    p(
-      "We estimate that care home patients aged 65 years or over receive around 60% ",
-      "more prescription items and unique medicines per patient month at around ",
-      "twice the cost than non-care home patients aged 65 years or over who received ",
-      "prescriptions. These prescribing metrics vary by age, gender and ",
-      "geography. The chart below allows you to explore them."
-    ),
-    br(),
-    br(),
-    p(
-      tags$b(
-        "The estimated average monthly drug cost for nursing home patients is ",
-        "around 1.5 times more than for residential home patients"
-      )
-    ),
-    p(
-      "Despite being prescribed a",
-      tags$b("similar number of prescription items"), "(both estimated to be ",
-      "around 10 per patient month)",
-      "the drug cost for", tags$b("nursing home patients is 1.5 times more"),
-      "per patient month than for residential home patients."
-    ),
-    p(
-      tags$b("Both"), "nursing and residential home patients are prescribed a",
-      tags$b("similar number of unique medicines"),
-      "per patient month and", tags$b("both"), "have approximately",
-      tags$b("3 in 10 patients on ten or more unique medicines"), "per patient",
-      "month.",
-    ),
-    p(
-      "Nursing home patients would be expected to have slightly higher ",
-      "prescribing metrics than residential home patients; a qualified nurse is ",
-      "provided at nursing homes to cater for patients with more complex needs."
-    ),
     nhs_card(
       heading = "Estimated average prescribing metrics per patient month for
         care home and non-care home patients aged 65 years or over in England by
@@ -201,7 +151,7 @@ mod_04_metrics_ch_type_server <- function(id) {
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_xAxis(
-          title = list(text = "Financial Year"),
+          title = NULL,
           categories = data$FY %>%
             unique() %>%
             sort(),

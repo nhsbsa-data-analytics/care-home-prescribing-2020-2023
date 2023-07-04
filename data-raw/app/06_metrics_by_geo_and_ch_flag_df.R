@@ -147,7 +147,7 @@ aggregate_by_geo <- function(geography_name) {
 }
 
 ## Process ----------------------------------------------------------------
-metrics_by_geo_and_ch_flag_df <- names(geographies)[2:4] %>% 
+metrics_by_geo_and_ch_flag_df <- names(geographies)[-1] %>% 
   map(aggregate_by_geo) %>%
   list_rbind()
 
@@ -156,7 +156,7 @@ metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
   format_data_raw("CH_FLAG") %>% 
-  suppressWarnings() # We do not have Overall and PCN in this data
+  suppressWarnings() # We do not have Overall in this data
 
 ## Save -------------------------------------------------------------------
 usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
