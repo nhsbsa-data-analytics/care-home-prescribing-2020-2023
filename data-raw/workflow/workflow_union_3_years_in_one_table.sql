@@ -1,7 +1,7 @@
 -- To run from DALL_REF
 
 drop table int646_base_20200401_20230331 purge;
-create table int646_base_20200401_20230331 nologging nocompress as
+create table int646_base_20200401_20230331 nologging compress for query low as
 
 select '2020/21' fy, y1.* from mamcp.int646_base_20200401_20210331 y1
 union all
