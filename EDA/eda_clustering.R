@@ -56,7 +56,7 @@ df_high = data %>%
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
-    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+    COST = janitor::round_half_up(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
   collect_with_parallelism(., 8) %>% 
   mutate(TYPE = "Exact care home matching")
@@ -70,7 +70,7 @@ df_high_ch = base %>%
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
-    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+    COST = janitor::round_half_up(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
   collect_with_parallelism(., 8) %>% 
   mutate(TYPE = "Any care home matching")
@@ -85,7 +85,7 @@ df_exact = data %>%
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
-    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+    COST = janitor::round_half_up(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
   ungroup() %>% 
   collect_with_parallelism(., 8) %>%  
@@ -105,7 +105,7 @@ df_any = base %>%
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
-    COST = round(sum(ITEM_PAY_DR_NIC) / 100)
+    COST = janitor::round_half_up(sum(ITEM_PAY_DR_NIC) / 100)
   ) %>% 
   ungroup() %>% 
   collect_with_parallelism(., 8) %>% 
@@ -234,7 +234,7 @@ drug_chapter_vars = c(names(df_total)[grepl("CHAPTER", names(df_total))], "DRUG_
 df_bar = df_total %>% 
   select(drug_chapter_vars) %>% 
   mutate(
-    DRUG_TOTAL = round(DRUG_TOTAL),
+    DRUG_TOTAL = janitor::round_half_up(DRUG_TOTAL),
     DRUG_TOTAL = case_when(
       DRUG_TOTAL <= 4 ~ "1-4",
       DRUG_TOTAL >= 9 ~ "9+",
@@ -511,7 +511,7 @@ df_gen = data %>%
   group_by(AGE_BAND, GENDER, SECTION_DESCR, TOTAL) %>% 
   summarise(ITEMS = sum(ITEM_COUNT)) %>% 
   ungroup() %>% 
-  mutate(PROP = round(ITEMS / TOTAL, 5)) %>% 
+  mutate(PROP = janitor::round_half_up(ITEMS / TOTAL, 5)) %>% 
   collect() %>% 
   arrange(SECTION_DESCR, AGE_BAND, GENDER) %>% 
   filter(!is.na(GENDER))
@@ -548,7 +548,7 @@ df_gen_ch = data %>%
   group_by(AGE_BAND, GENDER, CHAPTER_DESCR, TOTAL) %>% 
   summarise(ITEMS = sum(ITEM_COUNT)) %>% 
   ungroup() %>% 
-  mutate(PROP = round(ITEMS / TOTAL, 5)) %>% 
+  mutate(PROP = janitor::round_half_up(ITEMS / TOTAL, 5)) %>% 
   collect() %>% 
   arrange(CHAPTER_DESCR, AGE_BAND, GENDER) %>% 
   filter(
@@ -707,7 +707,7 @@ df_rank %>%
   ungroup() %>% 
   mutate(
     TOTAL = sum(n),
-    PROP = round(n / TOTAL, 2)
+    PROP = janitor::round_half_up(n / TOTAL, 2)
   )
 
 # 9. Provider Size -------------------------------------------------------------

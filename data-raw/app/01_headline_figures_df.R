@@ -15,9 +15,9 @@ annual_df = data_db %>%
   filter(CH_FLAG == 1) %>% 
   group_by(TIME = FY) %>% 
   summarise(
-    PATS = round(n_distinct(NHS_NO), -2),
-    ITEMS = round(sum(ITEM_COUNT), -3),
-    NIC = round(sum(ITEM_PAY_DR_NIC) / 100, -3)
+    PATS = janitor::round_half_up(n_distinct(NHS_NO), -2),
+    ITEMS = janitor::round_half_up(sum(ITEM_COUNT), -3),
+    NIC = janitor::round_half_up(sum(ITEM_PAY_DR_NIC) / 100, -3)
   ) %>% 
   ungroup() %>% 
   collect() %>% 
@@ -29,9 +29,9 @@ monthly_df = data_db %>%
   filter(CH_FLAG == 1) %>% 
   group_by(TIME = YEAR_MONTH) %>% 
   summarise(
-    PATS = round(n_distinct(NHS_NO), -2),
-    ITEMS = round(sum(ITEM_COUNT), -3),
-    NIC = round(sum(ITEM_PAY_DR_NIC) / 100, -3)
+    PATS = janitor::round_half_up(n_distinct(NHS_NO), -2),
+    ITEMS = janitor::round_half_up(sum(ITEM_COUNT), -3),
+    NIC = janitor::round_half_up(sum(ITEM_PAY_DR_NIC) / 100, -3)
   ) %>% 
   ungroup() %>% 
   collect() %>% 

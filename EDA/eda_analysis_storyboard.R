@@ -22,7 +22,7 @@ year %>%
   distinct() %>% 
   collect() %>% 
   mutate(
-    PATS = round(runif(n = 36, min = 250000, max = 350000)),
+    PATS = janitor::round_half_up(runif(n = 36, min = 250000, max = 350000)),
     YEAR_MONTH = as.factor(YEAR_MONTH)
     ) %>% 
   arrange(YEAR_MONTH) %>% 
@@ -36,7 +36,7 @@ year %>%
  distinct() %>% 
  collect() %>% 
  mutate(
-   PATS = round(runif(n = 3, min = 250000, max = 350000)),
+   PATS = janitor::round_half_up(runif(n = 3, min = 250000, max = 350000)),
    FINANCIAL_YEAR = as.character(as.factor(FINANCIAL_YEAR))
  ) %>% 
  arrange(FINANCIAL_YEAR) %>% 
@@ -48,8 +48,8 @@ cross_join(
   y = data.frame(YEAR = c("2020/21", "2021/22", "20222/23"))
   ) %>% 
   mutate(
-    MALE = round(runif(n = 18, min = 25000, max = 50000)),
-    FEMALE = round(runif(n = 18, min = 60000, max = 125000))
+    MALE = janitor::round_half_up(runif(n = 18, min = 25000, max = 50000)),
+    FEMALE = janitor::round_half_up(runif(n = 18, min = 60000, max = 125000))
   ) %>% 
   tidyr::pivot_longer(!c('AGE_GROUP', "YEAR")) %>% 
   mutate(GROUP = paste0(YEAR, ' - ', name)) %>% 
@@ -67,8 +67,8 @@ charts[[1]] = cross_join(
   y = data.frame(YEAR = c("2020/21"))
   ) %>% 
   mutate(
-    MALE = round(runif(n = 6, min = 25000, max = 50000)),
-    FEMALE = round(runif(n = 6, min = 90000, max = 110000))
+    MALE = janitor::round_half_up(runif(n = 6, min = 25000, max = 50000)),
+    FEMALE = janitor::round_half_up(runif(n = 6, min = 90000, max = 110000))
   ) %>% 
   tidyr::pivot_longer(!c('AGE_GROUP', "YEAR")) %>% 
   mutate(GROUP = paste0(YEAR, ' - ', name)) %>% 
@@ -80,8 +80,8 @@ charts[[2]] = cross_join(
   y = data.frame(YEAR = c("2021/22"))
   ) %>% 
   mutate(
-    MALE = round(runif(n = 6, min = 25000, max = 50000)),
-    FEMALE = round(runif(n = 6, min = 90000, max = 110000))
+    MALE = janitor::round_half_up(runif(n = 6, min = 25000, max = 50000)),
+    FEMALE = janitor::round_half_up(runif(n = 6, min = 90000, max = 110000))
   ) %>% 
   tidyr::pivot_longer(!c('AGE_GROUP', "YEAR")) %>% 
   mutate(GROUP = paste0(YEAR, ' - ', name)) %>% 
@@ -93,8 +93,8 @@ charts[[3]] = cross_join(
   y = data.frame(YEAR = c("2021/22"))
   ) %>% 
   mutate(
-    MALE = round(runif(n = 6, min = 25000, max = 50000)),
-    FEMALE = round(runif(n = 6, min = 90000, max = 110000))
+    MALE = janitor::round_half_up(runif(n = 6, min = 25000, max = 50000)),
+    FEMALE = janitor::round_half_up(runif(n = 6, min = 90000, max = 110000))
   ) %>% 
   tidyr::pivot_longer(!c('AGE_GROUP', "YEAR")) %>% 
   mutate(GROUP = paste0(YEAR, ' - ', name)) %>% 
@@ -114,10 +114,10 @@ metric_df = cross_join(
   y = data.frame(`Year` = c("20/21", "21/22", "22/23"))
   ) %>% 
   mutate(
-    `Care home` = round(runif(n = 18, min = 90, max = 110)),
-    `Residential home` = round(runif(n = 18, min = 100, max = 130)),
-    `Nursing home` = round(runif(n = 18, min = 70, max = 90)),
-    `Non-Care home` = round(runif(n = 18, min = 40, max = 60))
+    `Care home` = janitor::round_half_up(runif(n = 18, min = 90, max = 110)),
+    `Residential home` = janitor::round_half_up(runif(n = 18, min = 100, max = 130)),
+    `Nursing home` = janitor::round_half_up(runif(n = 18, min = 70, max = 90)),
+    `Non-Care home` = janitor::round_half_up(runif(n = 18, min = 40, max = 60))
   )
 
 # Max value for plot
@@ -155,12 +155,12 @@ la_df = la %>%
   arrange(LA_NAME) %>% 
   collect() %>% 
   mutate(
-    `Care home 2020/21` = round(runif(n = 326, min = 90, max = 110)),
-    `Care home 2021/22` = round(runif(n = 326, min = 90, max = 110)),
-    `Care home 2022/23` = round(runif(n = 326, min = 90, max = 110)),
-    `Non-Care home 2020/21` = round(runif(n = 326, min = 40, max = 60)),
-    `Non-Care home 2021/22` = round(runif(n = 326, min = 40, max = 60)),
-    `Non-Care home 2022/23` = round(runif(n = 326, min = 40, max = 60))
+    `Care home 2020/21` = janitor::round_half_up(runif(n = 326, min = 90, max = 110)),
+    `Care home 2021/22` = janitor::round_half_up(runif(n = 326, min = 90, max = 110)),
+    `Care home 2022/23` = janitor::round_half_up(runif(n = 326, min = 90, max = 110)),
+    `Non-Care home 2020/21` = janitor::round_half_up(runif(n = 326, min = 40, max = 60)),
+    `Non-Care home 2021/22` = janitor::round_half_up(runif(n = 326, min = 40, max = 60)),
+    `Non-Care home 2022/23` = janitor::round_half_up(runif(n = 326, min = 40, max = 60))
     ) %>% 
   rename_at("LA_NAME", ~"Local Authority")
 
@@ -266,13 +266,13 @@ fact_df <- fact_db %>%
 chapter_data <- fact_df %>% 
   pivot_wider(names_from = "CH_FLAG", values_from = "PROP") %>% 
   mutate(
-    DIFF = round(`Care home` - `Non-care home`, 4) * 100,
+    DIFF = janitor::round_half_up(`Care home` - `Non-care home`, 4) * 100,
     GREATER = case_when(
       DIFF > 0 ~ "Care homes",
       DIFF < 0 ~ "Non-care homes",
       T ~ "Neither"),
-    `Care home` = round(`Care home`, 4) * 100,
-    `Non care home` = round(`Non-care home`, 4) * 100,
+    `Care home` = janitor::round_half_up(`Care home`, 4) * 100,
+    `Non care home` = janitor::round_half_up(`Non-care home`, 4) * 100,
   ) %>% 
   arrange(desc(DIFF))
 

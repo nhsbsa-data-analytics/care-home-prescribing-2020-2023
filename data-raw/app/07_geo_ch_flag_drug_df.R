@@ -61,8 +61,8 @@ get_geo_bnf_prop = function(index){
     mutate(
       TOTAL_ITEMS = sum(ITEMS),
       TOTAL_NIC = sum(NIC),
-      PROP_ITEMS = round((ITEMS / TOTAL_ITEMS) * 100, 2),
-      PROP_NIC = round((NIC / TOTAL_NIC) * 100, 2)
+      PROP_ITEMS = janitor::round_half_up((ITEMS / TOTAL_ITEMS) * 100, 2),
+      PROP_NIC = janitor::round_half_up((NIC / TOTAL_NIC) * 100, 2)
       ) %>%
     ungroup() %>%
     collect() %>% 
@@ -156,8 +156,8 @@ get_geo_bnf_ppm = function(index){
     ungroup() %>% 
     group_by(FY, {{ geo }}, {{ bnf }}) %>% 
     summarise(
-      PPM_ITEMS = round(mean(ITEMS), 2),
-      PPM_NIC = round(mean(NIC), 2)
+      PPM_ITEMS = janitor::round_half_up(mean(ITEMS), 2),
+      PPM_NIC = janitor::round_half_up(mean(NIC), 2)
     ) %>% 
     ungroup() %>% 
     collect() %>% 

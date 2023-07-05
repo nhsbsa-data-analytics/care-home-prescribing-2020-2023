@@ -53,12 +53,22 @@ mod_nhs_download_server <- function(id, filename, export_data) {
     output$download <- downloadHandler(
       filename = filename,
       content = function(file) {
-        utils::write.csv(
-          # Handle possibility of reactive input
-          x = if (is.data.frame(export_data)) export_data else export_data(),
-          file = file,
-          row.names = FALSE
+        wb <- openxlsx::createWorkbook()
+        openxlsx::addWorksheet(wb, "Prescribing data")
+        openxlsx::writeData(
+          wb,
+          "Prescribing data",
+          if (is.data.frame(export_data)) export_data else export_data(),
+          rowNames = FALSE,
+          withFilter = TRUE
         )
+        openxlsx::setColWidths(
+          wb,
+          "Prescribing data",
+          cols = seq_along(export_data),
+          widths = "auto"
+        )
+        openxlsx::saveWorkbook(wb, file)
       }
     )
   })

@@ -1,51 +1,3 @@
-#' Custom NHSBSA highcharter theme
-#'
-#' Based on the nhsbsaR highcharter theme, since it returns a list we can edit
-#' it to the specific theme for this shiny app.
-#'
-#' @param hc Highcharts object
-#' @param palette Which colour palette to use from the `nhsbsaR` package.
-#' @param stack Stack option for highcharter.
-#'
-#' @return Highcharts object with theme added.
-#' @noRd
-theme_nhsbsa <- function(hc, palette = NA, stack = "normal") {
-  
-  # Set the thousands seperator
-  hcoptslang <- getOption("highcharter.lang")
-  hcoptslang$thousandsSep <- ","
-  options(highcharter.lang = hcoptslang)
-  
-  # Load theme from nhsbsaR package
-  theme_nhsbsa_hc <- nhsbsaR::theme_nhsbsa_hc(family = "Frutiger W01")
-  
-  # Add the plot options
-  theme_nhsbsa_hc$plotOptions <- list(
-    series = list(stacking = stack, borderWidth = 0),
-    bar = list(groupPadding = 0.1)
-  )
-  
-  # Add the palettes
-  theme_nhsbsa_hc$colors <- nhsbsaR::palette_nhsbsa(palette = palette)
-  theme_nhsbsa_hc$colAxis <- list(
-    min = 0,
-    minColor = nhsbsaR::palette_nhsbsa(palette = "gradient")[1],
-    maxColor = nhsbsaR::palette_nhsbsa(palette = "gradient")[2]
-  )
-  
-  # Style based on the NHS frontend toolkit
-  theme_nhsbsa_hc$xAxis$className <- "nhsuk-body-s"
-  theme_nhsbsa_hc$yAxis$className <- "nhsuk-body-s"
-  
-  # Add the theme to the chart and then remove the credits afterwards (currently
-  # does not work to do this within the theme)
-  hc %>%
-    highcharter::hc_add_theme(hc_thm = theme_nhsbsa_hc) %>%
-    highcharter::hc_xAxis(title = list(text = "")) %>%
-    highcharter::hc_yAxis(title = list(text = "")) %>%
-    highcharter::hc_credits(enabled = TRUE)
-}
-
 #' Define the breakdowns
 #'
 #' Define the labels of the breakdowns (in order of hierarchy) with the columns
@@ -80,12 +32,12 @@ breakdowns <- list(
 )
 
 
-#' Define the geographys
+#' Define the geographies
 #'
 #' Extract them from the breakdowns.
 #'
 #' @noRd
-geographys <- breakdowns %>%
+geographies <- breakdowns %>%
   purrr::keep(
     .p = stringr::str_detect(
       string = names(.),
@@ -131,7 +83,8 @@ format_data_raw <- function(df, vars) {
     dplyr::arrange(
       dplyr::across(
         dplyr::any_of(
-          c("FY",
+          c(
+            "FY",
             "YEAR_MONTH",
             "SUB_BREAKDOWN_NAME",
             "SUB_GEOGRAPHY_NAME",
@@ -165,7 +118,7 @@ format_data_raw <- function(df, vars) {
   if ("GEOGRAPHY" %in% names(df)) {
     df <- df %>%
       dplyr::mutate(
-        GEOGRAPHY = forcats::fct_relevel(.data$GEOGRAPHY, names(geographys))
+        GEOGRAPHY = forcats::fct_relevel(.data$GEOGRAPHY, names(geographies))
       )
   }
   
@@ -182,7 +135,8 @@ format_data_raw <- function(df, vars) {
     dplyr::arrange(
       dplyr::across(
         dplyr::any_of(
-          c("FY",
+          c(
+            "FY",
             "YEAR_MONTH",
             "BREAKDOWN",
             "SUB_BREAKDOWN_NAME",
@@ -275,3 +229,27 @@ acb3_drugs <- c(
   '0704020AD','0704020G0','0704020J0','0704020N0','0704020P0','0704020Z0','0704040G0',
   '1002020S0','1002020V0'
 )
+
+# Falls section level drug groups
+falls_section_vec = c(
+  'Antidepressant drugs',
+  'Antiepileptic drugs',
+  'Diuretics',
+  'Hypertension and heart failure'
+)
+
+# Falls paragraph level drug groups
+falls_paragraph_vec = c(
+  'Antipsychotic depot injections',
+  'Antipsychotic drugs',
+  'Opioid analgesics',
+  'Opioid dependence',
+  'Alpha-adrenoceptor blocking drugs',
+  'Antihistamines',
+  'Vasoconstrictor sympathomimetics',
+  'Vasodilator antihypertensive drugs',
+  'Drugs for urinary frequency enuresis and incontinence'
+)
+
+# Falls chem sub level groups
+falls_chem_vec = c('Midazolam hydrochloride')

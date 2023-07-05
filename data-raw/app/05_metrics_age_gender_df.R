@@ -175,28 +175,28 @@ metrics_by_age_gender_and_ch_flag_df <- metrics_by_age_gender_and_ch_flag_df |>
 metrics_by_age_gender_and_ch_flag_df <- metrics_by_age_gender_and_ch_flag_df |>
   mutate(
     SDC = ifelse(TOTAL_PATIENTS %in% c(1, 2, 3, 4), TRUE, FALSE),
-    SDC_TOTAL_PATIENTS = ifelse(SDC, NA_integer_, round(TOTAL_PATIENTS, -1)),
+    SDC_TOTAL_PATIENTS = ifelse(SDC, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS, -1)),
     SDC_ITEMS_MPMM = ifelse(SDC, NA_integer_, janitor::round_half_up(ITEMS_MPMM, 1)),
     SDC_COST_MPMM = ifelse(SDC, NA_integer_, janitor::round_half_up(COST_MPMM)),
     # SDC based on patients on patients on 2+ medicines
     SDC = ifelse(TOTAL_PATIENTS_UNIQUE_MEDS %in% c(1, 2, 3, 4), TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_UNIQUE_MEDS = ifelse(SDC, NA_integer_, round(TOTAL_PATIENTS_UNIQUE_MEDS, -1)),
+    SDC_TOTAL_PATIENTS_UNIQUE_MEDS = ifelse(SDC, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS_UNIQUE_MEDS, -1)),
     SDC_UNIQUE_MEDICINES_MPMM = ifelse(SDC, NA_integer_, janitor::round_half_up(UNIQUE_MEDICINES_MPMM, 1)),
     # SDC based on patients on patients on 6+ medicines
     SDC = ifelse(TOTAL_PATIENTS_6_PLUS %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_6_PLUS = ifelse(SDC, NA_integer_, round(TOTAL_PATIENTS_6_PLUS, -1)),
+    SDC_TOTAL_PATIENTS_6_PLUS = ifelse(SDC, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS_6_PLUS, -1)),
     SDC_PCT_PATIENTS_6_PLUS_MPP = ifelse(SDC, NA_integer_, janitor::round_half_up(PCT_PATIENTS_6_PLUS_MPP, 1)),
     # SDC based on patients on patients on 10+ medicines
     SDC = ifelse(TOTAL_PATIENTS_10_PLUS %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_10_PLUS = ifelse(SDC, NA_integer_, round(TOTAL_PATIENTS_10_PLUS, -1)),
+    SDC_TOTAL_PATIENTS_10_PLUS = ifelse(SDC, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS_10_PLUS, -1)),
     SDC_PCT_PATIENTS_10_PLUS_MPP = ifelse(SDC, NA_integer_, janitor::round_half_up(PCT_PATIENTS_10_PLUS_MPP, 1)),
     # SDC based on patients on patients with ACB_6 flag
     SDC = ifelse(TOTAL_PATIENTS_ACB_6 %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_ACB_6 = ifelse(SDC, NA_integer_, round(TOTAL_PATIENTS_ACB_6, -1)),
+    SDC_TOTAL_PATIENTS_ACB_6 = ifelse(SDC, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS_ACB_6, -1)),
     SDC_PCT_PATIENTS_ACB_6_MPP = ifelse(SDC, NA_integer_, janitor::round_half_up(PCT_PATIENTS_ACB_6_MPP, 1)),
     # SDC based on patients on patients with DAMN flag
     SDC = ifelse(TOTAL_PATIENTS_DAMN %in% 1:4, TRUE, FALSE),
-    SDC_TOTAL_PATIENTS_DAMN = ifelse(SDC, NA_integer_, round(TOTAL_PATIENTS_DAMN, -1)),
+    SDC_TOTAL_PATIENTS_DAMN = ifelse(SDC, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS_DAMN, -1)),
     SDC_PCT_PATIENTS_DAMN_MPP = ifelse(SDC, NA_integer_, janitor::round_half_up(PCT_PATIENTS_DAMN_MPP, 1))
   ) |>
   select(-SDC)
