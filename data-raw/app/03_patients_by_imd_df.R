@@ -21,7 +21,7 @@ mod_patients_by_imd_df <- fact_db %>%
   ungroup() %>% 
   group_by(FY) %>% 
   # Sum so annual percentages add to 100 (despite double counting)
-  mutate(PCT_PATIENTS = round(TOTAL_PATIENTS / sum(TOTAL_PATIENTS) * 100, 2)) %>% 
+  mutate(PCT_PATIENTS = janitor::round_half_up(TOTAL_PATIENTS / sum(TOTAL_PATIENTS) * 100, 2)) %>% 
   ungroup() %>% 
   collect() %>% 
   arrange(FY, IMD_DECILE) %>% 

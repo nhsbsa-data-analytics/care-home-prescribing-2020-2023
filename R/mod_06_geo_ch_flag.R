@@ -202,7 +202,6 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create datatable
     create_datatable <- function(data) {
-      browser()
       data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>% 
         dplyr::mutate(
@@ -212,7 +211,7 @@ mod_06_geo_ch_flag_server <- function(id) {
             TRUE  ~ "CH",
             FALSE ~ "NCH"
           ),
-          !!rlang::sym(input$geography) := .data$SUB_GEOGRAPHY_NAME,
+          !!rlang::sym(input$geography) := as.character(.data$SUB_GEOGRAPHY_NAME),
           .data[[input$metric]],
           .keep = "none"
         ) %>%
@@ -222,10 +221,14 @@ mod_06_geo_ch_flag_server <- function(id) {
           names_sep = " "
         ) %>% 
         dplyr::arrange(.data[[input$geography]]) %>%
+        # Move CH cols left of sub-geography column, so it is in centre col
         dplyr::relocate(
-          dplyr::ends_with("CH"),
-          .before = dplyr::ends_with("NCH")
+          dplyr::matches(" CH"),
+          .before = !!rlang::sym(input$geography)
         ) %>% 
+        # Apply styling for header names, also remove the extraneous CH/NCH
+        # NOTE: cannot have identical col names, so we use an extra space for
+        # one set
         dplyr::rename_with(
           \(cols) purrr::map_vec(
             cols,
@@ -233,7 +236,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               span(
                 class = "nhsuk-body-s",
                 style = "font-size: 12px;",
-                col # gsub("_NCH", " ", gsub("_CH", "", col))
+                gsub(" NCH", " ", gsub(" CH", "", col))
               ) %>%
                 as.character()
             }
@@ -248,7 +251,10 @@ mod_06_geo_ch_flag_server <- function(id) {
             paging = FALSE,
             scrollY = "350px",
             overflow = "scroll",
-            tabindex = "0"
+            tabindex = "0",
+            columnDefs = list(
+              list(className = "dt-center", targets = "_all")
+            )
           ),
           height = "400px",
           filter = "none",
@@ -256,7 +262,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         ) %>%
         DT::formatStyle(columns = 1:7, `font-size` = "12px") %>%
         DT::formatRound(
-          columns = 2:7,
+          columns = (1:7)[-4],
           digits = ifelse(input$metric != "COST_PPM", 1, 0)
         )
     }
@@ -285,7 +291,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # }
     
     # Create download data (all data)
-    create_download_data_all <- function() {
+    create_download_data <- function() {
       temp <- carehomes2::metrics_by_geo_and_ch_flag_df %>%
         dplyr::mutate(
           # Use TOTAL_PATIENTS for non-% metrics...
@@ -340,7 +346,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     mod_nhs_download_server(
       id = "download_data",
       filename = "Selected Prescribing Metrics by Geography and Carehome Status.xlsx",
-      export_data = create_download_data_all()
+      export_data = create_download_data()
     )
   })
 }

@@ -155,7 +155,7 @@ mod_02_patients_age_gender_server <- function(id){
           SDC_TOTAL_PATIENTS = ifelse(
             test = TOTAL_PATIENTS %in% c(1, 2, 3, 4),
             yes = "c",
-            no = format(round(TOTAL_PATIENTS, -1), big.mark = ",")
+            no = format(janitor::round_half_up(TOTAL_PATIENTS, -1), big.mark = ",")
           )
         ) %>%
         dplyr::pull(SDC_TOTAL_PATIENTS)

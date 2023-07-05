@@ -69,7 +69,7 @@ output = df %>%
   ungroup() %>% 
   select(-NHS_NO) %>% 
   group_by(ICB) %>% 
-  summarise_all(.funs = function(x) round(mean(x),2)) %>% 
+  summarise_all(.funs = function(x) janitor::round_half_up(mean(x),2)) %>% 
   ungroup()
 
 # Export 

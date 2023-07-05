@@ -139,7 +139,7 @@ ggplot(TOP_ORGS_PER_CH |> filter(ITEMS_PER_CH >= low_activity_threshold),
                                              PROP_ITEMS_BY_TOP_PRESC_TO_CH >= dom_fraction_threshold,
                                              PROP_ITEMS_BY_TOP_DISP_FROM_CH >= dom_fraction_threshold) |>
                                       nrow() / nrow(TOP_ORGS_PER_CH))*100) |>
-                   round() |> paste0("%"))
+             janitor::round_half_up() |> paste0("%"))
 
 # Prop by dominant presc/disp org vs item volume
 
@@ -204,7 +204,7 @@ t4 |> mutate(
   PRESC_ORG_NM = factor(PRESC_ORG_NM, levels = c(top_20_presc, "OTHER") |> rev()),
   DISP_NM = factor(DISP_NM, levels = c(top_20_disp, "OTHER"))
 ) |>
-  hchart(type = "heatmap", hcaes(DISP_NM, PRESC_ORG_NM, value = log(ITEMS) |> round(2)),
+  hchart(type = "heatmap", hcaes(DISP_NM, PRESC_ORG_NM, value = log(ITEMS) |> janitor::round_half_up(2)),
              dataLabels = list(enabled = T,
                                format = "{point.value:.1f}",
                                #formatter = htmlwidgets::JS("function () { return Math.round(Math.exp(this.point.value)/1000 * 10) / 10 + 'k' ; }"),
