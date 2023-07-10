@@ -235,7 +235,8 @@ falls_section_vec = c(
   'Antidepressant drugs',
   'Antiepileptic drugs',
   'Diuretics',
-  'Hypertension and heart failure'
+  'Hypertension and heart failure',
+  'Hypnotics and anxiolytics'
 )
 
 # Falls paragraph level drug groups
@@ -246,10 +247,21 @@ falls_paragraph_vec = c(
   'Opioid dependence',
   'Alpha-adrenoceptor blocking drugs',
   'Antihistamines',
-  'Vasoconstrictor sympathomimetics',
   'Vasodilator antihypertensive drugs',
-  'Drugs for urinary frequency enuresis and incontinence'
+  'Drugs for urinary frequency enuresis and incontinence',
+  'Nitrates'
 )
 
 # Falls chem sub level groups
 falls_chem_vec = c('Midazolam hydrochloride')
+
+# Falls risk chem sub exclusions
+falls_exclude_chem_vec = c(
+  'Paraldehyde',
+  'Mirabegron',
+  'Mannitol',
+  'Loratadine',
+  'Desloratadine',
+  'Bilastine',
+  'Minoxidil'
+)

@@ -83,9 +83,10 @@ get_metrics <- function(init_db,
         TRUE ~ 0
       ),
       FALLS_CAT = case_when(
-        SECTION_DESCR %in% falls_section_vec ~ 1,
-        PARAGRAPH_DESCR %in% falls_paragraph_vec ~ 1,
-        CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_chem_vec ~ 1,
+        (SECTION_DESCR %in% falls_section_vec |
+        PARAGRAPH_DESCR %in% falls_paragraph_vec |
+        CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_chem_vec) &
+        !CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_exclude_chem_vec ~ 1,
         TRUE ~ 0
       ),
       .keep = "none"
