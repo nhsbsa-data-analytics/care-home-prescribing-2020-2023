@@ -94,7 +94,7 @@ get_metrics <- function(init_db,
     group_by(across(all_of(first_grouping))) %>%
     summarise(
       TOTAL_ITEMS = sum(ITEM_COUNT, na.rm = TRUE),
-      TOTAL_COST = sum(ITEM_PAY_DR_NIC * 0.01, na.rm = TRUE),
+      TOTAL_COST =  0.01 * sum(ITEM_PAY_DR_NIC, na.rm = TRUE),
       ANY_MED_CH_1_4_6_10 = any(
         case_when(
           as.integer(substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)) %in% c(1:4, 6:10) ~ 1L,
@@ -106,7 +106,7 @@ get_metrics <- function(init_db,
           as.integer(
             substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)
           ) %in% c(1:4, 6:10) ~ CHEMICAL_SUBSTANCE_BNF_DESCR,
-          TRUE ~ NA_character_
+          TRUE ~ NA
         )
       ),
       ANY_ACB_6 = any(
@@ -144,7 +144,7 @@ get_metrics <- function(init_db,
       UNIQUE_MEDICINES_FALLS = n_distinct(
         case_when(
           FALLS_CAT == 1 ~ CHEMICAL_SUBSTANCE_BNF_DESCR,
-          TRUE ~ NA_character_
+          TRUE ~ NA
         )
       )
     ) %>%
@@ -165,14 +165,14 @@ get_metrics <- function(init_db,
         ifelse(
           UNIQUE_MEDICINES >= 6,
           NHS_NO,
-          NA_integer_
+          NA
         )
       ),
       RISK_PATIENTS_GTE_TEN = n_distinct(
         ifelse(
           UNIQUE_MEDICINES >= 10,
           NHS_NO,
-          NA_integer_
+          NA
         )
       ),
       # ACB numerator, also used for SDC
@@ -180,7 +180,7 @@ get_metrics <- function(init_db,
         ifelse(
           ACB_6 == 1,
           NHS_NO,
-          NA_integer_
+          NA
         )
       ),
       # DAMN numerator, also used for SDC
@@ -188,7 +188,7 @@ get_metrics <- function(init_db,
         ifelse(
           DAMN == 1,
           NHS_NO,
-          NA_integer_
+          NA
         )
       ),
       # Falls unique medicines
@@ -198,7 +198,7 @@ get_metrics <- function(init_db,
         ifelse(
           FALLS == 1,
           NHS_NO,
-          NA_integer_
+          NA
         )
       )
     ) %>%
@@ -206,25 +206,25 @@ get_metrics <- function(init_db,
     mutate(
       # Calculate % metrics - each denominator is restricted to patients on any
       # med that is also a condition to be included in numerator
-      PCT_PATIENTS_GTE_SIX_PPM = case_when(
+      PCT_PATIENTS_GTE_SIX_PPM = 100 * case_when(
         TOTAL_PATIENTS_MED_CH_1_4_6_10 == 0 ~ NA,
-        TRUE ~ 100 * RISK_PATIENTS_GTE_SIX / TOTAL_PATIENTS_MED_CH_1_4_6_10
+        TRUE ~ RISK_PATIENTS_GTE_SIX / TOTAL_PATIENTS_MED_CH_1_4_6_10
       ),
-      PCT_PATIENTS_GTE_TEN_PPM = case_when(
+      PCT_PATIENTS_GTE_TEN_PPM = 100 * case_when(
         TOTAL_PATIENTS_MED_CH_1_4_6_10 == 0 ~ NA,
-        TRUE ~ 100 * RISK_PATIENTS_GTE_TEN / TOTAL_PATIENTS_MED_CH_1_4_6_10
+        TRUE ~ RISK_PATIENTS_GTE_TEN / TOTAL_PATIENTS_MED_CH_1_4_6_10
       ),
-      PCT_PATIENTS_ACB_6_PPM   = case_when(
+      PCT_PATIENTS_ACB_6_PPM = 100 * case_when(
         TOTAL_PATIENTS_ACB_6 == 0 ~ NA,
-        TRUE ~ 100 * RISK_PATIENTS_ACB_6 / TOTAL_PATIENTS_ACB_6
+        TRUE ~ RISK_PATIENTS_ACB_6 / TOTAL_PATIENTS_ACB_6
       ),
-      PCT_PATIENTS_DAMN_PPM    = case_when(
+      PCT_PATIENTS_DAMN_PPM = 100 * case_when(
         TOTAL_PATIENTS_DAMN == 0 ~ NA,
-        TRUE ~ 100 * RISK_PATIENTS_DAMN / TOTAL_PATIENTS_DAMN
+        TRUE ~ RISK_PATIENTS_DAMN / TOTAL_PATIENTS_DAMN
       ),
-      PCT_PATIENTS_FALLS_PPM   = case_when(
+      PCT_PATIENTS_FALLS_PPM = 100 * case_when(
         TOTAL_PATIENTS == 0 ~ NA,
-        TRUE ~ 100 * RISK_PATIENTS_FALLS / TOTAL_PATIENTS
+        TRUE ~ RISK_PATIENTS_FALLS / TOTAL_PATIENTS
       )
     ) %>%
     nhsbsaR::collect_with_parallelism(num_parallel) %>% 
