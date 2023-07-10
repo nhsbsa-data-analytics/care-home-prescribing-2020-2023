@@ -17,10 +17,18 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) %>% 
+  head(10^3)
 
 # Initial manipulation to create CH_TYPE column, later to be grouped by
 init_db <- base_db %>%
+  # Fix missing CH_FLAG entries
+  mutate(
+    CH_FLAG = case_when(
+      RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
+      TRUE ~ CH_FLAG
+    )
+  ) %>% 
   mutate(NON_CH_FLAG = 1L - CH_FLAG) %>% 
   # Remove unwanted 'FLAG' columns
   select(-c(AB_FLAG, EPS_FLAG, UPRN_FLAG)) %>% 
@@ -45,7 +53,6 @@ init_db <- base_db %>%
   )
 
 ## Process ----------------------------------------------------------------
-
 
 metrics_by_ch_type_df <- get_metrics(
   init_db,
@@ -79,8 +86,8 @@ metrics_by_ch_type_df <- get_metrics(
 )
   
 ## Save -------------------------------------------------------------------
-usethis::use_data(metrics_by_ch_type_df, overwrite = TRUE)
+# usethis::use_data(metrics_by_ch_type_df, overwrite = TRUE)
 
 # Cleanup -----------------------------------------------------------------
-DBI::dbDisconnect(con)
-rm(list = ls())
+# DBI::dbDisconnect(con)
+# rm(list = ls())

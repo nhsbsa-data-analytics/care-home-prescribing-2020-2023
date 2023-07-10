@@ -94,7 +94,14 @@ stopifnot(
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))%>%
+  # Fix missing CH_FLAG entries
+  mutate(
+    CH_FLAG = case_when(
+      RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
+      TRUE ~ CH_FLAG
+    )
+  )
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {
