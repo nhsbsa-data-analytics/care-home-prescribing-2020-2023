@@ -85,8 +85,8 @@ metrics_by_ch_type_df <- get_metrics(
 )
   
 ## Save -------------------------------------------------------------------
-# usethis::use_data(metrics_by_ch_type_df, overwrite = TRUE)
+usethis::use_data(metrics_by_ch_type_df, overwrite = TRUE)
 
 # Cleanup -----------------------------------------------------------------
-# DBI::dbDisconnect(con)
-# rm(list = ls())
+DBI::dbDisconnect(con)
+rm(list = ls())

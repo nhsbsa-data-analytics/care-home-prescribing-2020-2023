@@ -226,7 +226,6 @@ get_metrics <- function(init_db,
         TRUE ~ 100 * RISK_PATIENTS_FALLS / TOTAL_PATIENTS
       )
     ) %>%
-    # select(-starts_with("PATIENTS")) %>% 
     nhsbsaR::collect_with_parallelism(num_parallel) %>% 
     # Complete
     complete(
