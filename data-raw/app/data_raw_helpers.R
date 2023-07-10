@@ -156,11 +156,11 @@ get_metrics <- function(init_db,
       TOTAL_PATIENTS_MED_CH_1_4_6_10 = sum(ANY_MED_CH_1_4_6_10, na.rm = TRUE),
       TOTAL_PATIENTS_ACB_6           = sum(ANY_ACB_6, na.rm = TRUE),
       TOTAL_PATIENTS_DAMN            = sum(ANY_DAMN, na.rm = TRUE),
-      # Items and cost
+      # Items, cost and unique meds count
       ITEMS_PPM = mean(TOTAL_ITEMS, na.rm = TRUE),
       COST_PPM = mean(TOTAL_COST, na.rm = TRUE),
-      # Unique medicines numerators
       UNIQ_MEDS_PPM = mean(UNIQUE_MEDICINES, na.rm = TRUE),
+      # Unique medicines numerators, also used for SDC
       RISK_PATIENTS_GTE_SIX = n_distinct(
         ifelse(
           UNIQUE_MEDICINES >= 6,
