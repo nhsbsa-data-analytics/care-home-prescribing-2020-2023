@@ -11,15 +11,12 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Item-level base table
 base_db <- con |> tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
+# Update CH_FLAG, add ACB_CAT and DAMN_FLAG
 base_db <- base_db |> mutate(
   CH_FLAG = case_when(
     RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
     TRUE ~ CH_FLAG
-  )
-)
-
-# Add ACB_CAT and DAMN_FLAG
-base_db <- base_db |> mutate(
+  ),
   ACB_CAT = case_when(
     BNF_CHEMICAL_SUBSTANCE %in% acb1_drugs ~ 1,
     BNF_CHEMICAL_SUBSTANCE %in% acb2_drugs ~ 2,
@@ -45,7 +42,7 @@ metrics_by_age_gender_and_ch_flag_df <- base_db |>
     YEAR_MONTH,
     NHS_NO
   ) |>
-  # Sums per patient month
+  # Patient-month level
   summarise(
     TOTAL_ITEMS = sum(ITEM_COUNT),
     TOTAL_COST = sum(ITEM_PAY_DR_NIC / 100),
@@ -66,98 +63,98 @@ metrics_by_age_gender_and_ch_flag_df <- base_db |>
       ),
     .groups = "drop"
   ) |>
-  # Metrics = means of patient monthly means (MPMM) and mean patient proportions (MPP)
-  group_by(FY,GENDER,AGE_BAND,CH_FLAG,NHS_NO) |>
-  summarise(
-    ITEMS_PATIENT_MONTHLY_MEAN = mean(TOTAL_ITEMS),
-    COST_PATIENT_MONTHLY_MEAN = mean(TOTAL_COST),
-    UNIQUE_MEDICINES_PATIENT_MONTHLY_MEAN = mean(UNIQUE_MEDICINES),
-    PROP_MTHS_UNIQUE_MEDS_PATIENT = sum(ifelse(UNIQUE_MEDICINES > 1, 1, 0)) / n(),
-    PROP_MTHS_6_PLUS_UNIQUE_MEDS_PATIENT = sum(ifelse(UNIQUE_MEDICINES >= 6, 1, 0)) / n(),
-    PROP_MTHS_10_PLUS_UNIQUE_MEDS_PATIENT = sum(ifelse(UNIQUE_MEDICINES >= 10, 1, 0)) / n(),
-    PROP_MTHS_ACB_6_PATIENT = sum(ifelse(ACB_6 == 1, 1, 0)) / n(),
-    PROP_MTHS_DAMN_PATIENT = sum(ifelse(DAMN == 1, 1, 0)) / n(),
-    .groups = "drop"
-  ) |>
-  group_by(FY,GENDER,AGE_BAND,CH_FLAG) |>
-  summarise(
-    # MPMM
-    ITEMS_MPMM = mean(ITEMS_PATIENT_MONTHLY_MEAN),
-    COST_MPMM = mean(COST_PATIENT_MONTHLY_MEAN),
-    UNIQUE_MEDICINES_MPMM = mean(UNIQUE_MEDICINES_PATIENT_MONTHLY_MEAN),
-    # MPP
-    PCT_PATIENTS_6_PLUS_MPP = mean(PROP_MTHS_6_PLUS_UNIQUE_MEDS_PATIENT) * 100,
-    PCT_PATIENTS_10_PLUS_MPP = mean(PROP_MTHS_10_PLUS_UNIQUE_MEDS_PATIENT) * 100,
-    PCT_PATIENTS_ACB_6_MPP = mean(PROP_MTHS_ACB_6_PATIENT) * 100,
-    PCT_PATIENTS_DAMN_MPP = mean(PROP_MTHS_DAMN_PATIENT) * 100,
-    # Totals for SCD 
-    TOTAL_PATIENTS = n_distinct(NHS_NO),
-    TOTAL_PATIENTS_UNIQUE_MEDS = n_distinct(ifelse(PROP_MTHS_UNIQUE_MEDS_PATIENT > 0, NHS_NO, NA)),
-    TOTAL_PATIENTS_6_PLUS = n_distinct(ifelse(PROP_MTHS_6_PLUS_UNIQUE_MEDS_PATIENT > 0, NHS_NO, NA)),
-    TOTAL_PATIENTS_10_PLUS = n_distinct(ifelse(PROP_MTHS_10_PLUS_UNIQUE_MEDS_PATIENT > 0, NHS_NO, NA)),
-    TOTAL_PATIENTS_ACB_6 = n_distinct(ifelse(PROP_MTHS_ACB_6_PATIENT > 0, NHS_NO, NA)),
-    TOTAL_PATIENTS_DAMN = n_distinct(ifelse(PROP_MTHS_DAMN_PATIENT > 0, NHS_NO, NA)),
-    .groups = "drop"
-  ) |>
+  # # Metrics = means of patient monthly means (MPMM) and mean patient proportions (MPP)
+  # group_by(FY,GENDER,AGE_BAND,CH_FLAG,NHS_NO) |>
+  # summarise(
+  #   ITEMS_PATIENT_MONTHLY_MEAN = mean(TOTAL_ITEMS),
+  #   COST_PATIENT_MONTHLY_MEAN = mean(TOTAL_COST),
+  #   UNIQUE_MEDICINES_PATIENT_MONTHLY_MEAN = mean(UNIQUE_MEDICINES),
+  #   PROP_MTHS_UNIQUE_MEDS_PATIENT = sum(ifelse(UNIQUE_MEDICINES > 1, 1, 0)) / n(),
+  #   PROP_MTHS_6_PLUS_UNIQUE_MEDS_PATIENT = sum(ifelse(UNIQUE_MEDICINES >= 6, 1, 0)) / n(),
+  #   PROP_MTHS_10_PLUS_UNIQUE_MEDS_PATIENT = sum(ifelse(UNIQUE_MEDICINES >= 10, 1, 0)) / n(),
+  #   PROP_MTHS_ACB_6_PATIENT = sum(ifelse(ACB_6 == 1, 1, 0)) / n(),
+  #   PROP_MTHS_DAMN_PATIENT = sum(ifelse(DAMN == 1, 1, 0)) / n(),
+  #   .groups = "drop"
+  # ) |>
+  # group_by(FY,GENDER,AGE_BAND,CH_FLAG) |>
+  # summarise(
+  #   # MPMM
+  #   ITEMS_MPMM = mean(ITEMS_PATIENT_MONTHLY_MEAN),
+  #   COST_MPMM = mean(COST_PATIENT_MONTHLY_MEAN),
+  #   UNIQUE_MEDICINES_MPMM = mean(UNIQUE_MEDICINES_PATIENT_MONTHLY_MEAN),
+  #   # MPP
+  #   PCT_PATIENTS_6_PLUS_MPP = mean(PROP_MTHS_6_PLUS_UNIQUE_MEDS_PATIENT) * 100,
+  #   PCT_PATIENTS_10_PLUS_MPP = mean(PROP_MTHS_10_PLUS_UNIQUE_MEDS_PATIENT) * 100,
+  #   PCT_PATIENTS_ACB_6_MPP = mean(PROP_MTHS_ACB_6_PATIENT) * 100,
+  #   PCT_PATIENTS_DAMN_MPP = mean(PROP_MTHS_DAMN_PATIENT) * 100,
+  #   # Totals for SCD 
+  #   TOTAL_PATIENTS = n_distinct(NHS_NO),
+  #   TOTAL_PATIENTS_UNIQUE_MEDS = n_distinct(ifelse(PROP_MTHS_UNIQUE_MEDS_PATIENT > 0, NHS_NO, NA)),
+  #   TOTAL_PATIENTS_6_PLUS = n_distinct(ifelse(PROP_MTHS_6_PLUS_UNIQUE_MEDS_PATIENT > 0, NHS_NO, NA)),
+  #   TOTAL_PATIENTS_10_PLUS = n_distinct(ifelse(PROP_MTHS_10_PLUS_UNIQUE_MEDS_PATIENT > 0, NHS_NO, NA)),
+  #   TOTAL_PATIENTS_ACB_6 = n_distinct(ifelse(PROP_MTHS_ACB_6_PATIENT > 0, NHS_NO, NA)),
+  #   TOTAL_PATIENTS_DAMN = n_distinct(ifelse(PROP_MTHS_DAMN_PATIENT > 0, NHS_NO, NA)),
+  #   .groups = "drop"
+  # ) |>
   
   
   # Metrics per patient month (PPM)
-  # ungroup(YEAR_MONTH, NHS_NO) |>
-  # summarise(
-  #   TOTAL_PATIENTS = n_distinct(NHS_NO), # For SDC
-  #   # Items and cost
-  #   ITEMS_PER_PATIENT_MONTH = mean(TOTAL_ITEMS),
-  #   COST_PER_PATIENT_MONTH = mean(TOTAL_COST),
-  #   # Unique medicines
-  #   TOTAL_PATIENTS_TWO_OR_MORE = n_distinct(
-  #     ifelse(UNIQUE_MEDICINES > 1, NHS_NO, NA)
-  #     ),
-  #   UNIQUE_MEDICINES_PER_PATIENT_MONTH = mean(UNIQUE_MEDICINES),
-  #   TOTAL_PATIENTS_SIX_OR_MORE = n_distinct(
-  #     ifelse(UNIQUE_MEDICINES >= 6, NHS_NO, NA)
-  #   ),
-  #   TOTAL_PATIENTS_TEN_OR_MORE = n_distinct(
-  #     ifelse(UNIQUE_MEDICINES >= 10, NHS_NO, NA)
-  #   ),
-  #   # ACB
-  #   TOTAL_PATIENTS_ACB_6 = n_distinct(
-  #     ifelse(ACB_6 == 1, NHS_NO, NA_integer_)
-  #   ),
-  #   # DAMN
-  #   TOTAL_PATIENTS_DAMN = n_distinct(
-  #     ifelse(DAMN == 1, NHS_NO, NA_integer_)
-  #   ),
-  #   .groups = "drop") |>
-  # mutate(
-  #   PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
-  #     TOTAL_PATIENTS_TWO_OR_MORE == 0,
-  #     NA_real_,
-  #     TOTAL_PATIENTS_SIX_OR_MORE / TOTAL_PATIENTS_TWO_OR_MORE * 100
-  #   ),
-  #   PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
-  #     TOTAL_PATIENTS_TWO_OR_MORE == 0,
-  #     NA_real_,
-  #     TOTAL_PATIENTS_TEN_OR_MORE / TOTAL_PATIENTS_TWO_OR_MORE * 100
-  #   ),
-  #   PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
-  #     TOTAL_PATIENTS_ACB_6 == 0,
-  #     NA_real_,
-  #     TOTAL_PATIENTS_ACB_6 / TOTAL_PATIENTS * 100
-  #   ),
-  #   PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
-  #     TOTAL_PATIENTS_DAMN == 0,
-  #     NA_real_,
-  #     TOTAL_PATIENTS_DAMN / TOTAL_PATIENTS * 100
-  #   )
-  # ) |>
+group_by(FY, GENDER, AGE_BAND, CH_FLAG) |>
+  summarise(
+    TOTAL_PATIENTS = n_distinct(NHS_NO), # For SDC
+    # Items and cost
+    ITEMS_PER_PATIENT_MONTH = mean(TOTAL_ITEMS),
+    COST_PER_PATIENT_MONTH = mean(TOTAL_COST),
+    # Unique medicines
+    TOTAL_PATIENTS_TWO_OR_MORE = n_distinct(
+      ifelse(UNIQUE_MEDICINES > 1, NHS_NO, NA)
+      ),
+    UNIQUE_MEDICINES_PER_PATIENT_MONTH = mean(UNIQUE_MEDICINES),
+    TOTAL_PATIENTS_SIX_OR_MORE = n_distinct(
+      ifelse(UNIQUE_MEDICINES >= 6, NHS_NO, NA)
+    ),
+    TOTAL_PATIENTS_TEN_OR_MORE = n_distinct(
+      ifelse(UNIQUE_MEDICINES >= 10, NHS_NO, NA)
+    ),
+    # ACB
+    TOTAL_PATIENTS_ACB_6 = n_distinct(
+      ifelse(ACB_6 == 1, NHS_NO, NA_integer_)
+    ),
+    # DAMN
+    TOTAL_PATIENTS_DAMN = n_distinct(
+      ifelse(DAMN == 1, NHS_NO, NA_integer_)
+    ),
+    .groups = "drop") |>
+  mutate(
+    PCT_PATIENTS_SIX_OR_MORE_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_TWO_OR_MORE == 0,
+      NA_real_,
+      TOTAL_PATIENTS_SIX_OR_MORE / TOTAL_PATIENTS_TWO_OR_MORE * 100
+    ),
+    PCT_PATIENTS_TEN_OR_MORE_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_TWO_OR_MORE == 0,
+      NA_real_,
+      TOTAL_PATIENTS_TEN_OR_MORE / TOTAL_PATIENTS_TWO_OR_MORE * 100
+    ),
+    PCT_PATIENTS_ACB_6_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_ACB_6 == 0,
+      NA_real_,
+      TOTAL_PATIENTS_ACB_6 / TOTAL_PATIENTS * 100
+    ),
+    PCT_PATIENTS_DAMN_PER_PATIENT_MONTH = ifelse(
+      TOTAL_PATIENTS_DAMN == 0,
+      NA_real_,
+      TOTAL_PATIENTS_DAMN / TOTAL_PATIENTS * 100
+    )
+  ) |>
 
   nhsbsaR::collect_with_parallelism(32)
 
 # Get all the possible combinations
 metrics_by_age_gender_and_ch_flag_df <- metrics_by_age_gender_and_ch_flag_df |>
   tidyr::complete(
-    tidyr::nesting(FY, GENDER, AGE_BAND),
-    CH_FLAG,
+    tidyr::nesting(FY, GENDER, AGE_BAND), # Only existing combinations of FY+GENDER+AGE_BAND
+    CH_FLAG,   #... criss-crossed with CH_FLAG to ensure each combination has a row with 0 and a row with 1
     fill = list(
       # MPMM
       ITEMS_MPMM = NA_real_,
