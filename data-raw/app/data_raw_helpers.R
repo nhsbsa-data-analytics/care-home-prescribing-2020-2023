@@ -325,7 +325,7 @@ get_metrics <- function(init_db,
         janitor::round_half_up(PCT_PATIENTS_FALLS_PPM, 1)
       )
     ) %>%
-    select(-SDC) %>% 
+    select(-SDC, -starts_with("RISK")) %>% 
     # Reorder columns so they are a bit tidier
     relocate(starts_with("RISK"), .after = last_col()) %>% 
     relocate(starts_with("TOTAL"), .after = last_col()) %>%
