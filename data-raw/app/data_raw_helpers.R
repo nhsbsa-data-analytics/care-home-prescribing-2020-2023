@@ -43,10 +43,8 @@ get_metrics <- function(init_db,
                         second_grouping,
                         nest_cols = c(),
                         num_parallel = 24) {
-  browser()
-  
   # Collect data and calculate raw metrics
-  out1 <- init_db %>% 
+  init_db %>% 
     mutate(
       across(all_of(first_grouping)),
       ITEM_COUNT,
@@ -136,10 +134,7 @@ get_metrics <- function(init_db,
         )
       )
     ) %>%
-    ungroup() %>% 
-    collect()
-  
-  out2 <- out1 %>%
+    ungroup() %>%
     group_by(across(all_of(second_grouping))) %>%
     summarise(
       # Total patients - Use for denominators and first 2 for SDC
@@ -193,9 +188,7 @@ get_metrics <- function(init_db,
         )
       )
     ) %>%
-    ungroup()
-  
-  out3 <- out2 %>%
+    ungroup() %>%
     mutate(
       # Calculate % metrics - each denominator is restricted to patients on any
       # med that is also a condition to be included in numerator
@@ -220,7 +213,7 @@ get_metrics <- function(init_db,
         TRUE ~ RISK_PATIENTS_FALLS / TOTAL_PATIENTS
       )
     ) %>%
-    # nhsbsaR::collect_with_parallelism(num_parallel) %>% 
+    nhsbsaR::collect_with_parallelism(num_parallel) %>%
     # Complete
     complete(
       nesting(!!!syms(nest_cols)),
@@ -338,8 +331,4 @@ get_metrics <- function(init_db,
     # Reorder columns so they are a bit tidier
     relocate(starts_with("TOTAL"), .after = last_col()) %>%
     relocate(starts_with("PCT"), .after = last_col())
-  
-  browser()
-  
-  out3
 }
