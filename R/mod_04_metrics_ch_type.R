@@ -16,15 +16,15 @@ mod_04_metrics_ch_type_ui <- function(id) {
             inputId = ns("metric"),
             label = "Metric",
             choices = c(
-              "Drug cost MPPM (\u00A3)" = "COST_PPM",
-              "Number of prescription items MPPM" = "ITEMS_PPM",
-              "Number of unique medicines MPPM" = "UNIQ_MEDS_PPM",
-              "Patients on 6+ unique medicines MPPM (%)" = "PCT_PATIENTS_GTE_SIX_PPM",
-              "Patients on 10+ unique medicines MPPM (%)" = "PCT_PATIENTS_GTE_TEN_PPM",
-              "Patients with ACB 6+ MPPM (%)" = "PCT_PATIENTS_ACB_6_PPM",
-              "Patients with DAMN 2+ MPPM (%)" = "PCT_PATIENTS_DAMN_PPM",
-              "Number of unique fall-risk medicines MPPM" = "UNIQ_MEDS_FALLS_PPM",
-              "Patients on 3+ unique falls-risk medicines MPPM (%)" = "PCT_PATIENTS_FALLS_PPM"
+              "Drug cost PPM (\u00A3)" = "COST_PPM",
+              "Number of prescription items PPM" = "ITEMS_PPM",
+              "Number of unique medicines PPM" = "UNIQ_MEDS_PPM",
+              "Patient months with 6+ unique medicines (%)" = "PCT_PM_GTE_SIX",
+              "Patient months with 10+ unique medicines (%)" = "PCT_PM_GTE_TEN",
+              "Patient months with ACB risk (%)" = "PCT_PM_ACB",
+              "Patient months with DAMN risk (%)" = "PCT_PM_DAMN",
+              "Number of unique fall-risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+              "Patient months with falls risk (%)" = "PCT_PM_FALLS"
             ),
             full_width = TRUE
           )
@@ -76,28 +76,25 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Map metric column names to UI metric names
     ui_metric_names <- c(
-      COST_PPM                 = "Drug cost MPPM (\u00A3)",
-      ITEMS_PPM                = "Number of prescription items MPPM",
-      UNIQ_MEDS_PPM            = "Number of unique medicines MPPM",
-      PCT_PATIENTS_GTE_SIX_PPM = "Patients on 6+ unique medicines MPPM (%)",
-      PCT_PATIENTS_GTE_TEN_PPM = "Patients on 10+ unique medicines MPPM (%)",
-      PCT_PATIENTS_ACB_6_PPM   = "Patients with ACB 6+ MPPM (%)",
-      PCT_PATIENTS_DAMN_PPM    = "Patients with DAMN 2+ MPPM (%)",
-      UNIQ_MEDS_FALLS_PPM      = "Number of unique fall-risk medicines MPPM",
-      PCT_PATIENTS_FALLS_PPM   = "Patients on 3+ unique fall-risk medicines MPPM (%)"
+      COST_PPM            = "Drug cost PPM (\u00A3)",
+      ITEMS_PPM           = "Number of prescription items PPM",
+      UNIQ_MEDS_PPM       = "Number of unique medicines PPM",
+      PCT_PM_GTE_SIX      = "Patient months with 6+ unique medicines (%)",
+      PCT_PM_GTE_TEN      = "Patient months with 10+ unique medicines (%)",
+      PCT_PM_ACB          = "Patient months with ACB risk (%)",
+      PCT_PM_DAMN         = "Patient months with DAMN risk (%)",
+      UNIQ_MEDS_FALLS_PPM = "Number of unique fall-risk medicines PPM",
+      PCT_PM_FALLS        = "Patient months with falls risk (%)"
     )
     
     # Map all column names to download data names
     dl_col_names <- c(
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
-      "Financial year"                             = "FY",
-      "Carehome type"                              = "CH_TYPE",
-      "Total patients"                             = "TOTAL_PATIENTS",
-      "Patients on 6+ unique medicines"            = "TOTAL_PATIENTS_GTE_SIX",
-      "Patients on 10+ unique medicines"           = "TOTAL_PATIENTS_GTE_TEN",
-      "Patients with ACB 6+"                       = "TOTAL_PATIENTS_ACB_6",
-      "Patients with DAMN 2+"                      = "TOTAL_PATIENTS_DAMN",
-      "Patients on 3+ unique fall-risk medicines"  = "TOTAL_PATIENTS_FALLS"
+      "Financial year"                      = "FY",
+      "Carehome type"                       = "CH_TYPE",
+      "Total patient months"                = "TOTAL_PM",
+      "Total patient months with ACB risk"  = "TOTAL_PM_ACB",
+      "Total patient months with DAMN risk" = "TOTAL_PM_DAMN"
     )
     
     # Reactive data -------------------------------------------------------
@@ -168,31 +165,32 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Create download data
     create_download_data <- function() {
       temp <- carehomes2::metrics_by_ch_type_df %>%
-        dplyr::mutate(
-          # Use TOTAL_PATIENTS for non-% metrics...
-          dplyr::across(
-            dplyr::matches("^(?!PCT_).*_PPM$", perl = TRUE),
-            \(x) dplyr::if_else(
-              is.na(x) & .data$TOTAL_PATIENTS > 0,
-              "c",
-              as.character(x)
-            )
-          ),
-          # ...but the associated TOTAL_PATIENTS_{X} column for % metrics
-          dplyr::across(
-            dplyr::matches("^(PCT_).*_PPM$", perl = TRUE), ~ {
-              # The 'middle' is the substring w/o leading "PCT_" or trailing "_PPM"
-              middle <- gsub("PCT_|_PPM", "", dplyr::cur_column())
-              # Get vector of associated total column for test
-              tot_vec <- dplyr::cur_data() %>% dplyr::pull(paste0("TOTAL_", middle))
-              dplyr::if_else(
-                is.na(.x) & tot_vec > 0,
-                "c",
-                as.character(.x)
-              )
-            }
-          )
-        ) %>% 
+        # Need only if SDC is used
+        # dplyr::mutate(
+        #   # Use TOTAL_PATIENTS for non-% metrics...
+        #   dplyr::across(
+        #     dplyr::matches("^(?!PCT_).*_PPM$", perl = TRUE),
+        #     \(x) dplyr::if_else(
+        #       is.na(x) & .data$TOTAL_PATIENTS > 0,
+        #       "c",
+        #       as.character(x)
+        #     )
+        #   ),
+        #   # ...but the associated TOTAL_PATIENTS_{X} column for % metrics
+        #   dplyr::across(
+        #     dplyr::matches("^(PCT_).*_PPM$", perl = TRUE), ~ {
+        #       # The 'middle' is the substring w/o leading "PCT_" or trailing "_PPM"
+        #       middle <- gsub("PCT_|_PPM", "", dplyr::cur_column())
+        #       # Get vector of associated total column for test
+        #       tot_vec <- dplyr::cur_data() %>% dplyr::pull(paste0("TOTAL_", middle))
+        #       dplyr::if_else(
+        #         is.na(.x) & tot_vec > 0,
+        #         "c",
+        #         as.character(.x)
+        #       )
+        #     }
+        #   )
+        # ) %>% 
         dplyr::arrange(.data$FY, .data$CH_TYPE) %>%
         dplyr::rename(dl_col_names)
     }
