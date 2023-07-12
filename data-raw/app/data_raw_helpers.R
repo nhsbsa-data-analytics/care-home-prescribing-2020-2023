@@ -157,8 +157,7 @@ get_metrics <- function(init_db,
     mutate(
       # Calculate % metrics - each denominator is restricted to patients on any
       # med that is also a condition to be included in numerator
-      PCT_PM_GTE_SIX = 100 * case_when(
-        TOTAL_PM == 0 ~ NA,
+      PCT_PM_GTE_SIX = 100 * case_when(TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_GTE_SIX / TOTAL_PM
       ),
       PCT_PM_GTE_TEN = 100 * case_when(
@@ -180,8 +179,8 @@ get_metrics <- function(init_db,
     ) %>%
     nhsbsaR::collect_with_parallelism(num_parallel) %>%
     # Complete
-    complete(
-      nesting(!!!syms(nest_cols)),
+    tidyr::complete(
+      tidyr::nesting(!!!syms(nest_cols)),
       !!!syms(setdiff(second_grouping, nest_cols)),
       fill = list(
         TOTAL_PATIENTS  = 0L,
