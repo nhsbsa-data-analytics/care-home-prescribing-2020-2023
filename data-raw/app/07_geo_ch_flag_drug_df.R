@@ -10,19 +10,25 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 fact_db <- con %>%
   dplyr::tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
+# BNF columns
+bnf_cols = c(
+  "CHAPTER_DESCR",
+  "SECTION_DESCR", 
+  "PARAGRAPH_DESCR", 
+  "CHEMICAL_SUBSTANCE_BNF_DESCR"
+)
+
+# Geography columns
+geo_cols = c(
+  "PCD_REGION_NAME", 
+  "PCD_LAD_NAME", 
+  "PCD_ICB_NAME"
+)
+
 # All level permutations
 all_levels = cross_join(
-  data.frame(BNF = c(
-    "CHAPTER_DESCR",
-    "SECTION_DESCR", 
-    "PARAGRAPH_DESCR", 
-    "CHEMICAL_SUBSTANCE_BNF_DESCR"
-    )),
-  data.frame(GEO = c(
-    "PCD_REGION_NAME", 
-    "PCD_LAD_NAME", 
-    "PCD_ICB_NAME"
-  ))
+  data.frame(BNF = bnf_cols),
+  data.frame(GEO = geo_cols)
 )
 
 # Part One: items and nic prop -------------------------------------------------
@@ -45,7 +51,7 @@ get_geo_bnf_prop = function(index){
       n = 50
     ) %>% 
     select({{ bnf }}) %>% 
-    collect()
+    nhsbsaR::collect_with_parallelism(., 16)
   
   # Total metric generation plus join
   df = fact_db %>% 
@@ -61,11 +67,11 @@ get_geo_bnf_prop = function(index){
     mutate(
       TOTAL_ITEMS = sum(ITEMS),
       TOTAL_NIC = sum(NIC),
-      PROP_ITEMS = janitor::round_half_up((ITEMS / TOTAL_ITEMS) * 100, 2),
-      PROP_NIC = janitor::round_half_up((NIC / TOTAL_NIC) * 100, 2)
+      PROP_ITEMS = (ITEMS / TOTAL_ITEMS) * 100,
+      PROP_NIC = (NIC / TOTAL_NIC) * 100
       ) %>%
     ungroup() %>%
-    collect() %>% 
+    nhsbsaR::collect_with_parallelism(., 16) %>% 
     inner_join(join_fact) %>% 
     transmute(
       FY,
@@ -73,8 +79,8 @@ get_geo_bnf_prop = function(index){
       GEOGRAPHY_CHILD := {{ geo }},
       BNF_PARENT = rlang::as_string(bnf),
       BNF_CHILD := {{ bnf }},
-      PROP_ITEMS,
-      PROP_NIC
+      PROP_ITEMS = janitor::round_half_up(PROP_ITEMS, 3),
+      PROP_NIC = janitor::round_half_up(PROP_NIC, 3)
       ) %>% 
     tidyr::pivot_longer(
       c('PROP_ITEMS', 'PROP_NIC'),
@@ -95,7 +101,7 @@ get_geo_bnf_prop = function(index){
     mutate(VALUE = ifelse(is.na(VALUE), 0, VALUE))
 }
 
-# Get prop results
+# Get prop results: < 5 mins
 prop_results = lapply(1:nrow(all_levels), get_geo_bnf_prop) %>% bind_rows()
 
 # Part two: items ppm and nic ppm ----------------------------------------------
@@ -133,7 +139,10 @@ get_geo_bnf_ppm = function(index){
   # Generate output
   pat_info = fact_db %>% 
     # There are 17 records without a postcode and no geographic information
-    filter(!is.na(IMD_DECILE)) %>% 
+    filter(
+      CH_FLAG == 1,
+      !is.na(IMD_DECILE)
+      ) %>% 
     group_by(FY, YEAR_MONTH, NHS_NO, {{ geo }}, {{ bnf }}) %>% 
     summarise(
       ITEMS = sum(ITEM_COUNT),
@@ -143,32 +152,28 @@ get_geo_bnf_ppm = function(index){
   
   # Output
   pat_months %>% 
-    left_join(pat_info) %>% 
+    left_join(pat_info) %>%
+    # Data now annual patient-month level
     mutate(
       ITEMS = ifelse(is.na(ITEMS), 0, ITEMS),
       NIC = ifelse(is.na(NIC), 0, NIC)
     ) %>% 
-    group_by(FY, NHS_NO, {{ geo }}, {{ bnf }}) %>% 
-    summarise(
-      ITEMS = mean(ITEMS),
-      NIC = mean(NIC)
-    ) %>% 
-    ungroup() %>% 
+    # Annual-level aggregation
     group_by(FY, {{ geo }}, {{ bnf }}) %>% 
     summarise(
-      PPM_ITEMS = janitor::round_half_up(mean(ITEMS), 2),
-      PPM_NIC = janitor::round_half_up(mean(NIC), 2)
+      PPM_ITEMS = mean(ITEMS),
+      PPM_NIC = mean(NIC)
     ) %>% 
     ungroup() %>% 
-    collect() %>% 
+    nhsbsaR::collect_with_parallelism(., 16) %>% 
     transmute(
       FY,
       GEOGRAPHY_PARENT = rlang::as_string(geo),
       GEOGRAPHY_CHILD := {{ geo }},
       BNF_PARENT = rlang::as_string(bnf),
       BNF_CHILD := {{ bnf }},
-      PPM_ITEMS,
-      PPM_NIC
+      PPM_ITEMS = janitor::round_half_up(PPM_ITEMS, 3),
+      PPM_NIC = janitor::round_half_up(PPM_NIC, 3)
     ) %>% 
     tidyr::pivot_longer(
       c('PPM_ITEMS', 'PPM_NIC'),
@@ -177,7 +182,7 @@ get_geo_bnf_ppm = function(index){
     )
 }
 
-# Get ppm results: ~20 mins
+# Get ppm results: ~40 mins
 ppm_results = lapply(1:nrow(all_levels), get_geo_bnf_ppm) %>% bind_rows()
 
 # Part Three: bind results and save --------------------------------------------
