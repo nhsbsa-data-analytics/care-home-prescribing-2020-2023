@@ -94,7 +94,14 @@ stopifnot(
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))%>%
+  # Fix missing CH_FLAG entries
+  mutate(
+    CH_FLAG = case_when(
+      RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
+      TRUE ~ CH_FLAG
+    )
+  )
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {
@@ -123,23 +130,6 @@ aggregate_by_geo <- function(geography_name) {
       "GEOGRAPHY",
       unname(geography_cols),
       "CH_FLAG"
-    ),
-    comp_fill = list(
-      TOTAL_PATIENTS = 0L,
-      ITEMS_PPM = NA_real_,
-      COST_PPM = NA_real_,
-      UNIQ_MEDS_PPM = NA_real_,
-      PATIENTS_GTE_SIX = 0L,
-      PCT_PATIENTS_GTE_SIX_PPM = NA_real_,
-      PATIENTS_GTE_TEN = 0L,
-      PCT_PATIENTS_GTE_TEN_PPM = NA_real_,
-      PATIENTS_ACB_6 = 0L,
-      PCT_PATIENTS_ACB_6_PPM = NA_real_,
-      PATIENTS_DAMN = 0L,
-      PCT_PATIENTS_DAMN_PPM = NA_real_,
-      UNIQ_MEDS_FALLS_PPM = NA_real_,
-      PATIENTS_FALLS = 0L,
-      PCT_PATIENTS_FALLS_PPM = NA_real_
     ),
     nest_cols = c("GEOGRAPHY", unname(geography_cols))
   ) %>% 

@@ -1,5 +1,8 @@
 source("data-raw/app/data_raw_helpers.R")
 source("data-raw/app/geo_data.R")
+
+keep_vars = c(ls(), 'keep_vars')
+
 source("data-raw/app/01_headline_figures_df.R")
 source("data-raw/app/02_patients_age_gender_df.R")
 source("data-raw/app/03_patients_by_imd_df.R")
