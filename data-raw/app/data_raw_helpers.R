@@ -180,8 +180,8 @@ get_metrics <- function(init_db,
     ) %>%
     nhsbsaR::collect_with_parallelism(num_parallel) %>%
     # Complete
-    complete(
-      nesting(!!!syms(nest_cols)),
+    tidyr::complete(
+      tidyr::nesting(!!!syms(nest_cols)),
       !!!syms(setdiff(second_grouping, nest_cols)),
       fill = list(
         TOTAL_PATIENTS  = 0L,

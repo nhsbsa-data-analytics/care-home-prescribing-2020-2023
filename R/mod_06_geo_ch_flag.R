@@ -11,7 +11,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
       div(
         class = "nhsuk-grid-row",
         div(
-          class = "nhsuk-grid-column-one-half",
+          class = "nhsuk-grid-column-one-quarter",
           nhs_selectInput(
             inputId = ns("fy"),
             label = "Financial Year",
@@ -26,18 +26,6 @@ mod_06_geo_ch_flag_ui <- function(id) {
         div(
           class = "nhsuk-grid-column-one-half",
           nhs_selectInput(
-            inputId = ns("geography"),
-            label = "Geography",
-            choices = c("Region", "ICB", "Local Authority"),
-            full_width = TRUE
-          )
-        )
-      ),
-      div(
-        class = "nhsuk-grid-row",
-        div(
-          class = "nhsuk-grid-column-full",
-          nhs_selectInput(
             inputId = ns("metric"),
             label = "Metric",
             choices = c(
@@ -51,6 +39,15 @@ mod_06_geo_ch_flag_ui <- function(id) {
               "Number of unique fall-risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "Patient months with falls risk (%)" = "PCT_PM_FALLS"
             ),
+            full_width = TRUE
+          )
+        ),
+        div(
+          class = "nhsuk-grid-column-one-quarter",
+          nhs_selectInput(
+            inputId = ns("geography"),
+            label = "Geography",
+            choices = c("Region", "ICB", "Local Authority"),
             full_width = TRUE
           )
         )
@@ -199,6 +196,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create datatable
     create_datatable <- function(data) {
+      browser()
       data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>% 
         dplyr::mutate(
@@ -239,6 +237,16 @@ mod_06_geo_ch_flag_server <- function(id) {
             }
           )
         ) %>%
+        # Add prefix or suffix if needed
+        mutate(
+          across(
+            !starts_with(rlang::sym(input$geography)),
+            \(x) {
+              if (input$metric == "COST_PPM")  return (paste0("\u00A3", x))
+              if (grepl("PCT_", input$metric)) return (paste0(x, "%"))
+            }
+          )
+        ) %>% 
         DT::datatable(
           escape = FALSE,
           rownames = FALSE,
