@@ -7,32 +7,27 @@
 #'   \item SUB_GEOGRAPHY_CODE. region or organisational codes
 #'   \item SUB_GEOGRAPHY_NAME. name in breakdown
 #'   \item CH_FLAG. do metrics apply to carehomes?, \code{TRUE} or \code{FALSE}
-#'   \item TOTAL_PATIENTS. number of distinct patients
-#'   \item ITEMS_PPM. mean number of distinct items per patient per month
-#'   \item COST_PPM. mean cost of items per patient per month
-#'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient per month
+#'   \item ITEMS_PPM. mean number of distinct items per patient month
+#'   \item COST_PPM. mean cost of items per patient month
+#'   \item UNIQ_MEDS_PPM. mean number of unique medicines from BNF Chapters 
+#'     1-4, 6-10 per patient month
 #'   \item UNIQ_MEDS_FALLS_PPM. mean number of unique medicines with associated
-#'     risk of falls per patient per month
-#'   \item TOTAL_PATIENTS_GTE_SIX. total number of patients prescribed 6+ unique
-#'     medicines
-#'   \item PCT_PATIENTS_GTE_SIX_PPM. percentage of patients prescribed 6+ unique
-#'     medicines per month
-#'   \item TOTAL_PATIENTS_GTE_TEN. total number of patients prescribed 10+ unique
-#'     medicines
-#'   \item PCT_PATIENTS_GTE_TEN_PPM. percentage of patients prescribed 10+ unique
-#'     medicines per month
-#'   \item TOTAL_PATIENTS_ACB_6. total number of patients with an anticholinergic
-#'     score of 6+
-#'   \item PCT_PATIENTS_ACB_6_PPM. percentage of patients with an anticholinergic
-#'     score of 6+ per month
-#'   \item TOTAL_PATIENTS_DAMN. total number of patients prescribed 2 or more 
-#'     medicines likely to cause kidney injury
-#'   \item PCT_PATIENTS_ACB_6_PPM. percentage of patients prescribed 2 or more
-#'     medicines likely to cause kidney injury per month
-#'   \item TOTAL_PATIENTS_FALLS. total number of patients prescribed 3 or more 
-#'     medicines with associated risk of falls
-#'   \item PCT_PATIENTS_FALLS_PPM. percentage of patients prescribed 3 or more
-#'     medicines with associated risk of falls per month
+#'     risk of falls per patient month
+#'   \item TOTAL_PM. total patient months
+#'   \item TOTAL_PM_ACB. total number of patient months in which at least 2
+#'     medicines of moderate to high anticholinergic burden were prescribed
+#'   \item TOTAL_PM_DAMN. total number of patient months in which at least 2
+#'     medicines likely to cause kidney injury were prescribed
+#'   \item PCT_PM_GTE_SIX. percentage of patient months in which at least 6
+#'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item PCT_PM_GTE_TEN. percentage of patient months in which at least 10
+#'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item PCT_PM_ACB. percentage of patient months in which at least 2
+#'     medicines of moderate to high anticholinergic burden were prescribed
+#'   \item PCT_PM_DAMN. percentage of patient months in which at least 2
+#'     medicines likely to cause kidney injury were prescribed
+#'   \item PCT_PM_FALLS. percentage of patient months in which at least 3 
+#'     unique medicines with associated risk of falls were prescribed
 #' }
 #'
 #' @source { Data and Advanced Analytics Team at NHS BSA, using
@@ -44,7 +39,7 @@
 #' @keywords datasets
 #' @name metrics_by_geo_and_ch_flag
 #' @usage data(metrics_by_geo_and_ch_flag_df)
-#' @format A data frame with 2148 rows and 20 variables
+#' @format A data frame with 2148 rows and 17 variables
 #' 
 "metrics_by_geo_and_ch_flag_df"
 
@@ -54,32 +49,27 @@
 #' \itemize{
 #'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
 #'   \item CH_TYPE. one of Carehome, Non-carehome, Nursing Home, Residential Home
-#'   \item TOTAL_PATIENTS. number of distinct patients
-#'   \item ITEMS_PPM. mean number of distinct items per patient per month
-#'   \item COST_PPM. mean cost of items per patient per month
-#'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient per month
+#'   \item ITEMS_PPM. mean number of distinct items per patient month
+#'   \item COST_PPM. mean cost of items per patient month
+#'   \item UNIQ_MEDS_PPM. mean number of unique medicines from BNF Chapters 
+#'     1-4, 6-10 per patient month
 #'   \item UNIQ_MEDS_FALLS_PPM. mean number of unique medicines with associated
-#'     risk of falls per patient per month
-#'   \item TOTAL_PM_MED_CH_1_4_6_10. total number of patient months in which
-#'     at least 1 medicine from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item TOTAL_PATIENTS_GTE_SIX. total number of patient months in which
-#'     at least 6 unique medicines from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item TOTAL_PATIENTS_GTE_TEN. total number of patient months in which
-#'     at least 10 unique medicines from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item TOTAL_PATIENTS_ACB_6. total number of patient months in which at 
-#'     anticholinergic burden was 6+
-#'   \item TOTAL_PATIENTS_DAMN. total number of patient months in which at least
-#'     2 medicines likely to cause kidney injury were prescribed
-#'   \item PCT_PATIENTS_GTE_SIX_PPM. percentage of patients prescribed 6+ unique
-#'     medicines per month
-#'   \item PCT_PATIENTS_GTE_TEN_PPM. percentage of patients prescribed 10+ unique
-#'     medicines per month
-#'   \item PCT_PATIENTS_ACB_6_PPM. percentage of patients with an anticholinergic
-#'     score of 6+ per month
-#'   \item PCT_PATIENTS_ACB_6_PPM. percentage of patients prescribed 2 or more
-#'     medicines likely to cause kidney injury per month
-#'   \item PCT_PATIENTS_FALLS_PPM. percentage of patients prescribed 3 or more
-#'     medicines with associated risk of falls per month
+#'     risk of falls per patient month
+#'   \item TOTAL_PM. total patient months
+#'   \item TOTAL_PM_ACB. total number of patient months in which at least 2
+#'     medicines of moderate to high anticholinergic burden were prescribed
+#'   \item TOTAL_PM_DAMN. total number of patient months in which at least 2
+#'     medicines likely to cause kidney injury were prescribed
+#'   \item PCT_PM_GTE_SIX. percentage of patient months in which at least 6
+#'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item PCT_PM_GTE_TEN. percentage of patient months in which at least 10
+#'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item PCT_PM_ACB. percentage of patient months in which at least 2
+#'     medicines of moderate to high anticholinergic burden were prescribed
+#'   \item PCT_PM_DAMN. percentage of patient months in which at least 2
+#'     medicines likely to cause kidney injury were prescribed
+#'   \item PCT_PM_FALLS. percentage of patient months in which at least 3 
+#'     unique medicines with associated risk of falls were prescribed
 #' }
 #'
 #' @source { Data and Advanced Analytics Team at NHS BSA, using
@@ -91,7 +81,7 @@
 #' @keywords datasets
 #' @name metrics_by_ch_type
 #' @usage data(metrics_by_ch_type_df)
-#' @format A data frame with 12 rows and 17 variables
+#' @format A data frame with 12 rows and 14 variables
 #' 
 "metrics_by_ch_type_df"
 

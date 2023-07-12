@@ -32,6 +32,7 @@ Imports:
     golem,
     highcharter,
     htmltools,
+    htmlwidgets,
     janitor,
     knitr,
     magrittr,
@@ -43,6 +44,7 @@ Imports:
     rlang,
     rsvg,
     shiny,
+    stats,
     tidyr
 Suggests:
     addressMatchR,

@@ -43,9 +43,8 @@ get_metrics <- function(init_db,
                         second_grouping,
                         nest_cols = c(),
                         num_parallel = 24) {
-  browser()
   # Collect data and calculate raw metrics
-  out1 <- init_db %>% 
+  init_db %>% 
     mutate(
       across(all_of(first_grouping)),
       ITEM_COUNT,
@@ -77,12 +76,7 @@ get_metrics <- function(init_db,
         TRUE ~ 0
       ),
       .keep = "none"
-    )
-  
-  check1 <- out1 %>% collect()
-  
-  browser()
-  out2 <- out1 %>% 
+    ) %>% 
     group_by(across(all_of(first_grouping))) %>%
     summarise(
       TOTAL_ITEMS = sum(ITEM_COUNT, na.rm = TRUE),
@@ -134,12 +128,7 @@ get_metrics <- function(init_db,
         )
       )
     ) %>%
-    ungroup()
-    
-  check2 <- out2 %>% collect()
-  
-  browser()
-  out3 <- out2 %>% 
+    ungroup() %>% 
     group_by(across(all_of(second_grouping))) %>%
     summarise(
       # Only needed if we use SDC
@@ -164,41 +153,31 @@ get_metrics <- function(init_db,
       # Falls numerator, also used for SDC
       RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE)
     ) %>%
-    ungroup()
-  
-  check3 <- out3 %>% collect()
-  
-  browser()
-  out4 <- out3 %>% 
+    ungroup() %>% 
     mutate(
       # Calculate % metrics - each denominator is restricted to patients on any
       # med that is also a condition to be included in numerator
-      PCT_PM_GTE_SIX_PPM = 100 * case_when(
+      PCT_PM_GTE_SIX = 100 * case_when(
         TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_GTE_SIX / TOTAL_PM
       ),
-      PCT_PM_GTE_TEN_PPM = 100 * case_when(
+      PCT_PM_GTE_TEN = 100 * case_when(
         TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_GTE_TEN / TOTAL_PM
       ),
-      PCT_PM_ACB_PPM = 100 * case_when(
+      PCT_PM_ACB = 100 * case_when(
         TOTAL_PM_ACB == 0 ~ NA,
         TRUE ~ RISK_PM_ACB / TOTAL_PM_ACB
       ),
-      PCT_PM_DAMN_PPM = 100 * case_when(
+      PCT_PM_DAMN = 100 * case_when(
         TOTAL_PM_DAMN == 0 ~ NA,
         TRUE ~ RISK_PM_DAMN / TOTAL_PM_DAMN
       ),
-      PCT_PM_FALLS_PPM = 100 * case_when(
+      PCT_PM_FALLS = 100 * case_when(
         TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_FALLS / TOTAL_PM
       )
-    ) 
-  
-  check4 <- out4 %>% collect()
-  
-  browser()
-  out5 <- out4 %>%
+    ) %>%
     nhsbsaR::collect_with_parallelism(num_parallel) %>%
     # Complete
     complete(
@@ -314,11 +293,8 @@ get_metrics <- function(init_db,
     #   )
     # ) %>%
     # select(-SDC, -starts_with("RISK")) %>% 
-    select(-starts_with("RISK")) %>% 
+    select(-TOTAL_PATIENTS, -starts_with("RISK")) %>% 
     # Reorder columns so they are a bit tidier
     relocate(starts_with("TOTAL"), .after = last_col()) %>%
     relocate(starts_with("PCT"), .after = last_col())
-  
-  browser()
-  out5
 }

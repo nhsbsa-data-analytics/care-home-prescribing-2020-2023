@@ -114,7 +114,7 @@ mod_02_patients_age_gender_server <- function(id){
           inputId = "sub_geography",
           choices =
             patients_by_geo_age_gender_at_specific_fy_and_geo_df()$SUB_GEOGRAPHY_NAME %>%
-            na.omit() %>%
+            stats::na.omit() %>%
             unique()
         )
       }

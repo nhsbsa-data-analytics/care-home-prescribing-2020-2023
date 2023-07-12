@@ -10,32 +10,6 @@ devtools::load_all()
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-
-### TEMP VALIDATION ###
-
-# val_df <- readxl::read_xlsx("metrics_validation.xlsx")
-# 
-# con %>% copy_to(val_df, temporary = FALSE, overwrite = TRUE)
-
-base_db <- con %>%
-  tbl(from = in_schema("MAMCP", "val_df"))
-
-metrics_by_ch_type_df <- get_metrics(
-  base_db,
-  first_grouping = c(
-    "FY",
-    "YEAR_MONTH",
-    "NHS_NO",
-    "CH_TYPE"
-  ),
-  second_grouping = c(
-    "FY",
-    "CH_TYPE"
-  )
-)
-
-#######################
-
 # Data prep ---------------------------------------------------------------
 
 ## Setup ------------------------------------------------------------------
