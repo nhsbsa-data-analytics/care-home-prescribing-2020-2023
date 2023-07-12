@@ -285,6 +285,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       # Process original df
       df = df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
+        dplyr::mutate(VALUE_LABEL = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
         dplyr::arrange(VALUE) %>%
         dplyr::mutate(
           index = dplyr::row_number(),
@@ -292,7 +293,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           total = max(rank),
           col =  "#f7a35c",
           label = dplyr::case_when(
-            GEOGRAPHY_CHILD == df_select ~ paste0(fy, ":   ", prefix, VALUE, suffix),
+            GEOGRAPHY_CHILD == df_select ~ paste0(fy, ":   ", prefix, VALUE_LABEL, suffix),
             TRUE ~ ""
           )
         )
@@ -354,8 +355,9 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         ) %>%
         highcharter::hc_tooltip(enabled = FALSE) %>%
         nhsbsaR::theme_nhsbsa_highchart()
+        
       
-      # Only caption if botttom chart
+      # Only caption if bottom chart
       if(bottom_plot){
         hc = hc %>%
           highcharter::hc_credits(enabled = TRUE)

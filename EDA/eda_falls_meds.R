@@ -95,24 +95,24 @@ df = pat_months %>%
 # Part Three: Proportion 3+ falls risk meds ------------------------------------
 
 # Proportion 3+ falls risk meds
-df_two = data %>% 
-  filter(
-    FY == "2022/23",
-    CH_FLAG == 1
-  ) %>% 
-  inner_join(drug_list_db) %>% 
-  group_by(YEAR_MONTH, NHS_NO, PCD_ICB_NAME) %>% 
-  summarise(
-    PROP_3_PLUS = case_when(
-      n_distinct(BNF_CHEMICAL_SUBSTANCE) >= 3 ~ 1,
-      TRUE ~ 0
-    )
-  ) %>% 
-  ungroup() %>% 
-  group_by(PCD_ICB_NAME) %>% 
-  summarise(PROP_3_PLUS = sum(PROP_3_PLUS) / n()) %>% 
-  ungroup() %>% 
-  collect()
+# df_two = data %>% 
+#   filter(
+#     FY == "2022/23",
+#     CH_FLAG == 1
+#   ) %>% 
+#   inner_join(drug_list_db) %>% 
+#   group_by(YEAR_MONTH, NHS_NO, PCD_ICB_NAME) %>% 
+#   summarise(
+#     PROP_3_PLUS = case_when(
+#       n_distinct(BNF_CHEMICAL_SUBSTANCE) >= 3 ~ 1,
+#       TRUE ~ 0
+#     )
+#   ) %>% 
+#   ungroup() %>% 
+#   group_by(PCD_ICB_NAME) %>% 
+#   summarise(PROP_3_PLUS = sum(PROP_3_PLUS) / n()) %>% 
+#   ungroup() %>% 
+#   collect()
 
 # Part four: data export -------------------------------------------------------
 
