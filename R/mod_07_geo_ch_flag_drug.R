@@ -790,6 +790,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       filename = "region_drug_data.csv",
       export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Region") %>% 
+        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
       )
     
@@ -799,6 +800,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       filename = "icb_drug_data.csv",
       export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>% 
+        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
     )
     
@@ -808,6 +810,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       filename = "lad_drug_data.csv",
       export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>% 
+        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
     )
     
