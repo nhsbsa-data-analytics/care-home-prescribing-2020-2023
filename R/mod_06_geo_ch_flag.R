@@ -196,7 +196,6 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create datatable
     create_datatable <- function(data) {
-      browser()
       data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>% 
         dplyr::mutate(
