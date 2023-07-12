@@ -238,9 +238,9 @@ mod_06_geo_ch_flag_server <- function(id) {
           )
         ) %>%
         # Add prefix or suffix if needed
-        mutate(
-          across(
-            !starts_with(rlang::sym(input$geography)),
+        dplyr::mutate(
+          dplyr::across(
+            !dplyr::contains(input$geography),
             \(x) {
               if (input$metric == "COST_PPM")  return (paste0("\u00A3", x))
               if (grepl("PCT_", input$metric)) return (paste0(x, "%"))
