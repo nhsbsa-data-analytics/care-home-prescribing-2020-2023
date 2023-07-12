@@ -60,24 +60,24 @@
 #'   \item UNIQ_MEDS_PPM. mean number of unique medicines per patient per month
 #'   \item UNIQ_MEDS_FALLS_PPM. mean number of unique medicines with associated
 #'     risk of falls per patient per month
-#'   \item TOTAL_PATIENTS_GTE_SIX. total number of patients prescribed 6+ unique
-#'     medicines
+#'   \item TOTAL_PM_MED_CH_1_4_6_10. total number of patient months in which
+#'     at least 1 medicine from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item TOTAL_PATIENTS_GTE_SIX. total number of patient months in which
+#'     at least 6 unique medicines from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item TOTAL_PATIENTS_GTE_TEN. total number of patient months in which
+#'     at least 10 unique medicines from BNF Chapters 1-4, 6-10 were prescribed
+#'   \item TOTAL_PATIENTS_ACB_6. total number of patient months in which at 
+#'     anticholinergic burden was 6+
+#'   \item TOTAL_PATIENTS_DAMN. total number of patient months in which at least
+#'     2 medicines likely to cause kidney injury were prescribed
 #'   \item PCT_PATIENTS_GTE_SIX_PPM. percentage of patients prescribed 6+ unique
 #'     medicines per month
-#'   \item TOTAL_PATIENTS_GTE_TEN. total number of patients prescribed 10+ unique
-#'     medicines
 #'   \item PCT_PATIENTS_GTE_TEN_PPM. percentage of patients prescribed 10+ unique
 #'     medicines per month
-#'   \item TOTAL_PATIENTS_ACB_6. total number of patients with an anticholinergic
-#'     score of 6+
 #'   \item PCT_PATIENTS_ACB_6_PPM. percentage of patients with an anticholinergic
 #'     score of 6+ per month
-#'   \item TOTAL_PATIENTS_DAMN. total number of patients prescribed 2 or more 
-#'     medicines likely to cause kidney injury
 #'   \item PCT_PATIENTS_ACB_6_PPM. percentage of patients prescribed 2 or more
 #'     medicines likely to cause kidney injury per month
-#'   \item TOTAL_PATIENTS_FALLS. total number of patients prescribed 3 or more 
-#'     medicines with associated risk of falls
 #'   \item PCT_PATIENTS_FALLS_PPM. percentage of patients prescribed 3 or more
 #'     medicines with associated risk of falls per month
 #' }
