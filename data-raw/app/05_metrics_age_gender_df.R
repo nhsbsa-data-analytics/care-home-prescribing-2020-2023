@@ -1,5 +1,4 @@
-tictoc::tic()
-# Running time ~x min
+# Running time ~50 min
 
 library(dplyr)
 library(dbplyr)
@@ -52,5 +51,3 @@ usethis::use_data(
 
 # Disconnect from database
 DBI::dbDisconnect(con)
-
-tictoc::toc()
