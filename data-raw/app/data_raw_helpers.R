@@ -131,9 +131,7 @@ get_metrics <- function(init_db,
     ungroup() %>% 
     group_by(across(all_of(second_grouping))) %>%
     summarise(
-      # Only needed if we use SDC
-      TOTAL_PATIENTS      = n_distinct(NHS_NO),
-      # Total patient months - Use for denominators, also used for SDC
+      # Total patient months - use for denominators
       TOTAL_PM            = n(),
       TOTAL_PM_ACB        = sum(ANY_ACB, na.rm = TRUE),
       TOTAL_PM_DAMN       = sum(ANY_DAMN, na.rm = TRUE),
@@ -141,16 +139,16 @@ get_metrics <- function(init_db,
       ITEMS_PPM           = mean(TOTAL_ITEMS, na.rm = TRUE),
       COST_PPM            = mean(TOTAL_COST, na.rm = TRUE),
       UNIQ_MEDS_PPM       = mean(UNIQUE_MEDICINES, na.rm = TRUE),
-      # Unique medicines numerators, also used for SDC
+      # Unique medicines numerators
       RISK_PM_GTE_SIX     = sum(GTE_SIX, na.rm = TRUE),
       RISK_PM_GTE_TEN     = sum(GTE_TEN, na.rm = TRUE),
-      # ACB numerator, also used for SDC
+      # ACB numerator
       RISK_PM_ACB         = sum(ACB, na.rm = TRUE),
-      # DAMN numerator, also used for SDC
+      # DAMN numerator
       RISK_PM_DAMN        = sum(DAMN, na.rm = TRUE),
       # Falls unique medicines
       UNIQ_MEDS_FALLS_PPM = mean(UNIQUE_MEDICINES_FALLS, na.rm = TRUE),
-      # Falls numerator, also used for SDC
+      # Falls numerator
       RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE)
     ) %>%
     ungroup() %>% 
@@ -184,7 +182,6 @@ get_metrics <- function(init_db,
       tidyr::nesting(!!!syms(nest_cols)),
       !!!syms(setdiff(second_grouping, nest_cols)),
       fill = list(
-        TOTAL_PATIENTS  = 0L,
         TOTAL_PM        = 0L,
         TOTAL_PM_ACB    = 0L,
         TOTAL_PM_DAMN   = 0L,
@@ -195,105 +192,7 @@ get_metrics <- function(init_db,
         RISK_PM_FALLS   = 0L
       )
     ) %>%
-    # Statistical disclosure control (SDC)
-    # mutate(
-    #   SDC = ifelse(TOTAL_PATIENTS %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PATIENTS = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(TOTAL_PATIENTS, -1)
-    #   ),
-    #   ITEMS_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(ITEMS_PPM, 1)
-    #   ),
-    #   COST_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(COST_PPM)
-    #   ),
-    #   SDC = ifelse(TOTAL_PM_MED_CH_1_4_6_10 %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PM_MED_CH_1_4_6_10 = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(TOTAL_PM_MED_CH_1_4_6_10, -1)
-    #   ),
-    #   UNIQ_MEDS_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(UNIQ_MEDS_PPM, 1)
-    #   ),
-    #   # Applicable test for SDC is the number in risk, replace total with this
-    #   SDC = ifelse(RISK_PATIENTS_GTE_SIX %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PM_GTE_SIX = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(RISK_PATIENTS_GTE_SIX, -1)
-    #   ),
-    #   PCT_PATIENTS_GTE_SIX_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(PCT_PATIENTS_GTE_SIX_PPM, 1)
-    #   ),
-    #   # Applicable test for SDC is the number in risk, replace total with this
-    #   SDC = ifelse(RISK_PATIENTS_GTE_TEN %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PM_GTE_TEN = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(RISK_PATIENTS_GTE_TEN, -1)
-    #   ),
-    #   PCT_PATIENTS_GTE_TEN_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(PCT_PATIENTS_GTE_TEN_PPM, 1)
-    #   ),
-    #   # Applicable test for SDC is the number in risk, replace total with this
-    #   SDC = ifelse(RISK_PATIENTS_ACB_6 %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PM_ACB_6 = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(RISK_PATIENTS_ACB_6, -1)
-    #   ),
-    #   PCT_PATIENTS_ACB_6_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(PCT_PATIENTS_ACB_6_PPM, 1)
-    #   ),
-    #   # Applicable test for SDC is the number in risk, replace total with this
-    #   SDC = ifelse(RISK_PATIENTS_DAMN %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PM_DAMN = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(RISK_PATIENTS_DAMN, -1)
-    #   ),
-    #   PCT_PATIENTS_DAMN_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(PCT_PATIENTS_DAMN_PPM, 1)
-    #   ),
-    #   # Applicable test for SDC is total patients for this 'new' metric
-    #   SDC = ifelse(TOTAL_PATIENTS %in% 1:4, TRUE, FALSE),
-    #   UNIQ_MEDS_FALLS_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(UNIQ_MEDS_FALLS_PPM, 1)
-    #   ),
-    #   # Applicable test for SDC is the number in risk, replace total with this
-    #   SDC = ifelse(RISK_PATIENTS_FALLS %in% 1:4, TRUE, FALSE),
-    #   TOTAL_PM_FALLS = ifelse(
-    #     SDC,
-    #     NA_integer_,
-    #     janitor::round_half_up(RISK_PATIENTS_FALLS, -1)
-    #   ),
-    #   PCT_PATIENTS_FALLS_PPM = ifelse(
-    #     SDC,
-    #     NA_real_,
-    #     janitor::round_half_up(PCT_PATIENTS_FALLS_PPM, 1)
-    #   )
-    # ) %>%
-    # select(-SDC, -starts_with("RISK")) %>% 
-    select(-TOTAL_PATIENTS, -starts_with("RISK")) %>% 
+    select(-starts_with("RISK")) %>% 
     # Reorder columns so they are a bit tidier
     relocate(starts_with("TOTAL"), .after = last_col()) %>%
     relocate(starts_with("PCT"), .after = last_col())
