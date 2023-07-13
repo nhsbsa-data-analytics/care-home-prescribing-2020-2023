@@ -330,7 +330,12 @@ mod_02_patients_age_gender_server <- function(id){
               group = GENDER
             )
           ) %>%
-          nhsbsaR::theme_nhsbsa_highchart(palette = "gender") %>%
+          nhsbsaR::theme_nhsbsa_highchart() %>%
+          highcharter::hc_colors(colors = c(
+            NHSRtheme::get_nhs_colours("LightBlue") |> unname(),
+            NHSRtheme::get_nhs_colours("DarkBlue") |> unname()
+            
+          )) %>%
           highcharter::hc_annotations(
             list(
               labels = list(
