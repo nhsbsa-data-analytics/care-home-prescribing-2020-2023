@@ -117,3 +117,4 @@ usethis::use_data(
 
 # Disconnect from database
 DBI::dbDisconnect(con)
+rm(list = ls()); gc()
