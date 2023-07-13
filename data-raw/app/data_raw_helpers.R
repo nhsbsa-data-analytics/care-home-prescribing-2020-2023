@@ -157,7 +157,8 @@ get_metrics <- function(init_db,
     mutate(
       # Calculate % metrics - each denominator is restricted to patients on any
       # med that is also a condition to be included in numerator
-      PCT_PM_GTE_SIX = 100 * case_when(TOTAL_PM == 0 ~ NA,
+      PCT_PM_GTE_SIX = 100 * case_when(
+        TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_GTE_SIX / TOTAL_PM
       ),
       PCT_PM_GTE_TEN = 100 * case_when(
