@@ -87,6 +87,19 @@ mod_04_metrics_ch_type_server <- function(id) {
       PCT_PM_FALLS        = "Patient months with falls risk (%)"
     )
     
+    # Map metric column names to tooltip metric names
+    metric_tooltips <- c(
+      COST_PPM            = "<b>Drug cost PPM:</b> \u00A3{point.y}",
+      ITEMS_PPM           = "<b>Number of prescription items PPM:</b> {point.y:.2f}",
+      UNIQ_MEDS_PPM       = "<b>Number of unique medicines PPM:</b> {point.y:.2f}",
+      PCT_PM_GTE_SIX      = "<b>Patient months with 6+ unique medicines:</b> {point.y:.2f}%",
+      PCT_PM_GTE_TEN      = "<b>Patient months with 10+ unique medicines:</b> {point.y:.2f}%",
+      PCT_PM_ACB          = "<b>Patient months with ACB risk:</b> {point.y:.2f}%",
+      PCT_PM_DAMN         = "<b>Patient months with DAMN risk:</b> {point.y:.2f}%",
+      UNIQ_MEDS_FALLS_PPM = "<b>Number of unique fall-risk medicines PPM</b> {point.y:.2f}",
+      PCT_PM_FALLS        = "<b>Patient months with falls risk</b> {point.y:.2f}%"
+    )
+    
     # Map all column names to download data names
     dl_col_names <- c(
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
@@ -155,7 +168,13 @@ mod_04_metrics_ch_type_server <- function(id) {
             y = !!input$metric,
             color = !!color
           ),
-          name = ui_metric_names[[input$metric]]
+          name = ui_metric_names[[input$metric]],
+          tooltip = list(
+            useHTML = TRUE,
+            pointFormat = paste0(
+              metric_tooltips[input$metric] %>% unname()
+            )
+          )
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_xAxis(
