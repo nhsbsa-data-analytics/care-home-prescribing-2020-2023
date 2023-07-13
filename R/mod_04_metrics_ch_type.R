@@ -97,10 +97,21 @@ mod_04_metrics_ch_type_server <- function(id) {
       "Total patient months with DAMN risk" = "TOTAL_PM_DAMN"
     )
     
+    # Formatted data ------------------------------------------------------
+    
+    fmt_data <- carehomes2::metrics_by_ch_type_df %>% 
+      dplyr::mutate(
+        COST_PPM = janitor::round_half_up(COST_PPM, 0),
+        dplyr::across(
+          c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
+          \(x) janitor::round_half_up(x, 2)
+        )
+      )
+    
     # Reactive data -------------------------------------------------------
     
     fdata <- reactive(
-      carehomes2::metrics_by_ch_type_df %>%
+      fmt_data %>%
         dplyr::mutate(
           .data$FY,
           .data$CH_TYPE,
@@ -118,7 +129,7 @@ mod_04_metrics_ch_type_server <- function(id) {
                                "Nursing Home",
                                "Residential Home",
                                "Non-carehome"
-                              )) {
+                             )) {
       ch_type <- match.arg(ch_type)
       
       data <- data %>% 
@@ -163,8 +174,8 @@ mod_04_metrics_ch_type_server <- function(id) {
     }
     
     # Create download data
-    create_download_data <- function() {
-      temp <- carehomes2::metrics_by_ch_type_df %>%
+    create_download_data <- function(data) {
+      temp <- data %>%
         # Need only if SDC is used
         # dplyr::mutate(
         #   # Use TOTAL_PATIENTS for non-% metrics...
@@ -215,7 +226,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     mod_nhs_download_server(
       id = "download_data",
       filename = "Selected Prescribing Metrics by Carehome Type.xlsx",
-      export_data = create_download_data()
+      export_data = create_download_data(fmt_data)
     )
   })
 }
