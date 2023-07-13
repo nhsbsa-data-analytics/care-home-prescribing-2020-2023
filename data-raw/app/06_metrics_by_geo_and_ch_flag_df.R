@@ -1,11 +1,13 @@
 # Initial setup -----------------------------------------------------------
 
+# Expected run time ~5-6 hours @parallel 24
+
 library(dplyr)
 library(dbplyr)
-library(tidyr)
 library(stringr)
 library(glue)
 library(purrr)
+
 devtools::load_all()
 
 # Set up connection to DALP

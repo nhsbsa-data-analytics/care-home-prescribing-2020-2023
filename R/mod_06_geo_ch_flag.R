@@ -11,7 +11,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
       div(
         class = "nhsuk-grid-row",
         div(
-          class = "nhsuk-grid-column-one-half",
+          class = "nhsuk-grid-column-one-quarter",
           nhs_selectInput(
             inputId = ns("fy"),
             label = "Financial Year",
@@ -26,18 +26,6 @@ mod_06_geo_ch_flag_ui <- function(id) {
         div(
           class = "nhsuk-grid-column-one-half",
           nhs_selectInput(
-            inputId = ns("geography"),
-            label = "Geography",
-            choices = c("Region", "ICB", "Local Authority"),
-            full_width = TRUE
-          )
-        )
-      ),
-      div(
-        class = "nhsuk-grid-row",
-        div(
-          class = "nhsuk-grid-column-full",
-          nhs_selectInput(
             inputId = ns("metric"),
             label = "Metric",
             choices = c(
@@ -51,6 +39,15 @@ mod_06_geo_ch_flag_ui <- function(id) {
               "Number of unique fall-risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "Patient months with falls risk (%)" = "PCT_PM_FALLS"
             ),
+            full_width = TRUE
+          )
+        ),
+        div(
+          class = "nhsuk-grid-column-one-quarter",
+          nhs_selectInput(
+            inputId = ns("geography"),
+            label = "Geography",
+            choices = c("Region", "ICB", "Local Authority"),
             full_width = TRUE
           )
         )
@@ -114,10 +111,21 @@ mod_06_geo_ch_flag_server <- function(id) {
       "Total patient months with DAMN risk" = "TOTAL_PM_DAMN"
     )
     
+    # Formatted data ------------------------------------------------------
+    
+    fmt_data <- carehomes2::metrics_by_geo_and_ch_flag_df %>% 
+    dplyr::mutate(
+      COST_PPM = janitor::round_half_up(COST_PPM, 0),
+      dplyr::across(
+        c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
+        \(x) janitor::round_half_up(x, 2)
+      )
+    )
+    
     # Reactive data -------------------------------------------------------
     
     fdata <- reactive(
-      carehomes2::metrics_by_geo_and_ch_flag_df %>%
+      fmt_data %>%
         dplyr::filter(
           .data$GEOGRAPHY == input$geography,
           .data$FY == input$fy
@@ -258,9 +266,10 @@ mod_06_geo_ch_flag_server <- function(id) {
           selection = "none"
         ) %>%
         DT::formatStyle(columns = 1:7, `font-size` = "12px") %>%
-        DT::formatRound(
+        DT::formatString(
           columns = (1:7)[-4],
-          digits = ifelse(input$metric != "COST_PPM", 1, 0)
+          prefix = ifelse(input$metric == "COST_PPM", "\u00A3", ""),
+          suffix = ifelse(grepl("PCT_", input$metric), "%", "")
         )
     }
     
@@ -288,8 +297,8 @@ mod_06_geo_ch_flag_server <- function(id) {
     # }
     
     # Create download data (all data)
-    create_download_data <- function() {
-      temp <- carehomes2::metrics_by_geo_and_ch_flag_df %>%
+    create_download_data <- function(data) {
+      temp <- data %>%
         # Need only if SDC is used
         # dplyr::mutate(
         #   # Use TOTAL_PATIENTS for non-% metrics...
@@ -337,14 +346,14 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Datatables
     output$table <- DT::renderDT(
-      create_datatable(carehomes2::metrics_by_geo_and_ch_flag_df)
+      create_datatable(fmt_data)
     )
     
     # Download buttons
     mod_nhs_download_server(
       id = "download_data",
       filename = "Selected Prescribing Metrics by Geography and Carehome Status.xlsx",
-      export_data = create_download_data()
+      export_data = create_download_data(fmt_data)
     )
   })
 }
