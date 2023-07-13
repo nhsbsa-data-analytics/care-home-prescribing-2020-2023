@@ -91,14 +91,14 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
       COST_PPM            = "<b>Drug cost PPM:</b> \u00A3{point.value}",
-      ITEMS_PPM           = "<b>Number of prescription items PPM:</b> {point.value:.1f}",
-      UNIQ_MEDS_PPM       = "<b>Number of unique medicines PPM:</b> {point.value:.1f}",
-      PCT_PM_GTE_SIX      = "<b>Patient months with 6+ unique medicines:</b> {point.value:.1f}%",
-      PCT_PM_GTE_TEN      = "<b>Patient months with 10+ unique medicines:</b> {point.value:.1f}%",
-      PCT_PM_ACB          = "<b>Patient months with ACB risk:</b> {point.value:.1f}%",
-      PCT_PM_DAMN         = "<b>Patient months with DAMN risk:</b> {point.value:.1f}%",
-      UNIQ_MEDS_FALLS_PPM = "<b>Number of unique fall-risk medicines PPM</b> {point.value:.1f}",
-      PCT_PM_FALLS        = "<b>Patient months with falls risk</b> {point.value:.1f}%"
+      ITEMS_PPM           = "<b>Number of prescription items PPM:</b> {point.value:.2f}",
+      UNIQ_MEDS_PPM       = "<b>Number of unique medicines PPM:</b> {point.value:.2f}",
+      PCT_PM_GTE_SIX      = "<b>Patient months with 6+ unique medicines:</b> {point.value:.2f}%",
+      PCT_PM_GTE_TEN      = "<b>Patient months with 10+ unique medicines:</b> {point.value:.2f}%",
+      PCT_PM_ACB          = "<b>Patient months with ACB risk:</b> {point.value:.2f}%",
+      PCT_PM_DAMN         = "<b>Patient months with DAMN risk:</b> {point.value:.2f}%",
+      UNIQ_MEDS_FALLS_PPM = "<b>Number of unique fall-risk medicines PPM</b> {point.value:.2f}",
+      PCT_PM_FALLS        = "<b>Patient months with falls risk</b> {point.value:.2f}%"
     )
     
     # Map all column names to download data names
@@ -200,9 +200,11 @@ mod_06_geo_ch_flag_server <- function(id) {
           min = color_axis_limits$min,
           max = color_axis_limits$max,
           stops = list(
-            c(0, "#313695"),
-            c(0.5, "#ffffbf"),
-            c(1, "#a50026")
+            c(0, NHSRtheme::get_nhs_colours("DarkBlue") |> unname()),
+            c(0.4, NHSRtheme::get_nhs_colours("LightBlue") |> unname()),
+            c(0.5, NHSRtheme::get_nhs_colours("Yellow") |> unname()),
+            c(0.6, NHSRtheme::get_nhs_colours("WarmYellow") |> unname()),
+            c(1, NHSRtheme::get_nhs_colours("Red") |> unname())
           )
         ) %>% 
         highcharter::hc_title(text = ch_status)
