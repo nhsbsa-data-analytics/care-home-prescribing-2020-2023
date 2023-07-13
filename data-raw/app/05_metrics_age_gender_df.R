@@ -11,7 +11,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Item-level base table
 base_db <- con |> tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
-# Update CH_FLAG, add ACB_CAT and DAMN_FLAG
+# Update CH_FLAG
 base_db <- base_db |> mutate(
   CH_FLAG = case_when(
     RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
