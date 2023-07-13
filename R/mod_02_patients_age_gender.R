@@ -18,8 +18,8 @@ mod_02_patients_age_gender_ui <- function(id){
       nhs_grid_3_col(
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
-                        choices = levels(patients_by_fy_geo_age_gender_df$FY),
-                        selected = levels(patients_by_fy_geo_age_gender_df$FY) |> max(),
+                        choices = levels(carehomes2::patients_by_fy_geo_age_gender_df$FY),
+                        selected = levels(carehomes2::patients_by_fy_geo_age_gender_df$FY) |> max(),
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
@@ -52,7 +52,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$geography)
       req(input$sub_geography)
       
-      t <- patients_by_fy_geo_age_gender_df |> 
+      t <- carehomes2::patients_by_fy_geo_age_gender_df |> 
       dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
       dplyr::summarise(
         EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER) | is.na(SDC_TOTAL_PATIENTS), TOTAL_PATIENTS, 0)),
@@ -91,7 +91,7 @@ mod_02_patients_age_gender_server <- function(id){
     
     # Filter to relevant data for this chart
     patients_by_fy_geo_age_gender_df <-
-      patients_by_fy_geo_age_gender_df %>%
+      carehomes2::patients_by_fy_geo_age_gender_df %>%
       dplyr::filter(!is.na(GENDER))
      
     # Filter the data based on the FY and the geography
@@ -253,7 +253,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$sub_geography)
 
       #patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-      patients_by_fy_geo_age_gender_df %>% # Download entire df with all FYs and geo levels
+      carehomes2::patients_by_fy_geo_age_gender_df %>% # Download entire df with all FYs and geo levels
         dplyr::mutate(
           SDC_TOTAL_PATIENTS = ifelse(
             test = is.na(SDC_TOTAL_PATIENTS),

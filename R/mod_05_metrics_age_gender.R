@@ -9,8 +9,8 @@ mod_05_metrics_age_gender_ui <- function(id){
       nhs_grid_2_col(
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
-                        choices = levels(patients_by_fy_geo_age_gender_df$FY),
-                        selected = levels(patients_by_fy_geo_age_gender_df$FY) |> max(),
+                        choices = levels(carehomes2::metrics_by_age_gender_and_ch_flag_df$FY),
+                        selected = levels(carehomes2::metrics_by_age_gender_and_ch_flag_df$FY) |> max(),
                         full_width = T),
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
@@ -47,7 +47,7 @@ mod_05_metrics_age_gender_server <- function(id){
     pct_excluded_patients <- reactive({
       req(input$fy)
 
-      t <- metrics_by_age_gender_and_ch_flag_df |> 
+      t <- carehomes2::metrics_by_age_gender_and_ch_flag_df |> 
         dplyr::group_by(FY) |>
          # Re-visit this when we have a final decision on SDC
         dplyr::summarise(
@@ -84,7 +84,7 @@ mod_05_metrics_age_gender_server <- function(id){
     # Swap NAs for "c" for data download and tidy the table
     metrics_by_gender_and_age_band_and_ch_flag_download_df <- 
       
-      metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
+      carehomes2::metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
       dplyr::filter(!is.na(GENDER)) |>
       dplyr::mutate(
       #   SDC_COST_MPMM = ifelse(
@@ -170,7 +170,7 @@ mod_05_metrics_age_gender_server <- function(id){
         highcharter::highchart() |>
       
           highcharter::hc_add_series(
-            data = metrics_by_age_gender_and_ch_flag_df |>
+            data = carehomes2::metrics_by_age_gender_and_ch_flag_df |>
               dplyr::filter(FY == input$fy & CH_FLAG == 1 & GENDER == "Female"),
               type = "line",
               highcharter::hcaes(
@@ -186,7 +186,7 @@ mod_05_metrics_age_gender_server <- function(id){
             icon = female_ch) |>
       
           highcharter::hc_add_series(
-            data = metrics_by_age_gender_and_ch_flag_df |>
+            data = carehomes2::metrics_by_age_gender_and_ch_flag_df |>
               dplyr::filter(FY == input$fy & CH_FLAG == 1 & GENDER == "Male"),
             type = "line",
             highcharter::hcaes(
@@ -202,7 +202,7 @@ mod_05_metrics_age_gender_server <- function(id){
               icon = male_ch) |>
       
           highcharter::hc_add_series(
-            data = metrics_by_age_gender_and_ch_flag_df |>
+            data = carehomes2::metrics_by_age_gender_and_ch_flag_df |>
                 dplyr::filter(FY == input$fy, CH_FLAG == 0 & GENDER == "Female"),
             type = "line",
             highcharter::hcaes(
@@ -218,7 +218,7 @@ mod_05_metrics_age_gender_server <- function(id){
             icon = female_non_ch) |>
       
           highcharter::hc_add_series(
-            data = metrics_by_age_gender_and_ch_flag_df |>
+            data = carehomes2::metrics_by_age_gender_and_ch_flag_df |>
               dplyr::filter(FY == input$fy & CH_FLAG == 0 & GENDER == "Male"),
             type = "line",
             highcharter::hcaes(
@@ -256,7 +256,7 @@ mod_05_metrics_age_gender_server <- function(id){
       
         highcharter::hc_xAxis(
           title = list(text = "Patient Age Band"),
-          categories = unique(metrics_by_age_gender_and_ch_flag_df$AGE_BAND)
+          categories = unique(carehomes2::metrics_by_age_gender_and_ch_flag_df$AGE_BAND)
           ) |>
       
         highcharter::hc_tooltip(
