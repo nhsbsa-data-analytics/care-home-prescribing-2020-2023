@@ -68,7 +68,7 @@ mod_02_patients_age_gender_server <- function(id){
       ) |>
       dplyr::pull(PCT_EXCLUDED_PATIENTS)
       
-      if (t < 1) "less than 1" else t
+      if (t < 1 & t > 0) "less than 1" else t
       
     })
     
