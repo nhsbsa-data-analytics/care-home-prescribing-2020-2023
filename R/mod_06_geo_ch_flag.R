@@ -20,6 +20,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
               "2021/22",
               "2022/23"
             ),
+            selected = max(carehomes2::metrics_by_geo_and_ch_flag_df$FY),
             full_width = TRUE
           )
         ),
