@@ -10,6 +10,25 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 data_db <- con %>%
   tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
+# Key findings used within analysis summary text
+data_db %>% 
+  group_by(FY, CH_FLAG) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    NIC = sum(ITEM_PAY_DR_NIC) / 100
+  ) %>% 
+  ungroup() %>% 
+  nhsbsaR::collect_with_parallelism(., 16) %>% 
+  group_by(FY) %>% 
+  mutate(
+    TOTAL_NIC = sum(NIC),
+    TOTAL_ITEMS = sum(ITEMS),
+    PROP_ITEMS = ITEMS / TOTAL_ITEMS * 100,
+    PROP_NI = NIC /TOTAL_NIC * 100
+  ) %>% 
+  arrange(FY)
+
 # Annual data df
 annual_df = data_db %>% 
   filter(CH_FLAG == 1) %>% 
