@@ -184,7 +184,7 @@ bespoke_round <- function(vec) {
     
     for (i in seq_along(vec)) {
 
-        if (vec[i] <= 5L) {
+        if (dplyr::between(vec[i], 1, 5)) {
 
           result[i] <- 5L
 

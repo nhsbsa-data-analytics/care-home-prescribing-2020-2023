@@ -53,7 +53,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
     ) |>
     summarise(TOTAL_PATIENTS = n_distinct(NHS_NO)) |>
     ungroup(GENDER, AGE_BAND, TOTAL_PATIENTS) |>
-    mutate(PCT_PATIENTS = TOTAL_PATIENTS / sum(TOTAL_PATIENTS) * 100) |>
+    #mutate(PCT_PATIENTS = TOTAL_PATIENTS / sum(TOTAL_PATIENTS) * 100) |> # Now calculated based on rounded values outside SQL
     ungroup() |>
     nhsbsaR::collect_with_parallelism(32)
   
@@ -64,6 +64,21 @@ patients_by_fy_geo_age_gender_df <- purrr::map(
   patients_by_fy_geo_age_gender_fun
   ) |>
   purrr::list_rbind()
+
+# Apply rounding
+patients_by_fy_geo_age_gender_df <-
+  patients_by_fy_geo_age_gender_df |>
+  mutate(
+    TOTAL_PATIENTS = bespoke_round(TOTAL_PATIENTS)
+    #PCT_PATIENTS = janitor::round_half_up(PCT_PATIENTS, 1)
+  )
+
+patients_by_fy_geo_age_gender_df <- patients_by_fy_geo_age_gender_df |>
+  group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME) |>
+  mutate(
+    PCT_PATIENTS = janitor::round_half_up(TOTAL_PATIENTS / sum(TOTAL_PATIENTS) * 100, 1)
+  ) |>
+  ungroup()
 
 # Get all the possible combinations
 patients_by_fy_geo_age_gender_df <-
@@ -80,17 +95,7 @@ patients_by_fy_geo_age_gender_df <-
     )
   )
 
-# Apply SDC to total patients and percentage of patients
-patients_by_fy_geo_age_gender_df <-
-  patients_by_fy_geo_age_gender_df |>
-  mutate(
-    SDC = ifelse(TOTAL_PATIENTS %in% c(1, 2, 3, 4), 1, 0),
-    SDC_TOTAL_PATIENTS =
-      ifelse(SDC == 1, NA_integer_, janitor::round_half_up(TOTAL_PATIENTS, -1)),
-    SDC_PCT_PATIENTS =
-      ifelse(SDC == 1, NA_integer_, janitor::round_half_up(PCT_PATIENTS, 1))
-  ) |>
-  select(-SDC)
+
 
 # Format factors etc and sort
 patients_by_fy_geo_age_gender_df <-
@@ -100,11 +105,9 @@ patients_by_fy_geo_age_gender_df <-
   )
 
 
-# Clean some names
+# Clean some geographic names
 patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
-    # mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " \\(as of \\d{6}\\)$")) |>
-    # mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " PCN$")) |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " ICB$")) |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, "^NHS "))
   

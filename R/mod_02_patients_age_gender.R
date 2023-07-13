@@ -55,7 +55,7 @@ mod_02_patients_age_gender_server <- function(id){
       t <- carehomes2::patients_by_fy_geo_age_gender_df |> 
       dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
       dplyr::summarise(
-        EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER) | is.na(SDC_TOTAL_PATIENTS), TOTAL_PATIENTS, 0)),
+        EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER), TOTAL_PATIENTS, 0)),
         TOTAL_PATIENTS = sum(TOTAL_PATIENTS),
         .groups = "drop"
       ) |>
@@ -80,7 +80,7 @@ mod_02_patients_age_gender_server <- function(id){
 
           paste0("This excludes ",
                  pct_excluded_patients(),
-                 "% of patients where the gender was unknown or where statistical disclosure control has been applied.")
+                 "% of patients where the gender was unknown.")
 
       )
       
@@ -140,7 +140,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$sub_geography)
 
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::summarise(max(SDC_TOTAL_PATIENTS, na.rm = TRUE)) %>%
+        dplyr::summarise(max(TOTAL_PATIENTS, na.rm = TRUE)) %>%
         dplyr::pull()
     })
 
@@ -152,14 +152,8 @@ mod_02_patients_age_gender_server <- function(id){
 
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::summarise(TOTAL_PATIENTS = sum(TOTAL_PATIENTS, na.rm = TRUE)) %>%
-        dplyr::mutate(
-          SDC_TOTAL_PATIENTS = ifelse(
-            test = TOTAL_PATIENTS %in% c(1, 2, 3, 4),
-            yes = "c",
-            no = format(janitor::round_half_up(TOTAL_PATIENTS, -1), big.mark = ",")
-          )
-        ) %>%
-        dplyr::pull(SDC_TOTAL_PATIENTS)
+        dplyr::mutate(TOTAL_PATIENTS = format(TOTAL_PATIENTS, big.mark = ",")) %>%
+        dplyr::pull(TOTAL_PATIENTS)
     })
 
     # Pull percentage of female patients
@@ -180,24 +174,10 @@ mod_02_patients_age_gender_server <- function(id){
       # Calculate the percentage of patients
       female_patients_df <- female_patients_df %>%
         dplyr::mutate(
-          PCT_FEMALE_PATIENTS = TOTAL_FEMALE_PATIENTS / TOTAL_PATIENTS * 100
-        )
+          PCT_FEMALE_PATIENTS = as.character(janitor::round_half_up(TOTAL_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1))
+        ) %>%
+        dplyr::pull(PCT_FEMALE_PATIENTS)
 
-      # Apply SDC to percentage of female patients
-      female_patients_df <- female_patients_df %>%
-        dplyr::mutate(
-          SDC = ifelse(TOTAL_FEMALE_PATIENTS %in% c(1, 2, 3, 4), 1, 0),
-          SDC_PCT_FEMALE_PATIENTS =
-            ifelse(
-              test = SDC == 1,
-              yes = "c",
-              no = as.character(janitor::round_half_up(PCT_FEMALE_PATIENTS, 1))
-            )
-        )
-
-      # Pull percentage
-      female_patients_df %>%
-        dplyr::pull(SDC_PCT_FEMALE_PATIENTS)
     })
 
     # Pull percentage of elderly female patients
@@ -223,50 +203,19 @@ mod_02_patients_age_gender_server <- function(id){
       # Calculate the percentage of patients
       elderly_female_patients_df <- elderly_female_patients_df %>%
         dplyr::mutate(
-          PCT_ELDERLY_FEMALE_PATIENTS =
-            TOTAL_ELDERLY_FEMALE_PATIENTS / TOTAL_PATIENTS * 100
-        )
+          PCT_ELDERLY_FEMALE_PATIENTS = janitor::round_half_up(TOTAL_ELDERLY_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1)
+        ) %>%
+        dplyr::pull(PCT_ELDERLY_FEMALE_PATIENTS)
 
-      # Apply SDC to percentage of elderly female patients
-      elderly_female_patients_df <- elderly_female_patients_df %>%
-        dplyr::mutate(
-          SDC = ifelse(TOTAL_ELDERLY_FEMALE_PATIENTS %in% c(1, 2, 3, 4), 1, 0),
-          SDC_PCT_ELDERLY_FEMALE_PATIENTS =
-            ifelse(
-              test = SDC == 1,
-              yes = "c",
-              no = as.character(
-                janitor::round_half_up(PCT_ELDERLY_FEMALE_PATIENTS, 1)
-              )
-            )
-        )
-
-      # Pull percentage
-      elderly_female_patients_df %>%
-        dplyr::pull(SDC_PCT_ELDERLY_FEMALE_PATIENTS)
     })
 
-    # Swap NAs for "c" for data download and subset columns
     patients_by_geo_age_gender_at_specific_fy_and_subgeo_download_df <- reactive({
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
-
-      #patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-      carehomes2::patients_by_fy_geo_age_gender_df %>% # Download entire df with all FYs and geo levels
-        dplyr::mutate(
-          SDC_TOTAL_PATIENTS = ifelse(
-            test = is.na(SDC_TOTAL_PATIENTS),
-            yes = "c",
-            no = as.character(SDC_TOTAL_PATIENTS)
-          ),
-          SDC_PCT_PATIENTS = ifelse(
-            test = is.na(SDC_PCT_PATIENTS),
-            yes = "c",
-            no = as.character(SDC_PCT_PATIENTS)
-          )
-        ) %>%
-        dplyr::select(-c(TOTAL_PATIENTS, PCT_PATIENTS)) %>%
+      
+      # Download entire df with all FYs and geo levels
+      carehomes2::patients_by_fy_geo_age_gender_df %>% 
         dplyr::rename(
           `Financial year` = FY,
           Geography = GEOGRAPHY,
@@ -274,8 +223,8 @@ mod_02_patients_age_gender_server <- function(id){
           `Sub geography name` = SUB_GEOGRAPHY_NAME,
           `Age band` = AGE_BAND,
           Gender = GENDER,
-          `Number of patients` = SDC_TOTAL_PATIENTS,
-          `Percentage of patients` = SDC_PCT_PATIENTS
+          `Number of patients` = TOTAL_PATIENTS,
+          `Percentage of patients` = PCT_PATIENTS
         )
     })
 
@@ -293,13 +242,10 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$sub_geography)
 
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::filter(!is.na(GENDER)) %>%
         # Negate male values so the butterfly chart works
         dplyr::mutate(
-          SDC_TOTAL_PATIENTS =
-            SDC_TOTAL_PATIENTS * ifelse(GENDER == "Male", 1, -1),
-          SDC_PCT_PATIENTS =
-            SDC_PCT_PATIENTS * ifelse(GENDER == "Male", 1, -1)
+          TOTAL_PATIENTS = TOTAL_PATIENTS * ifelse(GENDER == "Male", 1, -1),
+          PCT_PATIENTS = PCT_PATIENTS * ifelse(GENDER == "Male", 1, -1)
         )
     })
     
@@ -326,7 +272,7 @@ mod_02_patients_age_gender_server <- function(id){
             type = "bar",
             highcharter::hcaes(
               x = AGE_BAND,
-              y = SDC_TOTAL_PATIENTS,
+              y = TOTAL_PATIENTS,
               group = GENDER
             )
           ) %>%
@@ -400,7 +346,7 @@ mod_02_patients_age_gender_server <- function(id){
                   '<b>Gender: </b>' + this.series.name + '<br>' +
                   '<b>Age band: </b>' + this.point.category + '<br/>' +
                   '<b>Number of patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.y), 0) + '<br>' +
-                  '<b>Percentage of patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.SDC_PCT_PATIENTS), 1) + '%'
+                  '<b>Percentage of patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS), 1) + '%'
 
                 return outHTML
 
