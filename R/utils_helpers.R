@@ -168,6 +168,43 @@ fa_to_png_to_datauri <- function(name, ...) {
   knitr::image_uri(tmpfl)
 }
 
+#' Apply bespoke rounding logic
+#' 
+#' Numbers 1-5 rounded to 5, numbers 6-10 rounded to 10, all other numbers rounded to nearest 10.
+#' 
+#' The function is vectorised.
+#'
+#' @param x Number
+#'
+#' @return Rounded number.
+#' @noRd
+bespoke_round <- function(vec) {
+  
+  result <- rep(0L, length(vec)) # Empty vector for storing the result
+    
+    for (i in seq_along(vec)) {
+
+        if (vec[i] <= 5L) {
+
+          result[i] <- 5L
+
+        } else if (dplyr::between(vec[i], 6, 10)) {
+
+          result[i] <- 10L
+
+        } else {
+
+          result[i] <- janitor::round_half_up(vec[i], -1) |> as.integer()
+
+        }
+    }
+  
+  return(result)
+  
+}
+
+
+
 # Drug lookups
 
 # NSAID metric other drugs
