@@ -19,6 +19,7 @@ mod_02_patients_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
                         choices = levels(patients_by_fy_geo_age_gender_df$FY),
+                        selected = levels(patients_by_fy_geo_age_gender_df$FY) |> max(),
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",

@@ -10,17 +10,20 @@ mod_05_metrics_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
                         choices = levels(patients_by_fy_geo_age_gender_df$FY),
+                        selected = levels(patients_by_fy_geo_age_gender_df$FY) |> max(),
                         full_width = T),
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
                         choices = c(
-                          "Drug cost (MPMM)" = "SDC_COST_MPMM",
-                          "Number of prescription items (MPMM)" = "SDC_ITEMS_MPMM",
-                          "Number of unique medicines (MPMM)" = "SDC_UNIQUE_MEDICINES_MPMM",
-                          "Months with 6+ unique medicines (MPP, %)" = "SDC_PCT_PATIENTS_6_PLUS_MPP",
-                          "Months with 10+ unique medicines (MPP, %)" = "SDC_PCT_PATIENTS_10_PLUS_MPP",
-                          "Months with ACB of 6+ (MPP, %)" = "SDC_PCT_PATIENTS_ACB_6_MPP",
-                          "Months with 2+ DAMN medicines (MPP, %)" = "SDC_PCT_PATIENTS_DAMN_MPP"
+                          "Drug cost PPM (\u00A3)" = "COST_PPM",
+                          "Number of prescription items PPM" = "ITEMS_PPM",
+                          "Number of unique medicines PPM" = "UNIQ_MEDS_PPM",
+                          "Patient months with 6+ unique medicines (%)" = "PCT_PM_GTE_SIX",
+                          "Patient months with 10+ unique medicines (%)" = "PCT_PM_GTE_TEN",
+                          "Patient months with ACB risk (%)" = "PCT_PM_ACB",
+                          "Patient months with DAMN risk (%)" = "PCT_PM_DAMN",
+                          "Number of unique fall-risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+                          "Patient months with falls risk (%)" = "PCT_PM_FALLS"
                           ),
                         full_width = T)
         ),
@@ -46,9 +49,12 @@ mod_05_metrics_age_gender_server <- function(id){
 
       t <- metrics_by_age_gender_and_ch_flag_df |> 
         dplyr::group_by(FY) |>
+         # Re-visit this when we have a final decision on SDC
         dplyr::summarise(
-          EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER) | is.na(SDC_TOTAL_PATIENTS), TOTAL_PATIENTS, 0)),
-          TOTAL_PATIENTS = sum(TOTAL_PATIENTS),
+          EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER),# | is.na(SDC_TOTAL_PATIENTS),
+                                         TOTAL_PM, # TOTAL_PATIENTS,
+                                         0)),
+          TOTAL_PATIENTS = sum(TOTAL_PM), #  sum(TOTAL_PATIENTS),
           .groups = "drop"
         ) |>
         dplyr::mutate(PCT_EXCLUDED_PATIENTS = (EXCLUDED_PATIENTS/TOTAL_PATIENTS*100) |> janitor::round_half_up(1)) |>
@@ -81,41 +87,41 @@ mod_05_metrics_age_gender_server <- function(id){
       metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
       dplyr::filter(!is.na(GENDER)) |>
       dplyr::mutate(
-        SDC_COST_MPMM = ifelse(
-          test = is.na(SDC_COST_MPMM),
-          yes = "c",
-          no = as.character(SDC_COST_MPMM)
-        ),
-        SDC_ITEMS_MPMM = ifelse(
-          test = is.na(SDC_ITEMS_MPMM),
-          yes = "c",
-          no = as.character(SDC_ITEMS_MPMM)
-        ),
-        SDC_UNIQUE_MEDICINES_MPMM = ifelse(
-          test = is.na(SDC_UNIQUE_MEDICINES_MPMM),
-          yes = "c",
-          no = as.character(SDC_UNIQUE_MEDICINES_MPMM)
-        ),
-        SDC_PCT_PATIENTS_6_PLUS_MPP = ifelse(
-          test = is.na(SDC_PCT_PATIENTS_6_PLUS_MPP),
-          yes = "c",
-          no = as.character(SDC_PCT_PATIENTS_6_PLUS_MPP)
-        ),
-        SDC_PCT_PATIENTS_10_PLUS_MPP = ifelse(
-          test = is.na(SDC_PCT_PATIENTS_10_PLUS_MPP),
-          yes = "c",
-          no = as.character(SDC_PCT_PATIENTS_10_PLUS_MPP)
-        ),
-        SDC_PCT_PATIENTS_ACB_6_MPP = ifelse(
-          test = is.na(SDC_PCT_PATIENTS_ACB_6_MPP),
-          yes = "c",
-          no = as.character(SDC_PCT_PATIENTS_ACB_6_MPP)
-        ),
-        SDC_PCT_PATIENTS_DAMN_MPP = ifelse(
-          test = is.na(SDC_PCT_PATIENTS_DAMN_MPP),
-          yes = "c",
-          no = as.character(SDC_PCT_PATIENTS_DAMN_MPP)
-        ),
+      #   SDC_COST_MPMM = ifelse(
+      #     test = is.na(SDC_COST_MPMM),
+      #     yes = "c",
+      #     no = as.character(SDC_COST_MPMM)
+      #   ),
+      #   SDC_ITEMS_MPMM = ifelse(
+      #     test = is.na(SDC_ITEMS_MPMM),
+      #     yes = "c",
+      #     no = as.character(SDC_ITEMS_MPMM)
+      #   ),
+      #   SDC_UNIQUE_MEDICINES_MPMM = ifelse(
+      #     test = is.na(SDC_UNIQUE_MEDICINES_MPMM),
+      #     yes = "c",
+      #     no = as.character(SDC_UNIQUE_MEDICINES_MPMM)
+      #   ),
+      #   SDC_PCT_PATIENTS_6_PLUS_MPP = ifelse(
+      #     test = is.na(SDC_PCT_PATIENTS_6_PLUS_MPP),
+      #     yes = "c",
+      #     no = as.character(SDC_PCT_PATIENTS_6_PLUS_MPP)
+      #   ),
+      #   SDC_PCT_PATIENTS_10_PLUS_MPP = ifelse(
+      #     test = is.na(SDC_PCT_PATIENTS_10_PLUS_MPP),
+      #     yes = "c",
+      #     no = as.character(SDC_PCT_PATIENTS_10_PLUS_MPP)
+      #   ),
+      #   SDC_PCT_PATIENTS_ACB_6_MPP = ifelse(
+      #     test = is.na(SDC_PCT_PATIENTS_ACB_6_MPP),
+      #     yes = "c",
+      #     no = as.character(SDC_PCT_PATIENTS_ACB_6_MPP)
+      #   ),
+      #   SDC_PCT_PATIENTS_DAMN_MPP = ifelse(
+      #     test = is.na(SDC_PCT_PATIENTS_DAMN_MPP),
+      #     yes = "c",
+      #     no = as.character(SDC_PCT_PATIENTS_DAMN_MPP)
+      #   ),
         CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")
       ) |>
       dplyr::arrange(FY, GENDER, AGE_BAND, CH_FLAG) |>
@@ -124,13 +130,15 @@ mod_05_metrics_age_gender_server <- function(id){
          Gender = GENDER,
         `Age band` = AGE_BAND,
         `Care home flag` = CH_FLAG,
-        `Drug cost (MPMM)` = SDC_COST_MPMM,
-        `Number of prescription items (MPMM)` = SDC_ITEMS_MPMM,
-        `Number of unique medicines (MPMM)` = SDC_UNIQUE_MEDICINES_MPMM,
-        `Months with 6+ unique medicines (MPP, %)` = SDC_PCT_PATIENTS_6_PLUS_MPP,
-        `Months with 10+ unique medicines (MPP, %)` = SDC_PCT_PATIENTS_10_PLUS_MPP,
-        `Months with ACB of 6+ (MPP, %)` = SDC_PCT_PATIENTS_ACB_6_MPP,
-        `Months with 2+ DAMN medicines (MPP, %)` = SDC_PCT_PATIENTS_DAMN_MPP
+        `Drug cost PPM (£)` = COST_PPM,
+        `Number of prescription items PPM` = ITEMS_PPM,
+        `Number of unique medicines PPM` = UNIQ_MEDS_PPM,
+        `Patient months with 6+ unique medicines (%)` = PCT_PM_GTE_SIX,
+        `Patient months with 10+ unique medicines (%)` = PCT_PM_GTE_TEN,
+        `Patient months with ACB risk (%)` = PCT_PM_ACB,
+        `Patient months with DAMN risk (%)` = PCT_PM_DAMN,
+        `Number of unique fall-risk medicines PPM` = UNIQ_MEDS_FALLS_PPM,
+        `Patient months with falls risk (%)` = PCT_PM_FALLS
       )
 
     # Add a download button
@@ -232,13 +240,15 @@ mod_05_metrics_age_gender_server <- function(id){
           title = list(
           text = paste(
           switch(input$gender_and_age_band_and_ch_flag_metric,
-                "SDC_COST_MPMM" = "Drug cost (£)",
-                "SDC_ITEMS_MPMM" = "Number of prescription items",
-                "SDC_UNIQUE_MEDICINES_MPMM" = "Number of unique medicines",
-                "SDC_PCT_PATIENTS_6_PLUS_MPP" = "Months with 6+ unique medicines (MPP, %)",
-                "SDC_PCT_PATIENTS_10_PLUS_MPP" = "Months with 10+ unique medicines (MPP, %)",
-                "SDC_PCT_PATIENTS_ACB_6_MPP" = "Months with ACB of 6+ (MPP, %)",
-                "SDC_PCT_PATIENTS_DAMN_MPP" = "Months with 2+ DAMN medicines (MPP, %)"
+                 "COST_PPM" = "Drug cost PPM (\u00A3)",
+                 "ITEMS_PPM" = "Number of prescription items PPM",
+                 "UNIQ_MEDS_PPM" = "Number of unique medicines PPM",
+                 "PCT_PM_GTE_SIX" = "Patient months with 6+ unique medicines (%)",
+                 "PCT_PM_GTE_TEN" = "Patient months with 10+ unique medicines (%)",
+                 "PCT_PM_ACB" = "Patient months with ACB risk (%)",
+                 "PCT_PM_DAMN" = "Patient months with DAMN risk (%)",
+                 "UNIQ_MEDS_FALLS_PPM" = "Number of unique fall-risk medicines PPM",
+                 "PCT_PM_FALLS" = "Patient months with falls risk (%)"
                   )
                 )
               )
@@ -253,22 +263,25 @@ mod_05_metrics_age_gender_server <- function(id){
           shared = T,
           useHTML = T,
           valueDecimals = switch(input$gender_and_age_band_and_ch_flag_metric,
-                                 "SDC_COST_MPMM" = 0,
-                                 "SDC_ITEMS_MPMM" = 1,
-                                 "SDC_UNIQUE_MEDICINES_MPMM" = 1,
-                                 "SDC_PCT_PATIENTS_6_PLUS_MPP" = 1,
-                                 "SDC_PCT_PATIENTS_10_PLUS_MPP" = 1,
-                                 "SDC_PCT_PATIENTS_ACB_6_MPP" = 1,
-                                 "SDC_PCT_PATIENTS_DAMN_MPP" = 1
+                                 "COST_PPM" = 0,
+                                 "ITEMS_PPM" = 1,
+                                 "UNIQ_MEDS_PPM" = 1,
+                                 "PCT_PM_GTE_SIX" = 1,
+                                 "PCT_PM_GTE_TEN" = 1,
+                                 "PCT_PM_ACB" = 1,
+                                 "PCT_PM_DAMN" = 1,
+                                 "UNIQ_MEDS_FALLS_PPM" = 1,
+                                 "PCT_PM_FALLS" = 1
                                  ),
           headerFormat = "<b> {point.value:.1f} </b>",
           valueSuffix = switch(input$gender_and_age_band_and_ch_flag_metric,
-                              "SDC_PCT_PATIENTS_6_PLUS_MPP" = "%",
-                              "SDC_PCT_PATIENTS_10_PLUS_MPP" = "%",
-                              "SDC_PCT_PATIENTS_ACB_6_MPP" = "%",
-                              "SDC_PCT_PATIENTS_DAMN_MPP" = "%"),
+                              "PCT_PM_GTE_SIX" = "%",
+                              "PCT_PM_GTE_TEN" = "%",
+                              "PCT_PM_ACB" = "%",
+                              "PCT_PM_DAMN" = "%",
+                              "PCT_PM_FALLS" = "%"),
           valuePrefix = switch(input$gender_and_age_band_and_ch_flag_metric,
-                              "SDC_COST_MPMM" = "£")
+                              "COST_PPM" = "£")
           ) |>
       
         highcharter::hc_legend(
