@@ -1,76 +1,123 @@
 
-# Section level drug groups
-falls_section_vec = c(
+# Libraries
+library(dplyr)
+library(dbplyr)
+
+# Falls risk drug sections
+section_vec = c(
   'Antidepressant drugs',
   'Antiepileptic drugs',
   'Diuretics',
-  'Hypertension and heart failure'
-  )
- 
-# Paragraph level drug groups
-falls_paragraph_vec = c(
+  'Hypertension and heart failure',
+  'Hypnotics and anxiolytics'
+)
+
+# Falls risk paragraphs
+paragraph_vec = c(
   'Antipsychotic depot injections',
   'Antipsychotic drugs',
   'Opioid analgesics',
   'Opioid dependence',
   'Alpha-adrenoceptor blocking drugs',
   'Antihistamines',
-  'Vasoconstrictor sympathomimetics',
   'Vasodilator antihypertensive drugs',
-  'Drugs for urinary frequency enuresis and incontinence'
+  'Drugs for urinary frequency enuresis and incontinence',
+  'Nitrates'
 )
 
-# Chem sub leevel groups
-falls_chem_vec = c('Midazolam hydrochloride')
+# Falls risk drug chem
+chem_sub_vec = c('Midazolam hydrochloride')
 
-# Libraries
-library(dplyr)
-library(dbplyr)
+# Falls risk chem sub exlcusions
+exclude_chem_sub_vec = c(
+  'Paraldehyde',
+  'Mirabegron',
+  'Mannitol',
+  'Loratadine',
+  'Desloratadine',
+  'Bilastine',
+  'Minoxidil'
+)
 
-# Set up connection to DALP (sub paragraph benzodiazapenes)
+# Part One: collect chem sub-level falls risk med list -------------------------
+
+# Set up connection to DALP 
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Create a lazy table from year month dim table in DWCP
+drug_db <- con %>%
+  tbl(from = in_schema("DIM", "CDR_DY_DRUG_BNF_DIM"))
+
+# Join drug list
+drug_list_db = drug_db %>% 
+  filter(
+    YEAR_MONTH == 202303,
+    SECTION_DESCR %in% section_vec | PARAGRAPH_DESCR %in% paragraph_vec | CHEMICAL_SUBSTANCE_BNF_DESCR %in% chem_sub_vec,
+    !CHEMICAL_SUBSTANCE_BNF_DESCR %in% exclude_chem_sub_vec
+  ) %>% 
+  select(PARAGRAPH_DESCR, CHEMICAL_SUBSTANCE_BNF_DESCR) %>% 
+  distinct()
+
+# Inspect drug list
+drug_list_df = drug_list_db %>% collect()
+
+# Part Two: Mean unique falls risk meds ---------------------------------------- 
 
 # Create lazy table
 data <- con %>%
-  tbl(from = in_schema("MAMCP", "INT646_BASE_20220401_20230331"))
-
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  
 # Distinct patient-month combinations for left join
-pat_month = data %>% 
-  filter(CH_FLAG == 1) %>% 
+pat_months = data %>% 
+  filter(
+    FY == "2022/23",
+    CH_FLAG == 1
+    ) %>% 
   select(NHS_NO, YEAR_MONTH, PCD_ICB_NAME) %>% 
   distinct()
 
 # Number of unique falls rish chem subs per month (in which they received presc)
 pat_presc = data %>% 
-  filter(
-    CH_FLAG == 1,
-    CHAPTER_DESCR %in% falls_section_vec | PARAGRAPH_DESCR %in% falls_paragraph_vec | CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_chem_vec
-  ) %>% 
+  inner_join(drug_list_db) %>% 
   group_by(YEAR_MONTH, NHS_NO, PCD_ICB_NAME) %>% 
   summarise(N_DRUG =  n_distinct(CHEMICAL_SUBSTANCE_BNF_DESCR)) %>% 
   ungroup()
 
-# Collect for multiple local aggregations
-df = pat_month %>% 
+# Collect df output
+df = pat_months %>% 
   left_join(pat_presc) %>% 
   mutate(N_DRUG = ifelse(is.na(N_DRUG), 0, N_DRUG)) %>% 
+  group_by(PCD_ICB_NAME) %>% 
+  summarise(N_DRUG = mean(N_DRUG)) %>% 
+  ungroup() %>% 
   collect()
 
-# Sample output
-output = df %>% 
-  group_by(NHS_NO, ICB = PCD_ICB_NAME) %>% 
-  summarise(
-    MEAN = mean(N_DRUG),
-    `2+` = 100 * (sum(N_DRUG >= 2) / n()),
-    `3+` = 100 * (sum(N_DRUG >= 3) / n()),
-    `4+` = 100 * (sum(N_DRUG >= 4) / n()),
-    `5+` = 100 * (sum(N_DRUG >= 5) / n())
-    ) %>% 
-  ungroup() %>% 
-  select(-NHS_NO) %>% 
-  group_by(ICB) %>% 
-  summarise_all(.funs = function(x) janitor::round_half_up(mean(x),2)) %>% 
-  ungroup()
+# Part Three: Proportion 3+ falls risk meds ------------------------------------
+
+# Proportion 3+ falls risk meds
+# df_two = data %>% 
+#   filter(
+#     FY == "2022/23",
+#     CH_FLAG == 1
+#   ) %>% 
+#   inner_join(drug_list_db) %>% 
+#   group_by(YEAR_MONTH, NHS_NO, PCD_ICB_NAME) %>% 
+#   summarise(
+#     PROP_3_PLUS = case_when(
+#       n_distinct(BNF_CHEMICAL_SUBSTANCE) >= 3 ~ 1,
+#       TRUE ~ 0
+#     )
+#   ) %>% 
+#   ungroup() %>% 
+#   group_by(PCD_ICB_NAME) %>% 
+#   summarise(PROP_3_PLUS = sum(PROP_3_PLUS) / n()) %>% 
+#   ungroup() %>% 
+#   collect()
+
+# Part four: data export -------------------------------------------------------
+
+# join outputs
+output = inner_join(df, df_two)
 
 # Export 
 write.csv(output, "C:/Users/ADNSH/OneDrive - NHS Business Services Authority/Desktop/FALLS_RISK_METRICS_SAMPLE.csv")
