@@ -24,11 +24,11 @@ geography_db <- con %>%
 
 # Create a lazy table from the postcode data table
 postcode_db <- con %>%
-  tbl(from = in_schema("DIM", sql("ONS_POSTCODE_DATA_DIM@DWCP.WORLD")))
+  tbl(from = in_schema("DIM", sql("ONS_POSTCODE_DATA_DIM")))
 
 # Create a lazy table from postcode to lat-long mappings
 postcode_latlong <- con %>%
-  tbl(from = in_schema("DIM", sql("ONS_POSTCODE_LAT_LON_DIM@DWCP.WORLD")))
+  tbl(from = in_schema("DIM", sql("ONS_POSTCODE_LAT_LON_DIM")))
 
 # Create a lazy table for IMD data
 imd_db <- con %>%
