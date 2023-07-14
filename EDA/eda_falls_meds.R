@@ -114,7 +114,48 @@ df = pat_months %>%
 #   ungroup() %>% 
 #   collect()
 
-# Part four: data export -------------------------------------------------------
+# Part four: falls 5+ check ----------------------------------------------------
+
+falls_5_df = data %>% 
+  filter(FY == "2020/21") %>% 
+  mutate(
+    FALLS_CAT = case_when(
+      (SECTION_DESCR %in% section_vec |
+         PARAGRAPH_DESCR %in% paragraph_vec |
+         CHEMICAL_SUBSTANCE_BNF_DESCR %in% chem_sub_vec) &
+        !CHEMICAL_SUBSTANCE_BNF_DESCR %in% exclude_chem_sub_vec ~ 1,
+      TRUE ~ 0
+    )
+  ) %>% 
+  group_by(YEAR_MONTH, NHS_NO, PCD_LAD_NAME, CH_FLAG) %>% 
+  summarise(
+    FALLS = case_when(
+      n_distinct(BNF_CHEMICAL_SUBSTANCE[FALLS_CAT == 1]) >= 5 ~ 1L,
+      TRUE ~ 0L
+    )
+  ) %>%
+  ungroup() %>% 
+  group_by(PCD_LAD_NAME, CH_FLAG) %>% 
+  summarise(PCT_PM_FALLS = 100 * (sum(FALLS) / n())) %>% 
+  ungroup() %>% 
+  nhsbsaR::collect_with_parallelism(., 16)
+
+
+a = falls_5_df %>% 
+  filter(CH_FLAG == 0) %>% 
+  select(PCT_PM_FALLS, CH_FLAG) %>% 
+  arrange(PCT_PM_FALLS) %>%
+  mutate(ROW = row_number())
+
+b = falls_5_df %>% 
+  filter(CH_FLAG == 1) %>% 
+  select(PCT_PM_FALLS, CH_FLAG) %>% 
+  arrange(PCT_PM_FALLS) %>% 
+  mutate(ROW = row_number())
+
+hchart(rbind(a,b), "spline", hcaes(ROW, PCT_PM_FALLS, group = CH_FLAG))
+
+# Part five: data export -------------------------------------------------------
 
 # join outputs
 output = inner_join(df, df_two)
