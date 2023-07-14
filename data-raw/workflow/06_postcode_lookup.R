@@ -35,23 +35,23 @@ imd_db <- con %>%
   tbl(from = in_schema("DALL_REF", "ONS_INDEX_OF_MULTIPLE_DEPRIVATION"))
 
 postcode_db <- postcode_db %>%
-  filter(COUNTRY_CODE == "E92000001") %>% 
+  filter(COUNTRY_CODE == "E92000001") %>%
+  simple_format_postcode_db(POSTCODE) %>%
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   ungroup() %>% 
-  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) %>%
-  personMatchR::format_postcode_db(POSTCODE)
+  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) 
 
 postcode_latlong <- postcode_latlong %>%
+  simple_format_postcode_db(POSTCODE) %>%
   group_by(POSTCODE) %>%
   window_order(desc(YEAR_MONTH)) %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   ungroup() %>%
-  select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE) %>%
-  personMatchR::format_postcode_db(POSTCODE)
+  select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE)
   
 # Join to the postcode lookup to get NHS Region, ICB and LA based on their mappings to LSOAs
 postcode_db <- postcode_db %>%
