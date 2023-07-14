@@ -1,3 +1,4 @@
+source("R/utils_helpers.R")
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -135,6 +136,32 @@ fact_db = fact_db %>%
 # Get drug info
 drug_db = drug_db %>% 
   filter(YEAR_MONTH %in% year_month) %>%
+  mutate(
+    CHAPTER_1_4_6_10_CAT = case_when(
+      as.integer(
+        substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)
+      ) %in% c(1:4, 6:10) ~ 1,
+      TRUE ~ 0
+    ),
+    ACB_CAT = case_when(
+      BNF_CHEMICAL_SUBSTANCE %in% acb_drugs ~ 1,
+      TRUE ~ 0
+    ),
+    DAMN_CAT = case_when(
+      REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^100101') > 0 ~ 1,
+      REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205051') > 0 ~ 1,
+      REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205052') > 0 ~ 1,
+      BNF_CHEMICAL_SUBSTANCE %in% other_drug_vec ~ 1,
+      TRUE ~ 0
+    ),
+    FALLS_CAT = case_when(
+      (SECTION_DESCR %in% falls_section_vec |
+         PARAGRAPH_DESCR %in% falls_paragraph_vec |
+         CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_chem_vec) &
+        !CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_exclude_chem_vec ~ 1,
+      TRUE ~ 0
+    )
+  ) %>%
   select(
     YEAR_MONTH,
     PAY_DRUG_RECORD_ID = RECORD_ID,
@@ -143,7 +170,11 @@ drug_db = drug_db %>%
     PARAGRAPH_DESCR,
     CHEMICAL_SUBSTANCE_BNF_DESCR,
     BNF_CHEMICAL_SUBSTANCE,
-    BASE_NAME
+    BASE_NAME,
+    CHAPTER_1_4_6_10_CAT,
+    ACB_CAT,
+    DAMN_CAT,
+    FALLS_CAT
   )
 
 # Process prescriber information
@@ -300,6 +331,10 @@ fact_join_db = fact_db %>%
     AB_FLAG = case_when(is.na(AB_FLAG) ~ 0, T ~ AB_FLAG),
     UPRN_FLAG = case_when(is.na(UPRN_FLAG) ~ 0, T ~ UPRN_FLAG),
     CH_FLAG = case_when(is.na(CH_FLAG) ~ 0, T ~ CH_FLAG),
+    CH_FLAG = case_when(
+      RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
+      TRUE ~ CH_FLAG
+    ),
     MATCH_TYPE = case_when(is.na(MATCH_TYPE) ~ "NO MATCH", T ~ MATCH_TYPE)
   ) %>%
   select(
@@ -346,6 +381,10 @@ fact_join_db = fact_db %>%
     CHEMICAL_SUBSTANCE_BNF_DESCR,
     BNF_CHEMICAL_SUBSTANCE,
     BASE_NAME,
+    CHAPTER_1_4_6_10_CAT,
+    ACB_CAT,
+    DAMN_CAT,
+    FALLS_CAT,
     # Prescriber info
     PRESC_SLA,
     PRESC_POSTCODE,
