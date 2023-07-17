@@ -600,7 +600,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_icb_metric)
 
       # Plot table
-      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix())
+      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix()) %>% 
+        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
 
     # LA: Initial table
@@ -612,7 +613,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_lad_metric)
 
       # Plot table
-      geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix())
+      geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix()) %>% 
+        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
     
     # LHS: table affects -------------------------------------------------------
