@@ -15,15 +15,15 @@ mod_05_metrics_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
                         choices = c(
-                          "Mean drug cost PPM (\u00A3)" = "COST_PPM",
-                          "Mean number of prescription items PPM" = "ITEMS_PPM",
-                          "Mean number of unique medicines PPM" = "UNIQ_MEDS_PPM",
-                          "Patient months with 6+ unique medicines (%)" = "PCT_PM_GTE_SIX",
-                          "Patient months with 10+ unique medicines (%)" = "PCT_PM_GTE_TEN",
-                          "Patient months with ACB risk (%)" = "PCT_PM_ACB",
-                          "Patient months with DAMN risk (%)" = "PCT_PM_DAMN",
-                          "Mean number of unique fall-risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
-                          "Patient months with falls risk (%)" = "PCT_PM_FALLS"
+                          "Mean cost PPM" = "COST_PPM",
+                          "Mean items PPM" = "ITEMS_PPM",
+                          "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
+                          "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
+                          "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
+                          "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
+                          "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
+                          "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+                          "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
                           ),
                         full_width = T)
         ),
