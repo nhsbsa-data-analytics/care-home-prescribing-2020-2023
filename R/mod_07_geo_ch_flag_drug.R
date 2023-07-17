@@ -561,17 +561,21 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # Region: select row
     index_region = reactive({
-      reactable::getReactableState("region_table", "selected")
+      # Select 1st row on initialisation
+      t <- reactable::getReactableState("region_table", "selected")
+      ifelse(is.null(t), 1, t)
     })
     
     # Region: select row
     index_icb = reactive({
-      reactable::getReactableState("icb_table", "selected")
+      t <- reactable::getReactableState("icb_table", "selected")
+      ifelse(is.null(t), 1, t) 
     })
     
     # Region: select row
     index_lad = reactive({
-      reactable::getReactableState("lad_table", "selected")
+      t <- reactable::getReactableState("lad_table", "selected")
+      ifelse(is.null(t), 1, t)
     })
 
     # Region: Initial table
