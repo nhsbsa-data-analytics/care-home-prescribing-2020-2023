@@ -583,7 +583,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_region_metric)
 
       # Plot table
-      geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix())
+      geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix()) %>% 
+      htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
 
     # Icb: Initial table
