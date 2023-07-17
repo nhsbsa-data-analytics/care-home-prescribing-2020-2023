@@ -15,14 +15,14 @@ mod_05_metrics_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
                         choices = c(
-                          "Mean cost PPM" = "COST_PPM",
-                          "Mean items PPM" = "ITEMS_PPM",
+                          "Mean drug cost PPM (\u00A3)" = "COST_PPM",
+                          "Mean number of prescription items PPM" = "ITEMS_PPM",
                           "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
                           "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
                           "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
                           "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
                           "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
-                          "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+                          "Mean number of unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
                           "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
                           ),
                         full_width = T)
@@ -86,44 +86,7 @@ mod_05_metrics_age_gender_server <- function(id){
       
       carehomes2::metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
       dplyr::filter(!is.na(GENDER)) |>
-      dplyr::mutate(
-      #   SDC_COST_MPMM = ifelse(
-      #     test = is.na(SDC_COST_MPMM),
-      #     yes = "c",
-      #     no = as.character(SDC_COST_MPMM)
-      #   ),
-      #   SDC_ITEMS_MPMM = ifelse(
-      #     test = is.na(SDC_ITEMS_MPMM),
-      #     yes = "c",
-      #     no = as.character(SDC_ITEMS_MPMM)
-      #   ),
-      #   SDC_UNIQUE_MEDICINES_MPMM = ifelse(
-      #     test = is.na(SDC_UNIQUE_MEDICINES_MPMM),
-      #     yes = "c",
-      #     no = as.character(SDC_UNIQUE_MEDICINES_MPMM)
-      #   ),
-      #   SDC_PCT_PATIENTS_6_PLUS_MPP = ifelse(
-      #     test = is.na(SDC_PCT_PATIENTS_6_PLUS_MPP),
-      #     yes = "c",
-      #     no = as.character(SDC_PCT_PATIENTS_6_PLUS_MPP)
-      #   ),
-      #   SDC_PCT_PATIENTS_10_PLUS_MPP = ifelse(
-      #     test = is.na(SDC_PCT_PATIENTS_10_PLUS_MPP),
-      #     yes = "c",
-      #     no = as.character(SDC_PCT_PATIENTS_10_PLUS_MPP)
-      #   ),
-      #   SDC_PCT_PATIENTS_ACB_6_MPP = ifelse(
-      #     test = is.na(SDC_PCT_PATIENTS_ACB_6_MPP),
-      #     yes = "c",
-      #     no = as.character(SDC_PCT_PATIENTS_ACB_6_MPP)
-      #   ),
-      #   SDC_PCT_PATIENTS_DAMN_MPP = ifelse(
-      #     test = is.na(SDC_PCT_PATIENTS_DAMN_MPP),
-      #     yes = "c",
-      #     no = as.character(SDC_PCT_PATIENTS_DAMN_MPP)
-      #   ),
-        CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")
-      ) |>
+      dplyr::mutate(CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")) |>
       dplyr::arrange(FY, GENDER, AGE_BAND, CH_FLAG) |>
        dplyr::select(
         `Financial year` = FY,
@@ -161,6 +124,13 @@ mod_05_metrics_age_gender_server <- function(id){
     female_non_ch <- fa_to_png_to_datauri(name = "venus", width = 9 * symbol_scaling, fill = non_ch_col)
     male_ch <- fa_to_png_to_datauri(name = "mars", width = 11 * symbol_scaling, fill = ch_col)
     male_non_ch <- fa_to_png_to_datauri(name = "mars", width = 11 * symbol_scaling, fill = non_ch_col)
+    
+    # Max on Y-axis per metric
+    max_values_per_metric <- carehomes2::metrics_by_age_gender_and_ch_flag_df |>
+      dplyr::summarise(
+        dplyr::across(dplyr::ends_with("_PPM") | dplyr::starts_with("PCT_"), max)
+      ) |>
+      tidyr::pivot_longer(everything(), names_to = "metric")
     
     # Create the chart
     output$metrics_by_gender_and_age_band_and_ch_flag_chart <- highcharter::renderHighchart({
@@ -237,18 +207,21 @@ mod_05_metrics_age_gender_server <- function(id){
       
         highcharter::hc_yAxis(
           min = 0,
+          max = max_values_per_metric |>
+                dplyr::filter(metric == input$gender_and_age_band_and_ch_flag_metric) |>
+                dplyr::pull(value) * 1.1,
           title = list(
           text = paste(
           switch(input$gender_and_age_band_and_ch_flag_metric,
                  "COST_PPM" = "Mean drug cost PPM (\u00A3)",
                  "ITEMS_PPM" = "Mean number of prescription items PPM",
                  "UNIQ_MEDS_PPM" = "Mean number of unique medicines PPM",
-                 "PCT_PM_GTE_SIX" = "Patient months with 6+ unique medicines (%)",
-                 "PCT_PM_GTE_TEN" = "Patient months with 10+ unique medicines (%)",
-                 "PCT_PM_ACB" = "Patient months with ACB risk (%)",
-                 "PCT_PM_DAMN" = "Patient months with DAMN risk (%)",
+                 "PCT_PM_GTE_SIX" = "Patient-months with 6+ unique medicines (%)",
+                 "PCT_PM_GTE_TEN" = "Patient-months with 10+ unique medicines (%)",
+                 "PCT_PM_ACB" = "Patient-months with ACB risk (%)",
+                 "PCT_PM_DAMN" = "Patient-months with DAMN risk (%)",
                  "UNIQ_MEDS_FALLS_PPM" = "Mean number of unique fall-risk medicines PPM",
-                 "PCT_PM_FALLS" = "Patient months with falls risk (%)"
+                 "PCT_PM_FALLS" = "Patient-months with falls risk (%)"
                   )
                 )
               )
