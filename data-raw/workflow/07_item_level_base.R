@@ -420,7 +420,7 @@ drop_table_if_exists_db(table_name)
 print("Output being computed to be written back to the db ...")
 
 # Write the table back to DALP
-fact_join_db %>% compute_with_parallelism(table_name, 12)
+fact_join_db %>% compute_with_parallelism(table_name, 32)
 
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))

@@ -39,7 +39,7 @@ create_care_home_address_match(
 # 6. Create postcode lookup table (latest available mappings) for joining in the next step: ~5 min
 # create_postcode_lookup() # Run once in first epoch script
 
-# 7. Join to fact table and get non ch-postcode records within time frame: ~15-17hr
+# 7. Join to fact table and get non ch-postcode records within time frame: ~9 hrs
 create_matched_prescription_base_table(
   match_data = "INT646_MATCH_20210401_20220331",
   form_data = "INT646_FORMS_20210401_20220331"
