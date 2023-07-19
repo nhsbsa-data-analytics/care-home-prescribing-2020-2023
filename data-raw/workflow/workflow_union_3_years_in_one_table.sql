@@ -10,7 +10,7 @@ union all
 select '2022/23' fy, y3.* from migar.int646_base_20220401_20230331 y3
 ;
 
-grant select on int646_base_20200401_20230331 to migar, adnsh, mamcp
+grant select on int646_base_20200401_20230331 to migar, adnsh, mamcp;
 
 create index int646_i01 on int646_base_20200401_20230331 (fy);
 create index int646_i02 on int646_base_20200401_20230331 (fy, year_month);
