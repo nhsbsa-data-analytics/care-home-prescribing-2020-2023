@@ -2,10 +2,10 @@
 #' carehome or non-carehome
 #'
 #' \itemize{
-#'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
 #'   \item GEOGRAPHY. Region, ICB or Local Authority
 #'   \item SUB_GEOGRAPHY_CODE. region or organisational codes
 #'   \item SUB_GEOGRAPHY_NAME. name in breakdown
+#'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
 #'   \item CH_FLAG. do metrics apply to carehomes?, \code{TRUE} or \code{FALSE}
 #'   \item ITEMS_PPM. Mean number of items prescribed per patient-month
 #'   \item COST_PPM. Mean cost of items prescribed per patient-month
