@@ -21,6 +21,7 @@ app_ui <- function(request) {
         class = "nhsuk-main-wrapper",
         id = "maincontent",
         role = "main",
+        h1("Estimated prescribing patterns for care home patients aged 65 years or over"),
         nhs_navlistPanel(
           well = FALSE,
           widths = c(2, 10),
@@ -47,13 +48,14 @@ app_ui <- function(request) {
             #mod_11_caveats_ui("caveats")
           )
         ),
-        # Move to js file
-        tags$script(" $(document).ready(function () {
-      $('#maincontent a[data-toggle=\"tab\"]').on('click', function (e) {
-         window.scrollTo(0, 0)
+        tags$script("
+          $(document).ready(
+            function () {
+              $('.app-side-nav__list a[data-toggle=\"tab\"]').on('click', function (e) {
+                window.scrollTo(0, 0)
             });
-            });"),
-      #tags$head(tags$script(src = "survey.js"))
+          });
+        ")
       )
     ),
     br(),

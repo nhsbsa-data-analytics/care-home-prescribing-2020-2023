@@ -53,22 +53,69 @@ mod_nhs_download_server <- function(id, filename, export_data) {
     output$download <- downloadHandler(
       filename = filename,
       content = function(file) {
-        wb <- openxlsx::createWorkbook()
-        openxlsx::addWorksheet(wb, "Prescribing data")
-        openxlsx::writeData(
-          wb,
-          "Prescribing data",
-          if (is.data.frame(export_data)) export_data else export_data(),
-          rowNames = FALSE,
-          withFilter = TRUE
-        )
-        openxlsx::setColWidths(
-          wb,
-          "Prescribing data",
-          cols = seq_along(export_data),
-          widths = "auto"
-        )
-        openxlsx::saveWorkbook(wb, file)
+        # Separate process for CSV
+        if (filename %>% endsWith("csv")) {
+          write.table(
+            # Handle possibility of reactive input
+            x = if (is.data.frame(export_data)) export_data else export_data(),
+            file = file,
+            row.names = FALSE,
+            quote = FALSE,
+            sep = ","
+          )
+          # If it is not a CSV, it is an XLSX
+        } else {
+          # Handle possibility of reactive input
+          df <- if (is.data.frame(export_data)) export_data else export_data()
+          # Divide any % columns by 100, as will be using formatting whereby
+          # they will be multiplied by 100
+          df <- df %>%
+            dplyr::mutate(
+              dplyr::across(
+                dplyr::contains("%"),
+                ~ . / 100
+              )
+            )
+          # Get currency and % column indices for styling
+          currency_cols <- grep("cost", names(df))
+          percent_cols <- grep("%", names(df))
+          wb <- openxlsx::createWorkbook()
+          openxlsx::addWorksheet(wb, "Prescribing data")
+          # Add currency styling
+          s <- openxlsx::createStyle(numFmt = "£0")
+          openxlsx::addStyle(
+            wb,
+            1,
+            style = s,
+            rows = 1:nrow(df) + 1,
+            cols = currency_cols,
+            gridExpand = TRUE
+          )
+          # Add % styling
+          s <- openxlsx::createStyle(numFmt = "0.00%")
+          openxlsx::addStyle(
+            wb,
+            1,
+            style = s,
+            rows = 1:nrow(df) + 1,
+            cols = percent_cols,
+            gridExpand = TRUE
+          )
+          openxlsx::writeData(
+            wb,
+            "Prescribing data",
+            df,
+            rowNames = FALSE,
+            withFilter = TRUE
+          )
+          openxlsx::setColWidths(
+            wb,
+            "Prescribing data",
+            cols = seq_along(export_data),
+            widths = "auto"
+          )
+          openxlsx::saveWorkbook(wb, file)
+        }
       }
     )
   })

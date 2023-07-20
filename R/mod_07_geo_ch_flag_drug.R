@@ -561,17 +561,21 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # Region: select row
     index_region = reactive({
-      reactable::getReactableState("region_table", "selected")
+      # Select 1st row on initialisation
+      t <- reactable::getReactableState("region_table", "selected")
+      ifelse(is.null(t), 1, t)
     })
     
     # Region: select row
     index_icb = reactive({
-      reactable::getReactableState("icb_table", "selected")
+      t <- reactable::getReactableState("icb_table", "selected")
+      ifelse(is.null(t), 1, t) 
     })
     
     # Region: select row
     index_lad = reactive({
-      reactable::getReactableState("lad_table", "selected")
+      t <- reactable::getReactableState("lad_table", "selected")
+      ifelse(is.null(t), 1, t)
     })
 
     # Region: Initial table
@@ -583,7 +587,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_region_metric)
 
       # Plot table
-      geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix())
+      geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix()) %>% 
+      htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
 
     # Icb: Initial table
@@ -595,7 +600,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_icb_metric)
 
       # Plot table
-      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix())
+      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix()) %>% 
+        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
 
     # LA: Initial table
@@ -607,7 +613,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_lad_metric)
 
       # Plot table
-      geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix())
+      geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix()) %>% 
+        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
     
     # LHS: table affects -------------------------------------------------------

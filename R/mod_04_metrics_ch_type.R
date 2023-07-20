@@ -16,15 +16,15 @@ mod_04_metrics_ch_type_ui <- function(id) {
             inputId = ns("metric"),
             label = "Metric",
             choices = c(
-              "Drug cost PPM (\u00A3)" = "COST_PPM",
-              "Number of prescription items PPM" = "ITEMS_PPM",
-              "Number of unique medicines PPM" = "UNIQ_MEDS_PPM",
-              "Patient months with 6+ unique medicines (%)" = "PCT_PM_GTE_SIX",
-              "Patient months with 10+ unique medicines (%)" = "PCT_PM_GTE_TEN",
-              "Patient months with ACB risk (%)" = "PCT_PM_ACB",
-              "Patient months with DAMN risk (%)" = "PCT_PM_DAMN",
-              "Number of unique fall-risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
-              "Patient months with falls risk (%)" = "PCT_PM_FALLS"
+              "Mean cost PPM" = "COST_PPM",
+              "Mean items PPM" = "ITEMS_PPM",
+              "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
+              "% of patient months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
+              "% of patient months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
+              "% of patient months with 2+ ACB medicines" = "PCT_PM_ACB",
+              "% of patient months with 2+ DAMN medicines" = "PCT_PM_DAMN",
+              "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+              "% of patient months with 3+ falls risk medicines" = "PCT_PM_FALLS"
             ),
             full_width = TRUE
           )
@@ -76,28 +76,28 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Map metric column names to UI metric names
     ui_metric_names <- c(
-      COST_PPM            = "Drug cost PPM (\u00A3)",
-      ITEMS_PPM           = "Number of prescription items PPM",
-      UNIQ_MEDS_PPM       = "Number of unique medicines PPM",
-      PCT_PM_GTE_SIX      = "Patient months with 6+ unique medicines (%)",
-      PCT_PM_GTE_TEN      = "Patient months with 10+ unique medicines (%)",
-      PCT_PM_ACB          = "Patient months with ACB risk (%)",
-      PCT_PM_DAMN         = "Patient months with DAMN risk (%)",
-      UNIQ_MEDS_FALLS_PPM = "Number of unique fall-risk medicines PPM",
-      PCT_PM_FALLS        = "Patient months with falls risk (%)"
+      COST_PPM            = "Mean cost PPM",
+      ITEMS_PPM           = "Mean items PPM",
+      UNIQ_MEDS_PPM       = "Mean unique medicines PPM",
+      PCT_PM_GTE_SIX      = "% of patient months with 6+ unique medicines",
+      PCT_PM_GTE_TEN      = "% of patient months with 10+ unique medicines",
+      PCT_PM_ACB          = "% of patient months with 2+ ACB medicines",
+      PCT_PM_DAMN         = "% of patient months with 2+ DAMN medicines",
+      UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
+      PCT_PM_FALLS        = "% of patient months with 3+ falls risk medicines"
     )
     
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
-      COST_PPM            = "<b>Drug cost PPM:</b> \u00A3{point.y}",
-      ITEMS_PPM           = "<b>Number of prescription items PPM:</b> {point.y:.2f}",
-      UNIQ_MEDS_PPM       = "<b>Number of unique medicines PPM:</b> {point.y:.2f}",
-      PCT_PM_GTE_SIX      = "<b>Patient months with 6+ unique medicines:</b> {point.y:.2f}%",
-      PCT_PM_GTE_TEN      = "<b>Patient months with 10+ unique medicines:</b> {point.y:.2f}%",
-      PCT_PM_ACB          = "<b>Patient months with ACB risk:</b> {point.y:.2f}%",
-      PCT_PM_DAMN         = "<b>Patient months with DAMN risk:</b> {point.y:.2f}%",
-      UNIQ_MEDS_FALLS_PPM = "<b>Number of unique fall-risk medicines PPM</b> {point.y:.2f}",
-      PCT_PM_FALLS        = "<b>Patient months with falls risk</b> {point.y:.2f}%"
+      COST_PPM            = "<b>Mean cost PPM:</b> \u00A3{point.y}",
+      ITEMS_PPM           = "<b>Mean items PPM:</b> {point.y:.2f}",
+      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.2f}",
+      PCT_PM_GTE_SIX      = "<b>% of patient months with 6+ unique medicines:</b> {point.y:.2f}%",
+      PCT_PM_GTE_TEN      = "<b>% of patient months with 10+ unique medicines:</b> {point.y:.2f}%",
+      PCT_PM_ACB          = "<b>% of patient months with 2+ ACB medicines:</b> {point.y:.2f}%",
+      PCT_PM_DAMN         = "<b>% of patient months with 2+ DAMN medicines:</b> {point.y:.2f}%",
+      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.2f}",
+      PCT_PM_FALLS        = "<b>% of patient months with 3+ falls risk medicines</b> {point.y:.2f}%"
     )
     
     # Map all column names to download data names
