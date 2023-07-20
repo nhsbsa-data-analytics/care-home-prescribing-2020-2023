@@ -12,6 +12,22 @@ data_db <- con %>%
 
 # Key findings used within analysis summary text
 data_db %>% 
+  filter(CH_FLAG == 1) %>% 
+  group_by(FY, YEAR_MONTH) %>% 
+  summarise(
+    PATS = n_distinct(NHS_NO),
+    ITEMS = sum(ITEM_COUNT),
+    NIC = sum(ITEM_PAY_DR_NIC) / 100
+  ) %>% 
+  ungroup() %>% 
+  nhsbsaR::collect_with_parallelism(., 16) %>% 
+  group_by(FY) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup() %>% 
+  arrange(FY)
+  
+# Key findings used within analysis summary text
+data_db %>% 
   group_by(FY, CH_FLAG) %>% 
   summarise(
     PATS = n_distinct(NHS_NO),
@@ -25,10 +41,10 @@ data_db %>%
     TOTAL_NIC = sum(NIC),
     TOTAL_ITEMS = sum(ITEMS),
     PROP_ITEMS = ITEMS / TOTAL_ITEMS * 100,
-    PROP_NI = NIC /TOTAL_NIC * 100
+    PROP_NIC = NIC /TOTAL_NIC * 100
   ) %>% 
   arrange(FY)
-
+  
 # Annual data df
 annual_df = data_db %>% 
   filter(CH_FLAG == 1) %>% 
@@ -41,9 +57,10 @@ annual_df = data_db %>%
   ungroup() %>% 
   nhsbsaR::collect_with_parallelism(., 16) %>% 
   mutate(
+    # Patients nearest 100, Items 1,000, Cost 10,000
     PATS = janitor::round_half_up(PATS, -2),
     ITEMS = janitor::round_half_up(ITEMS, -3),
-    NIC = janitor::round_half_up(NIC, -3)
+    NIC = janitor::round_half_up(NIC, -4)
     ) %>% 
   mutate(TYPE = "ANNUAL") %>% 
   arrange(TIME)
@@ -61,9 +78,10 @@ monthly_df = data_db %>%
   nhsbsaR::collect_with_parallelism(., 16) %>% 
   mutate(
     TYPE = "MONTHLY",
+    # Patients nearest 100, Items 1,000, Cost 10,000
     PATS = janitor::round_half_up(PATS, -2),
     ITEMS = janitor::round_half_up(ITEMS, -3),
-    NIC = janitor::round_half_up(NIC, -3),
+    NIC = janitor::round_half_up(NIC, -4),
     ORDER = TIME,
     YEAR = substr(TIME, 1, 4),
     MONTH = substr(TIME, 5, 6),

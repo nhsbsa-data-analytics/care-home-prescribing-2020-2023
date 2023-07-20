@@ -702,7 +702,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          "Region Order (out of 8)"
+          "Region order (out of 8)"
         )
       )
     })
