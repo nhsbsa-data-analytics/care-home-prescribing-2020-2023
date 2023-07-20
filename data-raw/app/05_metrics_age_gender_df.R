@@ -1,4 +1,4 @@
-# Running time ~50 min
+# Running time ~25 min
 
 library(dplyr)
 library(dbplyr)
