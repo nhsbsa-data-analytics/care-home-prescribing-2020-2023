@@ -9,7 +9,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Create a lazy table from the item level base table
 fact_db <- con %>%
   tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
-  
+
 # Count care home patients in each decile
 mod_patients_by_imd_df <- fact_db %>%
   filter(
@@ -17,7 +17,7 @@ mod_patients_by_imd_df <- fact_db %>%
     !is.na(IMD_DECILE)
   ) %>% 
   group_by(FY, IMD_DECILE) %>%
-  summarise(TOTAL_PATIENTS = n_distinct(NHS_NO)) %>%
+  summarise(TOTAL_PATIENTS = round(n_distinct(NHS_NO), -1)) %>%
   ungroup() %>% 
   group_by(FY) %>% 
   # Sum so annual percentages add to 100 (despite double counting)
