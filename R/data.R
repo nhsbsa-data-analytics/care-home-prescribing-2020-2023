@@ -7,27 +7,27 @@
 #'   \item SUB_GEOGRAPHY_CODE. region or organisational codes
 #'   \item SUB_GEOGRAPHY_NAME. name in breakdown
 #'   \item CH_FLAG. do metrics apply to carehomes?, \code{TRUE} or \code{FALSE}
-#'   \item ITEMS_PPM. Mean number of items prescribed per patient month
-#'   \item COST_PPM. Mean cost of items prescribed per patient month
+#'   \item ITEMS_PPM. Mean number of items prescribed per patient-month
+#'   \item COST_PPM. Mean cost of items prescribed per patient-month
 #'   \item UNIQ_MEDS_PPM. Mean number of unique medicines from BNF Chapters 1-4,
-#'     6-10 prescribed per patient month
+#'     6-10 prescribed per patient-month
 #'   \item UNIQ_MEDS_FALLS_PPM. Mean number of unique medicines associated with
-#'     falls risk prescribed per patient month
-#'   \item TOTAL_PM. Total patient months
-#'   \item TOTAL_PM_ACB. total number of patient months in which at least 2
+#'     falls risk prescribed per patient-month
+#'   \item TOTAL_PM. Total patient-months
+#'   \item TOTAL_PM_ACB. total number of patient-months in which at least 2
 #'     medicines of moderate to high anticholinergic burden were prescribed
-#'   \item TOTAL_PM_DAMN. total number of patient months in which at least 2
+#'   \item TOTAL_PM_DAMN. total number of patient-months in which at least 2
 #'     medicines likely to cause kidney injury were prescribed
-#'   \item PCT_PM_GTE_SIX. Percentage of patient months in which at least 6 
+#'   \item PCT_PM_GTE_SIX. Percentage of patient-months in which at least 6 
 #'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item PCT_PM_GTE_TEN. Percentage of patient months in which at least 10
+#'   \item PCT_PM_GTE_TEN. Percentage of patient-months in which at least 10
 #'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item PCT_PM_ACB. Percentage of patient months with anticholinergic 
+#'   \item PCT_PM_ACB. Percentage of patient-months with anticholinergic 
 #'     prescribing, in which at least 2 medicines of moderate to high 
 #'     anticholinergic burden were prescribed
-#'   \item PCT_PM_DAMN. Percentage of patient months with DAMN prescribing, in
+#'   \item PCT_PM_DAMN. Percentage of patient-months with DAMN prescribing, in
 #'     which at least 2 medicines likely to cause kidney injury were prescribed
-#'   \item PCT_PM_FALLS. Percentage of patient months in which at least 3 unique
+#'   \item PCT_PM_FALLS. Percentage of patient-months in which at least 3 unique
 #'    medicines associated with falls risk were prescribed
 #' }
 #'
@@ -50,27 +50,27 @@
 #' \itemize{
 #'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
 #'   \item CH_TYPE. one of Carehome, Non-carehome, Nursing Home, Residential Home
-#'   \item ITEMS_PPM. Mean number of items prescribed per patient month
-#'   \item COST_PPM. Mean cost of items prescribed per patient month
+#'   \item ITEMS_PPM. Mean number of items prescribed per patient-month
+#'   \item COST_PPM. Mean cost of items prescribed per patient-month
 #'   \item UNIQ_MEDS_PPM. Mean number of unique medicines from BNF Chapters 1-4,
-#'     6-10 prescribed per patient month
+#'     6-10 prescribed per patient-month
 #'   \item UNIQ_MEDS_FALLS_PPM. Mean number of unique medicines associated with
-#'     falls risk prescribed per patient month
-#'   \item TOTAL_PM. Total patient months
-#'   \item TOTAL_PM_ACB. total number of patient months in which at least 2
+#'     falls risk prescribed per patient-month
+#'   \item TOTAL_PM. Total patient-months
+#'   \item TOTAL_PM_ACB. total number of patient-months in which at least 2
 #'     medicines of moderate to high anticholinergic burden were prescribed
-#'   \item TOTAL_PM_DAMN. total number of patient months in which at least 2
+#'   \item TOTAL_PM_DAMN. total number of patient-months in which at least 2
 #'     medicines likely to cause kidney injury were prescribed
-#'   \item PCT_PM_GTE_SIX. Percentage of patient months in which at least 6 
+#'   \item PCT_PM_GTE_SIX. Percentage of patient-months in which at least 6 
 #'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item PCT_PM_GTE_TEN. Percentage of patient months in which at least 10
+#'   \item PCT_PM_GTE_TEN. Percentage of patient-months in which at least 10
 #'     unique medicines from BNF Chapters 1-4, 6-10 were prescribed
-#'   \item PCT_PM_ACB. Percentage of patient months with anticholinergic 
+#'   \item PCT_PM_ACB. Percentage of patient-months with anticholinergic 
 #'     prescribing, in which at least 2 medicines of moderate to high 
 #'     anticholinergic burden were prescribed
-#'   \item PCT_PM_DAMN. Percentage of patient months with DAMN prescribing, in
+#'   \item PCT_PM_DAMN. Percentage of patient-months with DAMN prescribing, in
 #'     which at least 2 medicines likely to cause kidney injury were prescribed
-#'   \item PCT_PM_FALLS. Percentage of patient months in which at least 3 unique
+#'   \item PCT_PM_FALLS. Percentage of patient-months in which at least 3 unique
 #'    medicines associated with falls risk were prescribed
 #' }
 #'

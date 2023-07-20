@@ -5,7 +5,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
       "Estimated prescribing patterns for care home patients aged 65 years or over"
     ),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient month for
+      heading = "Estimated average prescribing metrics per patient-month for
         care home and non-care home patients aged 65 years or over in England by
         geography, age band or gender (2020/21 to 2022/23)",
       div(
@@ -16,15 +16,15 @@ mod_04_metrics_ch_type_ui <- function(id) {
             inputId = ns("metric"),
             label = "Metric",
             choices = c(
-              "Mean cost PPM" = "COST_PPM",
+              "Mean drug cost PPM" = "COST_PPM",
               "Mean items PPM" = "ITEMS_PPM",
               "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
-              "% of patient months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
-              "% of patient months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
-              "% of patient months with 2+ ACB medicines" = "PCT_PM_ACB",
-              "% of patient months with 2+ DAMN medicines" = "PCT_PM_DAMN",
+              "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
+              "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
+              "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
+              "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
               "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
-              "% of patient months with 3+ falls risk medicines" = "PCT_PM_FALLS"
+              "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
             ),
             full_width = TRUE
           )
@@ -76,38 +76,38 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Map metric column names to UI metric names
     ui_metric_names <- c(
-      COST_PPM            = "Mean cost PPM",
+      COST_PPM            = "Mean drug cost PPM",
       ITEMS_PPM           = "Mean items PPM",
       UNIQ_MEDS_PPM       = "Mean unique medicines PPM",
-      PCT_PM_GTE_SIX      = "% of patient months with 6+ unique medicines",
-      PCT_PM_GTE_TEN      = "% of patient months with 10+ unique medicines",
-      PCT_PM_ACB          = "% of patient months with 2+ ACB medicines",
-      PCT_PM_DAMN         = "% of patient months with 2+ DAMN medicines",
+      PCT_PM_GTE_SIX      = "% of patient-months with 6+ unique medicines",
+      PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
+      PCT_PM_ACB          = "% of patient-months with 2+ ACB medicines",
+      PCT_PM_DAMN         = "% of patient-months with 2+ DAMN medicines",
       UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
-      PCT_PM_FALLS        = "% of patient months with 3+ falls risk medicines"
+      PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
     )
     
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
-      COST_PPM            = "<b>Mean cost PPM:</b> \u00A3{point.y}",
+      COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
       ITEMS_PPM           = "<b>Mean items PPM:</b> {point.y:.2f}",
       UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.2f}",
-      PCT_PM_GTE_SIX      = "<b>% of patient months with 6+ unique medicines:</b> {point.y:.2f}%",
-      PCT_PM_GTE_TEN      = "<b>% of patient months with 10+ unique medicines:</b> {point.y:.2f}%",
-      PCT_PM_ACB          = "<b>% of patient months with 2+ ACB medicines:</b> {point.y:.2f}%",
-      PCT_PM_DAMN         = "<b>% of patient months with 2+ DAMN medicines:</b> {point.y:.2f}%",
+      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.2f}%",
+      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.2f}%",
+      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.2f}%",
+      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.2f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.2f}",
-      PCT_PM_FALLS        = "<b>% of patient months with 3+ falls risk medicines</b> {point.y:.2f}%"
+      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.2f}%"
     )
     
     # Map all column names to download data names
     dl_col_names <- c(
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
       "Financial year"                      = "FY",
-      "Carehome type"                       = "CH_TYPE",
-      "Total patient months"                = "TOTAL_PM",
-      "Total patient months with ACB risk"  = "TOTAL_PM_ACB",
-      "Total patient months with DAMN risk" = "TOTAL_PM_DAMN"
+      "Care home type"                       = "CH_TYPE",
+      "Total patient-months"                = "TOTAL_PM",
+      "Total patient-months with ACB risk"  = "TOTAL_PM_ACB",
+      "Total patient-months with DAMN risk" = "TOTAL_PM_DAMN"
     )
     
     # Formatted data ------------------------------------------------------
@@ -138,10 +138,10 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Create chart
     create_chart <- function(data, 
                              ch_type = c(
-                               "Carehome",
-                               "Nursing Home",
-                               "Residential Home",
-                               "Non-carehome"
+                               "Care home",
+                               "Nursing home",
+                               "Residential home",
+                               "Non-care home"
                              )) {
       ch_type <- match.arg(ch_type)
       
@@ -194,33 +194,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Create download data
     create_download_data <- function(data) {
-      temp <- data %>%
-        # Need only if SDC is used
-        # dplyr::mutate(
-        #   # Use TOTAL_PATIENTS for non-% metrics...
-        #   dplyr::across(
-        #     dplyr::matches("^(?!PCT_).*_PPM$", perl = TRUE),
-        #     \(x) dplyr::if_else(
-        #       is.na(x) & .data$TOTAL_PATIENTS > 0,
-        #       "c",
-        #       as.character(x)
-        #     )
-        #   ),
-        #   # ...but the associated TOTAL_PATIENTS_{X} column for % metrics
-        #   dplyr::across(
-        #     dplyr::matches("^(PCT_).*_PPM$", perl = TRUE), ~ {
-        #       # The 'middle' is the substring w/o leading "PCT_" or trailing "_PPM"
-        #       middle <- gsub("PCT_|_PPM", "", dplyr::cur_column())
-        #       # Get vector of associated total column for test
-        #       tot_vec <- dplyr::cur_data() %>% dplyr::pull(paste0("TOTAL_", middle))
-        #       dplyr::if_else(
-        #         is.na(.x) & tot_vec > 0,
-        #         "c",
-        #         as.character(.x)
-        #       )
-        #     }
-        #   )
-        # ) %>% 
+      data %>%
         dplyr::arrange(.data$FY, .data$CH_TYPE) %>%
         dplyr::rename(dl_col_names)
     }
@@ -229,22 +203,22 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Charts
     output$chart_ch <- highcharter::renderHighchart(
-      create_chart(fdata(), "Carehome")
+      create_chart(fdata(), "Care home")
     )
     output$chart_non_ch <- highcharter::renderHighchart(
-      create_chart(fdata(), "Non-carehome")
+      create_chart(fdata(), "Non-care home")
     )
     output$chart_nh <- highcharter::renderHighchart(
-      create_chart(fdata(), "Nursing Home")
+      create_chart(fdata(), "Nursing home")
     )
     output$chart_rh <- highcharter::renderHighchart(
-      create_chart(fdata(), "Residential Home")
+      create_chart(fdata(), "Residential home")
     )
     
     # Download button
     mod_nhs_download_server(
       id = "download_data",
-      filename = "Selected Prescribing Metrics by Carehome Type.xlsx",
+      filename = "Selected prescribing metrics by care home type.xlsx",
       export_data = create_download_data(fmt_data)
     )
   })

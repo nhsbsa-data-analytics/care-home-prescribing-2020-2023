@@ -45,38 +45,38 @@ get_metrics <- function(init_db,
                         num_parallel = 24) {
   # Collect data and calculate raw metrics
   init_db %>% 
-    mutate(
-      across(all_of(first_grouping)),
-      ITEM_COUNT,
-      ITEM_PAY_DR_NIC,
-      BNF_CHEMICAL_SUBSTANCE,
-      CHEMICAL_SUBSTANCE_BNF_DESCR,
-      CHAPTER_1_4_6_10_CAT = case_when(
-        as.integer(
-          substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)
-        ) %in% c(1:4, 6:10) ~ 1,
-        TRUE ~ 0
-      ),
-      ACB_CAT = case_when(
-        BNF_CHEMICAL_SUBSTANCE %in% acb_drugs ~ 1,
-        TRUE ~ 0
-      ),
-      DAMN_CAT = case_when(
-        REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^100101') > 0 ~ 1,
-        REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205051') > 0 ~ 1,
-        REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205052') > 0 ~ 1,
-        BNF_CHEMICAL_SUBSTANCE %in% other_drug_vec ~ 1,
-        TRUE ~ 0
-      ),
-      FALLS_CAT = case_when(
-        (SECTION_DESCR %in% falls_section_vec |
-        PARAGRAPH_DESCR %in% falls_paragraph_vec |
-        CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_chem_vec) &
-        !CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_exclude_chem_vec ~ 1,
-        TRUE ~ 0
-      ),
-      .keep = "none"
-    ) %>% 
+    # mutate(
+    #   across(all_of(first_grouping)),
+    #   ITEM_COUNT,
+    #   ITEM_PAY_DR_NIC,
+    #   BNF_CHEMICAL_SUBSTANCE,
+    #   CHEMICAL_SUBSTANCE_BNF_DESCR,
+    #   CHAPTER_1_4_6_10_CAT = case_when(
+    #     as.integer(
+    #       substr(BNF_CHEMICAL_SUBSTANCE, 1, 2)
+    #     ) %in% c(1:4, 6:10) ~ 1,
+    #     TRUE ~ 0
+    #   ),
+    #   ACB_CAT = case_when(
+    #     BNF_CHEMICAL_SUBSTANCE %in% acb_drugs ~ 1,
+    #     TRUE ~ 0
+    #   ),
+    #   DAMN_CAT = case_when(
+    #     REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^100101') > 0 ~ 1,
+    #     REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205051') > 0 ~ 1,
+    #     REGEXP_INSTR(BNF_CHEMICAL_SUBSTANCE, '^0205052') > 0 ~ 1,
+    #     BNF_CHEMICAL_SUBSTANCE %in% other_drug_vec ~ 1,
+    #     TRUE ~ 0
+    #   ),
+    #   FALLS_CAT = case_when(
+    #     (SECTION_DESCR %in% falls_section_vec |
+    #     PARAGRAPH_DESCR %in% falls_paragraph_vec |
+    #     CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_chem_vec) &
+    #     !CHEMICAL_SUBSTANCE_BNF_DESCR %in% falls_exclude_chem_vec ~ 1,
+    #     TRUE ~ 0
+    #   ),
+    #   .keep = "none"
+    # ) %>% 
     group_by(across(all_of(first_grouping))) %>%
     summarise(
       TOTAL_ITEMS = sum(ITEM_COUNT, na.rm = TRUE),

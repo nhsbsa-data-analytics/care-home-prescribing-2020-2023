@@ -20,13 +20,6 @@ base_db <- con %>%
 
 # Initial manipulation to create CH_TYPE column, later to be grouped by
 init_db <- base_db %>%
-  # Fix missing CH_FLAG entries
-  mutate(
-    CH_FLAG = case_when(
-      RESIDENTIAL_HOME_FLAG == 1 | NURSING_HOME_FLAG == 1 ~ 1,
-      TRUE ~ CH_FLAG
-    )
-  ) %>% 
   mutate(NON_CH_FLAG = 1L - CH_FLAG) %>% 
   # Remove unwanted 'FLAG' columns
   select(-c(AB_FLAG, EPS_FLAG, UPRN_FLAG)) %>% 
@@ -43,10 +36,10 @@ init_db <- base_db %>%
   mutate(
     CH_TYPE = case_match(
       CH_TYPE,
-      "CH_FLAG"               ~ "Carehome",
-      "NURSING_HOME_FLAG"     ~ "Nursing Home",
-      "RESIDENTIAL_HOME_FLAG" ~ "Residential Home",
-      "NON_CH_FLAG"           ~ "Non-carehome"
+      "CH_FLAG"               ~ "Care home",
+      "NURSING_HOME_FLAG"     ~ "Nursing home",
+      "RESIDENTIAL_HOME_FLAG" ~ "Residential home",
+      "NON_CH_FLAG"           ~ "Non-care home"
     )
   )
 
