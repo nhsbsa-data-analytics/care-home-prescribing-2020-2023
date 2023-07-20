@@ -155,8 +155,10 @@ mod_06_geo_ch_flag_server <- function(id) {
       # Note that the final displayed limits will not exactly match the min and
       # max values - highcharts will pick appropriate numbers close to the limits
       color_axis_limits <- list(
-        min = data[[input$metric]] %>% min(na.rm = TRUE),
-        max = data[[input$metric]] %>% max(na.rm = TRUE)
+        min = carehomes2::metrics_by_geo_and_ch_flag_df[[input$metric]] %>%
+          min(na.rm = TRUE),
+        max = carehomes2::metrics_by_geo_and_ch_flag_df[[input$metric]] %>% 
+          max(na.rm = TRUE)
       )
       
       ifelse(
