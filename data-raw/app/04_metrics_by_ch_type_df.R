@@ -1,9 +1,10 @@
 # Initial setup -----------------------------------------------------------
 
-# Expected run time ~90 minutes @parallel 24
+# Expected run time ~35 minutes @parallel 24
 
 library(dplyr)
 library(dbplyr)
+library(tidyr)
 
 devtools::load_all()
 

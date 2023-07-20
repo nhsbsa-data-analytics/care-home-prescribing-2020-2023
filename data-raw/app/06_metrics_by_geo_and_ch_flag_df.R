@@ -1,6 +1,6 @@
 # Initial setup -----------------------------------------------------------
 
-# Expected run time ~5-6 hours @parallel 24
+# Expected run time ~40 minutes @parallel 24
 
 library(dplyr)
 library(dbplyr)
