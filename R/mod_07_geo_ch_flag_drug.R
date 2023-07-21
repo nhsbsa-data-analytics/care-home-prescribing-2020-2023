@@ -20,7 +20,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
     nhs_card(
       
       # Overall Mod heading
-      heading = "... ABC ...",
+      heading = "BNF level prescribing analysis by geography",
       
       # 3 Tabs for differing geographies
       tabsetPanel(
@@ -30,7 +30,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         tabPanel(
           title = "Region",
           br(),
-          h4_tabstop("... Region ..."),
+          #h4_tabstop("... Region ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
@@ -110,7 +110,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         tabPanel(
           title = "ICB",
           br(),
-          h4_tabstop("... ICB ..."),
+          #h4_tabstop("... ICB ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
@@ -190,7 +190,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         tabPanel(
           title = "Local Authority",
           br(),
-          h4_tabstop("... Local Authority ..."),
+          #h4_tabstop("... Local Authority ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
