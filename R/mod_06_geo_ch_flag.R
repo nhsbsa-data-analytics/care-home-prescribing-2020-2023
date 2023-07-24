@@ -6,8 +6,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
       "Estimated prescribing patterns for care home patients aged 65 years or over"
     ),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient-month for 
-                 older care home patients in England by geography",
+      heading = "Estimated prescribing metrics in care home vs non-care home 
+                 settings for patients aged 65 years and over in England",
       div(
         class = "nhsuk-grid-row",
         div(
@@ -33,7 +33,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
             label = "Metric",
             choices = c(
               "Mean drug cost PPM" = "COST_PPM",
-              "Mean items PPM" = "ITEMS_PPM",
+              "Mean prescription items PPM" = "ITEMS_PPM",
               "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
               "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
               "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
@@ -50,7 +50,11 @@ mod_06_geo_ch_flag_ui <- function(id) {
           nhs_selectInput(
             inputId = ns("geography"),
             label = "Geography",
-            choices = c("Region", "ICB", "Local Authority"),
+            choices = c(
+              "Region" = "Region",
+              "ICS" = "ICB",
+              "Local Authority" = "Local Authority"
+            ),
             full_width = TRUE
           )
         )
@@ -78,7 +82,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map metric column names to UI metric names
     ui_metric_names <- c(
       COST_PPM            = "Mean drug cost PPM",
-      ITEMS_PPM           = "Mean items PPM",
+      ITEMS_PPM           = "Mean prescription items PPM",
       UNIQ_MEDS_PPM       = "Mean unique medicines PPM",
       PCT_PM_GTE_SIX      = "% of patient-months with 6+ unique medicines",
       PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
@@ -91,7 +95,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
       COST_PPM            = "<b>Mean drug cost PPM</b> \u00A3{point.value}",
-      ITEMS_PPM           = "<b>Mean items PPM:</b> {point.value:.2f}",
+      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.value:.2f}",
       UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.value:.2f}",
       PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.value:.2f}%",
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.2f}%",
@@ -229,7 +233,8 @@ mod_06_geo_ch_flag_server <- function(id) {
           dplyr::matches(" CH"),
           .before = !!rlang::sym(input$geography)
         ) %>% 
-        # Apply styling for header names, also remove the extraneous CH/NCH
+        # Apply styling for header names, also replace ICB with ICS and remove
+        # the extraneous CH/NCH
         # NOTE: cannot have identical col names, so we use an extra space for
         # one set
         dplyr::rename_with(
@@ -239,7 +244,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               span(
                 class = "nhsuk-body-s",
                 style = "font-size: 12px;",
-                gsub(" NCH", " ", gsub(" CH", "", col))
+                gsub("ICB", "ICS", gsub(" NCH", " ", gsub(" CH", "", col)))
               ) %>%
                 as.character()
             }

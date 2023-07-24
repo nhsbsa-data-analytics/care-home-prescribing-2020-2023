@@ -80,31 +80,7 @@ golem_add_external_resources <- function() {
     favicon(),
     bundle_resources(
       path = app_sys("app/www"),
-      app_title = "Estimated prescribing patterns for care home patients aged 65 years or over"
-    )
-    # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
-  )
-}
-
-#' Add external Resources to the Application
-#'
-#' This function is internally used to add external
-#' resources inside the Shiny application.
-#'
-#' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
-#' @noRd
-golem_add_external_resources <- function() {
-  add_resource_path(
-    "www", app_sys("app/www")
-  )
-  
-  tags$head(
-    favicon(),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "Estimated prescribing patterns for care home patients aged 65 years or over"
+      app_title = "Estimated prescribing patterns for care home patients aged 65 years and over"
     )
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()

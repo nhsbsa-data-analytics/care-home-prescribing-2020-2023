@@ -2,11 +2,12 @@ mod_04_metrics_ch_type_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
-      "Estimated prescribing patterns for care home patients aged 65 years or over"
+      "Estimated prescribing metrics by prescribing setting for patients aged 65
+       years and over in England"
     ),
     nhs_card(
       heading = "Estimated average prescribing metrics per patient-month for
-        care home and non-care home patients aged 65 years or over in England by
+        care home and non-care home patients aged 65 years and over in England by
         geography, age band or gender (2020/21 to 2022/23)",
       div(
         class = "nhsuk-grid-row",
@@ -17,7 +18,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
             label = "Metric",
             choices = c(
               "Mean drug cost PPM" = "COST_PPM",
-              "Mean items PPM" = "ITEMS_PPM",
+              "Mean prescription items PPM" = "ITEMS_PPM",
               "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
               "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
               "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
@@ -77,7 +78,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Map metric column names to UI metric names
     ui_metric_names <- c(
       COST_PPM            = "Mean drug cost PPM",
-      ITEMS_PPM           = "Mean items PPM",
+      ITEMS_PPM           = "Mean prescription items PPM",
       UNIQ_MEDS_PPM       = "Mean unique medicines PPM",
       PCT_PM_GTE_SIX      = "% of patient-months with 6+ unique medicines",
       PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
@@ -90,7 +91,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
       COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
-      ITEMS_PPM           = "<b>Mean items PPM:</b> {point.y:.2f}",
+      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.2f}",
       UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.2f}",
       PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.2f}%",
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.2f}%",

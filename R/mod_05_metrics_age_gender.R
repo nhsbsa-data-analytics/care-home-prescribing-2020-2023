@@ -5,7 +5,8 @@ mod_05_metrics_age_gender_ui <- function(id){
     h3_tabstop("Subtitle"),
     p("Paragraph text…"),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient month for care home and non-care home patients aged 65+ in England by age band and gender",
+      heading = "Estimated prescribing metrics by age band and gender for care
+                 home patients aged 65 years and over in England",
       nhs_grid_2_col(
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
@@ -15,14 +16,14 @@ mod_05_metrics_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
                         choices = c(
-                          "Mean drug cost PPM (\u00A3)" = "COST_PPM",
-                          "Mean number of prescription items PPM" = "ITEMS_PPM",
+                          "Mean drug cost PPM" = "COST_PPM",
+                          "Mean prescription items PPM" = "ITEMS_PPM",
                           "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
                           "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
                           "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
                           "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
                           "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
-                          "Mean number of unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+                          "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
                           "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
                           ),
                         full_width = T)
@@ -92,16 +93,16 @@ mod_05_metrics_age_gender_server <- function(id){
         `Financial year` = FY,
          Gender = GENDER,
         `Age band` = AGE_BAND,
-        `Care home flag` = CH_FLAG,
-        `Drug cost PPM (£)` = COST_PPM,
-        `Number of prescription items PPM` = ITEMS_PPM,
-        `Number of unique medicines PPM` = UNIQ_MEDS_PPM,
-        `Patient months with 6+ unique medicines (%)` = PCT_PM_GTE_SIX,
-        `Patient months with 10+ unique medicines (%)` = PCT_PM_GTE_TEN,
-        `Patient months with ACB risk (%)` = PCT_PM_ACB,
-        `Patient months with DAMN risk (%)` = PCT_PM_DAMN,
-        `Number of unique fall-risk medicines PPM` = UNIQ_MEDS_FALLS_PPM,
-        `Patient months with falls risk (%)` = PCT_PM_FALLS
+        `Care home status` = CH_FLAG,
+        `Mean drug cost PPM` = COST_PPM,
+        `Mean prescription items PPM` = ITEMS_PPM,
+        `Mean unique medicines PPM` = UNIQ_MEDS_PPM,
+        `% of patient-months with 6+ unique medicines` = PCT_PM_GTE_SIX,
+        `% of patient-months with 10+ unique medicines` = PCT_PM_GTE_TEN,
+        `% of patient-months with 2+ ACB medicines` = PCT_PM_ACB,
+        `% of patient-months with 2+ DAMN medicines` = PCT_PM_DAMN,
+        `Mean unique falls risk medicines PPM` = UNIQ_MEDS_FALLS_PPM,
+        `% of patient-months with 3+ falls risk medicines` = PCT_PM_FALLS
       )
 
     # Add a download button
@@ -213,22 +214,22 @@ mod_05_metrics_age_gender_server <- function(id){
           title = list(
           text = paste(
           switch(input$gender_and_age_band_and_ch_flag_metric,
-                 "COST_PPM" = "Mean drug cost PPM (\u00A3)",
-                 "ITEMS_PPM" = "Mean number of prescription items PPM",
-                 "UNIQ_MEDS_PPM" = "Mean number of unique medicines PPM",
-                 "PCT_PM_GTE_SIX" = "Patient-months with 6+ unique medicines (%)",
-                 "PCT_PM_GTE_TEN" = "Patient-months with 10+ unique medicines (%)",
-                 "PCT_PM_ACB" = "Patient-months with ACB risk (%)",
-                 "PCT_PM_DAMN" = "Patient-months with DAMN risk (%)",
-                 "UNIQ_MEDS_FALLS_PPM" = "Mean number of unique fall-risk medicines PPM",
-                 "PCT_PM_FALLS" = "Patient-months with falls risk (%)"
+                 "COST_PPM" = "Mean drug cost PPM",
+                 "ITEMS_PPM" = "Mean prescription items PPM",
+                 "UNIQ_MEDS_PPM" = "Mean unique medicines PPM",
+                 "PCT_PM_GTE_SIX" = "% of patient-months with 6+ unique medicines",
+                 "PCT_PM_GTE_TEN" = "% of patient-months with 10+ unique medicines",
+                 "PCT_PM_ACB" = "% of patient-months with 2+ ACB medicines",
+                 "PCT_PM_DAMN" = "% of patient-months with 2+ DAMN medicines",
+                 "UNIQ_MEDS_FALLS_PPM" = "Mean unique falls risk medicines PPM",
+                 "PCT_PM_FALLS" = "% of patient-months with 3+ falls risk medicines"
                   )
                 )
               )
             ) |>
       
         highcharter::hc_xAxis(
-          title = list(text = "Patient Age Band"),
+          title = list(text = "Patient age band"),
           categories = unique(carehomes2::metrics_by_age_gender_and_ch_flag_df$AGE_BAND)
           ) |>
       
@@ -260,7 +261,9 @@ mod_05_metrics_age_gender_server <- function(id){
         highcharter::hc_legend(
           squareSymbol = T,
           symbolWidth = 0.1, # Hide line through symbols
-          itemStyle = list(textDecoration = "none")
+          itemStyle = list(textDecoration = "none"),
+          symbolPadding = 10,
+          itemDistance = 30
         )
     
         })

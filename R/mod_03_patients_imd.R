@@ -11,12 +11,12 @@ mod_03_patients_imd_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
-      "There is a slight variation in numbers of care home patients aged 65 years or over by deprivation, with no overall trend."
+      "There is a slight variation in numbers of care home patients aged 65 years and over by deprivation, with no overall trend."
     ),
     # Chart One
     
     nhs_card(
-      heading = "Deprivation Decile of care home patients aged 65 years or over in England per financial year",
+      heading = "Deprivation decile of care home patients aged 65 years and over in England",
       
       # Metric select input
       nhs_selectInput(

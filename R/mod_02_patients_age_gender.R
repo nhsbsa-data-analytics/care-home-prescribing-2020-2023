@@ -14,7 +14,7 @@ mod_02_patients_age_gender_ui <- function(id){
     h3_tabstop("Subtitle"),
     p("Paragraph text…"),
     nhs_card(
-      heading = "Age band and gender of estimated care home patients aged 65 years or over in England",
+      heading = "Age band and gender of care home patients aged 65 years and over in England",
       nhs_grid_3_col(
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
@@ -23,7 +23,10 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = names(geographies),
+                        choices = purrr::set_names(
+                          gsub("ICS", "ICB", names(geographies)),
+                          names(geographies)
+                        ),
                         full_width = T),
         nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",

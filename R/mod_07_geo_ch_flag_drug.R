@@ -12,7 +12,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
-      "Prescribing metrics for care home residents aged 65 or over, ",
+      "Prescribing metrics for care home residents aged 65 and over, ",
       "for specific BNF areas by geography"
     ),
     
@@ -20,7 +20,8 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
     nhs_card(
       
       # Overall Mod heading
-      heading = "BNF level prescribing analysis by geography",
+      heading = "BNF level prescribing analysis by geography for care home 
+                 patients aged 65 years and over in England",
       
       # 3 Tabs for differing geographies
       tabsetPanel(
@@ -106,9 +107,9 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
           )
         ),
         
-        # Tab 2: ICB -----------------------------------------------------------
+        # Tab 2: ICS -----------------------------------------------------------
         tabPanel(
-          title = "ICB",
+          title = "ICS",
           br(),
           #h4_tabstop("... ICB ..."),
           
@@ -534,7 +535,6 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Function for each table
     geo_table = function(df, df_select, geo_name, prefix, suffix){
-      
       df %>%
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
@@ -600,7 +600,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_icb_metric)
 
       # Plot table
-      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix()) %>% 
+      geo_table(icb_df(), index_icb(), "ICS", icb_prefix(), icb_suffix()) %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
 
@@ -707,7 +707,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       )
     })
     
-    # ICB bottom axis text
+    # ICS bottom axis text
     output$icb_axis = renderUI({
       
       # Require region row select
@@ -757,7 +757,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       spline_chart_plot(region_df(), selected_region(), "22/23", region_prefix(), region_suffix(), bottom_plot = TRUE)
     })
 
-    # Icb charts
+    # Ics charts
     output$icb_chart_one = highcharter::renderHighchart({
       req(index_icb())
       spline_chart_plot(icb_df(), selected_icb(), "20/21", icb_prefix(), icb_suffix())
@@ -801,13 +801,16 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
       )
     
-    # ICB: download
+    # ICS: download
     mod_nhs_download_server(
       id = "download_icb_table",
-      filename = "icb_drug_data.csv",
+      filename = "icS_drug_data.csv",
       export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>% 
-        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
+        dplyr::mutate(
+          VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2)),
+          GEOGRAPHY_PARENT == "ICS"
+        ) %>% 
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
     )
     
