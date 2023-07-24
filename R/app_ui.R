@@ -37,15 +37,15 @@ app_ui <- function(request) {
           ),
           tabPanel(
             title = "Definitions"#,
-            #mod_09_definitions_ui("definitions")
+            #mod_08_definitions_ui("definitions")
           ),
           tabPanel(
-            title = "Methodology"#,
-            #mod_10_methodology_ui("methodology")
+            title = "Methodology",
+            mod_09_methodology_ui("methodology")
           ),
           tabPanel(
             title = "Caveats"#,
-            #mod_11_caveats_ui("caveats")
+            #mod_10_caveats_ui("caveats")
           )
         ),
         tags$script("
@@ -60,30 +60,6 @@ app_ui <- function(request) {
     ),
     br(),
     nhs_footer()
-  )
-}
-
-#' Add external Resources to the Application
-#'
-#' This function is internally used to add external
-#' resources inside the Shiny application.
-#'
-#' @import shiny
-#' @importFrom golem add_resource_path activate_js favicon bundle_resources
-#' @noRd
-golem_add_external_resources <- function() {
-  add_resource_path(
-    "www", app_sys("app/www")
-  )
-  
-  tags$head(
-    favicon(),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "Estimated prescribing patterns for care home patients aged 65 years or over"
-    )
-    # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
   )
 }
 
