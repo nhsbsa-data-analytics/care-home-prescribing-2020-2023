@@ -80,31 +80,6 @@ mod_05_metrics_age_gender_server <- function(id){
       
     })
     
-    
-    
-    # Swap NAs for "c" for data download and tidy the table
-    metrics_by_gender_and_age_band_and_ch_flag_download_df <- 
-      
-      carehomes2::metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
-      dplyr::filter(!is.na(GENDER)) |>
-      dplyr::mutate(CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")) |>
-      dplyr::arrange(FY, GENDER, AGE_BAND, CH_FLAG) |>
-       dplyr::select(
-        `Financial year` = FY,
-         Gender = GENDER,
-        `Age band` = AGE_BAND,
-        `Care home status` = CH_FLAG,
-        `Mean drug cost PPM` = COST_PPM,
-        `Mean prescription items PPM` = ITEMS_PPM,
-        `Mean unique medicines PPM` = UNIQ_MEDS_PPM,
-        `% of patient-months with 6+ unique medicines` = PCT_PM_GTE_SIX,
-        `% of patient-months with 10+ unique medicines` = PCT_PM_GTE_TEN,
-        `% of patient-months with 2+ ACB medicines` = PCT_PM_ACB,
-        `% of patient-months with 2+ DAMN medicines` = PCT_PM_DAMN,
-        `Mean unique falls risk medicines PPM` = UNIQ_MEDS_FALLS_PPM,
-        `% of patient-months with 3+ falls risk medicines` = PCT_PM_FALLS
-      )
-
     # Create download data
     create_download_data <- function(data) {
       data  %>% 
@@ -140,13 +115,6 @@ mod_05_metrics_age_gender_server <- function(id){
       filename = "Selected prescribing metrics by demographic.xlsx",
       export_data = create_download_data(carehomes2::metrics_by_age_gender_and_ch_flag_df)
     )
-    
-    # Add a download button
-    # mod_nhs_download_server(
-    #   id = "download_metrics_by_gender_and_age_band_and_ch_flag_chart",
-    #   filename = "metrics_by_gender_and_age_band_and_ch_flag.csv",
-    #   export_data = metrics_by_gender_and_age_band_and_ch_flag_download_df
-    # )
     
     # Define colours outside the chart
     ch_col = NHSRtheme::get_nhs_colours()["Orange"]
