@@ -375,7 +375,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # BNF lookup to speed up filtering
     icb_lookup = reactive({
       carehomes2::mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>%
+        dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
         dplyr::arrange(BNF_CHILD)
@@ -426,9 +426,9 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Initial df from select inputs --------------------------------------------
     
     # Metrics
-    p1 = "% of Total Annual Number of Prescription Items"
-    p2 = "% of Total Annual Drug Cost"
-    c1 = "Drug Cost (PPM)"
+    p1 = "% of total annual number of prescription items"
+    p2 = "% of total annual drug cost"
+    c1 = "Mean drug cost PPM"
     
     # Pound sign for pound metrics
     region_prefix = reactive({ifelse(input$input_region_metric == c1, "£", "")})
@@ -480,7 +480,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(
-          GEOGRAPHY_PARENT == "ICB",
+          GEOGRAPHY_PARENT == "ICS",
           BNF_PARENT == input$input_icb_bnf_parent,
           BNF_CHILD == input$input_icb_bnf_child,
           METRIC == input$input_icb_metric
@@ -710,7 +710,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          "ICB Order (out of 42)"
+          "ICS order (out of 42)"
         )
       )
     })
@@ -726,7 +726,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          "Local Authority Order (out of 308)"
+          "Local Authority order (out of 308)"
         )
       )
     })
@@ -806,11 +806,11 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           Geography = .data$GEOGRAPHY_PARENT,
           `Sub-geography name` = .data$GEOGRAPHY_CHILD,
           `BNF level` = .data$BNF_PARENT,
-          `BNF sub-level` = .data$BNF_CHILD,
-          `% of total annual number of prescription items` = .data[["% of Total Annual Number of Prescription Items"]],
-          `% of total annual drug cost` = .data[["% of Total Annual Drug Cost"]],
-          `Number of prescription items PPM` = .data[["Number of Prescription Items (PPM)"]],
-          `Drug cost PPM` = .data[["Drug Cost (PPM)"]]
+          `BNF sub-level` = .data$BNF_CHILD
+          #`% of total annual number of prescription items` = .data[["% of Total Annual Number of Prescription Items"]],
+          #`% of total annual drug cost` = .data[["% of Total Annual Drug Cost"]],
+          #`Number of prescription items PPM` = .data[["Number of Prescription Items (PPM)"]],
+          #`Drug cost PPM` = .data[["Drug Cost (PPM)"]]
         )
     }
     

@@ -40,7 +40,7 @@ mod_01_headline_figures_ui <- function(id) {
           4,
           highcharter::highchartOutput(
             outputId = ns("headline_annual_chart"),
-            height = "317px"
+            height = "340px"
             )
           ),
         
@@ -93,7 +93,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
       headline_figures_df() %>% 
         dplyr::filter(TYPE == "ANNUAL") %>% 
         highcharter::hchart(., "column", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
-        highcharter::hc_xAxis(title = list(text = "<b> Financial year</b>")) %>%  
+        highcharter::hc_xAxis(title = list(text = "")) %>%  
         highcharter::hc_yAxis(
           min = 0,
           title = list(
@@ -127,7 +127,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
       headline_figures_df() %>% 
         dplyr::filter(TYPE == "MONTHLY") %>% 
         highcharter::hchart(., "line", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
-        highcharter::hc_xAxis(title = list(text = "<b>Month</b>")) %>% 
+        highcharter::hc_xAxis(title = list(text = "")) %>% 
         highcharter::hc_yAxis(
           min = 0,
           title = list(
