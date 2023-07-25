@@ -3,7 +3,7 @@
 \docType{data}
 \name{geo_data}
 \alias{geo_data}
-\title{GIS data for boundaries at Region, ICB and Local Authority level}
+\title{GIS data for boundaries at Region, ICS and Local Authority level}
 \format{
 A named \code{list}, created from \href{https://geojson.org/}{geojson}
   using \code{jsonlite::fromJSON(simplifyVector = FALSE)}
@@ -18,7 +18,7 @@ data(geo_data)
 \description{
 \itemize{
     \item Region. \code{Featurecollection} of 7 \code{Feature}s
-    \item ICB. \code{Featurecollection} of 42 \code{Feature}s
+    \item ICS. \code{Featurecollection} of 42 \code{Feature}s
     \item Local Authority. \code{Featurecollection} of 309 \code{Feature}s
 }
 }

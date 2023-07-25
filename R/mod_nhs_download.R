@@ -46,7 +46,11 @@ mod_nhs_download_ui <- function(id) {
 #' nhs_download Server Functions
 #'
 #' @noRd
-mod_nhs_download_server <- function(id, filename, export_data) {
+mod_nhs_download_server <- function(id, filename, export_data,
+                                    currency_xl_fmt_str = "£#,##0",
+                                    percent_xl_fmt_str = "#0.00%",
+                                    number_xl_fmt_str = "#,##0"
+                                    ) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -67,6 +71,7 @@ mod_nhs_download_server <- function(id, filename, export_data) {
         } else {
           # Handle possibility of reactive input
           df <- if (is.data.frame(export_data)) export_data else export_data()
+          
           # Divide any % columns by 100, as will be using formatting whereby
           # they will be multiplied by 100
           df <- df %>%
@@ -76,13 +81,21 @@ mod_nhs_download_server <- function(id, filename, export_data) {
                 ~ . / 100
               )
             )
-          # Get currency and % column indices for styling
+          
+          # Get currency, % and remaining numeric column indices for styling
           currency_cols <- grep("cost", names(df))
           percent_cols <- grep("%", names(df))
+          number_cols <- df %>% 
+            purrr::map(is.numeric) %>% 
+            unlist() %>% 
+            which() %>% 
+            setdiff(union(currency_cols, percent_cols)) 
+          
           wb <- openxlsx::createWorkbook()
           openxlsx::addWorksheet(wb, "Prescribing data")
+          
           # Add currency styling
-          s <- openxlsx::createStyle(numFmt = "£0")
+          s <- openxlsx::createStyle(numFmt = currency_xl_fmt_str)
           openxlsx::addStyle(
             wb,
             1,
@@ -92,7 +105,7 @@ mod_nhs_download_server <- function(id, filename, export_data) {
             gridExpand = TRUE
           )
           # Add % styling
-          s <- openxlsx::createStyle(numFmt = "0.00%")
+          s <- openxlsx::createStyle(numFmt = percent_xl_fmt_str)
           openxlsx::addStyle(
             wb,
             1,
@@ -101,6 +114,18 @@ mod_nhs_download_server <- function(id, filename, export_data) {
             cols = percent_cols,
             gridExpand = TRUE
           )
+          # Add 1000s separator styling
+          s <- openxlsx::createStyle(numFmt = number_xl_fmt_str)
+          openxlsx::addStyle(
+            wb,
+            1,
+            style = s,
+            rows = 1:nrow(df) + 1,
+            cols = number_cols,
+            gridExpand = TRUE
+          )
+          
+          # Writes to an XLSX file, with auto-filtering applied
           openxlsx::writeData(
             wb,
             "Prescribing data",
@@ -108,6 +133,7 @@ mod_nhs_download_server <- function(id, filename, export_data) {
             rowNames = FALSE,
             withFilter = TRUE
           )
+          # Set column widths to be wide enough to contain their name
           openxlsx::setColWidths(
             wb,
             "Prescribing data",

@@ -11,21 +11,23 @@ mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
-      "Demographic estimates for care home patients aged 65 years or over receiving prescriptions"
+      "Demographic estimates for care home patients aged 65 years and over receiving prescriptions"
     ),
     # Chart One
     
     nhs_card(
-      heading = "Annual and monthly total care home items prescribed, total cost of care home prescribing and distinct patients that received care home prescribing",
+      heading = "Annual and monthly totals of patient numbers, prescription 
+                 items and drug cost for care home patients aged 65 years and
+                 over in England",
 
       # Metric select input
       nhs_selectInput(
         inputId = ns("metric"),
         label = "Metric",
         choices = c(
-          "Patient Count" = "PATS",
-          "Total Items" = "ITEMS",
-          "Total Cost (£)" = "NIC"
+          "Total patient count" = "PATS",
+          "Total prescription items" = "ITEMS",
+          "Total drug cost (£)" = "NIC"
         ),
         full_width = FALSE
       ),
@@ -56,12 +58,12 @@ mod_01_headline_figures_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Distinct patient counts are rounded to the nearest 100, total items roundest to the nearest 1,000 and total cost (£) rounded to the nearest 10,000."
+        "Distinct patient counts are rounded to the nearest 100, total prescription items are rounded to the nearest 1,000 and total drug cost (£) is rounded to the nearest 10,000."
       ),
       
       # Data download option
       mod_nhs_download_ui(
-        id = ns("download_headline_chart")
+        id = ns("download_data")
       )
     )
   )
@@ -154,18 +156,24 @@ mod_01_headline_figures_server <- function(id, export_data) {
         nhsbsaR::theme_nhsbsa_highchart()
     })
     
-    # Add a download button
-    mod_nhs_download_server(
-      id = "download_headline_chart",
-      filename = "headline_chart.csv",
-      export_data = carehomes2::mod_headline_figures_df %>% 
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        dplyr::arrange(.data$TIME) %>%
         dplyr::rename(
-          `Time Period` = TIME,
-          `Distinct Patients` = PATS,
-          `Total Items` = ITEMS,
-          `Total Cost (Pounds)` = NIC,
-          `Metric Type` = TYPE
+          `Time period` = TIME,
+          `Total patient count` = PATS,
+          `Total prescription items` = ITEMS,
+          `Total drug cost` = NIC,
+          `Metric type` = TYPE
         )
+    }
+    
+    # Download button
+    mod_nhs_download_server(
+      id = "download_data",
+      filename = "Headline figures for care home prescribing.xlsx",
+      export_data = create_download_data(carehomes2::mod_headline_figures_df)
     )
   })
 }
