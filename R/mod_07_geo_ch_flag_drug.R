@@ -798,8 +798,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           .data$FY,
           .data$GEOGRAPHY_PARENT,
           .data$GEOGRAPHY_CHILD,
-          data$BNF_PARENT,
-          data$BNF_CHILD
+          .data$BNF_PARENT,
+          .data$BNF_CHILD
         ) %>%
         dplyr::rename(
           `Financial year` = .data$FY,
@@ -807,10 +807,6 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
           `Sub-geography name` = .data$GEOGRAPHY_CHILD,
           `BNF level` = .data$BNF_PARENT,
           `BNF sub-level` = .data$BNF_CHILD
-          #`% of total annual number of prescription items` = .data[["% of Total Annual Number of Prescription Items"]],
-          #`% of total annual drug cost` = .data[["% of Total Annual Drug Cost"]],
-          #`Number of prescription items PPM` = .data[["Number of Prescription Items (PPM)"]],
-          #`Drug cost PPM` = .data[["Drug Cost (PPM)"]]
         )
     }
     
