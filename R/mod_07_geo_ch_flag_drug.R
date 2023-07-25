@@ -822,40 +822,6 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"
     )
-    
-    # Region: download
-    # mod_nhs_download_server(
-    #   id = "download_region_table",
-    #   filename = "region_drug_data.csv",
-    #   export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
-    #     dplyr::filter(GEOGRAPHY_PARENT == "Region") %>% 
-    #     dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
-    #     tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
-    #   )
-    
-    # ICS: download
-    # mod_nhs_download_server(
-    #   id = "download_icb_table",
-    #   filename = "icS_drug_data.csv",
-    #   export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
-    #     dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>% 
-    #     dplyr::mutate(
-    #       VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2)),
-    #       GEOGRAPHY_PARENT == "ICS"
-    #     ) %>% 
-    #     tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
-    # )
-    
-    # LA: download
-    # mod_nhs_download_server(
-    #   id = "download_lad_table",
-    #   filename = "lad_drug_data.csv",
-    #   export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
-    #     dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>% 
-    #     dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
-    #     tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
-    # )
-    
   })
 }
 
