@@ -52,7 +52,7 @@ mod_03_patients_imd_ui <- function(id) {
       
       # Data download option
       mod_nhs_download_ui(
-        id = ns("download_patients_imd_chart")
+        id = ns("download_data")
       )
     )
   )
@@ -92,11 +92,26 @@ mod_03_patients_imd_server <- function(id, export_data) {
         
     })
     
-    # Add a download button
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        dplyr::arrange(
+          .data[["Financial Year"]],
+          .data[["IMD Decile"]]
+        ) %>%
+        dplyr::rename(
+          `Financial year` = .data[["Financial Year"]],
+          `IMD Decile` = .data[["IMD Decile"]],
+          `Total patients` = .data[["Number of Patients"]],
+          `% of patients` = .data[["Percentage of Patients"]]
+        )
+    }
+    
+    # Download button
     mod_nhs_download_server(
-      id = "download_patients_imd_chart",
-      filename = "patient_imd.csv",
-      export_data = carehomes2::mod_patients_by_imd_df
+      id = "download_data",
+      filename = "IMD deciles for care home patients with prescribing.xlsx",
+      export_data = create_download_data(carehomes2::mod_patients_by_imd_df)
     )
   })
 }

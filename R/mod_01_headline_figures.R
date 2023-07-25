@@ -63,7 +63,7 @@ mod_01_headline_figures_ui <- function(id) {
       
       # Data download option
       mod_nhs_download_ui(
-        id = ns("download_headline_chart")
+        id = ns("download_headline_data")
       )
     )
   )
@@ -156,18 +156,24 @@ mod_01_headline_figures_server <- function(id, export_data) {
         nhsbsaR::theme_nhsbsa_highchart()
     })
     
-    # Add a download button
-    mod_nhs_download_server(
-      id = "download_headline_chart",
-      filename = "headline_chart.csv",
-      export_data = carehomes2::mod_headline_figures_df %>% 
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        dplyr::arrange(.data$TIME) %>%
         dplyr::rename(
-          `Time Period` = TIME,
-          `Distinct Patients` = PATS,
-          `Total Items` = ITEMS,
-          `Total Cost (Pounds)` = NIC,
-          `Metric Type` = TYPE
+          `Time period` = TIME,
+          `Total patient count` = PATS,
+          `Total prescription items` = ITEMS,
+          `Total drug cost` = NIC,
+          `Metric type` = TYPE
         )
+    }
+    
+    # Download button
+    mod_nhs_download_server(
+      id = "download_data",
+      filename = "Headline figures for care home prescribing.xlsx",
+      export_data = create_download_data(carehomes2::mod_headline_figures_df)
     )
   })
 }

@@ -35,7 +35,7 @@ mod_02_patients_age_gender_ui <- function(id){
       ),
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
       shiny::htmlOutput(outputId = ns("pct_excluded_patients")),
-      mod_nhs_download_ui(id = ns("patients_by_geo_age_gender_at_specific_fy_and_subgeo_download"))
+      mod_nhs_download_ui(id = ns("download_data"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
     
@@ -212,30 +212,33 @@ mod_02_patients_age_gender_server <- function(id){
 
     })
 
-    patients_by_geo_age_gender_at_specific_fy_and_subgeo_download_df <- reactive({
-      req(input$fy)
-      req(input$geography)
-      req(input$sub_geography)
-      
-      # Download entire df with all FYs and geo levels
-      carehomes2::patients_by_fy_geo_age_gender_df %>% 
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        dplyr::arrange(
+          .data$FY,
+          .data$GEOGRAPHY,
+          .data$SUB_GEOGRAPHY_NAME,
+          .data$GENDER,
+          .data$AGE_BAND
+        ) %>%
         dplyr::rename(
-          `Financial year` = FY,
-          Geography = GEOGRAPHY,
-          `Sub geography` = SUB_GEOGRAPHY_CODE,
-          `Sub geography name` = SUB_GEOGRAPHY_NAME,
-          `Age band` = AGE_BAND,
-          Gender = GENDER,
-          `Number of patients` = TOTAL_PATIENTS,
-          `Percentage of patients` = PCT_PATIENTS
+          `Financial year` = .data$FY,
+          Geography = .data$GEOGRAPHY,
+          `Sub geography code` = .data$SUB_GEOGRAPHY_CODE,
+          `Sub geography name` = .data$SUB_GEOGRAPHY_NAME,
+          `Age band` = .data$AGE_BAND,
+          Gender = .data$GENDER,
+          `Number of patients` = .data$TOTAL_PATIENTS,
+          `% of patients` = .data$PCT_PATIENTS
         )
-    })
-
-    # Add a download button
+    }
+    
+    # Download button
     mod_nhs_download_server(
-      id = "patients_by_geo_age_gender_at_specific_fy_and_subgeo_download",
-      filename = "patients_by_geography_and_gender_and_age_band_chart.csv",
-      export_data = patients_by_geo_age_gender_at_specific_fy_and_subgeo_download_df
+      id = "download_data",
+      filename = "Demographics of care home prescribing.xlsx",
+      export_data = create_download_data(carehomes2::patients_by_fy_geo_age_gender_df)
     )
 
     # Filter out unknown genders for the plot and format
