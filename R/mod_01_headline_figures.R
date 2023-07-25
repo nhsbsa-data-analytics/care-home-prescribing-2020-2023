@@ -58,7 +58,7 @@ mod_01_headline_figures_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Distinct patient counts are rounded to the nearest 100, total prescription items are rounded to the nearest 1,000 and total cost (£) is rounded to the nearest 10,000."
+        "Distinct patient counts are rounded to the nearest 100, total prescription items are rounded to the nearest 1,000 and total drug cost (£) is rounded to the nearest 10,000."
       ),
       
       # Data download option
