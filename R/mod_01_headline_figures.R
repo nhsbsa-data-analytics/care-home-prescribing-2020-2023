@@ -63,7 +63,7 @@ mod_01_headline_figures_ui <- function(id) {
       
       # Data download option
       mod_nhs_download_ui(
-        id = ns("download_headline_data")
+        id = ns("download_data")
       )
     )
   )
