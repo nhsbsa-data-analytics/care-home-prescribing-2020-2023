@@ -487,15 +487,6 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # ICS: df after 4 initial filters applied
     ics_df = reactive({
 
-      validate(
-        need(
-          input$input_ics_bnf_child %in% (ics_lookup() %>%
-            dplyr::filter(BNF_PARENT == isolate(input$input_ics_bnf_parent)) %>%
-            dplyr::pull(BNF_CHILD)),
-          message = "No data for selected choices"
-        )
-      )
-      
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(
