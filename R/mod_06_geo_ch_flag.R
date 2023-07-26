@@ -50,11 +50,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
           nhs_selectInput(
             inputId = ns("geography"),
             label = "Geography",
-            choices = c(
-              "Region" = "Region",
-              "ICS" = "ICB",
-              "Local Authority" = "Local Authority"
-            ),
+            choices = names(geographies)[-1],
             full_width = TRUE
           )
         )
@@ -126,8 +122,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       dplyr::across(
         c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
         \(x) janitor::round_half_up(x, 2)
-      ),
-      SUB_GEOGRAPHY_NAME = gsub("NHS | ICB", "", SUB_GEOGRAPHY_NAME)
+      )
     )
     
     # Reactive data -------------------------------------------------------
@@ -233,8 +228,7 @@ mod_06_geo_ch_flag_server <- function(id) {
           dplyr::matches(" CH"),
           .before = !!rlang::sym(input$geography)
         ) %>% 
-        # Apply styling for header names, also replace ICB with ICS and remove
-        # the extraneous CH/NCH
+        # Apply styling for header names, also remove the extraneous CH/NCH
         # NOTE: cannot have identical col names, so we use an extra space for
         # one set
         dplyr::rename_with(
@@ -244,7 +238,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               span(
                 class = "nhsuk-body-s",
                 style = "font-size: 12px;",
-                gsub("ICB", "ICS", gsub(" NCH", " ", gsub(" CH", "", col)))
+                gsub(" NCH", " ", gsub(" CH", "", col))
               ) %>%
                 as.character()
             }

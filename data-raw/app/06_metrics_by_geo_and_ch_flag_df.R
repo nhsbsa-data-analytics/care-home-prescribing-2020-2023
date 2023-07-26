@@ -111,7 +111,11 @@ aggregate_by_geo <- function(geography_name) {
     )
   
   get_metrics(
-    base_db %>% mutate(GEOGRAPHY = geography_name),
+    base_db %>% 
+      mutate(
+        GEOGRAPHY = geography_name,
+        SUB_GEOGRAPHY_NAME = gsub("NHS | ICB", "", SUB_GEOGRAPHY_NAME)
+      ),
     first_grouping = c(
       "FY",
       "YEAR_MONTH",

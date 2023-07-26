@@ -28,6 +28,9 @@ create_geo_data <- function(dataset, fields) {
       GEOMETRY = 3
     ) %>%
     filter(substr(SUB_GEOGRAPHY_CODE, 1, 1) == "E") %>% 
+    mutate(
+      SUB_GEOGRAPHY_NAME = gsub("NHS | Integrated Care Board", "", SUB_GEOGRAPHY_NAME)
+    ) %>% 
     geojsonsf::sf_geojson() %>%
     jsonlite::fromJSON(simplifyVector = FALSE)
 }
@@ -58,7 +61,7 @@ geo_data <- list(
     "NHS_England_Regions_July_2022_EN_BUC_2022",
     "NHSER22CD,NHSER22NM"
   ),
-  ICB = create_geo_data(
+  ICS = create_geo_data(
     "ICB_JUL_2022_EN_BUC_V3",
     "ICB22CD,ICB22NM"
   ),
@@ -83,7 +86,7 @@ geo_data_validation <- list(
     mutate(
       SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, "Integrated Care Board", "ICB"),
       SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " the ", " The "),
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " of ", " Of "),
+      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " of ", " Of ")
     ),
   `Local Authority` = create_geo_data_validation(
     "Local_Authority_Districts_December_2021_GB_BUC_2022",
