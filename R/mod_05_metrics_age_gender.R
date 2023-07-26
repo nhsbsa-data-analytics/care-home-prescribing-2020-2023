@@ -240,14 +240,14 @@ mod_05_metrics_age_gender_server <- function(id){
           useHTML = T,
           valueDecimals = switch(input$gender_and_age_band_and_ch_flag_metric,
                                  "COST_PPM" = 0,
-                                 "ITEMS_PPM" = 1,
-                                 "UNIQ_MEDS_PPM" = 1,
-                                 "PCT_PM_GTE_SIX" = 1,
-                                 "PCT_PM_GTE_TEN" = 1,
-                                 "PCT_PM_ACB" = 1,
-                                 "PCT_PM_DAMN" = 1,
-                                 "UNIQ_MEDS_FALLS_PPM" = 1,
-                                 "PCT_PM_FALLS" = 1
+                                 "ITEMS_PPM" = 2,
+                                 "UNIQ_MEDS_PPM" = 2,
+                                 "PCT_PM_GTE_SIX" = 2,
+                                 "PCT_PM_GTE_TEN" = 2,
+                                 "PCT_PM_ACB" = 2,
+                                 "PCT_PM_DAMN" = 2,
+                                 "UNIQ_MEDS_FALLS_PPM" = 2,
+                                 "PCT_PM_FALLS" = 2
                                  ),
           headerFormat = "<b> {point.value:.1f} </b>",
           valueSuffix = switch(input$gender_and_age_band_and_ch_flag_metric,
@@ -262,7 +262,7 @@ mod_05_metrics_age_gender_server <- function(id){
       
         highcharter::hc_legend(
           squareSymbol = T,
-          symbolWidth = 0.1, # Hide line through symbols
+          symbolWidth = 0.1, # Hide a line through symbols
           itemStyle = list(textDecoration = "none"),
           symbolPadding = 10,
           itemDistance = 30
