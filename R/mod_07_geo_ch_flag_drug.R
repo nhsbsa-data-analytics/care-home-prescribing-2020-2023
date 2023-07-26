@@ -815,8 +815,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       id = "download_data",
       filename = "BNF level prescribing in care homes.xlsx",
       export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
-      currency_xl_fmt_str = "£#,##0.00",
-      number_xl_fmt_str = "#,##0.00"
+      currency_xl_fmt_str = "£#,##0.00"
     )
   })
 }

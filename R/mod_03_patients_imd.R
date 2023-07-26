@@ -101,7 +101,7 @@ mod_03_patients_imd_server <- function(id, export_data) {
         ) %>%
         dplyr::rename(
           `Financial year` = .data[["Financial Year"]],
-          `IMD Decile` = .data[["IMD Decile"]],
+          `IMD decile` = .data[["IMD Decile"]],
           `Total patients` = .data[["Number of Patients"]],
           `% of patients` = .data[["Percentage of Patients"]]
         )

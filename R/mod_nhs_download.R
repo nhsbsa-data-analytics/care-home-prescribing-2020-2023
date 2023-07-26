@@ -49,7 +49,7 @@ mod_nhs_download_ui <- function(id) {
 mod_nhs_download_server <- function(id, filename, export_data,
                                     currency_xl_fmt_str = "£#,##0",
                                     percent_xl_fmt_str = "#0.00%",
-                                    number_xl_fmt_str = "#,##0"
+                                    number_xl_fmt_str = "#,##0.00"
                                     ) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns

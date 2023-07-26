@@ -238,7 +238,11 @@ mod_02_patients_age_gender_server <- function(id){
     mod_nhs_download_server(
       id = "download_data",
       filename = "Demographics of care home prescribing.xlsx",
-      export_data = create_download_data(carehomes2::patients_by_fy_geo_age_gender_df)
+      export_data = create_download_data(
+        carehomes2::patients_by_fy_geo_age_gender_df
+      ),
+      number_xl_fmt_str = "#,##0",
+      percent_xl_fmt_str = "#0.0%"
     )
 
     # Filter out unknown genders for the plot and format

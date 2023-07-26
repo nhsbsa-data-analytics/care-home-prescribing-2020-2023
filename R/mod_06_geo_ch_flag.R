@@ -280,7 +280,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     create_download_data <- function(data) {
       data %>%
         dplyr::mutate(
-          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")
+          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
         )  %>% 
         dplyr::arrange(
           .data$FY,

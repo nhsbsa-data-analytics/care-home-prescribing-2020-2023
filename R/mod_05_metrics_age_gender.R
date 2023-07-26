@@ -85,7 +85,7 @@ mod_05_metrics_age_gender_server <- function(id){
       data  %>% 
         dplyr::filter(!is.na(GENDER))  %>% 
         dplyr::mutate(
-          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")
+          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
         )  %>% 
         dplyr::arrange(
           .data$FY,
