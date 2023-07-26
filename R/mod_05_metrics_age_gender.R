@@ -130,6 +130,7 @@ mod_05_metrics_age_gender_server <- function(id){
     
     # Max on Y-axis per metric
     max_values_per_metric <- carehomes2::metrics_by_age_gender_and_ch_flag_df |>
+      dplyr::filter(!is.na(GENDER)) |>
       dplyr::summarise(
         dplyr::across(dplyr::ends_with("_PPM") | dplyr::starts_with("PCT_"), max)
       ) |>
