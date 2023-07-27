@@ -1,3 +1,5 @@
+# TODO: make things sentence case
+# gsub("ppm", "PPM", gsub("Percent", "%", janitor::make_clean_names("% Drug Cost (PPM)", case = "sentence")))
 
 #' mod 07 geographic care home drug analysis
 #'
@@ -28,7 +30,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         tabPanel(
           title = "Region",
           br(),
-          h4_tabstop("... Region ..."),
+          #h4_tabstop("... Region ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
@@ -57,58 +59,53 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
               full_width = TRUE
             )
               
-        ),
-        
-        # First column with 1 long table
-        fluidPage(
-          
-          # LHS: Single table
-          column(
-            7,
-            reactable::reactableOutput(
-              outputId = ns("region_table"),
-              height = "525px"
-              )
-            ),
-          # RHS: 3 charts
-          column(
-            5,
-            shiny::htmlOutput(outputId = ns("region_title")),
-            highcharter::highchartOutput(
-              outputId = ns("region_chart_one"), 
-              height = "175px"
-            ),
-            highcharter::highchartOutput(
-              outputId = ns("region_chart_two"), 
-              height = "175px"
-            ),
-            highcharter::highchartOutput(
-              outputId = ns("region_chart_three"), 
-              height = "175px"
-            ),
-            shiny::htmlOutput(outputId = ns("region_axis"))
-            ),
-          
-          # Chart caption
-          tags$text(
-            class = "highcharts-caption",
-            style = "font-size: 9pt",
-            "Click on a row to select one of the 7 regions. Only the top 50 elements by total item count per BNF level are presented. ",
-            "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
           ),
-          
-          # Data download option
-          mod_nhs_download_ui(
-            id = ns("download_region_table")
-          )
+        
+          # First column with 1 long table
+          fluidPage(
+            
+            # LHS: Single table
+            column(
+              7,
+              reactable::reactableOutput(
+                outputId = ns("region_table"),
+                height = "525px"
+                )
+              ),
+            # RHS: 3 charts
+            column(
+              5,
+              shiny::htmlOutput(outputId = ns("region_title")),
+              highcharter::highchartOutput(
+                outputId = ns("region_chart_one"), 
+                height = "175px"
+              ),
+              highcharter::highchartOutput(
+                outputId = ns("region_chart_two"), 
+                height = "175px"
+              ),
+              highcharter::highchartOutput(
+                outputId = ns("region_chart_three"), 
+                height = "175px"
+              ),
+              shiny::htmlOutput(outputId = ns("region_axis"))
+              ),
+            
+            # Chart caption
+            tags$text(
+              class = "highcharts-caption",
+              style = "font-size: 9pt",
+              "Click on a row to select one of the 7 regions. Only the top 50 elements by total item count per BNF level are presented. ",
+              "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
+            )
           )
         ),
         
-        # Tab 2: ICB -----------------------------------------------------------
+        # Tab 2: ICS -----------------------------------------------------------
         tabPanel(
-          title = "ICB",
+          title = "ICS",
           br(),
-          h4_tabstop("... ICB ..."),
+          #h4_tabstop("... ICB ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
@@ -175,11 +172,6 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
               style = "font-size: 9pt",
               "Click on a row to select one of the 42 ICBs. Only the top 50 elements by total item count per BNF level are presented. ",
               "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
-            ),
-            
-            # Data download option
-            mod_nhs_download_ui(
-              id = ns("download_icb_table")
             )
           )
         ),
@@ -188,7 +180,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         tabPanel(
           title = "Local Authority",
           br(),
-          h4_tabstop("... Local Authority ..."),
+          #h4_tabstop("... Local Authority ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
@@ -255,14 +247,14 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
               style = "font-size: 9pt",
               "Click on a row to select one of the 308 Local Authorities. Only the top 50 elements by total item count per BNF level are presented. ",
               "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
-            ),
-            
-            # Data download option
-            mod_nhs_download_ui(
-              id = ns("download_lad_table")
             )
           )
         )
+      ),
+
+      # Data download option
+      mod_nhs_download_ui(
+        id = ns("download_data")
       )
     )
   )
@@ -380,7 +372,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # BNF lookup to speed up filtering
     icb_lookup = reactive({
       carehomes2::mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>%
+        dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
         dplyr::arrange(BNF_CHILD)
@@ -431,9 +423,9 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Initial df from select inputs --------------------------------------------
     
     # Metrics
-    p1 = "% of Total Annual Number of Prescription Items"
-    p2 = "% of Total Annual Drug Cost"
-    c1 = "Drug Cost (PPM)"
+    p1 = "% of total annual number of prescription items"
+    p2 = "% of total annual drug cost"
+    c1 = "Mean drug cost PPM"
     
     # Pound sign for pound metrics
     region_prefix = reactive({ifelse(input$input_region_metric == c1, "£", "")})
@@ -485,7 +477,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(
-          GEOGRAPHY_PARENT == "ICB",
+          GEOGRAPHY_PARENT == "ICS",
           BNF_PARENT == input$input_icb_bnf_parent,
           BNF_CHILD == input$input_icb_bnf_child,
           METRIC == input$input_icb_metric
@@ -532,7 +524,6 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Function for each table
     geo_table = function(df, df_select, geo_name, prefix, suffix){
-      
       df %>%
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
@@ -598,7 +589,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       req(input$input_icb_metric)
 
       # Plot table
-      geo_table(icb_df(), index_icb(), "ICB", icb_prefix(), icb_suffix()) %>% 
+      geo_table(icb_df(), index_icb(), "ICS", icb_prefix(), icb_suffix()) %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
     })
 
@@ -705,7 +696,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       )
     })
     
-    # ICB bottom axis text
+    # ICS bottom axis text
     output$icb_axis = renderUI({
       
       # Require region row select
@@ -716,7 +707,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          "ICB Order (out of 42)"
+          "ICS order (out of 42)"
         )
       )
     })
@@ -732,7 +723,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          "Local Authority Order (out of 308)"
+          "Local Authority order (out of 308)"
         )
       )
     })
@@ -755,7 +746,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       spline_chart_plot(region_df(), selected_region(), "22/23", region_prefix(), region_suffix(), bottom_plot = TRUE)
     })
 
-    # Icb charts
+    # Ics charts
     output$icb_chart_one = highcharter::renderHighchart({
       req(index_icb())
       spline_chart_plot(icb_df(), selected_icb(), "20/21", icb_prefix(), icb_suffix())
@@ -789,36 +780,40 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # Downloads ----------------------------------------------------------------
     
-    # Region: download
-    mod_nhs_download_server(
-      id = "download_region_table",
-      filename = "region_drug_data.csv",
-      export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "Region") %>% 
-        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
-      )
+    # Create download data
+    create_download_data <- function(data) {
+      data <- data %>%
+        tidyr::pivot_wider(
+          names_from = .data$METRIC,
+          values_from = .data$VALUE
+        ) 
+      
+      # Need to start a new chain to prevent dplyr trying to arrange the
+      # original longer vectors
+      data %>% 
+        dplyr::arrange(
+          .data$FY,
+          .data$GEOGRAPHY_PARENT,
+          .data$GEOGRAPHY_CHILD,
+          .data$BNF_PARENT,
+          .data$BNF_CHILD
+        ) %>%
+        dplyr::rename(
+          `Financial year` = .data$FY,
+          Geography = .data$GEOGRAPHY_PARENT,
+          `Sub-geography name` = .data$GEOGRAPHY_CHILD,
+          `BNF level` = .data$BNF_PARENT,
+          `BNF sub-level` = .data$BNF_CHILD
+        )
+    }
     
-    # ICB: download
+    # Download button
     mod_nhs_download_server(
-      id = "download_icb_table",
-      filename = "icb_drug_data.csv",
-      export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "ICB") %>% 
-        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
+      id = "download_data",
+      filename = "BNF level prescribing in care homes.xlsx",
+      export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
+      currency_xl_fmt_str = "£#,##0.00"
     )
-    
-    # LA: download
-    mod_nhs_download_server(
-      id = "download_lad_table",
-      filename = "lad_drug_data.csv",
-      export_data = carehomes2::mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>% 
-        dplyr::mutate(VALUE = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE')
-    )
-    
   })
 }
 

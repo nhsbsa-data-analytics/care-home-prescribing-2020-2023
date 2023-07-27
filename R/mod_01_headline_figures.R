@@ -20,9 +20,9 @@ mod_01_headline_figures_ui <- function(id) {
         inputId = ns("metric"),
         label = "Metric",
         choices = c(
-          "Patient Count" = "PATS",
-          "Total Items" = "ITEMS",
-          "Total Cost (£)" = "NIC"
+          "Total patient count" = "PATS",
+          "Total prescription items" = "ITEMS",
+          "Total drug cost (£)" = "NIC"
         ),
         full_width = FALSE
       ),
@@ -35,7 +35,7 @@ mod_01_headline_figures_ui <- function(id) {
           4,
           highcharter::highchartOutput(
             outputId = ns("headline_annual_chart"),
-            height = "317px"
+            height = "340px"
             )
           ),
         
@@ -53,12 +53,12 @@ mod_01_headline_figures_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Distinct patient counts are rounded to the nearest 100, while total items and total cost (£) are rounded to the nearest 1,000."
+        "Distinct patient counts are rounded to the nearest 100, total prescription items are rounded to the nearest 1,000 and total drug cost (£) is rounded to the nearest 10,000."
       ),
       
       # Data download option
       mod_nhs_download_ui(
-        id = ns("download_headline_chart")
+        id = ns("download_data")
       )
     )
   )
@@ -88,16 +88,16 @@ mod_01_headline_figures_server <- function(id, export_data) {
       headline_figures_df() %>% 
         dplyr::filter(TYPE == "ANNUAL") %>% 
         highcharter::hchart(., "column", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
-        highcharter::hc_xAxis(title = list(text = "<b> Financial Year</b>")) %>%  
+        highcharter::hc_xAxis(title = list(text = "")) %>%  
         highcharter::hc_yAxis(
           min = 0,
           title = list(
             text = paste(
               switch(
                 input$metric,
-                "PATS" = "<b>Annual Distinct Patients</b>",
-                "ITEMS" = "<b>Annual Total Items</b>",
-                "NIC" = "<b>Annual Total Cost (£)</b>"
+                "PATS" = "<b>Annual distinct patients</b>",
+                "ITEMS" = "<b>Annual total items</b>",
+                "NIC" = "<b>Annual total cost (£)</b>"
               )
             )
           )
@@ -108,9 +108,9 @@ mod_01_headline_figures_server <- function(id, export_data) {
             "<b>Year: </b> {point.TIME}<br>",
             switch(
               input$metric,
-              "PATS" = "<b>Distinct Patients: </b> {point.METRIC:,.0f}",
-              "ITEMS" = "<b>Total Items: </b> {point.METRIC:,.0f}",
-              "NIC" = "<b>Total Cost: </b> £{point.METRIC:,.0f}"
+              "PATS" = "<b>Distinct patients: </b> {point.METRIC:,.0f}",
+              "ITEMS" = "<b>Total items: </b> {point.METRIC:,.0f}",
+              "NIC" = "<b>Total cost: </b> £{point.METRIC:,.0f}"
             )
           )
         ) %>% 
@@ -122,16 +122,16 @@ mod_01_headline_figures_server <- function(id, export_data) {
       headline_figures_df() %>% 
         dplyr::filter(TYPE == "MONTHLY") %>% 
         highcharter::hchart(., "line", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
-        highcharter::hc_xAxis(title = list(text = "<b>Month</b>")) %>% 
+        highcharter::hc_xAxis(title = list(text = "")) %>% 
         highcharter::hc_yAxis(
           min = 0,
           title = list(
             text = paste(
               switch(
                 input$metric,
-                "PATS" = "<b>Monthly Distinct Patients</b>",
-                "ITEMS" = "<b>Monthly Total Items</b>",
-                "NIC" = "<b>Monthly Total Cost (£)</b>"
+                "PATS" = "<b>Monthly distinct patients</b>",
+                "ITEMS" = "<b>Monthly total items</b>",
+                "NIC" = "<b>Monthly total cost (£)</b>"
                 )
               )
             )
@@ -142,27 +142,33 @@ mod_01_headline_figures_server <- function(id, export_data) {
             "<b>Month: </b> {point.TIME}<br>",
             switch(
               input$metric,
-              "PATS" = "<b>Distinct Patients: </b> {point.METRIC:,.0f}",
-              "ITEMS" = "<b>Total Items: </b> {point.METRIC:,.0f}",
-              "NIC" = "<b>Total Cost: </b> £{point.METRIC:,.0f}"
+              "PATS" = "<b>Distinct patients: </b> {point.METRIC:,.0f}",
+              "ITEMS" = "<b>Total items: </b> {point.METRIC:,.0f}",
+              "NIC" = "<b>Total cost: </b> £{point.METRIC:,.0f}"
               )
             )
           ) %>% 
         nhsbsaR::theme_nhsbsa_highchart()
     })
     
-    # Add a download button
-    mod_nhs_download_server(
-      id = "download_headline_chart",
-      filename = "headline_chart.csv",
-      export_data = carehomes2::mod_headline_figures_df %>% 
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        dplyr::arrange(.data$TIME) %>%
         dplyr::rename(
-          `Time Period` = TIME,
-          `Distinct Patients` = PATS,
-          `Total Items` = ITEMS,
-          `Total Cost (Pounds)` = NIC,
-          `Metric Type` = TYPE
+          `Time period` = TIME,
+          `Total patient count` = PATS,
+          `Total prescription items` = ITEMS,
+          `Total drug cost` = NIC,
+          `Metric type` = TYPE
         )
+    }
+    
+    # Download button
+    mod_nhs_download_server(
+      id = "download_data",
+      filename = "Headline figures for care home prescribing.xlsx",
+      export_data = create_download_data(carehomes2::mod_headline_figures_df)
     )
   })
 }

@@ -40,16 +40,15 @@ mod_03_patients_imd_ui <- function(id) {
         class = "highcharts-caption",
         style = "font-size: 9pt",
         paste0(
-          "IMD deciles were attributed to care home address based on their postcode. ",
-          "Every distinct patient that recieved a prescription form from a care homw off given IMD decile contributed to their total. ",
-          "If patients moved between care homes they could potentially be counted in multiple IMD decile total distinct patient counts. ",
-          "Only 10 prescription forms across the three financial years could not be attributed an IMD Decile."
+          "IMD deciles were attributed to care homes based on their address. ",
+          "If a patient moved between care homes they could potentially be double counted across multiple IMD deciles. ",
+          "Only 6 patients across the three financial years could not be attributed an IMD decile."
         )
       ),
       
       # Data download option
       mod_nhs_download_ui(
-        id = ns("download_patients_imd_chart")
+        id = ns("download_data")
       )
     )
   )
@@ -70,7 +69,8 @@ mod_03_patients_imd_server <- function(id, export_data) {
       
       # Select and rename chosen column
       carehomes2::mod_patients_by_imd_df %>% 
-        dplyr::filter(`Financial Year` == input$financial_year)
+        dplyr::filter(`Financial Year` == input$financial_year) %>% 
+        dplyr::rename(`Number of patients` = `Number of Patients`)
     })
     
     # Annual Chart
@@ -79,18 +79,35 @@ mod_03_patients_imd_server <- function(id, export_data) {
       nhsbsaR::chart_hc_imd_bar(
         df = imd_df(),
         imd_col = "IMD Decile",
-        value_col = "Number of Patients",
-        metric_def = "Number of Patients",
+        value_col = "Number of patients",
+        metric_def = "Number of patients",
         highlight_core20 = TRUE,
         value_dp = 0
-      )
+        ) %>%
+        highcharter::hc_yAxis(max = 60000)
+        
     })
     
-    # Add a download button
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        dplyr::arrange(
+          .data[["Financial Year"]],
+          .data[["IMD Decile"]]
+        ) %>%
+        dplyr::rename(
+          `Financial year` = .data[["Financial Year"]],
+          `IMD decile` = .data[["IMD Decile"]],
+          `Total patients` = .data[["Number of Patients"]],
+          `% of patients` = .data[["Percentage of Patients"]]
+        )
+    }
+    
+    # Download button
     mod_nhs_download_server(
-      id = "download_patients_imd_chart",
-      filename = "patient_imd.csv",
-      export_data = carehomes2::mod_patients_by_imd_df
+      id = "download_data",
+      filename = "IMD deciles for care home patients with prescribing.xlsx",
+      export_data = create_download_data(carehomes2::mod_patients_by_imd_df)
     )
   })
 }

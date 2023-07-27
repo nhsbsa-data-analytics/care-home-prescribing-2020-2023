@@ -14,21 +14,21 @@ mod_05_metrics_age_gender_ui <- function(id){
         nhs_selectInput(inputId = ns("gender_and_age_band_and_ch_flag_metric"),
                         label = "Metric",
                         choices = c(
-                          "Mean drug cost PPM (\u00A3)" = "COST_PPM",
-                          "Mean number of prescription items PPM" = "ITEMS_PPM",
+                          "Mean drug cost PPM" = "COST_PPM",
+                          "Mean prescription items PPM" = "ITEMS_PPM",
                           "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
                           "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
                           "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
                           "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
                           "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
-                          "Mean number of unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
+                          "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
                           "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
                           ),
                         full_width = T)
         ),
       highcharter::highchartOutput(outputId = ns("metrics_by_gender_and_age_band_and_ch_flag_chart"), height = "350px"),
       shiny::htmlOutput(outputId = ns("pct_excluded_patients")),
-      mod_nhs_download_ui(id = ns("download_metrics_by_gender_and_age_band_and_ch_flag_chart"))
+      mod_nhs_download_ui(id = ns("download_data"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
     
@@ -78,39 +78,41 @@ mod_05_metrics_age_gender_server <- function(id){
       
     })
     
+    # Create download data
+    create_download_data <- function(data) {
+      data  %>% 
+        dplyr::filter(!is.na(GENDER))  %>% 
+        dplyr::mutate(
+          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
+        )  %>% 
+        dplyr::arrange(
+          .data$FY,
+          .data$GENDER,
+          .data$AGE_BAND,
+          .data$CH_FLAG)  %>% 
+        dplyr::select(
+          `Financial year` = .data$FY,
+          Gender = .data$GENDER,
+          `Age band` = .data$AGE_BAND,
+          `Care home status` = .data$CH_FLAG,
+          `Mean drug cost PPM` = .data$COST_PPM,
+          `Mean prescription items PPM` = .data$ITEMS_PPM,
+          `Mean unique medicines PPM` = .data$UNIQ_MEDS_PPM,
+          `% of patient-months with 6+ unique medicines` = .data$PCT_PM_GTE_SIX,
+          `% of patient-months with 10+ unique medicines` = .data$PCT_PM_GTE_TEN,
+          `% of patient-months with 2+ ACB medicines` = .data$PCT_PM_ACB,
+          `% of patient-months with 2+ DAMN medicines` = .data$PCT_PM_DAMN,
+          `Mean unique falls risk medicines PPM` = .data$UNIQ_MEDS_FALLS_PPM,
+          `% of patient-months with 3+ falls risk medicines` = .data$PCT_PM_FALLS
+        )
+    }
     
-    
-    # Swap NAs for "c" for data download and tidy the table
-    metrics_by_gender_and_age_band_and_ch_flag_download_df <- 
-      
-      carehomes2::metrics_by_age_gender_and_ch_flag_df |> # Download entire df with all FYs
-      dplyr::filter(!is.na(GENDER)) |>
-      dplyr::mutate(CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non care home")) |>
-      dplyr::arrange(FY, GENDER, AGE_BAND, CH_FLAG) |>
-       dplyr::select(
-        `Financial year` = FY,
-         Gender = GENDER,
-        `Age band` = AGE_BAND,
-        `Care home flag` = CH_FLAG,
-        `Drug cost PPM (£)` = COST_PPM,
-        `Number of prescription items PPM` = ITEMS_PPM,
-        `Number of unique medicines PPM` = UNIQ_MEDS_PPM,
-        `Patient months with 6+ unique medicines (%)` = PCT_PM_GTE_SIX,
-        `Patient months with 10+ unique medicines (%)` = PCT_PM_GTE_TEN,
-        `Patient months with ACB risk (%)` = PCT_PM_ACB,
-        `Patient months with DAMN risk (%)` = PCT_PM_DAMN,
-        `Number of unique fall-risk medicines PPM` = UNIQ_MEDS_FALLS_PPM,
-        `Patient months with falls risk (%)` = PCT_PM_FALLS
-      )
-
-    # Add a download button
+    # Download button
     mod_nhs_download_server(
-      id = "download_metrics_by_gender_and_age_band_and_ch_flag_chart",
-      filename = "metrics_by_gender_and_age_band_and_ch_flag.csv",
-      export_data = metrics_by_gender_and_age_band_and_ch_flag_download_df
+      id = "download_data",
+      filename = "Selected prescribing metrics by demographic.xlsx",
+      export_data = create_download_data(carehomes2::metrics_by_age_gender_and_ch_flag_df)
     )
-    
-    
     
     # Define colours outside the chart
     ch_col = NHSRtheme::get_nhs_colours()["Orange"]
@@ -126,6 +128,7 @@ mod_05_metrics_age_gender_server <- function(id){
     
     # Max on Y-axis per metric
     max_values_per_metric <- carehomes2::metrics_by_age_gender_and_ch_flag_df |>
+      dplyr::filter(!is.na(GENDER)) |>
       dplyr::summarise(
         dplyr::across(dplyr::ends_with("_PPM") | dplyr::starts_with("PCT_"), max)
       ) |>
@@ -212,22 +215,22 @@ mod_05_metrics_age_gender_server <- function(id){
           title = list(
           text = paste(
           switch(input$gender_and_age_band_and_ch_flag_metric,
-                 "COST_PPM" = "Mean drug cost PPM (\u00A3)",
-                 "ITEMS_PPM" = "Mean number of prescription items PPM",
-                 "UNIQ_MEDS_PPM" = "Mean number of unique medicines PPM",
-                 "PCT_PM_GTE_SIX" = "Patient-months with 6+ unique medicines (%)",
-                 "PCT_PM_GTE_TEN" = "Patient-months with 10+ unique medicines (%)",
-                 "PCT_PM_ACB" = "Patient-months with ACB risk (%)",
-                 "PCT_PM_DAMN" = "Patient-months with DAMN risk (%)",
-                 "UNIQ_MEDS_FALLS_PPM" = "Mean number of unique fall-risk medicines PPM",
-                 "PCT_PM_FALLS" = "Patient-months with falls risk (%)"
+                 "COST_PPM" = "Mean drug cost PPM",
+                 "ITEMS_PPM" = "Mean prescription items PPM",
+                 "UNIQ_MEDS_PPM" = "Mean unique medicines PPM",
+                 "PCT_PM_GTE_SIX" = "% of patient-months with 6+ unique medicines",
+                 "PCT_PM_GTE_TEN" = "% of patient-months with 10+ unique medicines",
+                 "PCT_PM_ACB" = "% of patient-months with 2+ ACB medicines",
+                 "PCT_PM_DAMN" = "% of patient-months with 2+ DAMN medicines",
+                 "UNIQ_MEDS_FALLS_PPM" = "Mean unique falls risk medicines PPM",
+                 "PCT_PM_FALLS" = "% of patient-months with 3+ falls risk medicines"
                   )
                 )
               )
             ) |>
       
         highcharter::hc_xAxis(
-          title = list(text = "Patient Age Band"),
+          title = list(text = "Patient age band"),
           categories = unique(carehomes2::metrics_by_age_gender_and_ch_flag_df$AGE_BAND)
           ) |>
       
@@ -236,14 +239,14 @@ mod_05_metrics_age_gender_server <- function(id){
           useHTML = T,
           valueDecimals = switch(input$gender_and_age_band_and_ch_flag_metric,
                                  "COST_PPM" = 0,
-                                 "ITEMS_PPM" = 1,
-                                 "UNIQ_MEDS_PPM" = 1,
-                                 "PCT_PM_GTE_SIX" = 1,
-                                 "PCT_PM_GTE_TEN" = 1,
-                                 "PCT_PM_ACB" = 1,
-                                 "PCT_PM_DAMN" = 1,
-                                 "UNIQ_MEDS_FALLS_PPM" = 1,
-                                 "PCT_PM_FALLS" = 1
+                                 "ITEMS_PPM" = 2,
+                                 "UNIQ_MEDS_PPM" = 2,
+                                 "PCT_PM_GTE_SIX" = 2,
+                                 "PCT_PM_GTE_TEN" = 2,
+                                 "PCT_PM_ACB" = 2,
+                                 "PCT_PM_DAMN" = 2,
+                                 "UNIQ_MEDS_FALLS_PPM" = 2,
+                                 "PCT_PM_FALLS" = 2
                                  ),
           headerFormat = "<b> {point.value:.1f} </b>",
           valueSuffix = switch(input$gender_and_age_band_and_ch_flag_metric,
@@ -258,8 +261,10 @@ mod_05_metrics_age_gender_server <- function(id){
       
         highcharter::hc_legend(
           squareSymbol = T,
-          symbolWidth = 0.1, # Hide line through symbols
-          itemStyle = list(textDecoration = "none")
+          symbolWidth = 0.1, # Hide a line through symbols
+          itemStyle = list(textDecoration = "none"),
+          symbolPadding = 10,
+          itemDistance = 30
         )
     
         })

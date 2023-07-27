@@ -31,7 +31,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
             label = "Metric",
             choices = c(
               "Mean drug cost PPM" = "COST_PPM",
-              "Mean items PPM" = "ITEMS_PPM",
+              "Mean prescription items PPM" = "ITEMS_PPM",
               "Mean unique medicines PPM" = "UNIQ_MEDS_PPM",
               "% of patient-months with 6+ unique medicines" = "PCT_PM_GTE_SIX",
               "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
@@ -48,7 +48,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
           nhs_selectInput(
             inputId = ns("geography"),
             label = "Geography",
-            choices = c("Region", "ICB", "Local Authority"),
+            choices = names(geographies)[-1],
             full_width = TRUE
           )
         )
@@ -76,7 +76,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map metric column names to UI metric names
     ui_metric_names <- c(
       COST_PPM            = "Mean drug cost PPM",
-      ITEMS_PPM           = "Mean items PPM",
+      ITEMS_PPM           = "Mean prescription items PPM",
       UNIQ_MEDS_PPM       = "Mean unique medicines PPM",
       PCT_PM_GTE_SIX      = "% of patient-months with 6+ unique medicines",
       PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
@@ -89,7 +89,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
       COST_PPM            = "<b>Mean drug cost PPM</b> \u00A3{point.value}",
-      ITEMS_PPM           = "<b>Mean items PPM:</b> {point.value:.2f}",
+      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.value:.2f}",
       UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.value:.2f}",
       PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.value:.2f}%",
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.2f}%",
@@ -120,8 +120,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       dplyr::across(
         c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
         \(x) janitor::round_half_up(x, 2)
-      ),
-      SUB_GEOGRAPHY_NAME = gsub("NHS | ICB", "", SUB_GEOGRAPHY_NAME)
+      )
     )
     
     # Reactive data -------------------------------------------------------
@@ -272,11 +271,14 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Create download data (all data)
     create_download_data <- function(data) {
       data %>%
+        dplyr::mutate(
+          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
+        )  %>% 
         dplyr::arrange(
           .data$FY,
           .data$GEOGRAPHY,
           .data$SUB_GEOGRAPHY_NAME,
-          dplyr::desc(.data$CH_FLAG)
+          data$CH_FLAG
         ) %>%
         dplyr::rename(dl_col_names)
     }

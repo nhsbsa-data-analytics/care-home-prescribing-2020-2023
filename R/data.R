@@ -2,7 +2,7 @@
 #' carehome or non-carehome
 #'
 #' \itemize{
-#'   \item GEOGRAPHY. Region, ICB or Local Authority
+#'   \item GEOGRAPHY. Region, ICS or Local Authority
 #'   \item SUB_GEOGRAPHY_CODE. region or organisational codes
 #'   \item SUB_GEOGRAPHY_NAME. name in breakdown
 #'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
@@ -88,11 +88,11 @@
 "metrics_by_ch_type_df"
 
 
-#' GIS data for boundaries at Region, ICB and Local Authority level
+#' GIS data for boundaries at Region, ICS and Local Authority level
 #'
 #'  \itemize{
 #'     \item Region. \code{Featurecollection} of 7 \code{Feature}s
-#'     \item ICB. \code{Featurecollection} of 42 \code{Feature}s
+#'     \item ICS. \code{Featurecollection} of 42 \code{Feature}s
 #'     \item Local Authority. \code{Featurecollection} of 309 \code{Feature}s
 #' }
 #'

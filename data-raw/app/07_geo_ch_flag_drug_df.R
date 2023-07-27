@@ -200,20 +200,20 @@ mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
     ),
     GEOGRAPHY_PARENT = case_when(
       GEOGRAPHY_PARENT == "PCD_REGION_NAME" ~ "Region",
-      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ "ICB",
+      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ "ICS",
       GEOGRAPHY_PARENT == "PCD_LAD_NAME" ~ "Local Authority"
     ),
     BNF_PARENT = case_when(
       BNF_PARENT == "CHAPTER_DESCR" ~ "Chapter",
       BNF_PARENT == "PARAGRAPH_DESCR" ~ "Paragraph",
       BNF_PARENT == "SECTION_DESCR" ~ "Section",
-      BNF_PARENT == "CHEMICAL_SUBSTANCE_BNF_DESCR" ~ "Chemical Substance"
+      BNF_PARENT == "CHEMICAL_SUBSTANCE_BNF_DESCR" ~ "Chemical substance"
     ),
     METRIC = case_when(
-      METRIC == "PPM_ITEMS" ~ "Number of Prescription Items (PPM)",
-      METRIC == "PPM_NIC" ~ "Drug Cost (PPM)",
-      METRIC == "PROP_ITEMS" ~ "% of Total Annual Number of Prescription Items",
-      METRIC == "PROP_NIC" ~ "% of Total Annual Drug Cost"
+      METRIC == "PPM_ITEMS" ~ "Mean prescription items PPM",
+      METRIC == "PPM_NIC" ~ "Mean drug cost PPM",
+      METRIC == "PROP_ITEMS" ~ "% of total annual number of prescription items",
+      METRIC == "PROP_NIC" ~ "% of total annual drug cost"
     )
   )
 

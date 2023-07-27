@@ -109,7 +109,7 @@ golem_add_external_resources <- function() {
     favicon(),
     bundle_resources(
       path = app_sys("app/www"),
-      app_title = "Estimated prescribing patterns for care home patients aged 65 years or over"
+      app_title = "Estimated prescribing patterns for care home patients aged 65 years and over"
     )
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
