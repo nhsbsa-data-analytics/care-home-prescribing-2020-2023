@@ -2,12 +2,10 @@ mod_06_geo_ch_flag_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
-    h2(
-      "Estimated prescribing patterns for care home patients aged 65 years or over"
-    ),
+    includeMarkdown(app_sys("app", "www", "markdown", "06_geo_ch_flag.rmd")),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient-month for 
-                 older care home patients in England by geography",
+      heading = "Estimated prescribing metrics for care home vs non-care home
+                 patients aged 65 years and over in England",
       div(
         class = "nhsuk-grid-row",
         div(

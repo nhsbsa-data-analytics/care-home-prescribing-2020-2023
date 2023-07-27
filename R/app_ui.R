@@ -21,31 +21,60 @@ app_ui <- function(request) {
         class = "nhsuk-main-wrapper",
         id = "maincontent",
         role = "main",
-        h1("Estimated prescribing patterns for care home patients aged 65 years or over"),
+        h1(
+          "Estimated prescribing patterns for care home patients aged 65 years
+           and over from 2020/21 until 2022/23"
+        ),
         nhs_navlistPanel(
           well = FALSE,
           widths = c(2, 10),
           tabPanel(
             title = "Article",
             mod_01_headline_figures_ui("headline_figures"),
+            h2_tabstop(
+              "Demographic estimates for care home patients aged 65 years and
+               over receiving prescriptions"
+            ),
             mod_02_patients_age_gender_ui("patients_age_gender"),
             mod_03_patients_imd_ui("patients_imd"),
+            h2_tabstop(
+              "Estimated prescribing metrics for care home vs non-care home 
+               patients aged 65 years and over"
+            ),
             mod_04_metrics_ch_type_ui("metrics_ch_type"),
             mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_06_geo_ch_flag_ui("geo_ch_flag"),
-            mod_07_geo_ch_flag_drug_ui("geo_ch_flag_drug")
+            h2_tabstop("Care home prescribing drug profile"),
+            mod_07_geo_ch_flag_drug_ui("geo_ch_flag_drug"),
+            h2_tabstop("Final thoughts"),
+            p(
+              "This article provides estimates of primary care prescribing patterns
+               for care home  and non-care home patients aged 65 years and over in
+               England during 2020/21, 2021/22 and 2022/23 based on experimental
+               data linkage work."
+            ),
+            p(
+              "This analysis addresses a key gap in knowledge and gives valuable
+               insights which can inform the use and management of medicines in
+               care homes to help improve health outcomes, quality of care and
+               ensure value.
+            ")
           ),
           tabPanel(
-            title = "Definitions"#,
-            #mod_08_definitions_ui("definitions")
+            title = "Metrics",
+            mod_09_metrics_ui("metrics")
+          ),
+          tabPanel(
+            title = "Datasets",
+            mod_10_datasets_ui("datasets")
           ),
           tabPanel(
             title = "Methodology",
-            mod_09_methodology_ui("methodology")
+            mod_11_methodology_ui("methodology")
           ),
           tabPanel(
-            title = "Caveats"#,
-            #mod_10_caveats_ui("caveats")
+            title = "Feedback",
+            mod_12_feedback_ui("feedback")
           )
         ),
         tags$script("

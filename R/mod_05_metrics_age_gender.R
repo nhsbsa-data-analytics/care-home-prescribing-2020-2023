@@ -1,11 +1,10 @@
 mod_05_metrics_age_gender_ui <- function(id){
   ns <- NS(id)
   tagList(
-    h2_tabstop("Title"),
-    h3_tabstop("Subtitle"),
-    p("Paragraph text…"),
+    includeMarkdown(app_sys("app", "www", "markdown", "05_metrics_age_gender.rmd")),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient month for care home and non-care home patients aged 65+ in England by age band and gender",
+      heading = "Estimated prescribing metrics by age band and gender for care 
+                 home patients aged 65 years and over in England",
       nhs_grid_2_col(
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",

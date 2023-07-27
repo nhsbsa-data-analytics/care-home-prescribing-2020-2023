@@ -10,13 +10,10 @@
 mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    h2(
-      "Demographic estimates for care home patients aged 65 years or over receiving prescriptions"
-    ),
-    # Chart One
-    
+    includeMarkdown(app_sys("app", "www", "markdown", "01_headline_figures.rmd")),
     nhs_card(
-      heading = "Annual and monthly total care home items prescribed, total cost of care home prescribing and distinct patients that received care home prescribing",
+      heading = "Annual and monthly totals of patient numbers, prescription items
+                 and drug cost for care home patients aged 65 years and over in England",
 
       # Metric select input
       nhs_selectInput(
@@ -67,7 +64,7 @@ mod_01_headline_figures_ui <- function(id) {
   )
 }
 
-#' 02_demographics Server Functions
+#' mod 01 headline figures Server Functions
 #'
 #' @noRd
 mod_01_headline_figures_server <- function(id, export_data) {

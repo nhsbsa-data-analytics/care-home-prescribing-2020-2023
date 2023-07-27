@@ -4,4 +4,6 @@ Prescribing estimates are based on a sophisticated methodology which includes li
 
 This analysis addresses a key gap in knowledge and gives valuable insights which can inform the use and management of medicines in care homes to help improve health outcomes, quality of care and ensure value. __It should however be noted that data from the 2020/21 financial year was at the height of the COVID-19 pandemic and data from the 2021/22 financial year was toward the end of the pandemic.__ Prescribing patterns may change in subsequent years.
 
-Patient count estimates are of care home residents aged 65 years or over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the actual care home population.
+Patient count estimates are of care home residents aged 65 years and over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the monthly actual care home population. These monthly estimates will be higher than 2021 Census estimates which are based on occupancy on Census day.
+
+The methodology is described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).

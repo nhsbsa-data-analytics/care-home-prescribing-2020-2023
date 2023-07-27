@@ -12,7 +12,7 @@ app_server <- function(input, output, session) {
   mod_05_metrics_age_gender_server("metrics_age_gender")
   mod_06_geo_ch_flag_server("geo_ch_flag")
   mod_07_geo_ch_flag_drug_server("geo_ch_flag_drug")
-  #mod_08_definitions_server("definitions")
-  #mod_09_methodology_server("methodology")
-  #mod_10_caveats_server("caveats")
+  # mod_08_definitions_server("definitions")
+  # mod_09_methodology_server("methodology")
+  # mod_10_caveats_server("caveats")
 }

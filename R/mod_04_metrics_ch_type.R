@@ -1,13 +1,10 @@
 mod_04_metrics_ch_type_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    h2(
-      "Estimated prescribing patterns for care home patients aged 65 years or over"
-    ),
+    includeMarkdown(app_sys("app", "www", "markdown", "04_metrics_ch_type.rmd")),
     nhs_card(
-      heading = "Estimated average prescribing metrics per patient-month for
-        care home and non-care home patients aged 65 years or over in England by
-        geography, age band or gender (2020/21 to 2022/23)",
+      heading = "Estimated prescribing metrics by prescribing setting for 
+                 patients aged 65 years and over in England",
       div(
         class = "nhsuk-grid-row",
         div(

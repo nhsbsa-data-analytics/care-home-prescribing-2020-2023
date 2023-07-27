@@ -1,4 +1,4 @@
-#' mod_09_methodology UI Function
+#' mod_11_methodology UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,14 +7,14 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_09_methodology_ui <- function(id){
-  includeMarkdown(app_sys("app", "www", "09_methodology.rmd"))
+mod_11_methodology_ui <- function(id){
+  includeMarkdown(app_sys("app", "www", "markdown", "11_methodology.rmd"))
 }
     
 #' methodology Server Functions
 #'
 #' @noRd 
-mod_09_methodology_server <- function(id){
+mod_11_methodology_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -22,7 +22,7 @@ mod_09_methodology_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_09_methodology_ui("methodology_1")
+# mod_11_methodology_ui("11_methodology_1")
     
 ## To be copied in the server
-# mod_09_methodology_server("methodology_1")
+# mod_11_methodology_server("11_methodology_1")

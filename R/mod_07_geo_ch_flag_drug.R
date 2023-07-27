@@ -11,16 +11,14 @@
 mod_07_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    h2(
-      "Prescribing metrics for care home residents aged 65 or over, ",
-      "for specific BNF areas by geography"
-    ),
+    includeMarkdown(app_sys("app", "www", "markdown", "07_geo_ch_flag_drug.rmd")),
     
     # Overall nhs card
     nhs_card(
       
       # Overall Mod heading
-      heading = "... ABC ...",
+      heading = "BNF level prescribing analysis by geography for care home 
+                 patients aged 65 years and over in England",
       
       # 3 Tabs for differing geographies
       tabsetPanel(
