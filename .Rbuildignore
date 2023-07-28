@@ -8,3 +8,4 @@
 ^EDA$
 ^app\.R$
 ^rsconnect$
+^.gitleaksignore$
