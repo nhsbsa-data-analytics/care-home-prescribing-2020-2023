@@ -73,7 +73,7 @@ _Falls risk drug groups_
 
 The list of chemical substances within the broad STOPPFall drug groups was validated for associated falls risk by Heather Smith from West Yorkshire IB and David Alldred from Leeds University. A handful of these were considered exceptions and removed. For example, antihistamines are a STOPPFall drug group yet not every single antihistamine chemical substance may have a falls risk. A different clinical review could identify a different set of exceptions.
 
-### Analysis Metrics
+### Analysis metrics
 
 The _Prescribing metric definitions_ table describes the name of each metric as it appears in the analysis, together with the numerator and denominator when calculating each metric, and a longer description of each metric.
 

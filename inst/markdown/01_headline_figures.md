@@ -18,7 +18,7 @@ As might be expected, __care home patients aged 65 years and over received more 
 Almost two-thirds of care home patients aged 65 years and over who received prescriptions were female and 43% were females aged 85 years and over. There was some slight variation in care home patient counts by IMD decile, although it should be remembered that deprivation is based on care home location rather than providing a measure of the deprivation levels of the areas from which residents came. Monthly prescribing costs and volumes varied by age, gender, care home type and geography.
 
 
-## Headline Figures
+## Annual and monthly overall prescribing for care home patients aged 65 and over
 
 __The number of patients aged 65 years and over who received prescription items in care homes increased each year, as did the number of prescription items and drug cost.__
 

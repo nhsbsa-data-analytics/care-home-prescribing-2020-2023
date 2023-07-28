@@ -1,3 +1,3 @@
-__mod 5 headline sentence(s)__
+__mod 5 headline sentence(s) - Check Word doc__
 
-mod 5 further text
+mod 5 further text - Check Word doc
