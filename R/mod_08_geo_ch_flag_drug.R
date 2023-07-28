@@ -10,7 +10,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_07_geo_ch_flag_drug_ui <- function(id) {
+mod_08_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
@@ -284,7 +284,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
   )
 }
 
-mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
+mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
