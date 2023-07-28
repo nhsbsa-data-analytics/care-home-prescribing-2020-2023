@@ -76,7 +76,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               7,
               reactable::reactableOutput(
                 outputId = ns("region_table"),
-                height = "525px"
+                height = "450px"
                 )
               ),
             # RHS: 3 charts
@@ -85,15 +85,15 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               shiny::htmlOutput(outputId = ns("region_title")),
               highcharter::highchartOutput(
                 outputId = ns("region_chart_one"), 
-                height = "175px"
+                height = "150px"
               ),
               highcharter::highchartOutput(
                 outputId = ns("region_chart_two"), 
-                height = "175px"
+                height = "150px"
               ),
               highcharter::highchartOutput(
                 outputId = ns("region_chart_three"), 
-                height = "175px"
+                height = "150px"
               ),
               shiny::htmlOutput(outputId = ns("region_axis"))
               ),
@@ -365,9 +365,15 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           )
         ) %>%
         highcharter::hc_tooltip(enabled = FALSE) %>%
-        nhsbsaR::theme_nhsbsa_highchart()
+        nhsbsaR::theme_nhsbsa_highchart() %>% 
+        highcharter::hc_plotOptions(
+          spline = list(
+            dataLabels = list(
+              color = "black"
+                )
+            )
+          )
         
-      
       # Only caption if bottom chart
       if(bottom_plot){
         hc = hc %>%
