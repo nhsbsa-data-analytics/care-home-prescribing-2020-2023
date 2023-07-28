@@ -186,12 +186,12 @@ reactable(la_df ,
 
 # Drug info
 drug = read.csv("../../Desktop/metrics_by_bnf_and_ch_flag_df (1).csv") %>% 
-  clean_names()
+  janitor::clean_names()
 
 # Line plus dots
 highchart() %>% 
   hc_add_series(drug, "point", hcaes(bnf_description, non_care_home_percentage), color = "orange") %>% 
-  hc_add_series(drug, "line", hcaes(bnf_description, care_home_percentage), color = "darkblue", pointWidth = 0.5) %>% 
+  hc_add_series(drug, "spline", hcaes(bnf_description, care_home_percentage), color = "darkblue", pointWidth = 0.5) %>% 
   hc_xAxis(categories = drug %>% select(bnf_description) %>% pull()) %>% 
   hc_chart(inverted = T) %>% 
   hc_plotOptions(bar = list(pointWidth = 0.1))

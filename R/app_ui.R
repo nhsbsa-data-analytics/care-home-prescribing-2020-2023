@@ -45,7 +45,8 @@ app_ui <- function(request) {
             mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_06_geo_ch_flag_ui("geo_ch_flag"),
             h2_tabstop("Care home prescribing drug profile"),
-            mod_07_geo_ch_flag_drug_ui("geo_ch_flag_drug"),
+            mod_07_ch_flag_drug_ui("ch_flag_drug"),
+            mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug"),
             h2_tabstop("Final thoughts"),
             p(
               "This article provides estimates of primary care prescribing patterns
@@ -58,7 +59,7 @@ app_ui <- function(request) {
                insights which can inform the use and management of medicines in
                care homes to help improve health outcomes, quality of care and
                ensure value.
-            ")
+            ")            
           ),
           tabPanel(
             title = "Metrics",

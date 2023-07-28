@@ -30,7 +30,7 @@ mod_03_patients_imd_ui <- function(id) {
           12,
           highcharter::highchartOutput(
             outputId = ns("patients_imd_chart"),
-            height = "350px"
+            height = "300px"
           )
         )
       ),
