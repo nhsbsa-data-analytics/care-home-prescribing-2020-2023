@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_12_feedback_ui <- function(id){
-  includeMarkdown(app_sys("app", "www", "markdown", "12_feedback.rmd"))
+  includeMarkdown("inst/markdown/12_feedback.md")
 }
     
 #' 12_feedback Server Functions

@@ -58,7 +58,6 @@ Suggests:
     jsonlite,
     lubridate,
     pacman,
-    pkgload,
     readr,
     stringr,
     tictoc,

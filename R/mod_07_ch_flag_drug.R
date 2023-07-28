@@ -11,7 +11,7 @@
 mod_07_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown(app_sys("app", "www", "markdown", "07_ch_flag_drug.rmd")),
+    includeMarkdown("inst/markdown/07_ch_flag_drug.md"),
     
     nhs_card(
       heading = "National BNF level prescribing analysis for care home patients aged 65 years and over in England",

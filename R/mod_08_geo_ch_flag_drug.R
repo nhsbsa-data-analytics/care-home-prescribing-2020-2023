@@ -13,7 +13,7 @@
 mod_08_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown(app_sys("app", "www", "markdown", "08_geo_ch_flag_drug.rmd")),
+    includeMarkdown("inst/markdown/08_geo_ch_flag_drug.md"),
     
     # Overall nhs card
     nhs_card(

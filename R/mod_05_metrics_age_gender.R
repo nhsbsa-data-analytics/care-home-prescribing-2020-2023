@@ -1,7 +1,7 @@
 mod_05_metrics_age_gender_ui <- function(id){
   ns <- NS(id)
   tagList(
-    includeMarkdown(app_sys("app", "www", "markdown", "05_metrics_age_gender.rmd")),
+    includeMarkdown("inst/markdown/05_metrics_age_gender.md"),
     nhs_card(
       heading = "Estimated prescribing metrics by age band and gender for care 
                  home patients aged 65 years and over in England",

@@ -8,7 +8,7 @@
 #'
 #' @importFrom shiny NS tagList 
 mod_11_methodology_ui <- function(id){
-  includeMarkdown(app_sys("app", "www", "markdown", "11_methodology.rmd"))
+  includeMarkdown("inst/markdown/11_methodology.md")
 }
     
 #' methodology Server Functions

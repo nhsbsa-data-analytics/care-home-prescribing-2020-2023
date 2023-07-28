@@ -1,7 +1,7 @@
 mod_04_metrics_ch_type_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown(app_sys("app", "www", "markdown", "04_metrics_ch_type.rmd")),
+    includeMarkdown("inst/markdown/04_metrics_ch_type.md"),
     nhs_card(
       heading = "Estimated prescribing metrics by prescribing setting for 
                  patients aged 65 years and over in England",

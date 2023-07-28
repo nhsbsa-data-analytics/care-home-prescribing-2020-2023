@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_10_datasets_ui <- function(id){
-  includeMarkdown(app_sys("app", "www", "markdown", "10_datasets.rmd"))
+  includeMarkdown("inst/markdown/10_datasets.md")
 }
     
 #' 10_datasets Server Functions

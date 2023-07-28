@@ -1,3 +1,0 @@
-__mod 8 headline sentence(s)__
-
-mod 8 further text

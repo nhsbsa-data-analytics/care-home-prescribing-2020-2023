@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_09_metrics_ui <- function(id){
-  includeMarkdown(app_sys("app", "www", "markdown", "09_metrics.rmd"))
+  includeMarkdown("inst/markdown/09_metrics.md")
 }
     
 #' 09_metrics Server Functions

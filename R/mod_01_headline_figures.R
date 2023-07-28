@@ -10,7 +10,7 @@
 mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown(app_sys("app", "www", "markdown", "01_headline_figures.rmd")),
+    includeMarkdown("inst/markdown/01_headline_figures.md"),
     nhs_card(
       heading = "Annual and monthly totals of patient numbers, prescription items
                  and drug cost for care home patients aged 65 years and over in England",
