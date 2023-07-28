@@ -10,7 +10,7 @@
 #' @noRd
 #'
 #' @importFrom shiny NS tagList
-mod_07_geo_ch_flag_drug_ui <- function(id) {
+mod_08_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
     h2(
@@ -58,7 +58,14 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             nhs_selectInput(
               inputId = ns("input_region_bnf_child"),
               label = "BNF Type",
-              choices = NULL,
+              choices = carehomes2::mod_geo_ch_flag_drug_df %>%
+                dplyr::filter(
+                  GEOGRAPHY_PARENT == "Region",
+                  BNF_PARENT == "Chapter"
+                ) %>%
+                dplyr::pull(BNF_CHILD) %>%
+                unique() %>% 
+                sort(),
               full_width = TRUE
             )
               
@@ -108,14 +115,14 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
         tabPanel(
           title = "ICS",
           br(),
-          #h4_tabstop("... ICB ..."),
+          #h4_tabstop("... ICS ..."),
           
           # 3 select-inputs per tab
           nhs_grid_3_col(
             
             # Input 1: Metric
             nhs_selectInput(
-              inputId = ns("input_icb_metric"),
+              inputId = ns("input_ics_metric"),
               label = "Metric",
               choices = unique(carehomes2::mod_geo_ch_flag_drug_df$METRIC),
               full_width = TRUE
@@ -123,7 +130,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             
             # Input 2: BNF Parent
             nhs_selectInput(
-              inputId = ns("input_icb_bnf_parent"),
+              inputId = ns("input_ics_bnf_parent"),
               label = "BNF Level",
               choices = unique(carehomes2::mod_geo_ch_flag_drug_df$BNF_PARENT),
               full_width = TRUE
@@ -131,9 +138,16 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             
             # Input 3: BNF Child
             nhs_selectInput(
-              inputId = ns("input_icb_bnf_child"),
+              inputId = ns("input_ics_bnf_child"),
               label = "BNF Type",
-              choices = NULL,
+              choices = carehomes2::mod_geo_ch_flag_drug_df %>%
+                dplyr::filter(
+                  GEOGRAPHY_PARENT == "ICS",
+                  BNF_PARENT == "Chapter"
+                ) %>%
+                dplyr::pull(BNF_CHILD) %>%
+                unique() %>% 
+                sort(),
               full_width = TRUE
             )
             
@@ -146,34 +160,34 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             column(
               7,
               reactable::reactableOutput(
-                outputId = ns("icb_table"),
+                outputId = ns("ics_table"),
                 height = "525px"
               )
             ),
             # RHS: 3 charts
             column(
               5,
-              shiny::htmlOutput(outputId = ns("icb_title")),
+              shiny::htmlOutput(outputId = ns("ics_title")),
               highcharter::highchartOutput(
-                outputId = ns("icb_chart_one"), 
+                outputId = ns("ics_chart_one"), 
                 height = "175px"
               ),
               highcharter::highchartOutput(
-                outputId = ns("icb_chart_two"), 
+                outputId = ns("ics_chart_two"), 
                 height = "175px"
               ),
               highcharter::highchartOutput(
-                outputId = ns("icb_chart_three"), 
+                outputId = ns("ics_chart_three"), 
                 height = "175px"
               ),
-              shiny::htmlOutput(outputId = ns("icb_axis"))
+              shiny::htmlOutput(outputId = ns("ics_axis"))
             ),
             
             # Chart caption
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 42 ICBs. Only the top 50 elements by total item count per BNF level are presented. ",
+              "Click on a row to select one of the 42 ICSs. Only the top 50 elements by total item count per BNF level are presented. ",
               "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
             )
           )
@@ -208,7 +222,14 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
             nhs_selectInput(
               inputId = ns("input_lad_bnf_child"),
               label = "BNF Type",
-              choices = NULL,
+              choices = carehomes2::mod_geo_ch_flag_drug_df %>%
+                dplyr::filter(
+                  GEOGRAPHY_PARENT == "Local Authority",
+                  BNF_PARENT == "Chapter"
+                ) %>%
+                dplyr::pull(BNF_CHILD) %>%
+                unique() %>% 
+                sort(),
               full_width = TRUE
             )
             
@@ -263,7 +284,7 @@ mod_07_geo_ch_flag_drug_ui <- function(id) {
   )
 }
 
-mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
+mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
@@ -364,7 +385,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Select Inputs ------------------------------------------------------------
 
     # BNF lookup to speed up filtering
-    region_lookup = reactive({
+    region_lookup <- reactive({
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Region") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
@@ -373,7 +394,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     })
 
     # BNF lookup to speed up filtering
-    icb_lookup = reactive({
+    ics_lookup = reactive({
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
@@ -390,9 +411,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::arrange(BNF_CHILD)
     })
 
-    # Region: observe bnf parent choice
     observeEvent(input$input_region_bnf_parent, {
-
+      
       choices = region_lookup() %>%
         dplyr::filter(BNF_PARENT == input$input_region_bnf_parent) %>%
         dplyr::select(BNF_CHILD) %>%
@@ -401,15 +421,15 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
       updateSelectInput(inputId = "input_region_bnf_child", choices = choices)
     })
 
-    # Region: observe icb parent choice
-    observeEvent(input$input_icb_bnf_parent, {
+    # Region: observe ICS parent choice
+    observeEvent(input$input_ics_bnf_parent, {
 
-      choices = icb_lookup() %>%
-        dplyr::filter(BNF_PARENT == input$input_icb_bnf_parent) %>%
+      choices = ics_lookup() %>%
+        dplyr::filter(BNF_PARENT == input$input_ics_bnf_parent) %>%
         dplyr::select(BNF_CHILD) %>%
         dplyr::pull()
 
-      updateSelectInput(inputId = "input_icb_bnf_child", choices = choices)
+      updateSelectInput(inputId = "input_ics_bnf_child", choices = choices)
     })
 
     # Region: observe lad parent choice
@@ -435,8 +455,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     region_suffix = reactive({ifelse(input$input_region_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    icb_prefix = reactive({ifelse(input$input_icb_metric == c1, "£", "")})
-    icb_suffix = reactive({ifelse(input$input_icb_metric %in% c(p1,p2), "%", "")})
+    ics_prefix = reactive({ifelse(input$input_ics_metric == c1, "£", "")})
+    ics_suffix = reactive({ifelse(input$input_ics_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
     lad_prefix = reactive({ifelse(input$input_lad_metric == c1, "£", "")})
@@ -445,16 +465,11 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region: df after 4 initial filters applied
     region_df = reactive({
 
-      # Ensure select input required
-      req(input$input_region_bnf_child)
-      req(input$input_region_bnf_parent)
-      req(input$input_region_metric)
-
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "Region",
-          BNF_PARENT == input$input_region_bnf_parent,
+          BNF_PARENT == isolate(input$input_region_bnf_parent),
           BNF_CHILD == input$input_region_bnf_child,
           METRIC == input$input_region_metric
         ) %>%
@@ -469,21 +484,16 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::arrange(GEOGRAPHY_CHILD)
     })
 
-    # Icb: df after 4 initial filters applied
-    icb_df = reactive({
-
-      # Ensure select input required
-      req(input$input_icb_bnf_child)
-      req(input$input_icb_bnf_parent)
-      req(input$input_icb_metric)
+    # ICS: df after 4 initial filters applied
+    ics_df = reactive({
 
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "ICS",
-          BNF_PARENT == input$input_icb_bnf_parent,
-          BNF_CHILD == input$input_icb_bnf_child,
-          METRIC == input$input_icb_metric
+          BNF_PARENT == isolate(input$input_ics_bnf_parent),
+          BNF_CHILD == input$input_ics_bnf_child,
+          METRIC == input$input_ics_metric
         ) %>%
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
@@ -499,16 +509,11 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Lad: df after 4 initial filters applied
     lad_df = reactive({
 
-      # Ensure select input required
-      req(input$input_lad_bnf_child)
-      req(input$input_lad_bnf_parent)
-      req(input$input_lad_metric)
-
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "Local Authority",
-          BNF_PARENT == input$input_lad_bnf_parent,
+          BNF_PARENT == isolate(input$input_lad_bnf_parent),
           BNF_CHILD == input$input_lad_bnf_child,
           METRIC == input$input_lad_metric
         ) %>%
@@ -559,8 +564,8 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     })
     
     # Region: select row
-    index_icb = reactive({
-      t <- reactable::getReactableState("icb_table", "selected")
+    index_ics = reactive({
+      t <- reactable::getReactableState("ics_table", "selected")
       ifelse(is.null(t), 1, t) 
     })
     
@@ -573,40 +578,25 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region: Initial table
     output$region_table = reactable::renderReactable({
 
-      # Ensure select input required
-      req(input$input_region_bnf_child)
-      req(input$input_region_bnf_parent)
-      req(input$input_region_metric)
-
       # Plot table
       geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix()) %>% 
-      htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
+        htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
-    # Icb: Initial table
-    output$icb_table = reactable::renderReactable({
-
-      # Ensure select input required
-      req(input$input_icb_bnf_child)
-      req(input$input_icb_bnf_parent)
-      req(input$input_icb_metric)
+    # ICS: Initial table
+    output$ics_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(icb_df(), index_icb(), "ICS", icb_prefix(), icb_suffix()) %>% 
-        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
+      geo_table(ics_df(), index_ics(), "ICS", ics_prefix(), ics_suffix()) %>% 
+        htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
     # LA: Initial table
     output$lad_table = reactable::renderReactable({
 
-      # Ensure select input required
-      req(input$input_lad_bnf_child)
-      req(input$input_lad_bnf_parent)
-      req(input$input_lad_metric)
-
       # Plot table
       geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix()) %>% 
-        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
+        htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
     
     # LHS: table affects -------------------------------------------------------
@@ -619,10 +609,10 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::pull()
     })
 
-    # Icb: get selected row category name
-    selected_icb <- reactive({
-      icb_df() %>%
-        dplyr::filter(dplyr::row_number() == index_icb()) %>%
+    # ICS: get selected row category name
+    selected_ics <- reactive({
+      ics_df() %>%
+        dplyr::filter(dplyr::row_number() == index_ics()) %>%
         dplyr::select(GEOGRAPHY_CHILD) %>%
         dplyr::pull()
     })
@@ -652,17 +642,17 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     })
     
     # Create chart titles from selection
-    output$icb_title = renderUI({
+    output$ics_title = renderUI({
       
       # Ensure select input required
-      req(index_icb())
+      req(index_ics())
       
       # Region name text
       tags$div(
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          selected_icb()
+          selected_ics()
         )
       )
     })
@@ -700,10 +690,10 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     })
     
     # ICS bottom axis text
-    output$icb_axis = renderUI({
+    output$ics_axis = renderUI({
       
       # Require region row select
-      req(index_icb())
+      req(index_ics())
       
       # Region axiss text
       tags$div(
@@ -750,19 +740,19 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
     })
 
     # Ics charts
-    output$icb_chart_one = highcharter::renderHighchart({
-      req(index_icb())
-      spline_chart_plot(icb_df(), selected_icb(), "20/21", icb_prefix(), icb_suffix())
+    output$ics_chart_one = highcharter::renderHighchart({
+      req(index_ics())
+      spline_chart_plot(ics_df(), selected_ics(), "20/21", ics_prefix(), ics_suffix())
     })
 
-    output$icb_chart_two = highcharter::renderHighchart({
-      req(index_icb())
-      spline_chart_plot(icb_df(), selected_icb(), "21/22", icb_prefix(), icb_suffix())
+    output$ics_chart_two = highcharter::renderHighchart({
+      req(index_ics())
+      spline_chart_plot(ics_df(), selected_ics(), "21/22", ics_prefix(), ics_suffix())
     })
 
-    output$icb_chart_three = highcharter::renderHighchart({
-      req(index_icb())
-      spline_chart_plot(icb_df(), selected_icb(), "22/23", icb_prefix(), icb_suffix(), bottom_plot = TRUE)
+    output$ics_chart_three = highcharter::renderHighchart({
+      req(index_ics())
+      spline_chart_plot(ics_df(), selected_ics(), "22/23", ics_prefix(), ics_suffix(), bottom_plot = TRUE)
     })
 
     # Lad charts
