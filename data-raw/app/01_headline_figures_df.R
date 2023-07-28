@@ -44,26 +44,31 @@ data_db %>%
     PROP_NIC = NIC /TOTAL_NIC * 100
   ) %>% 
   arrange(FY)
-  
+
 # Annual data df
 annual_df = data_db %>% 
   filter(CH_FLAG == 1) %>% 
-  group_by(TIME = FY) %>% 
+  group_by(TIME = FY, YEAR_MONTH) %>% 
   summarise(
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
     NIC = sum(ITEM_PAY_DR_NIC) / 100
-  ) %>% 
+    ) %>% 
   ungroup() %>% 
   nhsbsaR::collect_with_parallelism(., 16) %>% 
+  select(-YEAR_MONTH) %>% 
+  group_by(TIME) %>% 
+  summarise_all(.funs = mean) %>% 
+  ungroup() %>% 
   mutate(
     # Patients nearest 100, Items 1,000, Cost 10,000
     PATS = janitor::round_half_up(PATS, -2),
     ITEMS = janitor::round_half_up(ITEMS, -3),
-    NIC = janitor::round_half_up(NIC, -4)
+    NIC = janitor::round_half_up(NIC, -4),
+    TYPE = "Annual monthly mean"
     ) %>% 
-  mutate(TYPE = "ANNUAL") %>% 
-  arrange(TIME)
+  arrange(TIME) %>% 
+  select(TIME, TYPE, PATS, ITEMS, NIC)
 
 # Monthly data df
 monthly_df = data_db %>% 
@@ -77,7 +82,7 @@ monthly_df = data_db %>%
   ungroup() %>% 
   nhsbsaR::collect_with_parallelism(., 16) %>% 
   mutate(
-    TYPE = "MONTHLY",
+    TYPE = "Monthly sum",
     # Patients nearest 100, Items 1,000, Cost 10,000
     PATS = janitor::round_half_up(PATS, -2),
     ITEMS = janitor::round_half_up(ITEMS, -3),
@@ -90,7 +95,7 @@ monthly_df = data_db %>%
     TIME = paste0(YEAR, " - ", MONTH)
   ) %>% 
   arrange(ORDER) %>% 
-  select(-c(YEAR, MONTH, ORDER))
+  select(TIME, TYPE, PATS, ITEMS, NIC)
 
 # Bind dfs together
 mod_headline_figures_df = rbind(annual_df, monthly_df)

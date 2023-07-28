@@ -24,7 +24,8 @@ mod_07_ch_flag_drug_ui <- function(id) {
         nhs_selectInput(
           inputId = ns("input_financial_year"),
           label = "Financial year",
-          choices = unique(carehomes2::mod_ch_flag_drug_df$FY),
+          choices = sort(unique(carehomes2::mod_ch_flag_drug_df$FY)),
+          selected = "2022/23",
           full_width = T
           ),
         
@@ -55,8 +56,9 @@ mod_07_ch_flag_drug_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Only the top 20 elements by total item count per BNF level are presented. ",
-        "For example, only the top 20 paragraphs are presented, determined by the 20 paragraphs with the largest total item count."
+        "Only the top 20 drugs or drug groups by total care home item count are presented. ",
+        "For example, only the top 20 paragraphs are presented, determined by the 20 paragraphs with the largest total item count in care homes. ",
+        "It is possible the 20 paragraphs with the highest total item count differs between care homes and non-care homes."
       ),
       
       # Data download
@@ -125,7 +127,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
           "column",
           name = "Care home",
           highcharter::hcaes(BNF_CHILD, VALUE),
-          color = "lightblue",
+          color = nhsbsaR::palette_nhsbsa()[3],
           pointWidth = 5
         ) %>%
         highcharter::hc_add_series(
@@ -137,7 +139,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
           pointWidth = 10,
           opacity = 0.9,
           borderWidth = 0.8,
-          borderColor = "darkblue"
+          borderColor = nhsbsaR::palette_nhsbsa()[1]
         ) %>%
         highcharter::hc_xAxis(
           categories = bnf_categories(),

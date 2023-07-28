@@ -25,7 +25,7 @@ mod_01_headline_figures_ui <- function(id) {
         inputId = ns("metric"),
         label = "Metric",
         choices = c(
-          "Total patient count" = "PATS",
+          "Patient count" = "PATS",
           "Total prescription items" = "ITEMS",
           "Total drug cost (£)" = "NIC"
         ),
@@ -40,7 +40,7 @@ mod_01_headline_figures_ui <- function(id) {
           4,
           highcharter::highchartOutput(
             outputId = ns("headline_annual_chart"),
-            height = "340px"
+            height = "240px"
             )
           ),
         
@@ -49,7 +49,7 @@ mod_01_headline_figures_ui <- function(id) {
           8,
           highcharter::highchartOutput(
             outputId = ns("headline_monthly_chart"),
-            height = "350px"
+            height = "250px"
             )
           )
         ),
@@ -91,7 +91,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
     # Annual Chart
     output$headline_annual_chart <- highcharter::renderHighchart({
       headline_figures_df() %>% 
-        dplyr::filter(TYPE == "ANNUAL") %>% 
+        dplyr::filter(TYPE == "Annual monthly mean") %>% 
         highcharter::hchart(., "column", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
         highcharter::hc_xAxis(title = list(text = "")) %>%  
         highcharter::hc_yAxis(
@@ -100,9 +100,9 @@ mod_01_headline_figures_server <- function(id, export_data) {
             text = paste(
               switch(
                 input$metric,
-                "PATS" = "<b>Annual distinct patients</b>",
-                "ITEMS" = "<b>Annual total items</b>",
-                "NIC" = "<b>Annual total cost (£)</b>"
+                "PATS" = "<b>Mean Monthly patient count</b>",
+                "ITEMS" = "<b>Mean monthly items</b>",
+                "NIC" = "<b>Mean monthly cost (£)</b>"
               )
             )
           )
@@ -113,9 +113,9 @@ mod_01_headline_figures_server <- function(id, export_data) {
             "<b>Year: </b> {point.TIME}<br>",
             switch(
               input$metric,
-              "PATS" = "<b>Distinct patients: </b> {point.METRIC:,.0f}",
-              "ITEMS" = "<b>Total items: </b> {point.METRIC:,.0f}",
-              "NIC" = "<b>Total cost: </b> £{point.METRIC:,.0f}"
+              "PATS" = "<b>Mean monthly patients: </b> {point.METRIC:,.0f}",
+              "ITEMS" = "<b>Mean monthly items: </b> {point.METRIC:,.0f}",
+              "NIC" = "<b>Mean monthly cost: </b> £{point.METRIC:,.0f}"
             )
           )
         ) %>% 
@@ -125,7 +125,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
     # Monthly Chart
     output$headline_monthly_chart <- highcharter::renderHighchart({
       headline_figures_df() %>% 
-        dplyr::filter(TYPE == "MONTHLY") %>% 
+        dplyr::filter(TYPE == "Monthly sum") %>% 
         highcharter::hchart(., "line", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
         highcharter::hc_xAxis(title = list(text = "")) %>% 
         highcharter::hc_yAxis(
@@ -134,9 +134,9 @@ mod_01_headline_figures_server <- function(id, export_data) {
             text = paste(
               switch(
                 input$metric,
-                "PATS" = "<b>Monthly distinct patients</b>",
-                "ITEMS" = "<b>Monthly total items</b>",
-                "NIC" = "<b>Monthly total cost (£)</b>"
+                "PATS" = "<b>Patient count</b>",
+                "ITEMS" = "<b>Items</b>",
+                "NIC" = "<b>Cost (£)</b>"
                 )
               )
             )
@@ -147,9 +147,9 @@ mod_01_headline_figures_server <- function(id, export_data) {
             "<b>Month: </b> {point.TIME}<br>",
             switch(
               input$metric,
-              "PATS" = "<b>Distinct patients: </b> {point.METRIC:,.0f}",
-              "ITEMS" = "<b>Total items: </b> {point.METRIC:,.0f}",
-              "NIC" = "<b>Total cost: </b> £{point.METRIC:,.0f}"
+              "PATS" = "<b>Patient count: </b> {point.METRIC:,.0f}",
+              "ITEMS" = "<b>Items: </b> {point.METRIC:,.0f}",
+              "NIC" = "<b>Cost: </b> £{point.METRIC:,.0f}"
               )
             )
           ) %>% 
@@ -162,10 +162,10 @@ mod_01_headline_figures_server <- function(id, export_data) {
         dplyr::arrange(.data$TIME) %>%
         dplyr::rename(
           `Time period` = TIME,
-          `Total patient count` = PATS,
+          `Metric type` = TYPE,
+          `Patient count` = PATS,
           `Total prescription items` = ITEMS,
           `Total drug cost` = NIC,
-          `Metric type` = TYPE
         )
     }
     
