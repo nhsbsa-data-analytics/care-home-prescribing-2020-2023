@@ -28,5 +28,5 @@ num_forms <- patient_db %>%
   summarise(num = n_distinct(PF_ID)) %>% 
   collect_with_parallelism(32)
 
-# 0.0002230195
+# 0.0002%
 pct_no_address <- 100 * pull(no_address) / pull(num_forms)
