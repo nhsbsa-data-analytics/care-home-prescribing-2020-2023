@@ -10,9 +10,7 @@
 mod_02_patients_age_gender_ui <- function(id){
   ns <- NS(id)
   tagList(
-    h2_tabstop("Title"),
-    h3_tabstop("Subtitle"),
-    p("Paragraph text…"),
+    includeMarkdown("inst/markdown/02_patients_age_gender.md"),
     nhs_card(
       heading = "Age band and gender of care home patients aged 65 years and over in England",
       nhs_grid_3_col(

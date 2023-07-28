@@ -1,7 +1,7 @@
 # TODO: make things sentence case
 # gsub("ppm", "PPM", gsub("Percent", "%", janitor::make_clean_names("% Drug Cost (PPM)", case = "sentence")))
 
-#' mod 07 geographic care home drug analysis
+#' mod 08 geographic care home drug analysis
 #'
 #' @description A shiny Module.
 #'
@@ -13,10 +13,7 @@
 mod_08_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    h2(
-      "Prescribing metrics for care home residents aged 65 and over, ",
-      "for specific BNF areas by geography"
-    ),
+    includeMarkdown("inst/markdown/08_geo_ch_flag_drug.md"),
     
     # Overall nhs card
     nhs_card(
@@ -811,7 +808,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 }
 
 ## To be copied in the UI
-# mod_07_geo_ch_flag_drug_ui("geo_ch_flag_drug")
+# mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug")
 
 ## To be copied in the server
-# mod_07_geo_ch_flag_drug_server("geo_ch_flag_drug")
+# mod_08_geo_ch_flag_drug_server("geo_ch_flag_drug")

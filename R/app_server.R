@@ -13,7 +13,4 @@ app_server <- function(input, output, session) {
   mod_06_geo_ch_flag_server("geo_ch_flag")
   mod_07_ch_flag_drug_server("ch_flag_drug")
   mod_08_geo_ch_flag_drug_server("geo_ch_flag_drug")
-  #mod_08_definitions_server("definitions")
-  #mod_09_methodology_server("methodology")
-  #mod_10_caveats_server("caveats")
 }

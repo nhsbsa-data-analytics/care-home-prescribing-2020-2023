@@ -1,10 +1,7 @@
 mod_04_metrics_ch_type_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    h2(
-      "Estimated prescribing metrics in different settings for patients aged 65
-       years and over in England"
-    ),
+    includeMarkdown("inst/markdown/04_metrics_ch_type.md"),
     nhs_card(
       heading = "Estimated prescribing metrics by prescribing setting for 
                  patients aged 65 years and over in England",
