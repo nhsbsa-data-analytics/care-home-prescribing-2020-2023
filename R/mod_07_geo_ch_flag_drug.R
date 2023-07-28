@@ -577,7 +577,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
 
       # Plot table
       geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix()) %>% 
-      htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
+      htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
     # Icb: Initial table
@@ -590,7 +590,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
 
       # Plot table
       geo_table(icb_df(), index_icb(), "ICS", icb_prefix(), icb_suffix()) %>% 
-        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
+        htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
     # LA: Initial table
@@ -603,7 +603,7 @@ mod_07_geo_ch_flag_drug_server <- function(id, export_data) {
 
       # Plot table
       geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix()) %>% 
-        htmlwidgets::onRender("() => {$('.rt-no-data').remove()}")
+        htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
     
     # LHS: table affects -------------------------------------------------------
