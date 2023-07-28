@@ -48,7 +48,7 @@ mod_07_ch_flag_drug_ui <- function(id) {
       # Chart output
       highcharter::highchartOutput(
         outputId = ns("ch_flag_drug_chart"), 
-        height = "550px"
+        height = "450px"
         ),
       
       # Chart caption
