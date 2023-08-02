@@ -55,9 +55,9 @@ mod_07_ch_flag_drug_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Only the top 20 drugs or drug groups by total care home item count are presented. ",
-        "For example, only the top 20 paragraphs are presented, determined by the 20 paragraphs with the largest total item count in care homes. ",
-        "It is possible the 20 paragraphs with the highest total item count differs between care homes and non-care homes."
+        "Only the top 20 drugs or drug groups by total care home item count are presented. 
+         It is possible the 20 paragraphs with the highest total item count differs
+         between care homes and non-care homes."
       ),
       
       # Data download

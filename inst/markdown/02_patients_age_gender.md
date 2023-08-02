@@ -1,3 +1,5 @@
+## Demographic estimates for care home patients aged 65 years and over receiving prescriptions
+
 __Age and gender were consistent across the three financial years. Around two thirds of care home patients aged 65 years and over were female and 6 in 10 were aged 85 years and over.__
 
 The number of care home patients increases with age, with the highest age band (90+) typically having the greatest number of care home patients. At some geographic levels lower age bands (such as 85-89) had higher patient counts than the highest (90+) age band.   

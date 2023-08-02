@@ -26,40 +26,20 @@ app_ui <- function(request) {
            and over from 2020/21 until 2022/23"
         ),
         nhs_navlistPanel(
+          id = "mainTabs",
           well = FALSE,
           widths = c(2, 10),
           tabPanel(
             title = "Article",
             mod_01_headline_figures_ui("headline_figures"),
-            h2_tabstop(
-              "Demographic estimates for care home patients aged 65 years and
-               over receiving prescriptions"
-            ),
             mod_02_patients_age_gender_ui("patients_age_gender"),
             mod_03_patients_imd_ui("patients_imd"),
-            h2_tabstop(
-              "Estimated prescribing metrics for care home vs non-care home 
-               patients aged 65 years and over"
-            ),
             mod_04_metrics_ch_type_ui("metrics_ch_type"),
             mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_06_geo_ch_flag_ui("geo_ch_flag"),
-            h2_tabstop("Care home prescribing drug profile"),
             mod_07_ch_flag_drug_ui("ch_flag_drug"),
             mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug"),
-            h2_tabstop("Final thoughts"),
-            p(
-              "This article provides estimates of primary care prescribing patterns
-               for care home  and non-care home patients aged 65 years and over in
-               England during 2020/21, 2021/22 and 2022/23 based on experimental
-               data linkage work."
-            ),
-            p(
-              "This analysis addresses a key gap in knowledge and gives valuable
-               insights which can inform the use and management of medicines in
-               care homes to help improve health outcomes, quality of care and
-               ensure value.
-            ")            
+            includeMarkdown("inst/markdown/final_thoughts.md")
           ),
           tabPanel(
             title = "Metrics",
@@ -77,15 +57,7 @@ app_ui <- function(request) {
             title = "Feedback",
             mod_12_feedback_ui("feedback")
           )
-        ),
-        tags$script("
-          $(document).ready(
-            function () {
-              $('.app-side-nav__list a[data-toggle=\"tab\"]').on('click', function (e) {
-                window.scrollTo(0, 0)
-            });
-          });
-        ")
+        )
       )
     ),
     br(),
@@ -102,21 +74,50 @@ app_ui <- function(request) {
 #' @importFrom golem add_resource_path activate_js favicon bundle_resources
 #' @noRd
 golem_add_external_resources <- function() {
-  add_resource_path(
-    "www", app_sys("app/www")
-  )
+  # add_resource_path(
+  #   "www", app_sys("app/www")
+  # )
+  # 
+  # add_resource_path(
+  #   "markdown", app_sys("markdown")
+  # )
+  # 
+  # tags$head(
+  #   favicon(),
+  #   bundle_resources(
+  #     path = app_sys("app/www"),
+  #     app_title = "Estimated prescribing patterns for care home patients aged 65 years and over"
+  #   )
+  #   # Add here other external resources
+  #   # for example, you can add shinyalert::useShinyalert()
+  # )
   
-  add_resource_path(
-    "markdown", app_sys("markdown")
-  )
+  resources <- app_sys("app/www")
+  addResourcePath("www", resources)
+  # addResourcePath("markdown", app_sys("app/markdown"))
   
   tags$head(
     favicon(),
-    bundle_resources(
-      path = app_sys("app/www"),
-      app_title = "Estimated prescribing patterns for care home patients aged 65 years and over"
-    )
+    tags$title(
+      "Estimated prescribing patterns for care home patients aged 65 years and over"
+    ),
+    
     # Add here other external resources
     # for example, you can add shinyalert::useShinyalert()
+    
+    # Javascript resources
+    htmltools::htmlDependency(
+      name = "resources",
+      version = "0.0.1",
+      src = resources,
+      script = list.files(resources, pattern = "\\.js$", recursive = TRUE),
+      package = NULL,
+      all_files = TRUE
+    ),
+    # CSS resources
+    lapply(
+      list.files(resources, pattern = "\\.css$", recursive = TRUE),
+      function(x) tags$link(href = file.path("www", x), rel = "stylesheet")
+    )
   )
 }

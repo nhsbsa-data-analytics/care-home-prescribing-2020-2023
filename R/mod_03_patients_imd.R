@@ -43,11 +43,7 @@ mod_03_patients_imd_ui <- function(id) {
           "IMD deciles were attributed to care homes based on their address. If 
            a patient moved between care homes they could potentially be double 
            counted across multiple IMD deciles. Only 6 patients across the three
-           financial years could not be attributed an IMD decile. Decisions on
-           the locations of care homes will be influenced by many factors including
-           the local demand for residential care but also by supply side factors 
-           such as local property costs and the availability and cost of the care
-           workforce required."
+           financial years could not be attributed an IMD decile."
         )
       ),
       

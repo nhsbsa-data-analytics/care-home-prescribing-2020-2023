@@ -1,7 +1,7 @@
 mod_04_metrics_ch_type_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown("inst/markdown/04_metrics_ch_type.md"),
+    gsub("&gt;", ">", gsub("&lt;", "<", includeMarkdown("inst/markdown/04_metrics_ch_type.md"))),
     nhs_card(
       heading = "Estimated prescribing metrics by prescribing setting for 
                  patients aged 65 years and over in England",
@@ -47,6 +47,15 @@ mod_04_metrics_ch_type_ui <- function(id) {
         div(
           class = "nhsuk-grid-column-one-half",
           highcharter::highchartOutput(ns("chart_rh"), height = "250px")
+        )
+      ),
+      # Chart caption
+      tags$text(
+        class = "highcharts-caption",
+        style = "font-size: 9pt",
+        paste0(
+          "Nursing home and residential home patients were a subset of the care 
+           home patient population."
         )
       ),
       tags$text(

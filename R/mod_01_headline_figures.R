@@ -12,8 +12,8 @@ mod_01_headline_figures_ui <- function(id) {
   tagList(
     includeMarkdown("inst/markdown/01_headline_figures.md"),
     nhs_card(
-      heading = "Annual and monthly totals of patient numbers, prescription items
-                 and drug cost for care home patients aged 65 years and over in England",
+      heading = "Estimated number of patients, prescription items and drug cost 
+                 for care home patients aged 65 years and over in England 2020/21 to 2022/23",
 
       # Metric select input
       nhs_selectInput(
@@ -53,7 +53,8 @@ mod_01_headline_figures_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Distinct patient counts are rounded to the nearest 100, total prescription items are rounded to the nearest 1,000 and total drug cost (£) is rounded to the nearest 10,000."
+        "Patient counts are rounded to the nearest 100, while total prescription
+         items and total cost (£) are rounded to the nearest 1,000."
       ),
       
       # Data download option
