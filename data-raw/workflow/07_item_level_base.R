@@ -233,7 +233,7 @@ disp_db = disp_db %>%
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   )
 
-# Get a single gender and age for the period 
+# Get a single latest gender and age for the period 
 pat_db <- pat_db %>% 
   filter(
     CALC_AGE >= 65L,
@@ -248,33 +248,31 @@ pat_db <- pat_db %>%
     IGNORE_FLAG == "N", # remove dummy ldp forms
     ITEM_COUNT >= 1 # remove element-level rows
   ) %>%
+  mutate(PRESCRIBED_DATE_NA = ifelse(is.na(PRESCRIBED_DATE), 0, 1)) %>% 
   group_by(NHS_NO) %>%
-  summarise(
-    # Gender
-    MALE_COUNT = sum(
-      ifelse(PDS_GENDER == 1, 1, 0),
-      na.rm = TRUE
-    ),
-    FEMALE_COUNT = sum(
-      ifelse(PDS_GENDER == 2, 1, 0),
-      na.rm = TRUE
-    ),
-    # Take the max age
-    AGE = max(
-      CALC_AGE,
-      na.rm = TRUE
-    )
+  window_order(
+    desc(YEAR_MONTH),
+    # For YMs where EPS & Paper forms occur together,
+    # take the value as of the latest known EPS prescribed date,
+    # if not available, take the value from an arbitrary paper form
+    # with missing prescribed date
+    desc(PRESCRIBED_DATE_NA),
+    desc(PRESCRIBED_DATE)) %>%
+  mutate(
+    RN = row_number(),
+    AGE = max(CALC_AGE, na.rm = TRUE)
   ) %>%
-  ungroup() %>%
+  filter(RN == 1) %>%
+  ungroup() %>% 
   mutate(
     GENDER = case_when(
-      MALE_COUNT > 0 & FEMALE_COUNT == 0 ~ "Male",
-      MALE_COUNT == 0 & FEMALE_COUNT > 0 ~ "Female",
+      PDS_GENDER == 1 ~ "Male",
+      PDS_GENDER == 2 ~ "Female",
+      PDS_GENDER == 0 ~ "Unknown",
+      PDS_GENDER == 9 ~ "Indeterminate",
       TRUE ~ NA_character_
     ),
     # Add an age band
-    # Will we need a more complex treatment of age/age-band when considering
-    # periods of longer than the initial single year?
     AGE_BAND = case_when(
       AGE == -1 ~ "UNKNOWN",
       AGE < 65 ~ "<65",
@@ -285,7 +283,8 @@ pat_db <- pat_db %>%
       AGE < 90 ~ "85-89",
       TRUE ~ "90+"
     )
-  )
+  ) %>%
+  select(NHS_NO, GENDER, AGE, AGE_BAND)
 
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
