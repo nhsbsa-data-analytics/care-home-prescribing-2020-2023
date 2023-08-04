@@ -17,7 +17,7 @@ mod_03_patients_imd_ui <- function(id) {
       # Metric select input
       nhs_selectInput(
         inputId = ns("financial_year"),
-        label = "Financial Year",
+        label = "Financial year",
         choices = unique(carehomes2::mod_patients_by_imd_df$`Financial Year`),
         full_width = FALSE
       ),

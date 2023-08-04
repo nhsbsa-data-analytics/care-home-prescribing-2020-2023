@@ -34,7 +34,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
     nhs_card(
       
       # Overall Mod heading
-      heading = "BNF level prescribing analysis by geography for care home 
+      heading = "BNF-level prescribing analysis by geography for care home 
                  patients aged 65 years and over in England",
       
       # 3 Tabs for differing geographies
@@ -61,7 +61,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             # Input 2: BNF Parent
             nhs_selectInput(
               inputId = ns("input_region_bnf_parent"),
-              label = "BNF Level",
+              label = "BNF level",
               choices = unique(carehomes2::mod_geo_ch_flag_drug_df$BNF_PARENT),
               full_width = TRUE
               ),
@@ -69,7 +69,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             # Input 3: BNF Child
             nhs_selectInput(
               inputId = ns("input_region_bnf_child"),
-              label = "BNF Type",
+              label = "BNF type",
               choices = carehomes2::mod_geo_ch_flag_drug_df %>%
                 dplyr::filter(
                   GEOGRAPHY_PARENT == "Region",
@@ -120,7 +120,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 7 regions. Only the top 50 elements by total item count per BNF level are presented. ",
+              "Click on a row to select one of the 7 regions. Only the top 50 elements by total item count per BNF-level are presented. ",
               "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
             )
           )
@@ -205,7 +205,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 42 ICSs. Only the top 50 elements by total item count per BNF level are presented. ",
+              "Click on a row to select one of the 42 ICSs. Only the top 50 elements by total item count per BNF-level are presented. ",
               "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
             )
           )
@@ -290,7 +290,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 308 Local Authorities. Only the top 50 elements by total item count per BNF level are presented. ",
+              "Click on a row to select one of the 308 Local Authorities. Only the top 50 elements by total item count per BNF-level are presented. ",
               "For example, only the top 50 paragraphs are presented, determined by the 50 paragraphs with the largest total item count."
             )
           )
@@ -573,9 +573,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           borderless = FALSE,
           columns = list(
             .selection = reactable::colDef(width = 15),
-            `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix)),
-            `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix)),
-            `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix))
+            `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
+            `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
+            `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2))
           ),
           defaultColDef = reactable::colDef(headerClass = "my-header"),
           style = list(fontSize = "14px", fontFamily = "Arial"),
