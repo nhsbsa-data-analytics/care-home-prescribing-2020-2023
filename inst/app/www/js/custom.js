@@ -39,6 +39,36 @@ $(document).ready(function () {
         a.addClass('local');
     }
   });
+  
+  // Handle clicks on mod_06 datatable, to outline selected map region
+  Shiny.addCustomMessageHandler("rowClicked",
+    function(message) {
+      // First, remove border from currently bordered areas
+      // previous_row may be null, so only update if it has a value
+      if(Number.isInteger(message.previous_row)) {
+        $("#geo_ch_flag-map_ch").highcharts().series[0]
+          .points[message.previous_row].update({
+            borderWidth: 0
+        });
+        
+        $("#geo_ch_flag-map_non_ch").highcharts().series[0]
+          .points[message.previous_row].update({
+            borderWidth: 0
+        });
+      }
+      
+      // Second, add border to area corresponding with current selection
+      $("#geo_ch_flag-map_ch").highcharts().series[0]
+        .points[message.row].update({
+          borderWidth: 2
+      });
+      
+      $("#geo_ch_flag-map_non_ch").highcharts().series[0]
+        .points[message.row].update({
+          borderWidth: 2
+      });
+    }
+  );
 });
 
 

@@ -12,7 +12,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
           class = "nhsuk-grid-column-one-third",
           nhs_selectInput(
             inputId = ns("fy"),
-            label = "Financial Year",
+            label = "Financial year",
             choices = c(
               "2020/21",
               "2021/22",
@@ -70,7 +70,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
 
 mod_06_geo_ch_flag_server <- function(id) {
   moduleServer(id, function(input, output, session) {
-
+    ns <- NS(id)
+    
     # Metric name mappings ------------------------------------------------
 
     # Map metric column names to UI metric names
@@ -178,7 +179,9 @@ mod_06_geo_ch_flag_server <- function(id) {
               tags$br(),
               metric_tooltips[input$metric] %>% unname()
             )
-          )
+          ),
+          borderWidth = 0,
+          borderColor = 'black'
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_mapNavigation(
@@ -202,8 +205,8 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Create datatable
     create_datatable <- function(data) {
-      data %>%
-        dplyr::filter(.data$GEOGRAPHY == input$geography) %>% 
+      tdata <- data %>%
+        dplyr::filter(.data$GEOGRAPHY == input$geography) %>%
         dplyr::mutate(
           .data$FY,
           CH_FLAG = dplyr::case_match(
@@ -219,13 +222,13 @@ mod_06_geo_ch_flag_server <- function(id) {
           names_from = dplyr::all_of(c("FY", "CH_FLAG")),
           values_from = .data[[input$metric]],
           names_sep = " "
-        ) %>% 
+        ) %>%
         dplyr::arrange(.data[[input$geography]]) %>%
         # Move CH cols left of sub-geography column, so it is in centre col
         dplyr::relocate(
           dplyr::matches(" CH"),
           .before = !!rlang::sym(input$geography)
-        ) %>% 
+        ) %>%
         # Apply styling for header names, also remove the extraneous CH/NCH
         # NOTE: cannot have identical col names, so we use an extra space for
         # one set
@@ -241,25 +244,52 @@ mod_06_geo_ch_flag_server <- function(id) {
                 as.character()
             }
           )
-        ) %>%
-        DT::datatable(
-          escape = FALSE,
-          rownames = FALSE,
-          options = list(
-            dom = "ft",
-            scrollCollapse = TRUE,
-            paging = FALSE,
-            scrollY = "350px",
-            overflow = "scroll",
-            tabindex = "0",
-            columnDefs = list(
-              list(className = "dt-center", targets = "_all")
+        )
+      
+      table_container <- tags$table(
+        DT::tableHeader(tdata, escape = FALSE),
+        DT::tableFooter(
+          purrr::map(
+            tdata,
+            function(x) ifelse(
+              is.numeric(x),
+              ifelse(
+                grepl("cost", input$metric, ignore.case = TRUE),
+                format(round(mean(x, na.rm = TRUE), 0), nsmall = 0),
+                format(round(mean(x, na.rm = TRUE), 2), nsmall = 2)
+              ),
+              "National average"
             )
-          ),
-          height = "400px",
-          filter = "none",
-          selection = "none"
-        ) %>%
+          )
+        )
+      )
+      
+      # Over-ride CSS in NHS front-end toolkit
+      table_container <- htmltools::tagQuery(table_container)$
+        find("tfoot>tr>th")$
+        addAttrs("style" = "font-size: 12px;")$
+        allTags()
+      
+      DT::datatable(
+        tdata,
+        escape = FALSE,
+        container = table_container,
+        rownames = FALSE,
+        options = list(
+          dom = "ft",
+          scrollCollapse = TRUE,
+          paging = FALSE,
+          scrollY = "350px",
+          overflow = "scroll",
+          tabindex = "0",
+          columnDefs = list(
+            list(className = "dt-center", targets = "_all")
+          )
+        ),
+        height = "400px",
+        filter = "none",
+        selection = "single"
+      ) %>%
         DT::formatStyle(columns = 1:7, `font-size` = "12px") %>%
         DT::formatString(
           columns = (1:7)[-4],
@@ -304,5 +334,30 @@ mod_06_geo_ch_flag_server <- function(id) {
       filename = "Selected prescribing metrics by geography and care home status.xlsx",
       export_data = create_download_data(fmt_data)
     )
+    
+
+    # Reactive events -----------------------------------------------------
+
+    # Need to track previously selected row to toggle border w/o searching whole
+    # dataset
+    previous_row_selected <- reactiveVal(NULL)
+    
+    # When a table row is clicked, fire a custom Shiny message to toggle the
+    # border of the same map area.
+    observe({
+      if (!is.null(previous_row_selected())) {
+        session$sendCustomMessage(
+          type = 'rowClicked',
+          message = list(
+            # Need index - 1 since JavaScript is 0-indexed vs R 1-indexed
+            previous_row = previous_row_selected() - 1,
+            row = input$table_rows_selected - 1
+          )
+        )
+      } 
+      
+      # Update previous selected row to be the current selected row
+      previous_row_selected(input$table_rows_selected)
+    })
   })
 }
