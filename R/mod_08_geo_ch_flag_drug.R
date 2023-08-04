@@ -12,6 +12,21 @@
 #' @importFrom shiny NS tagList
 mod_08_geo_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
+  
+  reactable_table_css = "
+  .my-header {
+    border-bottom: 1px solid #4C4E52;
+  }
+  
+  .my-row {
+    border-bottom: 1.8px solid #ABB0B8;
+  }
+  
+  .my-row:hover {
+    background-color: #E6E6E3;
+  }
+  "
+  
   tagList(
     includeMarkdown("inst/markdown/08_geo_ch_flag_drug.md"),
     
@@ -70,6 +85,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
         
           # First column with 1 long table
           fluidPage(
+            
+            # Reactable table CSS
+            tags$style(HTML(reactable_table_css)),
             
             # LHS: Single table
             column(
@@ -153,6 +171,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           # First column with 1 long table
           fluidPage(
             
+            # Reactable table CSS
+            tags$style(HTML(reactable_table_css)),
+            
             # LHS: Single table
             column(
               7,
@@ -234,6 +255,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           
           # First column with 1 long table
           fluidPage(
+            
+            # Reactable table CSS
+            tags$style(HTML(reactable_table_css)),
             
             # LHS: Single table
             column(
@@ -545,20 +569,22 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           pagination = FALSE,
           searchable = TRUE,
           striped = TRUE,
-          #outlined = TRUE, 
           highlight = TRUE,
-          borderless = TRUE,
+          borderless = FALSE,
           columns = list(
             .selection = reactable::colDef(width = 15),
             `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix)),
             `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix)),
             `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2, prefix = prefix, suffix = suffix))
           ),
+          defaultColDef = reactable::colDef(headerClass = "my-header"),
           style = list(fontSize = "14px", fontFamily = "Arial"),
-          theme = reactable::reactableTheme(stripedColor = "#f8f8f8")
+          theme = reactable::reactableTheme(stripedColor = "#f8f8f8"),
+          class = "my-tbl",
+          rowClass = "my-row"
         )
     }
-    
+
     # Region: select row
     index_region = reactive({
       # Select 1st row on initialisation
