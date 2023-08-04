@@ -96,7 +96,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
             text = paste(
               switch(
                 input$metric,
-                "PATS" = "<b>Mean Monthly patient count</b>",
+                "PATS" = "<b>Mean monthly patient count</b>",
                 "ITEMS" = "<b>Mean monthly items</b>",
                 "NIC" = "<b>Mean monthly cost (£)</b>"
               )
