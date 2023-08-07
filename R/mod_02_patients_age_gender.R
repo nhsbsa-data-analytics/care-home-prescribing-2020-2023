@@ -108,7 +108,8 @@ mod_02_patients_age_gender_server <- function(id){
                  excluded_unk(),
                  "% and ",
                  excluded_ind(),
-                 "% of patients where the gender was unknown and indeterminate, respectively."
+                 "% of patients where the gender was unknown and indeterminate, respectively.",
+                 " Patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
                  )
 
       )
