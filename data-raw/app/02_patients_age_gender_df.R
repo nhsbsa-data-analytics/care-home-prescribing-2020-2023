@@ -1,4 +1,4 @@
-# Running time ~10 min
+# Running time < 1 min
 
 library(dplyr)
 library(dbplyr)
@@ -43,7 +43,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
     rename(!!!geography_cols) |>
     mutate(
       # If the SUB_GEOGRAPHY_NAME is NA then set gender to NA
-      GENDER = ifelse(is.na(SUB_GEOGRAPHY_NAME), NA, GENDER),
+      GENDER = ifelse(is.na(SUB_GEOGRAPHY_NAME), "Unknown", GENDER),
       # If either SUB_GEOGRAPHY_NAME is NA or GENDER is NA then set AGE_BAND to NA
       AGE_BAND = ifelse(
         test = is.na(SUB_GEOGRAPHY_NAME) | is.na(GENDER),
@@ -64,6 +64,7 @@ patients_by_fy_geo_age_gender_df <- purrr::map(
   patients_by_fy_geo_age_gender_fun
   ) |>
   purrr::list_rbind()
+
 
 # Apply rounding
 patients_by_fy_geo_age_gender_df <-

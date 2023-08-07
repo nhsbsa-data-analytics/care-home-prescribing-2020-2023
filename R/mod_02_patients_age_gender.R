@@ -48,30 +48,55 @@ mod_02_patients_age_gender_server <- function(id){
     ns <- session$ns
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
-    pct_excluded_patients <- reactive({
+    excluded_patients <- carehomes2::patients_by_fy_geo_age_gender_df |> 
+      dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
+      dplyr::summarise(
+        EXCLUDED_UNK = sum(ifelse(GENDER=="Unknown", TOTAL_PATIENTS, 0)),
+        EXCLUDED_IND = sum(ifelse(GENDER=="Indeterminate", TOTAL_PATIENTS, 0)),
+        TOTAL_PATIENTS = sum(TOTAL_PATIENTS),
+        .groups = "drop"
+      ) |>
+      dplyr::mutate(
+        PCT_EXCLUDED_UNK = (EXCLUDED_UNK/TOTAL_PATIENTS*100) |> janitor::round_half_up(1),
+        PCT_EXCLUDED_IND = (EXCLUDED_IND/TOTAL_PATIENTS*100) |> janitor::round_half_up(1)
+      )
+    
+    excluded_unk <- reactive({
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
       
-      t <- carehomes2::patients_by_fy_geo_age_gender_df |> 
-      dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
-      dplyr::summarise(
-        EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER), TOTAL_PATIENTS, 0)),
-        TOTAL_PATIENTS = sum(TOTAL_PATIENTS),
-        .groups = "drop"
-      ) |>
-      dplyr::mutate(PCT_EXCLUDED_PATIENTS = (EXCLUDED_PATIENTS/TOTAL_PATIENTS*100) |> janitor::round_half_up(1)) |>
+      t <- excluded_patients |>
       # Extract % for the selected sub-geography
       dplyr::filter(
         FY == input$fy,
         GEOGRAPHY == input$geography,
         SUB_GEOGRAPHY_NAME == input$sub_geography
       ) |>
-      dplyr::pull(PCT_EXCLUDED_PATIENTS)
+      dplyr::pull(PCT_EXCLUDED_UNK)
       
-      if (t < 1 & t > 0) "less than 1" else t
+      if (t < 0.1 & t > 0) "less than 0.1" else t
       
     })
+    
+    excluded_ind <- reactive({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
+      
+      t <- excluded_patients |>
+        # Extract % for the selected sub-geography
+        dplyr::filter(
+          FY == input$fy,
+          GEOGRAPHY == input$geography,
+          SUB_GEOGRAPHY_NAME == input$sub_geography
+        ) |>
+        dplyr::pull(PCT_EXCLUDED_IND)
+      
+      if (t < 0.1 & t > 0) "less than 0.1" else t
+      
+    })    
+    
     
     output$pct_excluded_patients <- renderUI({
       
@@ -80,8 +105,11 @@ mod_02_patients_age_gender_server <- function(id){
         style = "font-size: 9pt;",
 
           paste0("This excludes ",
-                 pct_excluded_patients(),
-                 "% of patients where the gender was unknown.")
+                 excluded_unk(),
+                 "% and ",
+                 excluded_ind(),
+                 "% of patients where the gender was unknown and indeterminate, respectively."
+                 )
 
       )
       
@@ -93,7 +121,7 @@ mod_02_patients_age_gender_server <- function(id){
     # Filter to relevant data for this chart
     patients_by_fy_geo_age_gender_df <-
       carehomes2::patients_by_fy_geo_age_gender_df %>%
-      dplyr::filter(!is.na(GENDER))
+      dplyr::filter(GENDER %in% c("Male","Female"))
      
     # Filter the data based on the FY and the geography
     patients_by_geo_age_gender_at_specific_fy_and_geo_df <- reactive({
@@ -168,7 +196,7 @@ mod_02_patients_age_gender_server <- function(id){
         patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
         dplyr::summarise(
           TOTAL_FEMALE_PATIENTS =
-            sum(ifelse(!is.na(GENDER) & GENDER == "Female", TOTAL_PATIENTS, 0)),
+            sum(ifelse(GENDER == "Female", TOTAL_PATIENTS, 0)),
           TOTAL_PATIENTS = sum(TOTAL_PATIENTS)
         )
 
@@ -212,14 +240,17 @@ mod_02_patients_age_gender_server <- function(id){
 
     # Create download data
     create_download_data <- function(data) {
-      data %>%
+      data |>
+        dplyr::filter(
+          .data$GENDER %in% c("Male", "Female")
+        ) |>
         dplyr::arrange(
           .data$FY,
           .data$GEOGRAPHY,
           .data$SUB_GEOGRAPHY_NAME,
           .data$GENDER,
           .data$AGE_BAND
-        ) %>%
+        ) |>
         dplyr::rename(
           `Financial year` = .data$FY,
           Geography = .data$GEOGRAPHY,
