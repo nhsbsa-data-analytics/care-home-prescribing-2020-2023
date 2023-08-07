@@ -1,4 +1,4 @@
-# Running time ~25 min
+# Running time ~35 min
 
 library(dplyr)
 library(dbplyr)
@@ -9,7 +9,10 @@ source("data-raw/app/data_raw_helpers.R")
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
-base_db <- con |> tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+base_db <- con |>
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) |>
+  filter(GENDER %in% c("Male", "Female"))
+ 
 
 metrics_by_age_gender_and_ch_flag_df <- get_metrics(
   base_db,
