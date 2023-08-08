@@ -21,10 +21,7 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = purrr::set_names(
-                          gsub("ICS", "ICB", names(geographies)),
-                          names(geographies)
-                        ),
+                        choices = levels(carehomes2::patients_by_fy_geo_age_gender_df$GEOGRAPHY),
                         full_width = T),
         nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",
@@ -32,7 +29,7 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
-      shiny::htmlOutput(outputId = ns("pct_excluded_patients")),
+      shiny::htmlOutput(outputId = ns("excluded_patients")),
       mod_nhs_download_ui(id = ns("download_data"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
@@ -73,9 +70,9 @@ mod_02_patients_age_gender_server <- function(id){
         GEOGRAPHY == input$geography,
         SUB_GEOGRAPHY_NAME == input$sub_geography
       ) |>
-      dplyr::pull(PCT_EXCLUDED_UNK)
+      dplyr::pull(EXCLUDED_UNK)
       
-      if (t < 0.1 & t > 0) "less than 0.1" else t
+      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
       
     })
     
@@ -91,27 +88,46 @@ mod_02_patients_age_gender_server <- function(id){
           GEOGRAPHY == input$geography,
           SUB_GEOGRAPHY_NAME == input$sub_geography
         ) |>
-        dplyr::pull(PCT_EXCLUDED_IND)
+        dplyr::pull(EXCLUDED_IND)
       
-      if (t < 0.1 & t > 0) "less than 0.1" else t
+      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
       
     })    
     
     
-    output$pct_excluded_patients <- renderUI({
+    output$excluded_patients <- renderUI({
       
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
 
-          paste0("This excludes ",
-                 excluded_unk(),
-                 "% and ",
-                 excluded_ind(),
-                 "% of patients where the gender was unknown and indeterminate, respectively.",
-                 " Patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
-                 )
-
+        paste0(
+          
+          if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
+            
+            paste0("This chart does not show ",
+            excluded_unk(),
+            " and ",
+            excluded_ind(),
+            " patients where the gender was not known and not specified, respectively.")
+            
+          } else if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") == 0) {
+            
+            paste0("This chart does not show ",
+                   excluded_unk(),
+                   " patients where the gender was not known.")
+            
+          } else if (stringr::str_extract(excluded_unk(), "\\d+") == 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
+            
+            paste0("This chart does not show ",
+                   excluded_ind(),
+                   " patients where the gender was not specified.")
+            
+          } else NULL,
+          
+          " Patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
+              
+        )
       )
       
     })

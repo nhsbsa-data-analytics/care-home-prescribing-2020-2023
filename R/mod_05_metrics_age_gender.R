@@ -27,7 +27,7 @@ mod_05_metrics_age_gender_ui <- function(id){
                         full_width = T)
         ),
       highcharter::highchartOutput(outputId = ns("metrics_by_gender_and_age_band_and_ch_flag_chart"), height = "350px"),
-      shiny::htmlOutput(outputId = ns("pct_excluded_patients")),
+      shiny::htmlOutput(outputId = ns("excluded_patients")),
       mod_nhs_download_ui(id = ns("download_data"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
@@ -43,37 +43,56 @@ mod_05_metrics_age_gender_server <- function(id){
     ns <- session$ns
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
-    pct_excluded_patients <- reactive({
+    excluded_patients <- carehomes2::patients_by_fy_geo_age_gender_df |> 
+      dplyr::filter(GEOGRAPHY=="Overall") |>
+      dplyr::group_by(FY) |>
+      dplyr::summarise(
+        EXCLUDED_UNK = sum(ifelse(GENDER=="Unknown", TOTAL_PATIENTS, 0)),
+        EXCLUDED_IND = sum(ifelse(GENDER=="Indeterminate", TOTAL_PATIENTS, 0)),
+        TOTAL_PATIENTS = sum(TOTAL_PATIENTS),
+        .groups = "drop"
+      ) |>
+      dplyr::mutate(
+        PCT_EXCLUDED_UNK = (EXCLUDED_UNK/TOTAL_PATIENTS*100) |> janitor::round_half_up(1),
+        PCT_EXCLUDED_IND = (EXCLUDED_IND/TOTAL_PATIENTS*100) |> janitor::round_half_up(1)
+      )
+    
+    
+    excluded_unk <- reactive({
       req(input$fy)
 
-      t <- carehomes2::metrics_by_age_gender_and_ch_flag_df |> 
-        dplyr::group_by(FY) |>
-         # Re-visit this when we have a final decision on SDC
-        dplyr::summarise(
-          EXCLUDED_PATIENTS = sum(ifelse(is.na(GENDER),# | is.na(SDC_TOTAL_PATIENTS),
-                                         TOTAL_PM, # TOTAL_PATIENTS,
-                                         0)),
-          TOTAL_PATIENTS = sum(TOTAL_PM), #  sum(TOTAL_PATIENTS),
-          .groups = "drop"
-        ) |>
-        dplyr::mutate(PCT_EXCLUDED_PATIENTS = (EXCLUDED_PATIENTS/TOTAL_PATIENTS*100) |> janitor::round_half_up(1)) |>
-        # Extract % for the selected sub-geography
-        dplyr::filter(FY == input$fy) |>
-        dplyr::pull(PCT_EXCLUDED_PATIENTS)
+      t <- excluded_patients |>
+           dplyr::filter(FY == input$fy) |>
+           dplyr::pull(EXCLUDED_UNK)
       
-      if (t < 1) "less than 1" else t
+      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
       
     })
     
-    output$pct_excluded_patients <- renderUI({
+    excluded_ind <- reactive({
+      req(input$fy)
+      
+      t <- excluded_patients |>
+        dplyr::filter(FY == input$fy) |>
+        dplyr::pull(EXCLUDED_IND)
+      
+      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
+      
+    })
+    
+    output$excluded_patients <- renderUI({
       
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
         
-        paste0("This excludes ",
-               pct_excluded_patients(),
-               "% of patients where the gender was unknown or where statistical disclosure control has been applied.")
+        paste0("This chart does not show ",
+               excluded_unk(),
+               " and ",
+               excluded_ind(),
+               " patients where the gender was not known and not specified, respectively.",
+               " Patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
+              )
       )
       
     })

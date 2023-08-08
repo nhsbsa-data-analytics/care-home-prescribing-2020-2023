@@ -47,6 +47,7 @@ Imports:
     rsvg,
     shiny,
     stats,
+    stringr,
     tidyr
 Suggests:
     addressMatchR,
@@ -59,7 +60,6 @@ Suggests:
     lubridate,
     pacman,
     readr,
-    stringr,
     tictoc,
     yaml
 Remotes:
