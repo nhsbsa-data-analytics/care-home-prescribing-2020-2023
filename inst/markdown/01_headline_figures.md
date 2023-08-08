@@ -21,7 +21,7 @@ Prescribing estimates are based on a sophisticated methodology which includes li
 
 This analysis addresses a key gap in knowledge and gives valuable insights which can inform the use and management of medicines in care homes to help improve health outcomes, quality of care and ensure value. __It should however be noted that data from the 2020/21 financial year was at the height of the COVID-19 pandemic and data from the 2021/22 financial year was toward the end of the pandemic.__ Prescribing patterns may change in subsequent years.
 
-See the Methodology page for further details, or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
+See the <a onclick="internalLink('Methodology');">Methodology</a> page for further details, or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 
 
 ## Overall prescribing for care home patients aged 65 and over
@@ -37,7 +37,7 @@ The total number of care home patients who received at least one prescription it
 * The population is not stable – some patients become 65 years during the year, some move in or out of the care home and others may die;
 * Not all care home patients receive a prescription in every month they are in a care home.
 
-For this reason prescribing metrics were calculated on a patient-month basis.
+For this reason <a onclick="internalLink('Metrics', 'prescribing-metrics');">Metrics</a> were calculated on a <a onclick="internalLink('Metrics', 'prescribing-per-patient-month-ppm');">patient-month</a> basis.
 
 The number of patients who received prescriptions in a care home peaked in April 2020, at 314,000 patients which was at the start of the COVID-19 pandemic. April 2020 also had the highest number of care home prescription items, at 3.3 million items.
    

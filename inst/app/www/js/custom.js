@@ -60,12 +60,12 @@ $(document).ready(function () {
       // Second, add border to area corresponding with current selection
       $("#geo_ch_flag-map_ch").highcharts().series[0]
         .points[message.row].update({
-          borderWidth: 2
+          borderWidth: 1.25
       });
       
       $("#geo_ch_flag-map_non_ch").highcharts().series[0]
         .points[message.row].update({
-          borderWidth: 2
+          borderWidth: 1.25
       });
     }
   );

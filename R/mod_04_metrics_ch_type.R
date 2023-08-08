@@ -31,22 +31,22 @@ mod_04_metrics_ch_type_ui <- function(id) {
         class = "nhsuk-grid-row",
         div(
           class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_ch"), height = "250px")
+          highcharter::highchartOutput(ns("chart_ch"), height = "225px")
         ),
         div(
           class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_non_ch"), height = "250px")
+          highcharter::highchartOutput(ns("chart_non_ch"), height = "225px")
         )
       ),
       div(
         class = "nhsuk-grid-row",
         div(
           class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_nh"), height = "250px")
+          highcharter::highchartOutput(ns("chart_nh"), height = "225px")
         ),
         div(
           class = "nhsuk-grid-column-one-half",
-          highcharter::highchartOutput(ns("chart_rh"), height = "250px")
+          highcharter::highchartOutput(ns("chart_rh"), height = "225px")
         )
       ),
       # Chart caption
@@ -61,7 +61,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Where the number of patients is less than 5 the data has been redacted."
+        "Clicking a row will outline the selected area."
       ),
       mod_nhs_download_ui(id = ns("download_data"))
     )

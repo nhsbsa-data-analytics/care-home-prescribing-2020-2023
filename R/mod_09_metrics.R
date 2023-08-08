@@ -26,7 +26,7 @@ mod_09_metrics_ui <- function(id){
       ) %>%
         knitr::kable("html") %>%
         kableExtra::kable_styling(
-          bootstrap_options = c("striped", "hover", "condensed", "responsive")
+          bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
     includeMarkdown("inst/markdown/09_metrics_2.md"),
@@ -34,13 +34,14 @@ mod_09_metrics_ui <- function(id){
       tibble::tribble(
         ~`BNF Level`,         ~Category,   ~Name,
         #---------------------|------------|--------------------
-        "Section",            "Inclusion", "Antidepressant drugs<br>Antiepileptic drugs<br>Diuretics<br>Hypertension and heart failure<br>Hypnotics and anxiolytics | | Paragraph          | Inclusion | Antipsychotic depot injections<br>Antipsychotic drugs<br>Opioid analgesics<br>Opioid dependence<br>Alpha-adrenoceptor blocking drugs<br>Antihistamines<br>Vasodilator antihypertensive drugs<br>Drugs for urinary frequency enuresis and incontinence<br>Nitrates",
+        "Section",            "Inclusion", "Antidepressant drugs<br>Antiepileptic drugs<br>Diuretics<br>Hypertension and heart failure<br>Hypnotics and anxiolytics",
+        "Paragraph",          "Inclusion",  "Antipsychotic depot injections<br>Antipsychotic drugs<br>Opioid analgesics<br>Opioid dependence<br>Alpha-adrenoceptor blocking drugs<br>Antihistamines<br>Vasodilator antihypertensive drugs<br>Drugs for urinary frequency enuresis and incontinence<br>Nitrates",
         "Sub-paragraph",      "Inclusion", "Benzodiazepines",
         "Chemical substance", "Exclusion", "Paraldehyde<br>Mirabegron<br>Mannitol<br>Loratadine<br>Desloratadine<br>Bilastine<br>Minoxidil"
       ) %>% 
         knitr::kable("html", escape = FALSE) %>%
         kableExtra::kable_styling(
-          bootstrap_options = c("striped", "hover", "condensed", "responsive")
+          bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
     includeMarkdown("inst/markdown/09_metrics_3.md"),
@@ -60,7 +61,7 @@ mod_09_metrics_ui <- function(id){
       ) %>% 
         knitr::kable("html") %>%
         kableExtra::kable_styling(
-          bootstrap_options = c("striped", "hover", "condensed", "responsive")
+          bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     )
   )
