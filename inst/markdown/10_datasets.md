@@ -20,7 +20,7 @@ A single age was attributed to each patient for each financial year, to enable a
 
 The analysis focuses on prescriptions for older patients aged 65 years and over at the time of prescribing. Patient age was determined using a mixture of patient information from prescription forms and the [Personal Demographics Service](https://digital.nhs.uk/services/demographics) (PDS). Further details on the process of [patient age determination (PDF format)](https://www.nhsbsa.nhs.uk/sites/default/files/2018-02/180115%20Age%20Logic%20Summary%20Flow%20Chart%20-%20Revised%20Layout.pdf) can be found on our website.
 
-A single gender was attributed to each patient. The most recent gender recorded against a patient was taken as their gender.
+A single gender was attributed to each patient. The most recent gender recorded against a patient was taken as their gender. Patient gender was sourced from the PDS, which includes four categories: (1) Male, (2) Female, (3) Not known, (4) Not specified. Category (3) consists of patients where gender has not been recorded; category (4) consists of patients who could not be classified as either male or female.
 
 Patient prescription forms were labelled as being from a care home or not based on address matching described in the [Methodology](https://rpubs.com/nhsbsa-data-analytics/methodology). Of 248 million prescription forms issued to patients aged 65 years and over in 2022/23, 17 million could be categorised as being from a care home.
 
