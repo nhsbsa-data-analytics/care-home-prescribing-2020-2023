@@ -51,6 +51,19 @@ Imports:
     stringr,
     tibble,
     tidyr
+Suggests:
+    addressMatchR,
+    archive,
+    DBI,
+    dbplyr,
+    glue,
+    httr,
+    jsonlite,
+    lubridate,
+    pacman,
+    readr,
+    tictoc,
+    yaml
 Remotes:
     nhsbsa-data-analytics/nhsbsaR,
     nhsbsa-data-analytics/addressMatchR,
