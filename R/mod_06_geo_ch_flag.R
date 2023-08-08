@@ -290,12 +290,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         filter = "none",
         selection = "single"
       ) %>%
-        DT::formatStyle(columns = 1:7, `font-size` = "12px") %>%
-        DT::formatString(
-          columns = (1:7)[-4],
-          prefix = ifelse(input$metric == "COST_PPM", "\u00A3", ""),
-          suffix = ifelse(grepl("PCT_", input$metric), "%", "")
-        )
+        DT::formatStyle(columns = 1:7, `font-size` = "12px")
     }
     
     # Create download data (all data)
