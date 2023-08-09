@@ -13,7 +13,7 @@ We estimated a monthly average __of 301,000 care home patients aged 65 years__ a
 
 As might be expected, __care home patients aged 65 years and over received more prescribing__ than non-care home patients, including prescribing of drugs associated with a falls risk. Care home patients also received a different range of medicines and were more likely to receive prescribing of Vitamin D and for pain relief. They received less prescribing of medicines associated with kidney injury compared with non-care home patients.
 
-Almost two-thirds of care home patients aged 65 years and over who received prescriptions were female and 43% were females aged 85 years and over. Monthly prescribing costs and volumes varied by age, gender, care home type and geography.
+Almost two-thirds of care home patients aged 65 years and over who received prescriptions were female. Just over 4 in 10 were females aged 85 years and over. Monthly prescribing costs and volumes varied by age, gender, care home type and geography.
 
 ## Methodology
 
