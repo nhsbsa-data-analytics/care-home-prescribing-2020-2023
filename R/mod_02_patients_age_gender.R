@@ -125,7 +125,7 @@ mod_02_patients_age_gender_server <- function(id){
             
           } else NULL,
           
-          " Patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
+          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
               
         )
       )
