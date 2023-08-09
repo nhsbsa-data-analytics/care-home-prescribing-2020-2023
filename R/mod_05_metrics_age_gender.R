@@ -90,8 +90,7 @@ mod_05_metrics_age_gender_server <- function(id){
                excluded_unk(),
                " and ",
                excluded_ind(),
-               " patients where the gender was not known and not specified, respectively.",
-               " Patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
+               " patients where the gender was not known and not specified, respectively."
               )
       )
       
