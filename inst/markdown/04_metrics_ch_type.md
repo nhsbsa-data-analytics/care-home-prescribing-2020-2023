@@ -1,6 +1,6 @@
 ## Estimated prescribing metrics for care home vs non-care home patients aged 65 years and over
 
-_Similar proportions of care home patients aged 65 years or over live in residential homes and nursing homes.__
+__Similar proportions of care home patients aged 65 years or over live in residential homes and nursing homes.__
 
 On average each month, we estimate similar proportions of care home patients aged 65 years or over living in residential homes (44.5%) and nursing homes (42.5%). A small percentage (2.1%) appear in both settings each month. There were 10.9% which we were unable to link to the [CQC dataset](https://anypoint.mulesoft.com/exchange/portals/care-quality-commission-5/4d36bd23-127d-4acf-8903-ba292ea615d4/cqc-syndication-1/) in order to attribute to a residential or nursing home, due to incomplete address information. It should be noted that these proportions are not comparable to those reported by NHS Digital in the [Adult Social Care Activity and Finance Report, England 2020-21](https://digital.nhs.uk/data-and-information/publications/statistical/adult-social-care-activity-and-finance-report/2020-21#resources), which considers clients accessing long term support by setting.
 
