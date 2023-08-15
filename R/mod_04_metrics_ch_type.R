@@ -58,12 +58,6 @@ mod_04_metrics_ch_type_ui <- function(id) {
            home patient population."
         )
       ),
-      tags$text(
-        class = "highcharts-caption",
-        style = "font-size: 9pt",
-        "Nursing home and residential home patients were a subset of the care 
-         home patient population."
-      ),
       mod_nhs_download_ui(id = ns("download_data"))
     )
   )
