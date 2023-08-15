@@ -58,11 +58,6 @@ mod_04_metrics_ch_type_ui <- function(id) {
            home patient population."
         )
       ),
-      tags$text(
-        class = "highcharts-caption",
-        style = "font-size: 9pt",
-        "Clicking a row will outline the selected area."
-      ),
       mod_nhs_download_ui(id = ns("download_data"))
     )
   )

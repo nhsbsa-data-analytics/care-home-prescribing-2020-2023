@@ -61,7 +61,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Where the number of patients is less than 5 the data has been redacted."
+        "Clicking a row will outline the selected area."
       ),
       mod_nhs_download_ui(ns("download_data"))
     )
