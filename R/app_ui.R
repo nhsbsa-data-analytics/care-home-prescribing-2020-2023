@@ -56,6 +56,10 @@ app_ui <- function(request) {
           tabPanel(
             title = "Feedback",
             mod_12_feedback_ui("feedback")
+          ),
+          tabPanel(
+            title = "Annex",
+            mod_13_annex_ui("annex")
           )
         )
       )
