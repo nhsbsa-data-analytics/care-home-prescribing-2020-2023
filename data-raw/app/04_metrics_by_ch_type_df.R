@@ -21,6 +21,7 @@ base_db <- con %>%
 
 # Initial manipulation to create CH_TYPE column, later to be grouped by
 init_db <- base_db %>%
+  filter(YEAR_MONTH == 202004L) %>% 
   mutate(NON_CH_FLAG = 1L - CH_FLAG) %>% 
   # Remove unwanted 'FLAG' columns
   select(-c(AB_FLAG, EPS_FLAG, UPRN_FLAG)) %>% 
@@ -46,7 +47,7 @@ init_db <- base_db %>%
 
 ## Process ----------------------------------------------------------------
 
-metrics_by_ch_type_df <- get_metrics(
+TEMP_metrics_by_ch_type_df <- get_metrics(
   init_db,
   first_grouping = c(
     "FY",
@@ -61,7 +62,7 @@ metrics_by_ch_type_df <- get_metrics(
 )
   
 ## Save -------------------------------------------------------------------
-usethis::use_data(metrics_by_ch_type_df, overwrite = TRUE)
+usethis::use_data(TEMP_metrics_by_ch_type_df, overwrite = TRUE)
 
 # Cleanup -----------------------------------------------------------------
 DBI::dbDisconnect(con)

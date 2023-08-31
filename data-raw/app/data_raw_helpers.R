@@ -96,6 +96,12 @@ get_metrics <- function(init_db,
         )
       )
     ) %>%
+    mutate(
+      UNIQ_MEDS_GTE_TEN = case_when(
+        GTE_TEN == 1L ~ UNIQUE_MEDICINES,
+        TRUE ~ NA
+      )
+    ) %>% 
     ungroup() %>% 
     group_by(across(all_of(second_grouping))) %>%
     summarise(
@@ -107,6 +113,7 @@ get_metrics <- function(init_db,
       ITEMS_PPM           = mean(TOTAL_ITEMS, na.rm = TRUE),
       COST_PPM            = mean(TOTAL_COST, na.rm = TRUE),
       UNIQ_MEDS_PPM       = mean(UNIQUE_MEDICINES, na.rm = TRUE),
+      UNIQ_MEDS_GTE_TEN_PPM = mean(UNIQ_MEDS_GTE_TEN, na.rm = TRUE),
       # Unique medicines numerators
       RISK_PM_GTE_SIX     = sum(GTE_SIX, na.rm = TRUE),
       RISK_PM_GTE_TEN     = sum(GTE_TEN, na.rm = TRUE),
