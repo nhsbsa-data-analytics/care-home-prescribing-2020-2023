@@ -28,7 +28,7 @@ See the <a onclick="internalLink('Methodology');">Methodology</a> page for furth
 
 __The number of patients aged 65 years and over who received prescription items in care homes increased each year, as did the number of prescription items and drug cost.__
 
-It is worth bearing in mind that drug cost is particularly influenced by prices and these have been rising rapidly over the past year due to [price concessions](https://openprescribing.net/national/england/concessions/) and possibly general inflation.
+It is worth noting that drug costs per patient-month are particularly influenced, among other things, by general inflation.
 
 There was an estimated monthly average of 301,000 care home patients aged 65 years and over receiving at least one prescription item in 2022/23. They received around 37 million prescription items at a drug cost of £361 million.
 
