@@ -128,7 +128,7 @@ mod_02_patients_age_gender_server <- function(id){
             
           } else NULL,
           
-          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts."
+          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts. Hollow bars show percentages among non-care home patients."
               
         )
       )
@@ -335,7 +335,19 @@ mod_02_patients_age_gender_server <- function(id){
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df(),
           "bar",
-          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER)
+          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER),
+          pointWidth = 24
+        ) %>%
+        highcharter::hc_add_series(
+          patients_by_fy_geo_age_gender_plot_df(),
+          "column",
+          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER),
+          color = "rgba(0, 0, 0, 0)",
+          pointWidth = 28,
+          opacity = 0.9,
+          borderWidth = 1,
+          borderColor = "#000000",
+          showInLegend = F
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_colors(colors = c(
@@ -350,10 +362,12 @@ mod_02_patients_age_gender_server <- function(id){
                   point = list(
                     x = 0,
                     # Need -1 otherwise it fails when max_value() is axis max
-                    y = max_value() - 1,
+                    y = max_value() - 0.1,
                     xAxis = 0,
                     yAxis = 0
                   ),
+                  padding = 0,
+                  x = 20, # Offset
                   text = text,
                   style = list(
                     width = 150,
@@ -407,7 +421,7 @@ mod_02_patients_age_gender_server <- function(id){
                   '<b>Gender: </b>' + this.series.name + '<br>' +
                   '<b>Age band: </b>' + this.point.category + '<br/>' +
                   '<b>Number of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.TOTAL_PATIENTS_CH), 0) + '<br>' +
-                  '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' +
+                  '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' + '<br>' +
                   '<b>Percentage of non-care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_NCH), 1) + '%'
 
                 return outHTML
@@ -415,7 +429,19 @@ mod_02_patients_age_gender_server <- function(id){
               }
               "
             )
-          )
+          ) %>%
+        highcharter::hc_plotOptions(
+          series = list(
+            states = list(
+              #Disable series highlighting
+              inactive = list(opacity = 1)
+              ), 
+            events = list(
+              # Disables turning the series off
+              legendItemClick = htmlwidgets::JS("function () { return false; }")
+              ) 
+        )
+        )
       })
  
   })
