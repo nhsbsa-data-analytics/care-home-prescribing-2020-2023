@@ -45,8 +45,9 @@ mod_02_patients_age_gender_server <- function(id){
     ns <- session$ns
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
+    # In these version, exclusion is reported for all patients, ch & non-ch
     excluded_patients <- carehomes2::patients_by_fy_geo_age_gender_df |> 
-      dplyr::group_by(CH_FLAG, FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
+      dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
       dplyr::summarise(
         EXCLUDED_UNK = sum(ifelse(GENDER=="Unknown", TOTAL_PATIENTS, 0)),
         EXCLUDED_IND = sum(ifelse(GENDER=="Indeterminate", TOTAL_PATIENTS, 0)),
@@ -62,7 +63,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
-      
+
       t <- excluded_patients |>
       # Extract % for the selected sub-geography
       dplyr::filter(
@@ -70,17 +71,17 @@ mod_02_patients_age_gender_server <- function(id){
         GEOGRAPHY == input$geography,
         SUB_GEOGRAPHY_NAME == input$sub_geography
       ) |>
-      dplyr::pull(EXCLUDED_UNK)
-      
-      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
-      
+      dplyr::pull(PCT_EXCLUDED_UNK)
+
+      if (t < 0.1 & t > 0) "less than 0.1" else as.character(t)
+
     })
-    
+
     excluded_ind <- reactive({
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
-      
+
       t <- excluded_patients |>
         # Extract % for the selected sub-geography
         dplyr::filter(
@@ -88,13 +89,13 @@ mod_02_patients_age_gender_server <- function(id){
           GEOGRAPHY == input$geography,
           SUB_GEOGRAPHY_NAME == input$sub_geography
         ) |>
-        dplyr::pull(EXCLUDED_IND)
-      
-      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
-      
-    })    
+        dplyr::pull(PCT_EXCLUDED_IND)
+
+      if (t < 0.1 & t > 0) "less than 0.1" else as.character(t)
+
+    })
     
-    
+
     output$excluded_patients <- renderUI({
       
       tags$text(
@@ -103,29 +104,31 @@ mod_02_patients_age_gender_server <- function(id){
 
         paste0(
           
-          if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
+          # Example to test that shows both unk and ind in the caption: 2022/23, LA = Hinckley and Bosworth
+
+          if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
             
             paste0("This chart does not show ",
-            excluded_unk(),
+            excluded_unk(), "%",
             " and ",
-            excluded_ind(),
-            " care home patients where the gender was not known and not specified, respectively.")
+            excluded_ind(), "%",
+            " patients where the gender was not known and not specified, respectively.")
             
-          } else if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") == 0) {
-            
-            paste0("This chart does not show ",
-                   excluded_unk(),
-                   "care home patients where the gender was not known.")
-            
-          } else if (stringr::str_extract(excluded_unk(), "\\d+") == 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
+          } else if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0) {
             
             paste0("This chart does not show ",
-                   excluded_ind(),
-                   " care home patients where the gender was not specified.")
+                   excluded_unk(), "%",
+                   " patients where the gender was not known.")
+            
+          } else if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
+            
+            paste0("This chart does not show ",
+                   excluded_ind(), "%",
+                   " patients where the gender was not specified.")
             
           } else NULL,
           
-          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
+          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts."
               
         )
       )
