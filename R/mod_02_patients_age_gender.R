@@ -109,19 +109,19 @@ mod_02_patients_age_gender_server <- function(id){
             excluded_unk(),
             " and ",
             excluded_ind(),
-            " patients where the gender was not known and not specified, respectively.")
+            " care home patients where the gender was not known and not specified, respectively.")
             
           } else if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") == 0) {
             
             paste0("This chart does not show ",
                    excluded_unk(),
-                   " patients where the gender was not known.")
+                   "care home patients where the gender was not known.")
             
           } else if (stringr::str_extract(excluded_unk(), "\\d+") == 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
             
             paste0("This chart does not show ",
                    excluded_ind(),
-                   " patients where the gender was not specified.")
+                   " care home patients where the gender was not specified.")
             
           } else NULL,
           
