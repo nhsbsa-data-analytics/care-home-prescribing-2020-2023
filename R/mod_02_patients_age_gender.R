@@ -46,7 +46,7 @@ mod_02_patients_age_gender_server <- function(id){
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
     excluded_patients <- carehomes2::patients_by_fy_geo_age_gender_df |> 
-      dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
+      dplyr::group_by(CH_FLAG, FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
       dplyr::summarise(
         EXCLUDED_UNK = sum(ifelse(GENDER=="Unknown", TOTAL_PATIENTS, 0)),
         EXCLUDED_IND = sum(ifelse(GENDER=="Indeterminate", TOTAL_PATIENTS, 0)),
