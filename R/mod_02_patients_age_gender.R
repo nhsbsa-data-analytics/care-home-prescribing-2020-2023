@@ -45,6 +45,7 @@ mod_02_patients_age_gender_server <- function(id){
     ns <- session$ns
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
+    # In this version, exclusion is reported for all patients, ch & non-ch
     excluded_patients <- carehomes2::patients_by_fy_geo_age_gender_df |> 
       dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
       dplyr::summarise(
@@ -62,7 +63,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
-      
+
       t <- excluded_patients |>
       # Extract % for the selected sub-geography
       dplyr::filter(
@@ -70,17 +71,17 @@ mod_02_patients_age_gender_server <- function(id){
         GEOGRAPHY == input$geography,
         SUB_GEOGRAPHY_NAME == input$sub_geography
       ) |>
-      dplyr::pull(EXCLUDED_UNK)
-      
-      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
-      
+      dplyr::pull(PCT_EXCLUDED_UNK)
+
+      if (t < 0.1 & t > 0) "less than 0.1" else as.character(t)
+
     })
-    
+
     excluded_ind <- reactive({
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
-      
+
       t <- excluded_patients |>
         # Extract % for the selected sub-geography
         dplyr::filter(
@@ -88,14 +89,17 @@ mod_02_patients_age_gender_server <- function(id){
           GEOGRAPHY == input$geography,
           SUB_GEOGRAPHY_NAME == input$sub_geography
         ) |>
-        dplyr::pull(EXCLUDED_IND)
-      
-      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
-      
-    })    
+        dplyr::pull(PCT_EXCLUDED_IND)
+
+      if (t < 0.1 & t > 0) "less than 0.1" else as.character(t)
+
+    })
     
-    
+
     output$excluded_patients <- renderUI({
+      
+      any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
+      any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
       
       tags$text(
         class = "highcharts-caption",
@@ -103,29 +107,31 @@ mod_02_patients_age_gender_server <- function(id){
 
         paste0(
           
-          if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
+          # Example for testing: unk and ind shown in the same caption: 2022/23, LA = Hinckley and Bosworth
+          
+          if (!any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
-            excluded_unk(),
+            excluded_unk(), "%",
             " and ",
-            excluded_ind(),
+            excluded_ind(), "%",
             " patients where the gender was not known and not specified, respectively.")
             
-          } else if (stringr::str_extract(excluded_unk(), "\\d+") != 0 & stringr::str_extract(excluded_ind(), "\\d+") == 0) {
+          } else if (!any_excl_unk & any_excl_ind) {
             
             paste0("This chart does not show ",
-                   excluded_unk(),
+                   excluded_unk(), "%",
                    " patients where the gender was not known.")
             
-          } else if (stringr::str_extract(excluded_unk(), "\\d+") == 0 & stringr::str_extract(excluded_ind(), "\\d+") != 0) {
+          } else if (any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
-                   excluded_ind(),
+                   excluded_ind(), "%",
                    " patients where the gender was not specified.")
             
           } else NULL,
           
-          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10."
+          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts. Hollow bars show percentages of non-care home patients."
               
         )
       )
@@ -186,23 +192,24 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$sub_geography)
 
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::summarise(max(TOTAL_PATIENTS, na.rm = TRUE)) %>%
+        dplyr::summarise(max(PCT_PATIENTS, na.rm = TRUE)) %>%
         dplyr::pull()
     })
 
-    # # Pull the total
+    # # Pull the total CH patients
     total <- reactive({
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
 
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::filter(CH_FLAG==1) %>%
         dplyr::summarise(TOTAL_PATIENTS = sum(TOTAL_PATIENTS, na.rm = TRUE)) %>%
         dplyr::mutate(TOTAL_PATIENTS = format(TOTAL_PATIENTS, big.mark = ",")) %>%
         dplyr::pull(TOTAL_PATIENTS)
     })
 
-    # Pull percentage of female patients
+    # Pull percentage of female CH patients
     percentage_female_patients <- reactive({
       req(input$fy)
       req(input$geography)
@@ -211,6 +218,7 @@ mod_02_patients_age_gender_server <- function(id){
       # Get the total female patients
       female_patients_df <-
         patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::filter(CH_FLAG==1) %>%
         dplyr::summarise(
           TOTAL_FEMALE_PATIENTS =
             sum(ifelse(GENDER == "Female", TOTAL_PATIENTS, 0)),
@@ -235,6 +243,7 @@ mod_02_patients_age_gender_server <- function(id){
       # Get the total elderly female patients
       elderly_female_patients_df <-
         patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::filter(CH_FLAG==1) %>%
         dplyr::summarise(
           TOTAL_ELDERLY_FEMALE_PATIENTS = sum(
             ifelse(
@@ -275,8 +284,8 @@ mod_02_patients_age_gender_server <- function(id){
           `Sub geography name` = .data$SUB_GEOGRAPHY_NAME,
           `Age band` = .data$AGE_BAND,
           Gender = .data$GENDER,
-          `Number of patients` = .data$TOTAL_PATIENTS,
-          `% of patients` = .data$PCT_PATIENTS
+          `Number of care home patients` = .data$TOTAL_PATIENTS,
+          `% of care home patients` = .data$PCT_PATIENTS
         )
     }
     
@@ -302,7 +311,9 @@ mod_02_patients_age_gender_server <- function(id){
         dplyr::mutate(
           TOTAL_PATIENTS = TOTAL_PATIENTS * ifelse(GENDER == "Male", 1, -1),
           PCT_PATIENTS = PCT_PATIENTS * ifelse(GENDER == "Male", 1, -1)
-        )
+        ) %>%
+        dplyr::mutate(CH_FLAG = ifelse(CH_FLAG==1, "CH", "NCH")) %>%
+        tidyr::pivot_wider(names_from = CH_FLAG, values_from = c(TOTAL_PATIENTS, PCT_PATIENTS))
     })
     
     # Pyramid plot for age band and gender
@@ -321,34 +332,57 @@ mod_02_patients_age_gender_server <- function(id){
           tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
           " females aged 85 or over."
         )
-        
         # Create the chart
-        patients_by_fy_geo_age_gender_plot_df() %>%
-          highcharter::hchart(
-            type = "bar",
-            highcharter::hcaes(
-              x = AGE_BAND,
-              y = TOTAL_PATIENTS,
-              group = GENDER
-            )
-          ) %>%
-          nhsbsaR::theme_nhsbsa_highchart() %>%
-          highcharter::hc_colors(colors = c(
-            NHSRtheme::get_nhs_colours("Orange") |> unname(),
-            NHSRtheme::get_nhs_colours("DarkBlue") |> unname()
-            
-          )) %>%
-          highcharter::hc_annotations(
+        highcharter::highchart() %>%
+        highcharter::hc_add_series(
+          patients_by_fy_geo_age_gender_plot_df() %>% 
+            dplyr::mutate(
+              GENDER_CH = dplyr::case_when(
+                GENDER == "Female" ~ "Female (care home)",
+                GENDER == "Male" ~ "Male (care home)",
+                TRUE ~ GENDER
+              )
+            ),
+          "bar",
+          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER_CH),
+          pointWidth = 24,
+          opacity = 0.9,
+        ) %>%
+        highcharter::hc_add_series(
+          patients_by_fy_geo_age_gender_plot_df() %>% 
+            dplyr::mutate(
+              GENDER_CH = dplyr::case_when(
+                GENDER == "Female" ~ "Female (non-care home)",
+                GENDER == "Male" ~ "Male (non-care home)",
+                TRUE ~ GENDER
+              )
+            ),
+          "column",
+          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER_CH),
+          pointWidth = 28,
+          opacity = 0.5,
+          borderWidth = 1,
+          borderColor = "#000000"
+        ) %>%
+        nhsbsaR::theme_nhsbsa_highchart() %>%
+        highcharter::hc_colors(colors = c(
+          NHSRtheme::get_nhs_colours("Orange") |> unname(),
+          NHSRtheme::get_nhs_colours("DarkBlue") |> unname()
+          )
+        ) %>%
+        highcharter::hc_annotations(
             list(
               labels = list(
                 list(
                   point = list(
                     x = 0,
                     # Need -1 otherwise it fails when max_value() is axis max
-                    y = max_value() - 1,
+                    y = max_value() - 0.1,
                     xAxis = 0,
                     yAxis = 0
                   ),
+                  padding = 0,
+                  x = 20, # Offset
                   text = text,
                   style = list(
                     width = 150,
@@ -374,7 +408,7 @@ mod_02_patients_age_gender_server <- function(id){
             reversed = FALSE
           ) %>%
           highcharter::hc_yAxis(
-            title = list(text = "Number of patients"),
+            title = list(text = "Proportion of patients (%)"),
             min = -max_value(),
             max = max_value(),
             labels = list(
@@ -399,17 +433,30 @@ mod_02_patients_age_gender_server <- function(id){
               function() {
 
                 outHTML =
-                  '<b>Gender: </b>' + this.series.name + '<br>' +
+                  '<b>Gender: </b>' + this.point.GENDER + '<br>' +
                   '<b>Age band: </b>' + this.point.category + '<br/>' +
-                  '<b>Number of patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.y), 0) + '<br>' +
-                  '<b>Percentage of patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS), 1) + '%'
+                  '<b>Number of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.TOTAL_PATIENTS_CH), 0) + '<br>' +
+                  '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' + '<br>' +
+                  '<b>Percentage of non-care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_NCH), 1) + '%'
 
                 return outHTML
 
               }
               "
             )
-          )
+          ) %>%
+        highcharter::hc_plotOptions(
+          series = list(
+            states = list(
+              #Disable series highlighting
+              inactive = list(enabled = FALSE)
+              ), 
+            events = list(
+              # Disables turning the series off
+              legendItemClick = htmlwidgets::JS("function () { return false; }")
+              ) 
+        )
+        )
       })
  
   })

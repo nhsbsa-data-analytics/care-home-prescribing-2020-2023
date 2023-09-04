@@ -157,7 +157,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
         highcharter::hc_plotOptions(
           series = list(
             states = list(
-              inactive = list(opacity = 1)
+              inactive = list(enabled = FALSE)
             )
           )
         ) %>%
