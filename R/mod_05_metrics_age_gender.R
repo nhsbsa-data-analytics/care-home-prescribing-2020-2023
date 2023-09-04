@@ -82,13 +82,18 @@ mod_05_metrics_age_gender_server <- function(id){
     
     output$excluded_patients <- renderUI({
       
+      any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
+      any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
+      
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
         
         paste0(
-
-          if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
+          
+          # Example for testing: unk and ind shown in the same caption: 2022/23, LA = Hinckley and Bosworth
+          
+          if (!any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_unk(), "%",
@@ -96,22 +101,23 @@ mod_05_metrics_age_gender_server <- function(id){
                    excluded_ind(), "%",
                    " patients where the gender was not known and not specified, respectively.")
             
-          } else if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0) {
+          } else if (!any_excl_unk & any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_unk(), "%",
                    " patients where the gender was not known.")
             
-          } else if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
+          } else if (any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_ind(), "%",
                    " patients where the gender was not specified.")
             
-          } else NULL
+          } else NULL,
+          
+          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts. Hollow bars show percentages of non-care home patients."
           
         )
-        
       )
       
     })

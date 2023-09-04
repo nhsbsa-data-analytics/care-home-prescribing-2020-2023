@@ -98,6 +98,9 @@ mod_02_patients_age_gender_server <- function(id){
 
     output$excluded_patients <- renderUI({
       
+      any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
+      any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
+      
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
@@ -105,8 +108,8 @@ mod_02_patients_age_gender_server <- function(id){
         paste0(
           
           # Example for testing: unk and ind shown in the same caption: 2022/23, LA = Hinckley and Bosworth
-
-          if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
+          
+          if (!any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
             excluded_unk(), "%",
@@ -114,13 +117,13 @@ mod_02_patients_age_gender_server <- function(id){
             excluded_ind(), "%",
             " patients where the gender was not known and not specified, respectively.")
             
-          } else if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0) {
+          } else if (!any_excl_unk & any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_unk(), "%",
                    " patients where the gender was not known.")
             
-          } else if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
+          } else if (any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_ind(), "%",
@@ -329,25 +332,37 @@ mod_02_patients_age_gender_server <- function(id){
           tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
           " females aged 85 or over."
         )
-        
         # Create the chart
         highcharter::highchart() %>%
         highcharter::hc_add_series(
-          patients_by_fy_geo_age_gender_plot_df(),
+          patients_by_fy_geo_age_gender_plot_df() %>% 
+            dplyr::mutate(
+              GENDER = dplyr::case_when(
+                GENDER == "Female" ~ "Female (care home)",
+                GENDER == "Male" ~ "Male (care home)",
+                TRUE ~ GENDER
+              )
+            ),
           "bar",
           highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER),
-          pointWidth = 24
+          pointWidth = 24,
+          opacity = 0.9,
         ) %>%
         highcharter::hc_add_series(
-          patients_by_fy_geo_age_gender_plot_df(),
+          patients_by_fy_geo_age_gender_plot_df() %>% 
+            dplyr::mutate(
+              GENDER = dplyr::case_when(
+                GENDER == "Female" ~ "Female (non-care home)",
+                GENDER == "Male" ~ "Male (non-care home)",
+                TRUE ~ GENDER
+              )
+            ),
           "column",
           highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER),
-          color = "rgba(0, 0, 0, 0)",
           pointWidth = 28,
-          opacity = 0.9,
+          opacity = 0.5,
           borderWidth = 1,
-          borderColor = "#000000",
-          showInLegend = F
+          borderColor = "#000000"
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_colors(colors = c(
