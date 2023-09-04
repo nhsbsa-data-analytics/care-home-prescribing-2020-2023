@@ -337,28 +337,28 @@ mod_02_patients_age_gender_server <- function(id){
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df() %>% 
             dplyr::mutate(
-              GENDER = dplyr::case_when(
+              GENDER_CH = dplyr::case_when(
                 GENDER == "Female" ~ "Female (care home)",
                 GENDER == "Male" ~ "Male (care home)",
                 TRUE ~ GENDER
               )
             ),
           "bar",
-          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER),
+          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER_CH),
           pointWidth = 24,
           opacity = 0.9,
         ) %>%
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df() %>% 
             dplyr::mutate(
-              GENDER = dplyr::case_when(
+              GENDER_CH = dplyr::case_when(
                 GENDER == "Female" ~ "Female (non-care home)",
                 GENDER == "Male" ~ "Male (non-care home)",
                 TRUE ~ GENDER
               )
             ),
           "column",
-          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER),
+          highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER_CH),
           pointWidth = 28,
           opacity = 0.5,
           borderWidth = 1,
@@ -433,7 +433,7 @@ mod_02_patients_age_gender_server <- function(id){
               function() {
 
                 outHTML =
-                  '<b>Gender: </b>' + this.series.name + '<br>' +
+                  '<b>Gender: </b>' + this.point.GENDER + '<br>' +
                   '<b>Age band: </b>' + this.point.category + '<br/>' +
                   '<b>Number of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.TOTAL_PATIENTS_CH), 0) + '<br>' +
                   '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' + '<br>' +
@@ -449,7 +449,7 @@ mod_02_patients_age_gender_server <- function(id){
           series = list(
             states = list(
               #Disable series highlighting
-              inactive = list(opacity = 1)
+              inactive = list(enabled = FALSE)
               ), 
             events = list(
               # Disables turning the series off
