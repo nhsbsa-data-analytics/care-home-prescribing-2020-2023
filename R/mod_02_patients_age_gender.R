@@ -104,7 +104,7 @@ mod_02_patients_age_gender_server <- function(id){
 
         paste0(
           
-          # Example to test a caption that shows both unk and ind in the caption: 2022/23, LA = Hinckley and Bosworth
+          # Example for testing: unk and ind shown in the same caption: 2022/23, LA = Hinckley and Bosworth
 
           if (stringr::str_extract(excluded_unk(), "[\\d\\.]+") != 0 & stringr::str_extract(excluded_ind(), "[\\d\\.]+") != 0) {
             
