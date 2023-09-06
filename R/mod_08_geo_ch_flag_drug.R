@@ -833,7 +833,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           Geography = .data$GEOGRAPHY_PARENT,
           `Sub-geography name` = .data$GEOGRAPHY_CHILD,
           `BNF level` = .data$BNF_PARENT,
-          `BNF sub-level` = .data$BNF_CHILD
+          `BNF sub-level` = .data$BNF_CHILD,
+          `Patient count` = .data$PATS
         )
     }
     
