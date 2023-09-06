@@ -4,10 +4,8 @@
 #'   of it. 
 #' @param first_grouping A vector of col names to do initial grouping by.
 #' @param second_grouping A vector of col names to do secondary grouping by.
-#' @param comp_fill A named vector, names are col names and values are 
-#'   replacements for any NAs.
 #' @param nest_cols A vector of col names to use nesting on when completing.
-#' @param num_parallel By default, query will ask for 8 parallel, but can ask 
+#' @param num_parallel By default, query will ask for 24 parallel, but can ask 
 #'   for different value if you think it is needed.
 #'
 #' @return
@@ -152,12 +150,7 @@ get_metrics <- function(init_db,
       fill = list(
         TOTAL_PM        = 0L,
         TOTAL_PM_ACB    = 0L,
-        TOTAL_PM_DAMN   = 0L,
-        RISK_PM_GTE_SIX = 0L,
-        RISK_PM_GTE_TEN = 0L,
-        RISK_PM_ACB     = 0L,
-        RISK_PM_DAMN    = 0L,
-        RISK_PM_FALLS   = 0L
+        TOTAL_PM_DAMN   = 0L
       )
     ) %>%
     select(-starts_with("RISK")) %>% 

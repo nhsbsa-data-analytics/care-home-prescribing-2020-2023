@@ -45,11 +45,13 @@
 "metrics_by_geo_and_ch_flag_df"
 
 
-#' Aggregated prescribing data broken down by financial year and carehome type
+#' Aggregated prescribing data broken down by financial year, carehome type and 
+#' age band (65+ and 85+)
 #'
 #' \itemize{
 #'   \item FY. financial year, one of 2020/21, 2021/22 or 2022/23
 #'   \item CH_TYPE. one of Carehome, Non-carehome, Nursing Home, Residential Home
+#'   \item AGE_BAND. one of Ages 65+ or Ages 85+
 #'   \item ITEMS_PPM. Mean number of items prescribed per patient-month
 #'   \item COST_PPM. Mean cost of items prescribed per patient-month
 #'   \item UNIQ_MEDS_PPM. Mean number of unique medicines from BNF Chapters 1-4,
@@ -82,10 +84,10 @@
 #' @docType data
 #' @keywords datasets
 #' @name metrics_by_ch_type
-#' @usage data(metrics_by_ch_type_df)
-#' @format A data frame with 12 rows and 14 variables
+#' @usage data(metrics_by_ch_type_85_split_df)
+#' @format A data frame with 12 rows and 15 variables
 #' 
-"metrics_by_ch_type_df"
+"metrics_by_ch_type_85_split_df"
 
 
 #' GIS data for boundaries at Region, ICS and Local Authority level

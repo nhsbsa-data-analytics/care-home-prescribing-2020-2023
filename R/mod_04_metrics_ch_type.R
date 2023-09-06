@@ -54,7 +54,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
         class = "highcharts-caption",
         style = "font-size: 9pt",
         paste0(
-          "Nursing home and residential home patients were a subset of the care 
+          "Nursing home and residential home patients are subsets of the care 
            home patient population."
         )
       ),
@@ -69,10 +69,9 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Metric and UI mappings-----------------------------------------------
 
     # Map FY to UI color
-    ui_fy_colors <- list(
-      `2020/21` = NHSRtheme::get_nhs_colours("DarkBlue"),
-      `2021/22` = NHSRtheme::get_nhs_colours("BrightBlue"),
-      `2022/23` = NHSRtheme::get_nhs_colours("AquaBlue")
+    ui_age_band_colors <- list(
+      `Ages 65+` = NHSRtheme::get_nhs_colours("BrightBlue"),
+      `Ages 85+` = NHSRtheme::get_nhs_colours("AquaBlue")
     )
     
     # Map metric column names to UI metric names
@@ -105,7 +104,8 @@ mod_04_metrics_ch_type_server <- function(id) {
     dl_col_names <- c(
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
       "Financial year"                      = "FY",
-      "Care home type"                       = "CH_TYPE",
+      "Care home type"                      = "CH_TYPE",
+      "Age band"                            = "AGE_BAND",
       "Total patient-months"                = "TOTAL_PM",
       "Total patient-months with ACB risk"  = "TOTAL_PM_ACB",
       "Total patient-months with DAMN risk" = "TOTAL_PM_DAMN"
@@ -113,14 +113,15 @@ mod_04_metrics_ch_type_server <- function(id) {
     
     # Formatted data ------------------------------------------------------
     
-    fmt_data <- carehomes2::metrics_by_ch_type_df %>% 
+    fmt_data <- carehomes2::metrics_by_ch_type_85_split_df %>% 
       dplyr::mutate(
-        COST_PPM = janitor::round_half_up(COST_PPM, 0),
+        COST_PPM = janitor::round_half_up(.data$COST_PPM, 0),
         dplyr::across(
           c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
           \(x) janitor::round_half_up(x, 2)
         )
-      )
+      ) %>% 
+      dplyr::relocate(AGE_BAND, .after = CH_TYPE)
     
     # Reactive data -------------------------------------------------------
     
@@ -129,6 +130,7 @@ mod_04_metrics_ch_type_server <- function(id) {
         dplyr::mutate(
           .data$FY,
           .data$CH_TYPE,
+          .data$AGE_BAND,
           .data[[input$metric]],
           .keep = "none"
         )
@@ -146,20 +148,20 @@ mod_04_metrics_ch_type_server <- function(id) {
                              )) {
       ch_type <- match.arg(ch_type)
       
-      data <- data %>% 
-        dplyr::filter(.data$CH_TYPE == ch_type) %>% 
+      data <- data %>% dplyr::filter(.data$CH_TYPE == ch_type) %>% 
         dplyr::mutate(
-          color = ui_fy_colors[.data$FY] %>%
+          COLOR = ui_age_band_colors[.data$AGE_BAND] %>%
             unlist() %>%
             unname()
         )
       
       # Get max of metric to use a common y-axis range
-      y_max <- carehomes2::metrics_by_ch_type_df[[input$metric]] %>%
+      y_max <- carehomes2::metrics_by_ch_type_85_split_df[[input$metric]] %>%
         max(na.rm = TRUE)
       
       x <- rlang::sym("FY")
-      color <- rlang::sym("color")
+      group <- rlang::sym("AGE_BAND")
+      color <- rlang::sym("COLOR")
       
       data %>% 
         highcharter::hchart(
@@ -167,17 +169,22 @@ mod_04_metrics_ch_type_server <- function(id) {
           highcharter::hcaes(
             x = !!x,
             y = !!input$metric,
+            group = !!group,
             color = !!color
           ),
-          name = ui_metric_names[[input$metric]],
           tooltip = list(
             useHTML = TRUE,
+            shared = TRUE,
+            headerFormat = paste0(
+              "{point.key} - ", ui_metric_names[[input$metric]], "<br>"
+            ),
             pointFormat = paste0(
-              metric_tooltips[input$metric] %>% unname()
+              "{point.AGE_BAND}: <b>{point.y}</b>"
             )
           )
         ) %>%
-        nhsbsaR::theme_nhsbsa_highchart() %>%
+        nhsbsaR::theme_nhsbsa_highchart(stack = NA) %>%
+        highcharter::hc_colors(ui_age_band_colors %>% unlist() %>% unname()) %>% 
         highcharter::hc_xAxis(
           title = NULL,
           categories = data$FY %>%
@@ -190,13 +197,14 @@ mod_04_metrics_ch_type_server <- function(id) {
           min = 0,
           max = y_max
         ) %>%
-        highcharter::hc_title(text = ch_type)
+        highcharter::hc_title(text = ch_type)# %>%
+        # highcharter::hc_legend(enabled = FALSE)
     }
     
     # Create download data
     create_download_data <- function(data) {
       data %>%
-        dplyr::arrange(.data$FY, .data$CH_TYPE) %>%
+        dplyr::arrange(.data$FY, .data$CH_TYPE, .data$AGE_BAND) %>%
         dplyr::rename(dl_col_names)
     }
     
