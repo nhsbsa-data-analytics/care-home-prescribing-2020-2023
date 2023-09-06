@@ -126,7 +126,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
                by the 50 paragraphs with the largest total item count nationally. 
                The number of patients contributing to each metric are provided 
                in the data download, offering additional context to metric value
-               calculations."
+               calculations. Patient counts between one and four have been rounded to five."
             )
           )
         ),
@@ -216,7 +216,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
                determined by the 50 paragraphs with the largest total item count
                nationally. The number of patients contributing to each metric are provided 
                in the data download, offering additional context to metric value
-               calculations."
+               calculations. Patient counts between one and four have been rounded to five."
             )
           )
         ),
@@ -306,7 +306,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
                presented, determined by the 50 paragraphs with the largest total
                item count nationally. The number of patients contributing to each metric are provided 
                in the data download, offering additional context to metric value
-               calculations."
+               calculations. Patient counts between one and four have been rounded to five."
             )
           )
         )
