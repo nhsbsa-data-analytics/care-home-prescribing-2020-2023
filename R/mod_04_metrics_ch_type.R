@@ -120,8 +120,7 @@ mod_04_metrics_ch_type_server <- function(id) {
           c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
           \(x) janitor::round_half_up(x, 2)
         )
-      ) %>% 
-      dplyr::relocate(AGE_BAND, .after = CH_TYPE)
+      )
     
     # Reactive data -------------------------------------------------------
     
