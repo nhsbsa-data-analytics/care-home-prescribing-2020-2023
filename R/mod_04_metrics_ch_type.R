@@ -196,8 +196,7 @@ mod_04_metrics_ch_type_server <- function(id) {
           min = 0,
           max = y_max
         ) %>%
-        highcharter::hc_title(text = ch_type)# %>%
-        # highcharter::hc_legend(enabled = FALSE)
+        highcharter::hc_title(text = ch_type)
     }
     
     # Create download data
