@@ -15,6 +15,8 @@ nhs_header <- function() {
             href = "https://www.nhs.uk/",
             `aria-label` = "NHS homepage",
             tags$svg(
+              name = "NHS logo",
+              alt = "NHS logo",
               class = "nhsuk-logo",
               xmlns = "http://www.w3.org/2000/svg",
               viewBox = "0 0 40 16",

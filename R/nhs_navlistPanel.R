@@ -23,8 +23,10 @@ nhs_navlistPanel <- function(...,
   )
 
   # Hack the CSS to look like an NHS list
-  nhs_navlistPanel$children[[1]]$children[[1]]$attribs$class <-
-    "nhsuk-list app-side-nav__list"
+  # nhs_navlistPanel$children[[1]]$children[[1]]$attribs$class <-  "nhsuk-list app-side-nav__list"
+  nhs_navlistPanel$children[[1]]$children[[1]]$attribs$class <- "nhsuk-list nav-pills nav-stacked"
+  nhs_navlistPanel$children[[1]]$attribs$role <- "navigation"
+  nhs_navlistPanel$children[[1]]$attribs$`aria-label` <- "Navigation menu"
 
   tagList(
     nhs_navlistPanel

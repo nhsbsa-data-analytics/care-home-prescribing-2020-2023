@@ -37,7 +37,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "https://github.com/nhsbsa-data-analytics/nhsbsaShinyR",
+                href = "https://github.com/nhsbsa-data-analytics/bestStartScrollytellR",
                 target = "_blank",
                 "GitHub"
               )
@@ -45,7 +45,7 @@ nhs_footer <- function() {
           ),
           p(
             class = "nhsuk-footer__copyright",
-            HTML("&#169; APLv2")
+            "© APLv2"
           )
         )
       )

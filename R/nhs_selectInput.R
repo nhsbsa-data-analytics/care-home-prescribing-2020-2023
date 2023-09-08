@@ -1,3 +1,6 @@
+#' nhs_selectInput Function
+#'
+#' @importFrom shiny tagList
 nhs_selectInput <- function(inputId,
                             label,
                             choices,
@@ -24,7 +27,7 @@ nhs_selectInput <- function(inputId,
     nhs_selectInput$children[[2]]$children[[1]]$attribs$class <- "nhsuk-select"
   }
 
-  shiny::tagList(
+  tagList(
     nhs_selectInput
   )
 }
