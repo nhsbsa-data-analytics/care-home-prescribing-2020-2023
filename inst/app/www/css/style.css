@@ -61,3 +61,18 @@ and prevent them fading in / out) */
 	stroke: #003087;
 	fill-opacity: 0.9;
 }
+
+a {
+  text-decoration: underline;
+}
+
+#skiplink {
+  position: absolute;
+  transform: translateY(-100%);
+}
+#skiplink:focus {
+  transform: translateY(0%);
+  background-color: lightyellow;
+  padding: 20px;
+  z-index: 9999;
+}
