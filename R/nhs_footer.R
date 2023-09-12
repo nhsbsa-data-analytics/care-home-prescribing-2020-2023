@@ -27,7 +27,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "mailto:@nhs.net",
+                href = "mailto:dall@nhsbsa.nhs.uk",
                 target = "_blank",
                 "Contact us"
               )
