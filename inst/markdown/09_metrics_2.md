@@ -41,5 +41,3 @@ This analysis uses the broad medicine groups outlined by STOPPFall to define a l
 The list of chemical substances within the broad STOPPFall drug groups was validated for associated falls risk by Heather Smith from West Yorkshire ICS and David Alldred from Leeds University. A handful of these were considered exceptions and removed. For example, antihistamines are a STOPPFall drug group yet not every single antihistamine chemical substance may have a falls risk.
 
 The end-result is a list of 304 combinations of BNF paragraphs and chemical substances (as a single chemical substance can appear in multiple paragraphs and some of which are not required). The formation of this list is summarised by the _Falls risk drug groups_ table, taking all the BNF paragraph-chemical substance combinations resulting from multiple BNF level filters.
-
-_Falls risk drug groups_
