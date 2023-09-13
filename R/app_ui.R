@@ -16,11 +16,11 @@ app_ui <- function(request) {
     # First level UI elements
     nhs_header(),
     br(),
+    div(id = "maincontent"),
     tags$div(
       class = "nhsuk-width-container",
       tags$div(
         class = "nhsuk-main-wrapper",
-        id = "maincontent",
         role = "main",
         h1(
           "Estimated prescribing patterns for care home patients aged 65 years
