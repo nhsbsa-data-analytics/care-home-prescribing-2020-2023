@@ -9,7 +9,7 @@ nhs_card <- function(heading, ...) {
       class = "nhsuk-card",
       div(
         class = "nhsuk-card__content",
-        h3(
+        h4(
           class = "nhsuk-card__heading",
           heading
         ),

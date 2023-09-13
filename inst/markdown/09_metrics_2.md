@@ -10,27 +10,27 @@ All prescribing metric definitions are described in the ‘Analysis Metrics’ t
 
 The PPM metrics were calculated only using data from months where a patient received prescribing. If a patient was a care home resident for a given month yet received no prescribing, this month would not contribute towards PPM calculations. A care home resident with periodic repeat prescriptions could potentially have a drug allocation covering more than one month. Prescribing would only be allocated to the dispensing month.  
 
-## Polypharmacy metrics
+### Polypharmacy metrics
 
-### Patients prescribed 6+ or 10+ unique medicines 
+#### Patients prescribed 6+ or 10+ unique medicines 
 
 The percentage of patients prescribed 6+ or 10+ unique medicines are patient-month variations of metrics from the NHSBSA ePACT2 Polypharmacy dashboard. These metric calculations only consider prescription items from BNF chapters 1-4 and 6-10. The [rationale (PDF format)](https://www.nhsbsa.nhs.uk/sites/default/files/2018-02/PolyPharmacy%20Specification%20v1%200%20July%202017_0.pdf) for the selection of BNF chapters is that the comparators are intended to help practices to focus on mostly orally taken medicines, prescribed for long term conditions. This can then exclude, for example, incidental prescribing related to infections. In general, these are the medicines that have been found in studies to increase the risks associated with taking multiple medicines.
 
-### Anticholinergic burden (ACB)
+#### Anticholinergic burden (ACB)
 
 Anticholinergic medicines should be prescribed with caution as elderly patients are more likely to experience side effects such as constipation, urinary retention, dry mouth/eyes, sedation, delirium, falls and reduced cognition (which may be wrongly diagnosed as dementia).
 
 This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy dashboard ACB metric](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.nhsbsa.nhs.uk%2Fsites%2Fdefault%2Ffiles%2F2021-02%2FACB1_specification_MH_v1.1_Feb2021.docx&wdOrigin=BROWSELINK). Rather than generating an ACB score, the percentage of patient-months with anticholinergic prescribing, in which at least 2 medicines of moderate to high anticholinergic burden were prescribed has been calculated.
 
-### Medicines likely to cause kidney damage (DAMN)
+#### Medicines likely to cause kidney damage (DAMN)
 
 Patients in the community with chronic kidney disease and patients with normal renal function who are treated with an angiotensin converting enzyme inhibitor (ACEi) or angiotensin receptor blocker (ARB) are at increased risk of acute kidney injury (AKI) if they develop an illness associated with hypovolaemia and hypotension. The temporary cessation of certain medications may induce, exacerbate, and complicate AKI. These drugs can be remembered by the mnemonic DAMN (diuretics, ACEi/ ARBs, metformin, NSAIDs).
 
 This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy dashboard DAMN metric](https://www.nhsbsa.nhs.uk/sites/default/files/2018-02/PolyPharmacy%20Specification%20v1%200%20July%202017_0.pdf), which is the percentage of patients prescribed two or more unique medicines during a single month that are likely to induce, exacerbate or complicate AKI (DAMN medicines), out of the months where patients was prescribed at least one such drug.
 
-## Fall metrics
+### Fall metrics
 
-### Medicines associated with falls risk in elderly patients
+#### Medicines associated with falls risk in elderly patients
 
 Falls and falls-related injuries are a common and serious problem for elderly people. Whilst there are many contributing factors, [certain medications (PDF format)](https://pubmed.ncbi.nlm.nih.gov/29396189/) are recognised as a major and modifiable risk factor for falls. The human cost of falling includes distress, pain, injury, loss of confidence, loss of independence and mortality. Financially, falls are estimated to cost the NHS more than £2.3 billion per year. Falling in elderly people, such as the care home population, [impact both quality of life and healthcare costs](https://www.nice.org.uk/guidance/cg161). 
 
