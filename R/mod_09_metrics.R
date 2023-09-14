@@ -39,7 +39,7 @@ mod_09_metrics_ui <- function(id){
         "Sub-paragraph",      "Inclusion", "Benzodiazepines",
         "Chemical substance", "Exclusion", "Paraldehyde<br>Mirabegron<br>Mannitol<br>Loratadine<br>Desloratadine<br>Bilastine<br>Minoxidil"
       ) %>% 
-        knitr::kable("html", escape = FALSE, caption = "Falls risk drug groups") %>%
+        knitr::kable("html", escape = FALSE, caption = "Falls risk medicine groups") %>%
         kableExtra::kable_styling(
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )

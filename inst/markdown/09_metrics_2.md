@@ -30,14 +30,14 @@ This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy da
 
 ### Fall metrics
 
-#### Medicines associated with falls risk in elderly patients
+#### Medicines associated with falls risk in older people
 
-Falls and falls-related injuries are a common and serious problem for elderly people. Whilst there are many contributing factors, [certain medications (PDF format)](https://pubmed.ncbi.nlm.nih.gov/29396189/) are recognised as a major and modifiable risk factor for falls. The human cost of falling includes distress, pain, injury, loss of confidence, loss of independence and mortality. Financially, falls are estimated to cost the NHS more than £2.3 billion per year. Falling in elderly people, such as the care home population, [impact both quality of life and healthcare costs](https://www.nice.org.uk/guidance/cg161). 
+Falls and falls-related injuries are a common and serious problem for older people. Whilst there are many contributing factors, [certain medications (PDF format)](https://pubmed.ncbi.nlm.nih.gov/29396189/) are recognised as a major and modifiable risk factor for falls. The human cost of falling includes distress, pain, injury, loss of confidence, loss of independence and mortality. Financially, falls are estimated to cost the NHS more than £2.3 billion per year. Falls in older people, including those living in care homes, [impact both quality of life and healthcare costs](https://www.nice.org.uk/guidance/cg161). 
 
 To support clinicians in the management of falls and to facilitate the deprescribing process, a group of clinicians developed the [Screening Tool of Older Persons Prescriptions in older adults with high fall risk](https://academic.oup.com/ageing/article/50/4/1189/6043386) (STOPPFall).
 
 This analysis uses the broad medicine groups outlined by STOPPFall to define a list of medicines associated with falls risk. The medicine groups were converted into a list of chemical substances, collating the chemical substances within several BNF sections, paragraphs and sub-paragraphs most closely aligned with the STOPPFall medicine groups. 
 
-The list of chemical substances within the broad STOPPFall drug groups was validated for associated falls risk by Heather Smith from West Yorkshire ICS and David Alldred from Leeds University. A handful of these were considered exceptions and removed. For example, antihistamines are a STOPPFall drug group yet not every single antihistamine chemical substance may have a falls risk.
+The list of chemical substances within the broad STOPPFall medicine groups was validated for associated falls risk by Heather Smith, Consultant Pharmacist: Older People at NHS West Yorkshire Integrated Care Board and David Alldred, Professor of Medicines Use and Safety at the University of Leeds. A small number of medicines were considered exceptions and removed. For example, antihistamines are a STOPPFall medicine group yet not every single antihistamine has a falls risk.
 
-The end-result is a list of 304 combinations of BNF paragraphs and chemical substances (as a single chemical substance can appear in multiple paragraphs and some of which are not required). The formation of this list is summarised by the _Falls risk drug groups_ table, taking all the BNF paragraph-chemical substance combinations resulting from multiple BNF level filters.
+The end-result is a list of 304 combinations of BNF paragraphs and chemical substances (as a single chemical substance can appear in multiple paragraphs and some of which are not relevant). The formation of this list is summarised by the _Falls risk medicine groups_ table, taking all the BNF paragraph-chemical substance combinations resulting from multiple BNF level filters.
