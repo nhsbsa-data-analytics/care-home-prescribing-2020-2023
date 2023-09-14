@@ -63,7 +63,8 @@ mod_09_metrics_ui <- function(id){
         kableExtra::kable_styling(
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
-    )
+    ),
+    includeMarkdown("inst/markdown/09_metrics_4.md")
   )
 }
     
