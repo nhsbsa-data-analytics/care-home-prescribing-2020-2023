@@ -123,7 +123,10 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               "Click on a row to select one of the 7 regions. Only the top 50 
                elements nationally by total item count per BNF level are presented.
                For example, only the top 50 paragraphs are presented, determined
-               by the 50 paragraphs with the largest total item count nationally."
+               by the 50 paragraphs with the largest total item count nationally. 
+               The number of patients contributing to each metric are provided 
+               in the data download, offering additional context to metric value
+               calculations. Patient counts between one and four have been rounded to five."
             )
           )
         ),
@@ -211,7 +214,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
                elements nationally by total item count per BNF level are 
                presented. For example, only the top 50 paragraphs are presented,
                determined by the 50 paragraphs with the largest total item count
-               nationally."
+               nationally. The number of patients contributing to each metric are provided 
+               in the data download, offering additional context to metric value
+               calculations. Patient counts between one and four have been rounded to five."
             )
           )
         ),
@@ -299,7 +304,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
                the top 50 elements nationally by total item count per BNF level
                are presented. For example, only the top 50 paragraphs are
                presented, determined by the 50 paragraphs with the largest total
-               item count nationally."
+               item count nationally. The number of patients contributing to each metric are provided 
+               in the data download, offering additional context to metric value
+               calculations. Patient counts between one and four have been rounded to five."
             )
           )
         )
@@ -502,6 +509,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "Region",
           BNF_PARENT == isolate(input$input_region_bnf_parent),
@@ -524,6 +532,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "ICS",
           BNF_PARENT == isolate(input$input_ics_bnf_parent),
@@ -546,6 +555,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
       # Filter, pivot an rename
       carehomes2::mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "Local Authority",
           BNF_PARENT == isolate(input$input_lad_bnf_parent),
@@ -833,7 +843,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           Geography = .data$GEOGRAPHY_PARENT,
           `Sub-geography name` = .data$GEOGRAPHY_CHILD,
           `BNF level` = .data$BNF_PARENT,
-          `BNF sub-level` = .data$BNF_CHILD
+          `BNF sub-level` = .data$BNF_CHILD,
+          `Patient count` = .data$PATS
         )
     }
     
