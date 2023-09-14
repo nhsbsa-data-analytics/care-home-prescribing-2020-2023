@@ -1,4 +1,6 @@
 #' nhs_footer Function
+#' 
+#' @noRd
 #'
 #' @importFrom shiny tagList
 nhs_footer <- function() {

@@ -83,7 +83,7 @@
 #'
 #' @docType data
 #' @keywords datasets
-#' @name metrics_by_ch_type
+#' @name metrics_by_ch_type_85_split_df
 #' @usage data(metrics_by_ch_type_85_split_df)
 #' @format A data frame with 12 rows and 15 variables
 #' 

@@ -1,5 +1,7 @@
 #' nhs_selectInput Function
 #'
+#' @noRd
+#'
 #' @importFrom shiny tagList
 nhs_selectInput <- function(inputId,
                             label,

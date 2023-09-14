@@ -1,5 +1,7 @@
 #' nhs_header Function
 #'
+#' @noRd
+#'
 #' @importFrom shiny tagList
 nhs_header <- function() {
   tagList(
