@@ -1,4 +1,4 @@
-## Care home prescribing drug profile
+### Care home prescribing drug profile
 
 __The profile of medicines prescribed to patients aged 65 years and over, differs between care home and non-care home__
 

@@ -3598,7 +3598,7 @@ b,strong{
     display:block
 }
 .nhsuk-header__container{
-    padding:20px 0
+    padding:4px 0;
 }
 .nhsuk-header__container:after{
     clear:both;
@@ -3642,8 +3642,6 @@ b,strong{
     }
 }
 .nhsuk-header__logo .nhsuk-logo{
-    height:40px;
-    width:100px;
     border:0
 }
 @media (max-width:48.0525em){
@@ -3657,8 +3655,8 @@ b,strong{
     }
 }
 .nhsuk-header__link{
-    height:40px;
-    width:100px;
+    height:80px;
+    width:200px;
     display:block
 }
 .nhsuk-header__link:hover .nhsuk-logo{

@@ -1,4 +1,4 @@
-## Demographic estimates for care home patients aged 65 years and over receiving prescriptions
+### Demographic estimates for care home patients aged 65 years and over receiving prescriptions
 
 __Age and gender were consistent across the three financial years. Around two thirds of care home patients aged 65 years and over were female and 6 in 10 were aged 85 years and over.__
 

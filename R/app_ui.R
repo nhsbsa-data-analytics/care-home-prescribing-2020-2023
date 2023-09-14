@@ -12,14 +12,15 @@ app_ui <- function(request) {
     tags$html(lang = "en"),
     # Need this for shiny bootstrap dependencies TODO: check if needed
     bootstrapLib(),
+    tags$a(id = "skiplink", "Skip to Main Content", href = "#maincontent"),
     # First level UI elements
     nhs_header(),
     br(),
+    div(id = "maincontent"),
     tags$div(
       class = "nhsuk-width-container",
       tags$div(
         class = "nhsuk-main-wrapper",
-        id = "maincontent",
         role = "main",
         h1(
           "Estimated prescribing patterns for care home patients aged 65 years

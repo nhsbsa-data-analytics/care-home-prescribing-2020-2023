@@ -1,11 +1,13 @@
-## Introduction
+## Article
+
+### Introduction
 
 In this article we provide unique insight into primary care prescribing patterns for care home and non-care home patients aged 65 years and over in England for the 2020/21, 2021/22 and 2022/23 financial years.
 
 Patient address classification is based on experimental data linkage work. We welcome feedback, collaboration, and refinement of the methodology to see if it can be used in NHSBSA information systems in the future and how we can develop additional analyses.
 
 
-## Key Findings
+### Key Findings
 
 The estimated number of care home patients aged 65 years and over who received prescribing increased each financial year, from 2020/21 to 2022/23. The number of prescription items and associated drug cost also increased.
 
@@ -15,7 +17,7 @@ As might be expected, __care home patients aged 65 years and over received more 
 
 Almost two-thirds of care home patients aged 65 years and over who received prescriptions were female. Just over 4 in 10 were females aged 85 years and over. Monthly prescribing costs and volumes varied by age, gender, care home type and geography.
 
-## Methodology
+### Methodology
 
 Prescribing estimates are based on a sophisticated methodology which includes linking primary care prescription address data to care home addresses in [AddressBase Plus](https://www.ordnancesurvey.co.uk/business-government/products/addressbase) and [CQC data](https://anypoint.mulesoft.com/exchange/portals/care-quality-commission-5/4d36bd23-127d-4acf-8903-ba292ea615d4/cqc-syndication-1/). The address matching method has been made available as an R package named [<code>{<u>addressMatchR</u>}</code>](https://github.com/nhsbsa-data-analytics/addressMatchR). In addition, the R package [<code>{<u>nhsbsaR</u>}</code>](https://github.com/nhsbsa-data-analytics/nhsbsaR) is used. Many of the functions within the <code>{nhsbsaR}</code> and <code>{addressMatchR}</code> packages are scripted to work specifically with an Oracle database. The source code behind these functions may have to be edited for different database architectures, for them to work correctly.
 
@@ -24,7 +26,7 @@ This analysis addresses a key gap in knowledge and gives valuable insights which
 See the <a onclick="internalLink('Methodology');">Methodology</a> page for further details, or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 
 
-## Overall prescribing for care home patients aged 65 and over
+### Overall prescribing for care home patients aged 65 and over
 
 __The number of patients aged 65 years and over who received prescription items in care homes increased each year, as did the number of prescription items and drug cost.__
 

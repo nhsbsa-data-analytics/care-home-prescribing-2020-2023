@@ -1,4 +1,6 @@
-## Prescriptions data
+## Datasets
+
+### Prescriptions data
 
 Analysis is based on primary care prescription data collected by the NHS Business Services Authority. The data are collected for the operational purpose of reimbursing and remunerating dispensing contractors for the costs of supplying drugs and devices, along with essential and advanced services, to NHS patients. This excludes:
   *	prescriptions that were issued but not presented for dispensing
@@ -14,7 +16,7 @@ The NHSBSA do not capture the clinical indication of a prescription and therefor
 
 Due to manual processes involved in the processing of prescriptions there may be inaccuracies in capturing prescription information which are then reflected in the data. NHS Prescription Services have a variety of validation streams throughout prescription processing to support accurate capture of the data. In addition, a retrospective sample is completed in the month following reimbursement to identify the accuracy of prescription processing information. The check includes the accuracy of prescriber, practice, and drug information, but does not include the personal details of the patient. The reported Prescription Processing Information Accuracy for the 12-month rolling period ending March 2023 was 99.9%. The sample may not be representative at a more granular level; as such the level of accuracy is undetermined for specific groups such as drugs, geographies, and time periods. It should also be noted that the identification of errors in the accuracy checking sample does not result in amendments to data held in NHSBSA systems. Further details of Prescription Processing Information Accuracy can be found on our [website](https://www.nhsbsa.nhs.uk/pharmacies-gp-practices-and-appliance-contractors/payments-and-pricing/how-we-process-prescriptions).
 
-## Patient data
+### Patient data
 
 A single age was attributed to each patient for each financial year, to enable aggregations for multiple charts within the analysis. The maximum age recorded across all prescription forms for a patient, within each financial year, was taken as their age.
 
@@ -40,7 +42,7 @@ For the 2022/23 financial year, patient addresses could be allocated for 99.9% o
 
 Prescription forms with known non-English patient address information were removed from the analysis. Records with an unknown or missing postcode were included.
 
-## Lookup address
+### Lookup address
 
 Patient geography information was determined using the [National Statistics Postcode Lookup](https://geoportal.statistics.gov.uk/datasets/9ac0331178b0435e839f62f41cc61c16/about) (NSPL) from the [ONS Open Geography portal](https://geoportal.statistics.gov.uk/). An NHS Region, Integrated Care System (ICS) or Local Authority could not be attributed to a patient address record if they had an unknown postcode, or if their postcode was not contained within the NSPL. We use 2022 boundaries for NHS Regions and ICSs. For Local Authorities we use 2021 boundaries since our internal data is currently being updated. 
 

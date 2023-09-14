@@ -11,29 +11,6 @@ and prevent them fading in / out) */
   opacity: 1;
 }
 
-/* Tippy stuff */
-
-.tippy {
-  text-decoration: underline;
-}
-
-.tippy-content{
-	background: #f0f4f5 none repeat scroll 0% 0%;
-	text-align: left;
-	font-size: 12pt;
-}
-
-.tippy-tooltip{
-    color: #212b32;
-    background-color: #f0f4f5 !important;
-    border: 1px solid #425563;
-    border-radius: 0;
-}
-
-.tippy-backdrop {
-  background-color: #f0f4f5;
-}
-
 /* Tweak CSS for navpanel to make it sticky when scrolling page */
 .col-sm-2 {
   position: -webkit-sticky; /* Safari */
@@ -60,4 +37,19 @@ and prevent them fading in / out) */
 	stroke-width: 0.8;
 	stroke: #003087;
 	fill-opacity: 0.9;
+}
+
+a {
+  text-decoration: underline;
+}
+
+#skiplink {
+  position: absolute;
+  transform: translateY(-100%);
+}
+#skiplink:focus {
+  transform: translateY(0%);
+  background-color: lightyellow;
+  padding: 20px;
+  z-index: 9999;
 }

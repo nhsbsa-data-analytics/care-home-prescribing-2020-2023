@@ -1,4 +1,4 @@
-## Estimated prescribing metrics for care home vs non-care home patients aged 65 years and over
+### Estimated prescribing metrics for care home vs non-care home patients aged 65 years and over
 
 __Similar proportions of care home patients aged 65 years or over live in residential homes and nursing homes.__
 
