@@ -45,7 +45,7 @@ nhs_footer <- function() {
           ),
           p(
             class = "nhsuk-footer__copyright",
-            "© APLv2"
+            HTML("&#169; APLv2")
           )
         )
       )
