@@ -268,7 +268,8 @@ mod_02_patients_age_gender_server <- function(id){
     create_download_data <- function(data) {
       data |>
         dplyr::filter(
-          .data$GENDER %in% c("Male", "Female")
+          .data$GENDER %in% c("Male", "Female") &
+          !(is.na(.data$SUB_GEOGRAPHY_CODE) & is.na(.data$SUB_GEOGRAPHY_NAME)) # Filter out blank rows
         ) |>
         dplyr::arrange(
           .data$FY,
