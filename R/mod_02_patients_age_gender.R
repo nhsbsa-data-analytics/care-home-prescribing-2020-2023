@@ -340,6 +340,8 @@ mod_02_patients_age_gender_server <- function(id){
         )
         # Create the chart
         highcharter::highchart() %>%
+        
+        # CH series
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df() %>% 
             dplyr::mutate(
@@ -351,9 +353,10 @@ mod_02_patients_age_gender_server <- function(id){
             ),
           "bar",
           highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER_CH),
-          pointWidth = 24,
-          opacity = 0.9,
+          pointWidth = 18
         ) %>%
+        
+        # NCH series
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df() %>% 
             dplyr::mutate(
@@ -366,14 +369,20 @@ mod_02_patients_age_gender_server <- function(id){
           "column",
           highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER_CH),
           pointWidth = 28,
-          opacity = 0.5,
-          borderWidth = 1,
-          borderColor = "#000000"
+          borderWidth = 1.25,
+          # Note, same border colours for legend symbols are hard-coded in style.css
+          borderColor = c(
+            "#ffba59",
+            NHSRtheme::get_nhs_colours("BrightBlue")
+          )
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_colors(colors = c(
           NHSRtheme::get_nhs_colours("Orange") |> unname(),
-          NHSRtheme::get_nhs_colours("DarkBlue") |> unname()
+          NHSRtheme::get_nhs_colours("DarkBlue") |> unname(),
+          # M & F in NCH series to have transparent fill
+          highcharter::hex_to_rgba("#ffffff", alpha = 0),
+          highcharter::hex_to_rgba("#ffffff", alpha = 0)
           )
         ) %>%
         highcharter::hc_annotations(

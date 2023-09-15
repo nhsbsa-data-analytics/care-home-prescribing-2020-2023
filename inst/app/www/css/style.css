@@ -25,11 +25,15 @@ and prevent them fading in / out) */
 }
 
 #patients_age_gender-patients_by_fy_geo_age_gender_chart
- g.highcharts-legend-item.highcharts-column-series.highcharts-color-0.highcharts-series-2 > rect,
- g.highcharts-legend-item.highcharts-column-series.highcharts-color-1.highcharts-series-3 > rect {
+ g.highcharts-legend-item.highcharts-column-series.highcharts-color-2.highcharts-series-2 > rect {
+   stroke-width: 1;
+   stroke: #ffba59;
+ }
+ 
+#patients_age_gender-patients_by_fy_geo_age_gender_chart 
+ g.highcharts-legend-item.highcharts-column-series.highcharts-color-3.highcharts-series-3 > rect {
 	stroke-width: 1;
-	stroke: black;
-	fill-opacity: 0.5;
+	stroke: #0072CE;
 }
 
 #ch_flag_drug-ch_flag_drug_chart
