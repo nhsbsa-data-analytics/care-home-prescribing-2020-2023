@@ -278,6 +278,9 @@ mod_02_patients_age_gender_server <- function(id){
           .data$GENDER,
           .data$AGE_BAND
         ) |>
+        tidyr::pivot_wider(names_from = CH_FLAG, values_from = c(TOTAL_PATIENTS, PCT_PATIENTS)) |>
+        dplyr::relocate(.data$TOTAL_PATIENTS_1, .before = TOTAL_PATIENTS_0) |>
+        dplyr::relocate(.data$PCT_PATIENTS_1, .before = PCT_PATIENTS_0) |>
         dplyr::rename(
           `Financial year` = .data$FY,
           Geography = .data$GEOGRAPHY,
@@ -285,8 +288,10 @@ mod_02_patients_age_gender_server <- function(id){
           `Sub geography name` = .data$SUB_GEOGRAPHY_NAME,
           `Age band` = .data$AGE_BAND,
           Gender = .data$GENDER,
-          `Number of care home patients` = .data$TOTAL_PATIENTS,
-          `% of care home patients` = .data$PCT_PATIENTS
+          `Number of care home patients` = .data$TOTAL_PATIENTS_1,
+          `% of care home patients` = .data$PCT_PATIENTS_1,
+          `Number of non-care home patients` = .data$TOTAL_PATIENTS_0,
+          `% of non-care home patients` = .data$PCT_PATIENTS_0
         )
     }
     
