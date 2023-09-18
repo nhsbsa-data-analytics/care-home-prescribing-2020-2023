@@ -27,13 +27,13 @@ and prevent them fading in / out) */
 #patients_age_gender-patients_by_fy_geo_age_gender_chart
  g.highcharts-legend-item.highcharts-column-series.highcharts-color-2.highcharts-series-2 > rect {
    stroke-width: 1;
-   stroke: #ED8B00;
+   stroke: #9c5b00;
  }
  
 #patients_age_gender-patients_by_fy_geo_age_gender_chart 
  g.highcharts-legend-item.highcharts-column-series.highcharts-color-3.highcharts-series-3 > rect {
 	stroke-width: 1;
-	stroke: #003087;
+	stroke: #001f57;
 }
 
 #ch_flag_drug-ch_flag_drug_chart

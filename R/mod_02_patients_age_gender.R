@@ -372,14 +372,14 @@ mod_02_patients_age_gender_server <- function(id){
           borderWidth = 1.25,
           # Note, same border colours for legend symbols are hard-coded in style.css
           borderColor = c(
-            NHSRtheme::get_nhs_colours("Orange") |> unname(),
-            NHSRtheme::get_nhs_colours("DarkBlue") |> unname()
+            "#9c5b00",
+            "#001f57"
           )
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_colors(colors = c(
-          "#ffba59",
-          NHSRtheme::get_nhs_colours("BrightBlue") |> unname(),
+          "#ffd9a3",
+          "#91abdb",
           # M & F in NCH series to have transparent fill
           highcharter::hex_to_rgba("#ffffff", alpha = 0),
           highcharter::hex_to_rgba("#ffffff", alpha = 0)
