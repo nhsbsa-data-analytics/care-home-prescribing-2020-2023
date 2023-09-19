@@ -131,7 +131,7 @@ mod_02_patients_age_gender_server <- function(id){
             
           } else NULL,
           
-          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts. Hollow bars show percentages of non-care home patients."
+          " Patient counts between one and four have been rounded to five, otherwise to the nearest ten; and the percentages are based on rounded counts."
               
         )
       )
@@ -268,7 +268,8 @@ mod_02_patients_age_gender_server <- function(id){
     create_download_data <- function(data) {
       data |>
         dplyr::filter(
-          .data$GENDER %in% c("Male", "Female")
+          .data$GENDER %in% c("Male", "Female") &
+          !(is.na(.data$SUB_GEOGRAPHY_CODE) & is.na(.data$SUB_GEOGRAPHY_NAME)) # Filter out blank rows
         ) |>
         dplyr::arrange(
           .data$FY,
@@ -277,6 +278,9 @@ mod_02_patients_age_gender_server <- function(id){
           .data$GENDER,
           .data$AGE_BAND
         ) |>
+        tidyr::pivot_wider(names_from = CH_FLAG, values_from = c(TOTAL_PATIENTS, PCT_PATIENTS)) |>
+        dplyr::relocate(.data$TOTAL_PATIENTS_1, .before = TOTAL_PATIENTS_0) |>
+        dplyr::relocate(.data$PCT_PATIENTS_1, .before = PCT_PATIENTS_0) |>
         dplyr::rename(
           `Financial year` = .data$FY,
           Geography = .data$GEOGRAPHY,
@@ -284,8 +288,10 @@ mod_02_patients_age_gender_server <- function(id){
           `Sub geography name` = .data$SUB_GEOGRAPHY_NAME,
           `Age band` = .data$AGE_BAND,
           Gender = .data$GENDER,
-          `Number of care home patients` = .data$TOTAL_PATIENTS,
-          `% of care home patients` = .data$PCT_PATIENTS
+          `Number of care home patients` = .data$TOTAL_PATIENTS_1,
+          `% of care home patients` = .data$PCT_PATIENTS_1,
+          `Number of non-care home patients` = .data$TOTAL_PATIENTS_0,
+          `% of non-care home patients` = .data$PCT_PATIENTS_0
         )
     }
     
@@ -334,6 +340,8 @@ mod_02_patients_age_gender_server <- function(id){
         )
         # Create the chart
         highcharter::highchart() %>%
+        
+        # CH series
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df() %>% 
             dplyr::mutate(
@@ -345,9 +353,10 @@ mod_02_patients_age_gender_server <- function(id){
             ),
           "bar",
           highcharter::hcaes(AGE_BAND, PCT_PATIENTS_CH, group = GENDER_CH),
-          pointWidth = 24,
-          opacity = 0.9,
+          pointWidth = 18
         ) %>%
+        
+        # NCH series
         highcharter::hc_add_series(
           patients_by_fy_geo_age_gender_plot_df() %>% 
             dplyr::mutate(
@@ -360,14 +369,20 @@ mod_02_patients_age_gender_server <- function(id){
           "column",
           highcharter::hcaes(AGE_BAND, PCT_PATIENTS_NCH, group = GENDER_CH),
           pointWidth = 28,
-          opacity = 0.5,
-          borderWidth = 1,
-          borderColor = "#000000"
+          borderWidth = 1.25,
+          # Note, same border colours for legend symbols are hard-coded in style.css
+          borderColor = c(
+            "#9c5b00",
+            "#001f57"
+          )
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart() %>%
         highcharter::hc_colors(colors = c(
-          NHSRtheme::get_nhs_colours("Orange") |> unname(),
-          NHSRtheme::get_nhs_colours("DarkBlue") |> unname()
+          "#ffd9a3",
+          "#91abdb",
+          # M & F in NCH series to have transparent fill
+          highcharter::hex_to_rgba("#ffffff", alpha = 0),
+          highcharter::hex_to_rgba("#ffffff", alpha = 0)
           )
         ) %>%
         highcharter::hc_annotations(
