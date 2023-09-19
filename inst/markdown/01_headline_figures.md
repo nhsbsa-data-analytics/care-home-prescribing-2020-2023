@@ -2,7 +2,7 @@
 
 ### Introduction
 
-In this article we provide unique insight into primary care prescribing patterns for care home and non-care home patients aged 65 years and over in England for the 2020/21, 2021/22 and 2022/23 financial years.
+In this article we provide unique insight into primary care prescribing patterns for care home patients aged 65 years and over in England for the 2020/21, 2021/22 and 2022/23 financial years.
 
 Patient address classification is based on experimental data linkage work. We welcome feedback, collaboration, and refinement of the methodology to see if it can be used in NHSBSA information systems in the future and how we can develop additional analyses.
 
@@ -21,7 +21,11 @@ Almost two-thirds of care home patients aged 65 years and over who received pres
 
 Prescribing estimates are based on a sophisticated methodology which includes linking primary care prescription address data to care home addresses in [AddressBase Plus](https://www.ordnancesurvey.co.uk/business-government/products/addressbase) and [CQC data](https://anypoint.mulesoft.com/exchange/portals/care-quality-commission-5/4d36bd23-127d-4acf-8903-ba292ea615d4/cqc-syndication-1/). The address matching method has been made available as an R package named [<code>{<u>addressMatchR</u>}</code>](https://github.com/nhsbsa-data-analytics/addressMatchR). In addition, the R package [<code>{<u>nhsbsaR</u>}</code>](https://github.com/nhsbsa-data-analytics/nhsbsaR) is used. Many of the functions within the <code>{nhsbsaR}</code> and <code>{addressMatchR}</code> packages are scripted to work specifically with an Oracle database. The source code behind these functions may have to be edited for different database architectures, for them to work correctly.
 
-This analysis addresses a key gap in knowledge and gives valuable insights which can inform the use and management of medicines in care homes to help improve health outcomes, quality of care and ensure value. __It should however be noted that data from the 2020/21 financial year was at the height of the COVID-19 pandemic and data from the 2021/22 financial year was toward the end of the pandemic.__ Prescribing patterns may change in subsequent years.
+This analysis addresses a key gap in knowledge and gives valuable insights which can inform the use and management of medicines in care homes to help improve health outcomes, quality of care and ensure value. Points to note:
+
+- __Data from the 2020/21 financial year was at the height of the COVID-19 pandemic and data from the 2021/22 financial year was toward the end of the pandemic.__ Prescribing patterns may change in subsequent years.
+- There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the <a onclick="internalLink('Annex');">Annex</a> for further sources of data available on the care home population.
+- Drug costs are particularly are influenced by prices which have been rising rapidly over the past year due to price concessions and possibly general inflation.
 
 See the <a onclick="internalLink('Methodology');">Methodology</a> page for further details, or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 
@@ -29,8 +33,6 @@ See the <a onclick="internalLink('Methodology');">Methodology</a> page for furth
 ### Overall prescribing for care home patients aged 65 and over
 
 __The number of patients aged 65 years and over who received prescription items in care homes increased each year, as did the number of prescription items and drug cost.__
-
-It is worth noting that drug costs per patient-month are particularly influenced, among other things, by general inflation.
 
 There was an estimated monthly average of 301,000 care home patients aged 65 years and over receiving at least one prescription item in 2022/23. They received around 37 million prescription items at a drug cost of £361 million.
 
