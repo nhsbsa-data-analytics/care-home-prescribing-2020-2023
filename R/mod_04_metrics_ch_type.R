@@ -164,9 +164,7 @@ mod_04_metrics_ch_type_server <- function(id) {
           type = "column",
           highcharter::hcaes(
             x = !!x,
-            y = !!input$metric,
-            # group = !!group,
-            # color = !!color
+            y = !!input$metric
           ),
           name = ui_metric_names[[input$metric]],
           tooltip = list(
