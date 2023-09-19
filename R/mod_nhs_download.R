@@ -131,7 +131,8 @@ mod_nhs_download_server <- function(id, filename, export_data,
             "Prescribing data",
             df,
             rowNames = FALSE,
-            withFilter = TRUE
+            withFilter = TRUE,
+            keepNA = TRUE
           )
           # Set column widths to be wide enough to contain their name
           openxlsx::setColWidths(
