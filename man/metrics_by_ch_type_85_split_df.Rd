@@ -6,7 +6,7 @@
 \title{Aggregated prescribing data broken down by financial year, carehome type and 
 age band (65+ and 85+)}
 \format{
-A data frame with 12 rows and 15 variables
+A data frame with 24 rows and 15 variables
 }
 \source{
 { Data and Advanced Analytics Team at NHS BSA, using

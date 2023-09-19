@@ -111,10 +111,7 @@ mod_04_metrics_ch_type_server <- function(id) {
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
       "Financial year"                      = "FY",
       "Care home type"                      = "CH_TYPE",
-      "Age band"                            = "AGE_BAND",
-      "Total patient-months"                = "TOTAL_PM",
-      "Total patient-months with ACB risk"  = "TOTAL_PM_ACB",
-      "Total patient-months with DAMN risk" = "TOTAL_PM_DAMN"
+      "Age band"                            = "AGE_BAND"
     )
     
     # Formatted data ------------------------------------------------------
@@ -198,6 +195,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Create download data
     create_download_data <- function(data) {
       data %>%
+        dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::arrange(.data$FY, .data$CH_TYPE, .data$AGE_BAND) %>%
         dplyr::rename(dl_col_names)
     }

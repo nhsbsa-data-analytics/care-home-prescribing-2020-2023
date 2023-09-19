@@ -107,10 +107,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       "Geography"                           = "GEOGRAPHY",
       "Sub-geography code"                  = "SUB_GEOGRAPHY_CODE",
       "Sub-geography name"                  = "SUB_GEOGRAPHY_NAME",
-      "Care home status"                    = "CH_FLAG",
-      "Total patient-months"                = "TOTAL_PM",
-      "Total patient-months with ACB risk"  = "TOTAL_PM_ACB",
-      "Total patient-months with DAMN risk" = "TOTAL_PM_DAMN"
+      "Care home status"                    = "CH_FLAG"
     )
     
     # Formatted data ------------------------------------------------------
@@ -296,6 +293,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Create download data (all data)
     create_download_data <- function(data) {
       data %>%
+        dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::mutate(
           CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
         )  %>% 
