@@ -8,7 +8,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
       div(
         class = "nhsuk-grid-row",
         div(
-          class = "nhsuk-grid-column-two-thirds",
+          class = "nhsuk-grid-column-one-half",
           nhs_selectInput(
             inputId = ns("metric"),
             label = "Metric",
@@ -22,6 +22,18 @@ mod_04_metrics_ch_type_ui <- function(id) {
               "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
               "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
+            ),
+            full_width = TRUE
+          )
+        ),
+        div(
+          class = "nhsuk-grid-column-one-half",
+          nhs_selectInput(
+            inputId = ns("age_band"),
+            label = "Age group",
+            choices = c(
+              "Ages 65+",
+              "Ages 85+"
             ),
             full_width = TRUE
           )
@@ -68,12 +80,6 @@ mod_04_metrics_ch_type_server <- function(id) {
 
     # Metric and UI mappings-----------------------------------------------
 
-    # Map FY to UI color
-    ui_age_band_colors <- list(
-      `Ages 65+` = NHSRtheme::get_nhs_colours("BrightBlue"),
-      `Ages 85+` = NHSRtheme::get_nhs_colours("AquaBlue")
-    )
-    
     # Map metric column names to UI metric names
     ui_metric_names <- c(
       COST_PPM            = "Mean drug cost PPM",
@@ -105,10 +111,7 @@ mod_04_metrics_ch_type_server <- function(id) {
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
       "Financial year"                      = "FY",
       "Care home type"                      = "CH_TYPE",
-      "Age band"                            = "AGE_BAND",
-      "Total patient-months"                = "TOTAL_PM",
-      "Total patient-months with ACB risk"  = "TOTAL_PM_ACB",
-      "Total patient-months with DAMN risk" = "TOTAL_PM_DAMN"
+      "Age band"                            = "AGE_BAND"
     )
     
     # Formatted data ------------------------------------------------------
@@ -132,7 +135,8 @@ mod_04_metrics_ch_type_server <- function(id) {
           .data$AGE_BAND,
           .data[[input$metric]],
           .keep = "none"
-        )
+        ) %>% 
+        dplyr::filter(.data$AGE_BAND == input$age_band)
     )
     
     # Output functions ----------------------------------------------------
@@ -147,43 +151,30 @@ mod_04_metrics_ch_type_server <- function(id) {
                              )) {
       ch_type <- match.arg(ch_type)
       
-      data <- data %>% dplyr::filter(.data$CH_TYPE == ch_type) %>% 
-        dplyr::mutate(
-          COLOR = ui_age_band_colors[.data$AGE_BAND] %>%
-            unlist() %>%
-            unname()
-        )
+      data <- data %>% dplyr::filter(.data$CH_TYPE == ch_type)
       
       # Get max of metric to use a common y-axis range
       y_max <- carehomes2::metrics_by_ch_type_85_split_df[[input$metric]] %>%
         max(na.rm = TRUE)
       
       x <- rlang::sym("FY")
-      group <- rlang::sym("AGE_BAND")
-      color <- rlang::sym("COLOR")
       
       data %>% 
         highcharter::hchart(
           type = "column",
           highcharter::hcaes(
             x = !!x,
-            y = !!input$metric,
-            group = !!group,
-            color = !!color
+            y = !!input$metric
           ),
+          name = ui_metric_names[[input$metric]],
           tooltip = list(
             useHTML = TRUE,
-            shared = TRUE,
-            headerFormat = paste0(
-              "{point.key} - ", ui_metric_names[[input$metric]], "<br>"
-            ),
             pointFormat = paste0(
-              "{point.AGE_BAND}: <b>{point.y}</b>"
+              metric_tooltips[input$metric] %>% unname()
             )
           )
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart(stack = NA) %>%
-        highcharter::hc_colors(ui_age_band_colors %>% unlist() %>% unname()) %>% 
         highcharter::hc_xAxis(
           title = NULL,
           categories = data$FY %>%
@@ -202,6 +193,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Create download data
     create_download_data <- function(data) {
       data %>%
+        dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::arrange(.data$FY, .data$CH_TYPE, .data$AGE_BAND) %>%
         dplyr::rename(dl_col_names)
     }

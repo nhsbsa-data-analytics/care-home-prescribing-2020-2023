@@ -107,10 +107,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       "Geography"                           = "GEOGRAPHY",
       "Sub-geography code"                  = "SUB_GEOGRAPHY_CODE",
       "Sub-geography name"                  = "SUB_GEOGRAPHY_NAME",
-      "Care home status"                    = "CH_FLAG",
-      "Total patient-months"                = "TOTAL_PM",
-      "Total patient-months with ACB risk"  = "TOTAL_PM_ACB",
-      "Total patient-months with DAMN risk" = "TOTAL_PM_DAMN"
+      "Care home status"                    = "CH_FLAG"
     )
     
     # Formatted data ------------------------------------------------------
@@ -270,6 +267,18 @@ mod_06_geo_ch_flag_server <- function(id) {
         addAttrs("style" = "font-size: 12px;")$
         allTags()
       
+      # Callback to handle empty cells and display as NA
+      rowCallback <- c(
+        "function(row, data){",
+        "  for(var i=0; i<data.length; i++){",
+        "    if(data[i] === null){",
+        "      $('td:eq('+i+')', row).html('NA')",
+        "        .css({'color': 'rgb(151,151,151)', 'font-style': 'italic'});",
+        "    }",
+        "  }",
+        "}"
+      )
+      
       DT::datatable(
         tdata,
         escape = FALSE,
@@ -284,7 +293,8 @@ mod_06_geo_ch_flag_server <- function(id) {
           tabindex = "0",
           columnDefs = list(
             list(className = "dt-center", targets = "_all")
-          )
+          ),
+          rowCallback = DT::JS(rowCallback)
         ),
         height = "400px",
         filter = "none",
@@ -296,6 +306,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Create download data (all data)
     create_download_data <- function(data) {
       data %>%
+        dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::mutate(
           CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
         )  %>% 
