@@ -3,6 +3,7 @@
 ### Prescriptions data
 
 Analysis is based on primary care prescription data collected by the NHS Business Services Authority. The data are collected for the operational purpose of reimbursing and remunerating dispensing contractors for the costs of supplying drugs and devices, along with essential and advanced services, to NHS patients. This excludes:
+
   *	prescriptions that were issued but not presented for dispensing
   *	prescriptions that were not submitted to the NHSBSA for processing and reimbursement
   *	prescriptions issued and dispensed in prisons, hospitals, and private prescriptions

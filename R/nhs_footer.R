@@ -19,7 +19,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "#",
+                href = "https://www.nhsbsa.nhs.uk/accessibility-statement-website-estimated-prescribing-patterns-care-home-patients-aged-65-years-or",
                 target = "_blank",
                 "Accessibility statement"
               )
