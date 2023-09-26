@@ -115,7 +115,9 @@ mod_05_metrics_age_gender_server <- function(id){
             
           } else NULL,
           
-          " In each age band, patient counts of ≤5 were rounded up to the nearest 5, otherwise to the nearest 10; and the percentages are based on rounded counts. Hollow bars show percentages of non-care home patients."
+          "This chart does not show 0.3% patients where the gender was not known.
+           In each age band, patient counts of ≤5 were rounded up to the nearest 5,
+           otherwise to the nearest 10; and the percentages are based on rounded counts."
           
         )
       )

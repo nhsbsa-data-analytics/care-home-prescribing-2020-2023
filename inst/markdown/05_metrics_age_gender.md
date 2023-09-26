@@ -4,6 +4,6 @@ The drug cost for care home patients aged 65 to 69 years was around 3 times high
 
 Prescribing metrics were closest amongst care home and non-care home patients aged 90+, where life expectancy differences were reported to be smallest by the ONS.
 
-With the exception of prescribing of DAMN medicines, prescribing was higher among care home patients than non-care home patients across all age groups.
+Except for prescribing of DAMN medicines, prescribing was higher among care home patients than non-care home patients across all age groups.
 
 Male and female care home patients in a given age band had broadly similar prescribing metric values. The same was true for non-care home patients.

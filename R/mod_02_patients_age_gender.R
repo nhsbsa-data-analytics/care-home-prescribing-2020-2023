@@ -131,7 +131,10 @@ mod_02_patients_age_gender_server <- function(id){
             
           } else NULL,
           
-          " Patient counts between one and four have been rounded to five, otherwise to the nearest ten; and the percentages are based on rounded counts."
+          "This chart does not show 0.3% patients where the gender was not known.
+           Patient counts between one and four have been rounded to five, otherwise
+           to the nearest ten; and the percentages are based on rounded counts.
+           Hollow bars show percentages of non-care home patients."
               
         )
       )

@@ -2,7 +2,7 @@ __London has higher estimated drug costs and overall prescribing volumes per pat
 
 The chart and map show prescribing metrics by region, ICS, and Local Authority. 
 
-All prescribing metrics other than prescribing of 2 or more DAMN medicines are higher across all geographical breakdowns and years for care home patients, compared to non-care home patients.
+All prescribing metrics other than prescribing of two or more DAMN medicines are higher across all geographical breakdowns and years for care home patients, compared to non-care home patients.
 
 The average drug cost and number of prescription items per patient-month was highest in the London NHS region  for both care home and non-care home patients. The London NHS region was also highest among care home patients for polypharmacy unique medicines metrics and highest for DAMN medicines in non-care home patients.
 

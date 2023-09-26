@@ -1,12 +1,10 @@
 There are 10 patient-months (from 3 patients) in this sample. Over the 10 patient-months, 70 items were prescribed. The mean number of items prescribed per patient-month (PPM) was therefore 70 / 10 = 7 items. This metric uses the sum of all items as the numerator and the total number of patient-months as the denominator.
 
-There are 10 patient-months in this sample. Over the 10 patient-months, 70 items were prescribed. The mean number of items prescribed per patient-month (PPM) was therefore 70 / 10 = 7 items. This metric uses the sum of all items as the numerator and the total number of patient-months as the denominator.
-
 Out of the 10 patient-months, only two of them had 10 or more unique medicines prescribed. Therefore, the percentage of patient-months with 10 or more unique medicines prescribed is 2 / 10 = 20%. This metric uses a count of patient-months satisfying a condition as a numerator and the total number of patient-months as the denominator.
 
 This analysis uses nine key prescribing metrics. Four of these calculate the mean value across patient-months, like the first example. Five of these see how many patient-months satisfy a condition out of all (or a selection of) patient-months, like the second example. 
 
-All prescribing metric definitions are described in the ‘Analysis Metrics’ table. Two metrics relate to cost and volume. Five polypharmacy metrics are based on metrics developed nationally and used in NHSBSA [ePACT2 polypharmacy dashboard](https://www.nhsbsa.nhs.uk/access-our-data-products/epact2/dashboards-and-specifications/medicines-optimisation-polypharmacy). Two of the metrics were generated from [research around medicines](https://www.nice.org.uk/guidance/cg161) associated with falls risk in elderly people.  The required additional information to fully understand these metrics is presented below.
+All prescribing metric definitions are described in the _Prescribing metric definitions_ table. Two metrics relate to cost and volume. Five polypharmacy metrics are based on metrics developed nationally and used in NHSBSA [ePACT2 polypharmacy dashboard](https://www.nhsbsa.nhs.uk/access-our-data-products/epact2/dashboards-and-specifications/medicines-optimisation-polypharmacy). Two of the metrics were generated from [research around medicines](https://www.nice.org.uk/guidance/cg161) associated with falls risk in elderly people.  The required additional information to fully understand these metrics is presented below.
 
 The PPM metrics were calculated only using data from months where a patient received prescribing. If a patient was a care home resident for a given month yet received no prescribing, this month would not contribute towards PPM calculations. A care home resident with periodic repeat prescriptions could potentially have a drug allocation covering more than one month. Prescribing would only be allocated to the dispensing month.  
 
@@ -20,7 +18,7 @@ The percentage of patients prescribed 6+ or 10+ unique medicines are patient-mon
 
 Anticholinergic medicines should be prescribed with caution as elderly patients are more likely to experience side effects such as constipation, urinary retention, dry mouth/eyes, sedation, delirium, falls and reduced cognition (which may be wrongly diagnosed as dementia).
 
-This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy dashboard ACB metric](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.nhsbsa.nhs.uk%2Fsites%2Fdefault%2Ffiles%2F2021-02%2FACB1_specification_MH_v1.1_Feb2021.docx&wdOrigin=BROWSELINK). Rather than generating an ACB score, the percentage of patient-months with anticholinergic prescribing, in which at least 2 medicines of moderate to high anticholinergic burden were prescribed has been calculated.
+This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy dashboard ACB metric](https://view.officeapps.live.com/op/view.aspx?src=https%3A%2F%2Fwww.nhsbsa.nhs.uk%2Fsites%2Fdefault%2Ffiles%2F2021-02%2FACB1_specification_MH_v1.1_Feb2021.docx&wdOrigin=BROWSELINK). Rather than generating an ACB score, the percentage of patient-months with anticholinergic prescribing, in which at least two medicines of moderate to high anticholinergic burden were prescribed has been calculated.
 
 #### Medicines likely to cause kidney damage (DAMN)
 

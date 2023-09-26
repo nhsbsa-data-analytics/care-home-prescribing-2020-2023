@@ -51,8 +51,8 @@ app_ui <- function(request) {
             mod_10_datasets_ui("datasets")
           ),
           tabPanel(
-            title = "Methodology",
-            mod_11_methodology_ui("methodology")
+            title = "Data Linkage",
+            mod_11_data_linkage_ui("data_linkage")
           ),
           tabPanel(
             title = "Feedback",
