@@ -61,7 +61,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Clicking a row will outline the selected area."
+        "Clicking a row will outline the selected area on the maps."
       ),
       mod_nhs_download_ui(ns("download_data"))
     )

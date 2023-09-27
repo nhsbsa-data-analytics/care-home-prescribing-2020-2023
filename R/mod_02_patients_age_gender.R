@@ -115,24 +115,23 @@ mod_02_patients_age_gender_server <- function(id){
             excluded_unk(), "%",
             " and ",
             excluded_ind(), "%",
-            " patients where the gender was not known and not specified, respectively.")
+            " patients where the gender was not known and not specified, respectively. ")
             
           } else if (!any_excl_unk & any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_unk(), "%",
-                   " patients where the gender was not known.")
+                   " patients where the gender was not known. ")
             
           } else if (any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_ind(), "%",
-                   " patients where the gender was not specified.")
+                   " patients where the gender was not specified. ")
             
           } else NULL,
           
-          "This chart does not show 0.3% patients where the gender was not known.
-           Patient counts between one and four have been rounded to five, otherwise
+          "Patient counts between one and four have been rounded to five, otherwise
            to the nearest ten; and the percentages are based on rounded counts.
            Hollow bars show percentages of non-care home patients."
               
@@ -449,12 +448,18 @@ mod_02_patients_age_gender_server <- function(id){
             formatter = htmlwidgets::JS(
               "
               function() {
+                var num_fmt = function(x) {
+                  result = Math.abs(x);
+                  if (result > 1000000) { result = Highcharts.numberFormat(result / 1000000, 2) + 'M' }
+                  return result;
+                }
 
                 outHTML =
                   '<b>Gender: </b>' + this.point.GENDER + '<br>' +
                   '<b>Age band: </b>' + this.point.category + '<br/>' +
-                  '<b>Number of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.TOTAL_PATIENTS_CH), 0) + '<br>' +
+                  '<b>Number of care home patients: </b>' + num_fmt(this.point.TOTAL_PATIENTS_CH) + '<br>' +
                   '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' + '<br>' +
+                  '<b>Number of non-care home patients: </b>' + num_fmt(this.point.TOTAL_PATIENTS_NCH) + '<br>' +    
                   '<b>Percentage of non-care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_NCH), 1) + '%'
 
                 return outHTML

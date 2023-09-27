@@ -120,13 +120,14 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 7 regions. Only the top 50 
+              "Click on a row to display chart for one of the 7 regions. Only the top 50 
                elements nationally by total item count per BNF level are presented.
                For example, only the top 50 paragraphs are presented, determined
                by the 50 paragraphs with the largest total item count nationally. 
                The number of patients contributing to each metric are provided 
                in the data download, offering additional context to metric value
-               calculations. Patient counts between one and four have been rounded to five."
+               calculations. Patient counts between one and four have been rounded
+               to five, otherwise to the nearest ten."
             )
           )
         ),
@@ -210,13 +211,14 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 42 ICSs. Only the top 50 
+              "Click on a row to display chart for one of the 42 ICSs. Only the top 50 
                elements nationally by total item count per BNF level are 
                presented. For example, only the top 50 paragraphs are presented,
                determined by the 50 paragraphs with the largest total item count
                nationally. The number of patients contributing to each metric are provided 
                in the data download, offering additional context to metric value
-               calculations. Patient counts between one and four have been rounded to five."
+               calculations. Patient counts between one and four have been rounded
+               to five, otherwise to the nearest ten."
             )
           )
         ),
@@ -300,13 +302,14 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to select one of the 308 Local Authorities. Only 
+              "Click on a row to display chart for one of the 308 Local Authorities. Only 
                the top 50 elements nationally by total item count per BNF level
                are presented. For example, only the top 50 paragraphs are
                presented, determined by the 50 paragraphs with the largest total
                item count nationally. The number of patients contributing to each metric are provided 
                in the data download, offering additional context to metric value
-               calculations. Patient counts between one and four have been rounded to five."
+               calculations. Patient counts between one and four have been rounded
+               to five, otherwise to the nearest ten."
             )
           )
         )
@@ -845,7 +848,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `BNF level` = .data$BNF_PARENT,
           `BNF sub-level` = .data$BNF_CHILD,
           `Patient count` = .data$PATS
-        )
+        ) %>% 
+        dplyr::mutate(`Patient count` = bespoke_round(`Patient count`))
     }
     
     # Download button
@@ -853,7 +857,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       id = "download_data",
       filename = "BNF level prescribing in care homes.xlsx",
       export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
-      currency_xl_fmt_str = "£#,##0.00"
+      currency_xl_fmt_str = "£#,##0.00",
+      number_xl_fmt_str = "#,##0"
     )
   })
 }

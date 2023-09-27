@@ -109,7 +109,8 @@ mod_03_patients_imd_server <- function(id, export_data) {
     mod_nhs_download_server(
       id = "download_data",
       filename = "IMD deciles for care home patients with prescribing.xlsx",
-      export_data = create_download_data(carehomes2::mod_patients_by_imd_df)
+      export_data = create_download_data(carehomes2::mod_patients_by_imd_df),
+      number_xl_fmt_str = "#,##0"
     )
   })
 }
