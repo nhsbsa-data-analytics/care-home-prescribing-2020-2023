@@ -29,7 +29,7 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
-      shiny::htmlOutput(outputId = ns("excluded_patients")),
+      shiny::htmlOutput(outputId = ns("caption")),
       mod_nhs_download_ui(id = ns("download_data"))
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
@@ -43,6 +43,77 @@ mod_02_patients_age_gender_ui <- function(id){
 mod_02_patients_age_gender_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    
+    # Reactive values needed for caption annotation
+    
+    # Total CH patients
+    total <- reactive({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
+      
+      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::filter(CH_FLAG==1) %>%
+        dplyr::summarise(TOTAL_PATIENTS = sum(TOTAL_PATIENTS, na.rm = TRUE)) %>%
+        dplyr::mutate(TOTAL_PATIENTS = format(TOTAL_PATIENTS, big.mark = ",")) %>%
+        dplyr::pull(TOTAL_PATIENTS)
+    })
+    
+    # Percentage of female CH patients
+    percentage_female_patients <- reactive({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
+      
+      # Get the total female patients
+      female_patients_df <-
+        patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::filter(CH_FLAG==1) %>%
+        dplyr::summarise(
+          TOTAL_FEMALE_PATIENTS =
+            sum(ifelse(GENDER == "Female", TOTAL_PATIENTS, 0)),
+          TOTAL_PATIENTS = sum(TOTAL_PATIENTS)
+        )
+      
+      # Calculate the percentage of patients
+      female_patients_df <- female_patients_df %>%
+        dplyr::mutate(
+          PCT_FEMALE_PATIENTS = as.character(janitor::round_half_up(TOTAL_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1))
+        ) %>%
+        dplyr::pull(PCT_FEMALE_PATIENTS)
+      
+    })
+    
+    # Percentage of elderly female patients
+    percentage_elderly_female_patients <- reactive({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
+      
+      # Get the total elderly female patients
+      elderly_female_patients_df <-
+        patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+        dplyr::filter(CH_FLAG==1) %>%
+        dplyr::summarise(
+          TOTAL_ELDERLY_FEMALE_PATIENTS = sum(
+            ifelse(
+              test = GENDER == "Female" & AGE_BAND %in% c("85-89", "90+"),
+              yes = TOTAL_PATIENTS,
+              no = 0
+            )
+          ),
+          TOTAL_PATIENTS = sum(TOTAL_PATIENTS)
+        )
+      
+      # Calculate the percentage of patients
+      elderly_female_patients_df <- elderly_female_patients_df %>%
+        dplyr::mutate(
+          PCT_ELDERLY_FEMALE_PATIENTS = janitor::round_half_up(TOTAL_ELDERLY_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1)
+        ) %>%
+        dplyr::pull(PCT_ELDERLY_FEMALE_PATIENTS)
+      
+    })
+
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
     # In this version, exclusion is reported for all patients, ch & non-ch
@@ -96,14 +167,33 @@ mod_02_patients_age_gender_server <- function(id){
     })
     
 
-    output$excluded_patients <- renderUI({
+    output$caption <- renderUI({
+      req(input$fy)
+      req(input$geography)
+      req(input$sub_geography)
       
       any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
       any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
       
-      tags$text(
+      list(
+        
+      tags$p(
         class = "highcharts-caption",
-        style = "font-size: 9pt;",
+        style = "font-size: 9pt; margin-bottom: 0.5em;",
+      
+      HTML(
+      paste0(ifelse(input$sub_geography == "Overall", "", "In "),
+             input$sub_geography, ", there were an estimated ", tags$b(total()),
+             " care home patients in ", input$fy, ", of which ",
+             tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
+             tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
+             " females aged 85 or over.")
+       )
+      ),
+      
+      tags$p(
+        class = "highcharts-caption",
+        style = "font-size: 9pt; margin-top: 0em; margin-bottom: 0em;",
 
         paste0(
           
@@ -136,6 +226,7 @@ mod_02_patients_age_gender_server <- function(id){
            Hollow bars show percentages of non-care home patients."
               
         )
+       )
       )
       
     })
@@ -185,86 +276,6 @@ mod_02_patients_age_gender_server <- function(id){
         dplyr::filter(
           SUB_GEOGRAPHY_NAME == input$sub_geography
           )
-    })
-
-    # Pull the max value
-    max_value <- 40
-    # max_value <- reactive({
-    #   req(input$fy)
-    #   req(input$geography)
-    #   req(input$sub_geography)
-    # 
-    #   patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-    #     dplyr::summarise(max(PCT_PATIENTS, na.rm = TRUE)) %>%
-    #     dplyr::pull()
-    # })
-
-    # # Pull the total CH patients
-    total <- reactive({
-      req(input$fy)
-      req(input$geography)
-      req(input$sub_geography)
-
-      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::filter(CH_FLAG==1) %>%
-        dplyr::summarise(TOTAL_PATIENTS = sum(TOTAL_PATIENTS, na.rm = TRUE)) %>%
-        dplyr::mutate(TOTAL_PATIENTS = format(TOTAL_PATIENTS, big.mark = ",")) %>%
-        dplyr::pull(TOTAL_PATIENTS)
-    })
-
-    # Pull percentage of female CH patients
-    percentage_female_patients <- reactive({
-      req(input$fy)
-      req(input$geography)
-      req(input$sub_geography)
-
-      # Get the total female patients
-      female_patients_df <-
-        patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::filter(CH_FLAG==1) %>%
-        dplyr::summarise(
-          TOTAL_FEMALE_PATIENTS =
-            sum(ifelse(GENDER == "Female", TOTAL_PATIENTS, 0)),
-          TOTAL_PATIENTS = sum(TOTAL_PATIENTS)
-        )
-
-      # Calculate the percentage of patients
-      female_patients_df <- female_patients_df %>%
-        dplyr::mutate(
-          PCT_FEMALE_PATIENTS = as.character(janitor::round_half_up(TOTAL_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1))
-        ) %>%
-        dplyr::pull(PCT_FEMALE_PATIENTS)
-
-    })
-
-    # Pull percentage of elderly female patients
-    percentage_elderly_female_patients <- reactive({
-      req(input$fy)
-      req(input$geography)
-      req(input$sub_geography)
-
-      # Get the total elderly female patients
-      elderly_female_patients_df <-
-        patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::filter(CH_FLAG==1) %>%
-        dplyr::summarise(
-          TOTAL_ELDERLY_FEMALE_PATIENTS = sum(
-            ifelse(
-              test = GENDER == "Female" & AGE_BAND %in% c("85-89", "90+"),
-              yes = TOTAL_PATIENTS,
-              no = 0
-            )
-          ),
-          TOTAL_PATIENTS = sum(TOTAL_PATIENTS)
-        )
-
-      # Calculate the percentage of patients
-      elderly_female_patients_df <- elderly_female_patients_df %>%
-        dplyr::mutate(
-          PCT_ELDERLY_FEMALE_PATIENTS = janitor::round_half_up(TOTAL_ELDERLY_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1)
-        ) %>%
-        dplyr::pull(PCT_ELDERLY_FEMALE_PATIENTS)
-
     })
 
     # Create download data
@@ -332,15 +343,6 @@ mod_02_patients_age_gender_server <- function(id){
         req(input$geography)
         req(input$sub_geography)
         
-        # Process annotation
-        text <- paste0(
-          ifelse(input$sub_geography == "Overall", "", "In "),
-          input$sub_geography, ", there were an estimated ", tags$b(total()),
-          " care home patients in ", input$fy, ", of which ",
-          tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
-          tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
-          " females aged 85 or over."
-        )
         # Create the chart
         highcharter::highchart() %>%
         
@@ -388,36 +390,7 @@ mod_02_patients_age_gender_server <- function(id){
           highcharter::hex_to_rgba("#ffffff", alpha = 0)
           )
         ) %>%
-        highcharter::hc_annotations(
-            list(
-              labels = list(
-                list(
-                  point = list(
-                    x = 0,
-                    # Need -1 otherwise it fails when max_value() is axis max
-                    y = max_value - 0.1,
-                    xAxis = 0,
-                    yAxis = 0
-                  ),
-                  padding = 0,
-                  x = 20, # Offset
-                  text = text,
-                  style = list(
-                    width = 150,
-                    fontSize = "9pt"
-                  )
-                )
-              ),
-              labelOptions = list(
-                backgroundColor = "#FFFFFF",
-                borderWidth = 0,
-                align = "right",
-                verticalAlign = "top",
-                useHTML = TRUE
-              )
-            )
-          ) %>%
-          highcharter::hc_xAxis(
+        highcharter::hc_xAxis(
             title = list(text = "Age band"),
             categories =
               patients_by_fy_geo_age_gender_plot_df()$AGE_BAND %>%
@@ -427,8 +400,8 @@ mod_02_patients_age_gender_server <- function(id){
           ) %>%
           highcharter::hc_yAxis(
             title = list(text = "Proportion of patients (%)"),
-            min = -max_value,
-            max = max_value,
+            min = -40,
+            max = 40,
             labels = list(
               formatter = highcharter::JS(
                 "
