@@ -450,7 +450,7 @@ mod_02_patients_age_gender_server <- function(id){
               function() {
                 var num_fmt = function(x) {
                   result = Math.abs(x);
-                  if (result > 1000000) { result = Highcharts.numberFormat(result / 1000000, 2) + 'M' }
+                  if (result > 1000000) { result = Highcharts.numberFormat(result / 1000000, 2) + 'm' }
                   return result;
                 }
 

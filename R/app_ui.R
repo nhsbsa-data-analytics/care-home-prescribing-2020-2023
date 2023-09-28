@@ -51,8 +51,8 @@ app_ui <- function(request) {
             mod_10_datasets_ui("datasets")
           ),
           tabPanel(
-            title = "Data Linkage",
-            mod_11_data_linkage_ui("data_linkage")
+            title = "Address Matching",
+            mod_11_data_linkage_ui("address_matching")
           ),
           tabPanel(
             title = "Feedback",
