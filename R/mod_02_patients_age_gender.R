@@ -188,15 +188,16 @@ mod_02_patients_age_gender_server <- function(id){
     })
 
     # Pull the max value
-    max_value <- reactive({
-      req(input$fy)
-      req(input$geography)
-      req(input$sub_geography)
-
-      patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        dplyr::summarise(max(PCT_PATIENTS, na.rm = TRUE)) %>%
-        dplyr::pull()
-    })
+    max_value <- 40
+    # max_value <- reactive({
+    #   req(input$fy)
+    #   req(input$geography)
+    #   req(input$sub_geography)
+    # 
+    #   patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
+    #     dplyr::summarise(max(PCT_PATIENTS, na.rm = TRUE)) %>%
+    #     dplyr::pull()
+    # })
 
     # # Pull the total CH patients
     total <- reactive({
@@ -394,7 +395,7 @@ mod_02_patients_age_gender_server <- function(id){
                   point = list(
                     x = 0,
                     # Need -1 otherwise it fails when max_value() is axis max
-                    y = max_value() - 0.1,
+                    y = max_value - 0.1,
                     xAxis = 0,
                     yAxis = 0
                   ),
@@ -426,8 +427,8 @@ mod_02_patients_age_gender_server <- function(id){
           ) %>%
           highcharter::hc_yAxis(
             title = list(text = "Proportion of patients (%)"),
-            min = -max_value(),
-            max = max_value(),
+            min = -max_value,
+            max = max_value,
             labels = list(
               formatter = highcharter::JS(
                 "
