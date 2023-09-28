@@ -99,24 +99,23 @@ mod_05_metrics_age_gender_server <- function(id){
                    excluded_unk(), "%",
                    " and ",
                    excluded_ind(), "%",
-                   " patients where the gender was not known and not specified, respectively.")
+                   " patients where the gender was not known and not specified, respectively. ")
             
           } else if (!any_excl_unk & any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_unk(), "%",
-                   " patients where the gender was not known.")
+                   " patients where the gender was not known. ")
             
           } else if (any_excl_unk & !any_excl_ind) {
             
             paste0("This chart does not show ",
                    excluded_ind(), "%",
-                   " patients where the gender was not specified.")
+                   " patients where the gender was not specified. ")
             
           } else NULL,
           
-          "This chart does not show 0.3% patients where the gender was not known.
-           In each age band, patient counts of ≤5 were rounded up to the nearest 5,
+          "In each age band, patient counts of ≤5 were rounded up to the nearest 5,
            otherwise to the nearest 10; and the percentages are based on rounded counts."
           
         )

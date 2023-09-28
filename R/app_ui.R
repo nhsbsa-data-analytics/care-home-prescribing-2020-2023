@@ -52,7 +52,7 @@ app_ui <- function(request) {
           ),
           tabPanel(
             title = "Address Matching",
-            mod_11_data_linkage_ui("address_matching")
+            mod_11_address_matching_ui("address_matching")
           ),
           tabPanel(
             title = "Feedback",

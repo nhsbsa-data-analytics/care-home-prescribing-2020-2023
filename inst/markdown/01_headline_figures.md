@@ -27,7 +27,7 @@ This analysis addresses a key gap in knowledge and gives valuable insights which
 - There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the <a onclick="internalLink('Annex');">Annex</a> for further sources of data available on the care home population.
 - Drug costs are particularly influenced by prices which have been rising rapidly over the past year due to price concessions and possibly general inflation.
 
-See the <a onclick="internalLink('Address Matching');">Address Matching</a> page for further details or the  data linkage methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
+See the <a onclick="internalLink('Address Matching');">Address Matching</a> page for further details or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 
 
 ### Overall prescribing for care home patients aged 65 and over
