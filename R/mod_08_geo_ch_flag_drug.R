@@ -121,7 +121,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               class = "highcharts-caption",
               style = "font-size: 9pt",
               "Click on a row to display chart for one of the 7 regions. Only the top 50 
-               elements nationally by total item count per BNF level are presented.
+               elements nationally by total item count across the three years per BNF level are presented.
                For example, only the top 50 paragraphs are presented, determined
                by the 50 paragraphs with the largest total item count nationally. 
                The number of patients contributing to each metric are provided 
@@ -212,7 +212,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               class = "highcharts-caption",
               style = "font-size: 9pt",
               "Click on a row to display chart for one of the 42 ICSs. Only the top 50 
-               elements nationally by total item count per BNF level are 
+               elements nationally by total item count across the three years per BNF level are 
                presented. For example, only the top 50 paragraphs are presented,
                determined by the 50 paragraphs with the largest total item count
                nationally. The number of patients contributing to each metric are provided 
@@ -302,8 +302,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to display chart for one of the 308 Local Authorities. Only 
-               the top 50 elements nationally by total item count per BNF level
+              "Click on a row to display chart for one of the 307 Local Authorities. 
+              The Isles of Scilly were removed due to the number of care homes in the Local Authority.
+               Only the top 50 elements nationally by total item count across the three years per BNF level
                are presented. For example, only the top 50 paragraphs are
                presented, determined by the 50 paragraphs with the largest total
                item count nationally. The number of patients contributing to each metric are provided 
@@ -766,7 +767,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         style = "text-align: center;",
         tags$text(
           style = "font-weight: bold; font-size: 12pt;", 
-          "Local Authority order (out of 308)"
+          "Local Authority order (out of 307)"
         )
       )
     })
