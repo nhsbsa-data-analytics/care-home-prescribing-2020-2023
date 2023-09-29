@@ -57,3 +57,12 @@ a {
   padding: 20px;
   z-index: 9999;
 }
+
+thead tr{
+  color: white;
+  background-color: #005EB8CC;
+}
+
+tbody:nth-child(odd){
+  background-color: #005EB81F;
+}
