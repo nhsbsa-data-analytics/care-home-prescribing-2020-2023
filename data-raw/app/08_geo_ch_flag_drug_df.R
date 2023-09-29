@@ -307,7 +307,9 @@ mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
       METRIC == "PROP_NIC" ~ "% of total annual drug cost"
     ),
     PATS = ifelse(is.na(PATS), 0, PATS)
-  )
+  ) %>% 
+  # Remove Isles of Scilly
+  filter(GEOGRAPHY_CHILD != "Isles of Scilly")
 
 # Check Output
 colSums(is.na(mod_geo_ch_flag_drug_df))
