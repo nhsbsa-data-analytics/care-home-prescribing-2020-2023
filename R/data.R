@@ -40,7 +40,7 @@
 #' @keywords datasets
 #' @name metrics_by_geo_and_ch_flag
 #' @usage data(metrics_by_geo_and_ch_flag_df)
-#' @format A data frame with 2148 rows and 17 variables
+#' @format A data frame with 2142 rows and 17 variables
 #' 
 "metrics_by_geo_and_ch_flag_df"
 

@@ -58,10 +58,13 @@ mod_06_geo_ch_flag_ui <- function(id) {
         highcharter::highchartOutput(ns("map_non_ch"), height = "500px")
       ),
       div(DT::DTOutput(ns("table"))),
-      tags$text(
+      tags$p(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Clicking a row will outline the selected area on the maps."
+        "Clicking a row will outline the selected area on the maps.",
+        tags$br(),
+        "The Isles of Scilly were removed due to the number of care homes in the
+         Local Authority."
       ),
       mod_nhs_download_ui(ns("download_data"))
     )

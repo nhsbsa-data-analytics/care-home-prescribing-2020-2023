@@ -120,7 +120,8 @@ aggregate_by_geo <- function(geography_name) {
           "NHS | ICB",
           ""
         )
-      ),
+      ) %>% 
+      filter(!!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]) != "Isles of Scilly"),
     first_grouping = c(
       "FY",
       "YEAR_MONTH",

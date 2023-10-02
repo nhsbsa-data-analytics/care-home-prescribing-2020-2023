@@ -7,7 +7,7 @@
 \title{Aggregated prescribing data broken down by financial year, geography and 
 carehome or non-carehome}
 \format{
-A data frame with 2148 rows and 17 variables
+A data frame with 2142 rows and 17 variables
 }
 \source{
 { Data and Advanced Analytics Team at NHS BSA, using
