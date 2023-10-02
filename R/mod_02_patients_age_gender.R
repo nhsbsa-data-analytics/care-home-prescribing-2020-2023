@@ -193,7 +193,7 @@ mod_02_patients_age_gender_server <- function(id){
       
       tags$p(
         class = "highcharts-caption",
-        style = "font-size: 9pt; margin-top: 0em; margin-bottom: 0em;",
+        style = "font-size: 9pt; margin-top: 0em; margin-bottom: 0.5em;",
 
         paste0(
           
@@ -226,7 +226,14 @@ mod_02_patients_age_gender_server <- function(id){
            Hollow bars show percentages of non-care home patients."
               
         )
-       )
+       ),
+      
+      tags$p(
+        class = "highcharts-caption",
+        style = "font-size: 9pt; margin-top: 0em; margin-bottom: 0em;",
+        
+        "The Isles of Scilly were removed due to the number of care homes in the Local Authority.")
+      
       )
       
     })
