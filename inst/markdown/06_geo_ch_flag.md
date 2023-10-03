@@ -1,6 +1,6 @@
 __London has higher estimated drug costs and overall prescribing volumes per patient-month.__
 
-The chart and map show prescribing metrics by region, ICS, and Local Authority. 
+The chart and map show prescribing metrics by NHS region, ICS, and Local Authority. 
 
 All prescribing metrics other than prescribing of two or more DAMN medicines are higher across all geographical breakdowns and years for care home patients, compared to non-care home patients.
 

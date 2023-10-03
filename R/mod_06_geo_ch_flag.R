@@ -60,7 +60,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
       div(DT::DTOutput(ns("table"))),
       tags$p(
         class = "highcharts-caption",
-        style = "font-size: 9pt",
+        style = "font-size: 9pt;",
         "Clicking a row will outline the selected area on the maps.",
         tags$br(),
         "The Isles of Scilly were removed due to the number of care homes in the

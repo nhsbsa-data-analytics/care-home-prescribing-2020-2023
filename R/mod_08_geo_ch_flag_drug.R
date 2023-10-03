@@ -117,10 +117,10 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               ),
             
             # Chart caption
-            tags$text(
+            tags$p(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to display chart for one of the 7 regions. Only the top 50 
+              "Click on a row to display chart for one of the 7 NHS regions. Only the top 50 
                elements nationally by total item count across the three years per BNF level are presented.
                For example, only the top 50 paragraphs are presented, determined
                by the 50 paragraphs with the largest total item count nationally. 
@@ -208,7 +208,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             ),
             
             # Chart caption
-            tags$text(
+            tags$p(
               class = "highcharts-caption",
               style = "font-size: 9pt",
               "Click on a row to display chart for one of the 42 ICSs. Only the top 50 
@@ -299,7 +299,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             ),
             
             # Chart caption
-            tags$text(
+            tags$p(
               class = "highcharts-caption",
               style = "font-size: 9pt",
               "Click on a row to display chart for one of the 307 Local Authorities. 

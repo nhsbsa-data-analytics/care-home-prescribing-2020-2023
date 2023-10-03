@@ -10,4 +10,4 @@ Care home patients received a greater number of unique medicines PPM and the pro
 
 Prescribing of two or more DAMN medicines was the only metric where non-care home patients had higher values than care home patients. Prescribing of two or more ACB medicines was the only metric where values decreased year on year in all four settings.
 
-You can also restrict the ages to 85 and over in the chart. This subgroup shows similar but much less pronounced differences between care home and non-care home patients than the comparisons for all older people.
+Age can be restricted to 85 and over in the chart. This subgroup shows similar but much less pronounced differences between care home and non-care home patients than the comparisons for all older people.

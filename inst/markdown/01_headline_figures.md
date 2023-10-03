@@ -6,11 +6,11 @@ In this article we provide unique insight into primary care prescribing patterns
 
 Patient address classification is based on experimental data linkage work. We welcome feedback, collaboration, and refinement of the methodology to see if it can be used in NHSBSA information systems in the future and how we can develop additional analyses.
 
-### Key Findings
+### Key findings
 
 The estimated number of care home patients aged 65 years and over who received prescribing increased each financial year, from 2020/21 to 2022/23. The number of prescription items and associated drug cost also increased.
 
-We estimated a monthly average __of 301,000 care home patients aged 65 years__ and over receiving prescriptions in 2022/23. They received an estimated 37 million prescription items at drug cost of £361 million during 2022/23.
+We estimated a monthly average __of 301,000 care home patients aged 65 years__ and over receiving prescriptions in 2022/23. They received an estimated 37 million prescription items at a drug cost of £361 million during 2022/23.
 
 As might be expected, __care home patients aged 65 years and over received  a higher rate of prescribing__ than non-care home patients, including prescribing of drugs associated with a falls risk. Care home patients also received a different range of medicines to non-care home patients and were more likely to receive prescribing of Vitamin D and for pain relief. They received less prescribing of medicines associated with kidney injury compared with non-care home patients.
 
@@ -38,9 +38,9 @@ There was an estimated monthly average of 301,000 care home patients aged 65 yea
 
 This accounts for around __6.2%__ of all items prescribed to patients aged 65 years and over and around __7.8%__ of the drug cost. This represents increases from 2020/21, where there was a monthly average of 289,000 patients, 35 million prescription items and a drug cost of £324 million.
 
-The total number of care home patients who received at least one prescription item in 2022/23 was 481,000. The difference in the monthly average and annual estimates is explained by two key factors:
+The total number of care home patients who received at least one prescription item in 2022/23 was 481,000. The difference in the monthly average and annual estimates is explained by two key factors.
 
-* The population is not stable – some patients turn 65 years old during the year, some move in or out of the care home and others may die;
+* The population is not stable – some patients turn 65 years old during the year, some move in or out of the care home and others may die.
 * Not all care home patients receive a prescription in every month they are in a care home.
 
 For this reason most <a onclick="internalLink('Metrics', 'prescribing-metrics');">Metrics</a> were calculated on a <a onclick="internalLink('Metrics', 'prescribing-per-patient-month-ppm');">patient-month</a> basis.

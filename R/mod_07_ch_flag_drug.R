@@ -55,7 +55,7 @@ mod_07_ch_flag_drug_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Only the top 20 drugs or drug groups by total care home item count across the three years are presented."
+        "For all metrics, only the top 20 drugs or drug groups by total care home item count are presented."
       ),
       
       # Data download
