@@ -169,7 +169,8 @@ mod_01_headline_figures_server <- function(id, export_data) {
     mod_nhs_download_server(
       id = "download_data",
       filename = "Headline figures for care home prescribing.xlsx",
-      export_data = create_download_data(carehomes2::mod_headline_figures_df)
+      export_data = create_download_data(carehomes2::mod_headline_figures_df),
+      number_xl_fmt_str = "#,##0"
     )
   })
 }

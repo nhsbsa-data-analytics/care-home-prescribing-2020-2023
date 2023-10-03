@@ -114,8 +114,14 @@ aggregate_by_geo <- function(geography_name) {
     base_db %>% 
       mutate(
         GEOGRAPHY = geography_name,
-        SUB_GEOGRAPHY_NAME = gsub("NHS | ICB", "", SUB_GEOGRAPHY_NAME)
-      ),
+        # Remove any NHS or ICB acronyms
+        !!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]) := REGEXP_REPLACE(
+          !!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]),
+          "NHS | ICB",
+          ""
+        )
+      ) %>% 
+      filter(!!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]) != "Isles of Scilly"),
     first_grouping = c(
       "FY",
       "YEAR_MONTH",

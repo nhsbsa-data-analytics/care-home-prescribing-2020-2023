@@ -1,4 +1,4 @@
-# Running time < 1 min
+# Running time ~10 min
 
 library(dplyr)
 library(dbplyr)
@@ -11,9 +11,8 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 base_db <- con |>
   tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
  
-# Filter to care home only and add a dummy overall column
+# Add a dummy overall column
 base_db <- base_db |>
-   filter(CH_FLAG == 1L) |>
    mutate(OVERALL = "Overall")
  
 # Loop over each geography and aggregate using purrr's map function approach
@@ -34,6 +33,7 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
   # Overall total patients
   base_db |>
     group_by(
+      CH_FLAG,
       FY,
       GEOGRAPHY = geography_name,
       across(all_of(unname(geography_cols))),
@@ -46,9 +46,9 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
       GENDER = ifelse(is.na(SUB_GEOGRAPHY_NAME), "Unknown", GENDER),
       # If either SUB_GEOGRAPHY_NAME is NA or GENDER is NA then set AGE_BAND to NA
       AGE_BAND = ifelse(
-        test = is.na(SUB_GEOGRAPHY_NAME) | is.na(GENDER),
-        yes = NA,
-        AGE_BAND
+       is.na(SUB_GEOGRAPHY_NAME) | is.na(GENDER),
+       NA,
+       AGE_BAND
       )
     ) |>
     summarise(TOTAL_PATIENTS = n_distinct(NHS_NO)) |>
@@ -75,7 +75,7 @@ patients_by_fy_geo_age_gender_df <-
   )
 
 patients_by_fy_geo_age_gender_df <- patients_by_fy_geo_age_gender_df |>
-  group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME) |>
+  group_by(CH_FLAG, FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME) |>
   mutate(
     PCT_PATIENTS = janitor::round_half_up(TOTAL_PATIENTS / sum(TOTAL_PATIENTS) * 100, 1)
   ) |>
@@ -86,7 +86,7 @@ patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
   tidyr::complete(
     # Only geographies that already exist
-    tidyr::nesting(FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME),
+    tidyr::nesting(CH_FLAG, FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME),
     # Only age band and gender combinations that exist (so we only have NA age
     # band for NA genders)
     tidyr::nesting(AGE_BAND, GENDER),
@@ -96,8 +96,6 @@ patients_by_fy_geo_age_gender_df <-
     )
   )
 
-
-
 # Format factors etc and sort
 patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
@@ -105,13 +103,15 @@ patients_by_fy_geo_age_gender_df <-
     vars = c("GENDER", "AGE_BAND")
   )
 
-
 # Clean some geographic names
 patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " ICB$")) |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, "^NHS "))
-  
+
+# Exclude Isles of Scilly
+patients_by_fy_geo_age_gender_df <- patients_by_fy_geo_age_gender_df |>
+  filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly")
 
 # Add to data/
 usethis::use_data(

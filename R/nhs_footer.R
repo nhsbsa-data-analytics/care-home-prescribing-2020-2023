@@ -1,4 +1,6 @@
 #' nhs_footer Function
+#' 
+#' @noRd
 #'
 #' @importFrom shiny tagList
 nhs_footer <- function() {
@@ -17,7 +19,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "#",
+                href = "https://www.nhsbsa.nhs.uk/accessibility-statement-website-estimated-prescribing-patterns-care-home-patients-aged-65-years-or",
                 target = "_blank",
                 "Accessibility statement"
               )
@@ -27,7 +29,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "mailto:@nhs.net",
+                href = "mailto:dall@nhsbsa.nhs.uk",
                 target = "_blank",
                 "Contact us"
               )
@@ -37,7 +39,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "https://github.com/nhsbsa-data-analytics/nhsbsaShinyR",
+                href = "https://github.com/nhsbsa-data-analytics/careHomePrescribingTwo",
                 target = "_blank",
                 "GitHub"
               )

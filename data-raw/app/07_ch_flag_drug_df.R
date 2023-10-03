@@ -27,9 +27,22 @@ get_geo_bnf_prop = function(index){
   # Get vars names
   bnf = rlang::sym(bnf_cols[index])
   
+  # Limit to care homes
+  ch_db = fact_db %>% 
+    filter(CH_FLAG == 1)
+  
+  # Filter when section name equals paragraph name
+  if(bnf_cols[index] == "PARAGRAPH_DESCR"){
+    ch_db = ch_db %>% filter(PARAGRAPH_DESCR != SECTION_DESCR)
+  }
+  
+  # Filter when chem_sub name equals paragraph name
+  if(bnf_cols[index] == "CHEMICAL_SUBSTANCE_BNF_DESCR"){
+    ch_db = ch_db %>% filter(CHEMICAL_SUBSTANCE_BNF_DESCR != PARAGRAPH_DESCR)
+  }
+  
   # Limit to top 20 bnf_child ch items across all years, for *each metric*
-  join_fact = fact_db %>% 
-    filter(CH_FLAG == 1) %>% 
+  join_fact = ch_db %>% 
     group_by({{ bnf }}) %>%
     summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>% 
     ungroup() %>% 
@@ -93,9 +106,22 @@ get_geo_bnf_ppm = function(index){
   # Get vars names
   bnf = rlang::sym(bnf_cols[index])
   
+  # Limit to care homes
+  ch_db = fact_db %>% 
+    filter(CH_FLAG == 1)
+  
+  # Filter when section name equals paragraph name
+  if(bnf_cols[index] == "PARAGRAPH_DESCR"){
+    ch_db = ch_db %>% filter(PARAGRAPH_DESCR != SECTION_DESCR)
+  }
+  
+  # Filter when chem_sub name equals paragraph name
+  if(bnf_cols[index] == "CHEMICAL_SUBSTANCE_BNF_DESCR"){
+    ch_db = ch_db %>% filter(CHEMICAL_SUBSTANCE_BNF_DESCR != PARAGRAPH_DESCR)
+  }
+  
   # Limit to top 20 bnf_child across all years & geographies, for *each metric*
-  join_fact = fact_db %>%
-    filter(CH_FLAG == 1) %>%
+  join_fact = ch_db %>%
     group_by({{ bnf }}) %>%
     summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>%
     slice_max(

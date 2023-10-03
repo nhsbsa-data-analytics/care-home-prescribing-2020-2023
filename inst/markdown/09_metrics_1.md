@@ -1,5 +1,5 @@
-## Prescribing per patient-month (PPM)
+## Metrics
 
-The notion of ‘patient-months’ is used in all prescribing metrics. The _Patient-months example_ table displays the total number of prescription items and unique medicines prescribed per patient per month within a given financial year:
+### Prescribing per patient-month (PPM)
 
-_Patient-months example_
+‘Patient-months’ is used in all prescribing metrics. The _Patient-months example_ table displays the total number of prescription items and unique medicines prescribed per patient per month within a given financial year:

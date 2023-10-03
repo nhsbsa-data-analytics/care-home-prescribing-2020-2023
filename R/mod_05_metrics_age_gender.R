@@ -63,9 +63,9 @@ mod_05_metrics_age_gender_server <- function(id){
 
       t <- excluded_patients |>
            dplyr::filter(FY == input$fy) |>
-           dplyr::pull(EXCLUDED_UNK)
+           dplyr::pull(PCT_EXCLUDED_UNK)
       
-      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
+      if (t < 0.1 & t > 0) "less than 0.1" else as.character(t)
       
     })
     
@@ -74,24 +74,43 @@ mod_05_metrics_age_gender_server <- function(id){
       
       t <- excluded_patients |>
         dplyr::filter(FY == input$fy) |>
-        dplyr::pull(EXCLUDED_IND)
+        dplyr::pull(PCT_EXCLUDED_IND)
       
-      if (t < 5 & t > 0) "less than 5" else format(t, big.mark = ",")
+      if (t < 0.1 & t > 0) "less than 0.1" else as.character(t)
       
     })
     
     output$excluded_patients <- renderUI({
       
+      any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
+      any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
+      
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
         
-        paste0("This chart does not show ",
-               excluded_unk(),
-               " and ",
-               excluded_ind(),
-               " patients where the gender was not known and not specified, respectively."
-              )
+          if (!any_excl_unk & !any_excl_ind) {
+            
+            paste0("This chart does not show ",
+                   excluded_unk(), "%",
+                   " and ",
+                   excluded_ind(), "%",
+                   " patients where the gender was not known and not specified, respectively. ")
+            
+          } else if (!any_excl_unk & any_excl_ind) {
+            
+            paste0("This chart does not show ",
+                   excluded_unk(), "%",
+                   " patients where the gender was not known. ")
+            
+          } else if (any_excl_unk & !any_excl_ind) {
+            
+            paste0("This chart does not show ",
+                   excluded_ind(), "%",
+                   " patients where the gender was not specified. ")
+            
+          } else NULL
+          
       )
       
     })

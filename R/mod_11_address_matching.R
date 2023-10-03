@@ -1,4 +1,4 @@
-#' mod_11_methodology UI Function
+#' Address Matching UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -7,14 +7,14 @@
 #' @noRd 
 #'
 #' @importFrom shiny NS tagList 
-mod_11_methodology_ui <- function(id){
-  includeMarkdown("inst/markdown/11_methodology.md")
+mod_11_address_matching_ui <- function(id){
+  includeMarkdown("inst/markdown/11_data_linkage.md")
 }
     
-#' methodology Server Functions
+#' Address Matching Server Function
 #'
 #' @noRd 
-mod_11_methodology_server <- function(id){
+mod_11_address_matching_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -22,7 +22,7 @@ mod_11_methodology_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_11_methodology_ui("11_methodology_1")
+# mod_11_address_matching_ui("11_data_linkage_1")
     
 ## To be copied in the server
-# mod_11_methodology_server("11_methodology_1")
+# mod_11_address_matching_server("11_data_linkage_1")

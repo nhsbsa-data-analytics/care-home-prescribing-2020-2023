@@ -41,27 +41,51 @@ init_db <- base_db %>%
       "NURSING_HOME_FLAG"     ~ "Nursing home",
       "RESIDENTIAL_HOME_FLAG" ~ "Residential home",
       "NON_CH_FLAG"           ~ "Non-care home"
+    ),
+    AGE_GTE_85 = case_when(
+      AGE >= 85 ~ 1L,
+      TRUE ~ 0L
     )
+  ) 
+
+init_db <- init_db %>% 
+  union(
+    init_db %>% 
+      filter(AGE_GTE_85 == 1) %>% 
+      mutate(AGE_GTE_85 = 0)
   )
 
 ## Process ----------------------------------------------------------------
 
-metrics_by_ch_type_df <- get_metrics(
+metrics_by_ch_type_85_split_df <- get_metrics(
   init_db,
   first_grouping = c(
     "FY",
     "YEAR_MONTH",
     "NHS_NO",
-    "CH_TYPE"
+    "CH_TYPE",
+    "AGE_GTE_85"
   ),
   second_grouping = c(
     "FY",
-    "CH_TYPE"
+    "CH_TYPE",
+    "AGE_GTE_85"
   )
 )
+
+metrics_by_ch_type_85_split_df <- metrics_by_ch_type_85_split_df %>% 
+  mutate(
+    AGE_BAND = dplyr::case_match(
+      AGE_GTE_85,
+      0 ~ "Ages 65+",
+      1 ~ "Ages 85+"
+    ),
+    AGE_GTE_85 = NULL
+  ) %>% 
+  dplyr::relocate(AGE_BAND, .after = CH_TYPE)
   
 ## Save -------------------------------------------------------------------
-usethis::use_data(metrics_by_ch_type_df, overwrite = TRUE)
+usethis::use_data(metrics_by_ch_type_85_split_df, overwrite = TRUE)
 
 # Cleanup -----------------------------------------------------------------
 DBI::dbDisconnect(con)

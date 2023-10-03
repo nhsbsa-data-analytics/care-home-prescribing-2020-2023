@@ -31,7 +31,70 @@ all_levels = cross_join(
   data.frame(GEO = geo_cols)
 )
 
-# Part One: items and nic prop -------------------------------------------------
+# BNF cols vector
+bnf_cols = all_levels %>% 
+  select(BNF) %>% 
+  pull()
+
+# Part One: Get distinct patient counts ----------------------------------------
+
+# Function to generate data
+get_pats = function(index){
+  
+  # Get vars names
+  bnf = rlang::sym(all_levels[index,1])
+  geo = rlang::sym(all_levels[index,2])
+  
+  # Initial care home filter
+  ch_db = fact_db %>% 
+    filter(CH_FLAG == 1)
+  
+  # Filter bnf element when paragraph == section  
+  if(bnf_cols[index] == "PARAGRAPH_DESCR"){
+    ch_db = ch_db %>% filter(PARAGRAPH_DESCR != SECTION_DESCR)
+  }
+  
+  # Filter bnf element when chemical substance == paragraph  
+  if(bnf_cols[index] == "CHEMICAL_SUBSTANCE_BNF_DESCR"){
+    ch_db = ch_db %>% filter(CHEMICAL_SUBSTANCE_BNF_DESCR != PARAGRAPH_DESCR)
+  }
+  
+  # Limit to top 50 bnf_child across all years & geographies, for *each metric*
+  join_fact = ch_db %>% 
+    group_by({{ bnf }}) %>%
+    summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>% 
+    slice_max(
+      TOTAL_ITEMS,
+      n = 50
+    ) %>% 
+    ungroup() %>% 
+    select({{ bnf }})
+  
+  # Number of distinct patients per aggregation combination
+  fact_db %>% 
+    inner_join(join_fact) %>% 
+    filter(
+      CH_FLAG == 1,
+      !is.na({{ geo }})
+    ) %>% 
+    group_by(FY, {{ geo }}, {{ bnf }}) %>%
+    summarise(PATS = n_distinct(NHS_NO)) %>%
+    ungroup() %>%
+    nhsbsaR::collect_with_parallelism(., 16) %>% 
+    transmute(
+      FY,
+      GEOGRAPHY_PARENT = rlang::as_string(geo),
+      GEOGRAPHY_CHILD := {{ geo }},
+      BNF_PARENT = rlang::as_string(bnf),
+      BNF_CHILD := {{ bnf }},
+      PATS = ifelse(PATS <= 5, 5, PATS)
+    )
+}
+
+# Get prop results: < 3 mins
+pat_results = lapply(1:nrow(all_levels), get_pats) %>% bind_rows()
+
+# Part Two: items and nic prop -------------------------------------------------
 
 # Function to generate data
 get_geo_bnf_prop = function(index){
@@ -40,9 +103,22 @@ get_geo_bnf_prop = function(index){
   bnf = rlang::sym(all_levels[index,1])
   geo = rlang::sym(all_levels[index,2])
   
+  # Initial care home filter
+  ch_db = fact_db %>% 
+    filter(CH_FLAG == 1)
+  
+  # Filter when section name equals paragraph name
+  if(bnf_cols[index] == "PARAGRAPH_DESCR"){
+    ch_db = ch_db %>% filter(PARAGRAPH_DESCR != SECTION_DESCR)
+  }
+
+  # Filter when chem_sub name equals paragraph name
+  if(bnf_cols[index] == "CHEMICAL_SUBSTANCE_BNF_DESCR"){
+    ch_db = ch_db %>% filter(CHEMICAL_SUBSTANCE_BNF_DESCR != PARAGRAPH_DESCR)
+  }
+  
   # Limit to top 50 bnf_child across all years & geographies, for *each metric*
-  join_fact = fact_db %>% 
-    filter(CH_FLAG == 1) %>% 
+  join_fact = ch_db %>% 
     group_by({{ bnf }}) %>%
     summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>% 
     ungroup() %>% 
@@ -104,7 +180,7 @@ get_geo_bnf_prop = function(index){
 # Get prop results: < 5 mins
 prop_results = lapply(1:nrow(all_levels), get_geo_bnf_prop) %>% bind_rows()
 
-# Part two: items ppm and nic ppm ----------------------------------------------
+# Part Three: items ppm and nic ppm --------------------------------------------
 
 # Function to generate data
 get_geo_bnf_ppm = function(index){
@@ -113,8 +189,22 @@ get_geo_bnf_ppm = function(index){
   bnf = rlang::sym(all_levels[index,1])
   geo = rlang::sym(all_levels[index,2])
   
-  # Limit to top20 bnf_child across all years & geographies, for *each metric*
-  join_fact = fact_db %>% 
+  # Initial care home filter
+  ch_db = fact_db %>% 
+    filter(CH_FLAG == 1)
+  
+  # Filter bnf element when paragraph == section  
+  if(bnf_cols[index] == "PARAGRAPH_DESCR"){
+    ch_db = ch_db %>% filter(PARAGRAPH_DESCR != SECTION_DESCR)
+  }
+  
+  # Filter bnf element when chemical substance == paragraph  
+  if(bnf_cols[index] == "CHEMICAL_SUBSTANCE_BNF_DESCR"){
+    ch_db = ch_db %>% filter(CHEMICAL_SUBSTANCE_BNF_DESCR != PARAGRAPH_DESCR)
+  }
+  
+  # Limit to top 50 bnf_child across all years & geographies, for *each metric*
+  join_fact = ch_db %>% 
     filter(CH_FLAG == 1) %>% 
     group_by({{ bnf }}) %>%
     summarise(TOTAL_ITEMS = sum(ITEM_COUNT)) %>% 
@@ -185,10 +275,11 @@ get_geo_bnf_ppm = function(index){
 # Get ppm results: ~40 mins
 ppm_results = lapply(1:nrow(all_levels), get_geo_bnf_ppm) %>% bind_rows()
 
-# Part Three: bind results and save --------------------------------------------
+# Part Four: bind results and left-join pat count and save ---------------------
 
 # Bind both both outputs
 mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>% 
+  left_join(pat_results) %>% 
   mutate(
     GEOGRAPHY_CHILD = case_when(
       GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bNHS\\b ", "", GEOGRAPHY_CHILD),
@@ -214,8 +305,11 @@ mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
       METRIC == "PPM_NIC" ~ "Mean drug cost PPM",
       METRIC == "PROP_ITEMS" ~ "% of total annual number of prescription items",
       METRIC == "PROP_NIC" ~ "% of total annual drug cost"
-    )
-  )
+    ),
+    PATS = ifelse(is.na(PATS), 0, PATS)
+  ) %>% 
+  # Remove Isles of Scilly
+  filter(GEOGRAPHY_CHILD != "Isles of Scilly")
 
 # Check Output
 colSums(is.na(mod_geo_ch_flag_drug_df))
