@@ -39,7 +39,7 @@ nhs_footer <- function() {
               a(
                 class = "nhsuk-footer__list-item-link",
                 style = "text-decoration: underline;",
-                href = "https://github.com/nhsbsa-data-analytics/careHomePrescribingTwo",
+                href = "https://github.com/nhsbsa-data-analytics/care-home-prescribing-2020-2023",
                 target = "_blank",
                 "GitHub"
               )
