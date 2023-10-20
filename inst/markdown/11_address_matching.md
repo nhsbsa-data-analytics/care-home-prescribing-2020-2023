@@ -29,7 +29,7 @@ The threshold of five or more patients was identified through a data validation 
 
 The final match type looked at keywords appearing in patient addresses. If a patient address contained the term ‘care home’, ‘nursing home’, ‘residential home’, or ‘rest home’, it was classified as being a care home.
 
-Each match type led to a different number of prescription forms classified as being from a care home. In 2020/21: 
+Each match type led to a different number of prescription forms classified as being from a care home. In 2020/21:
 
 *	3.9m forms were exact matched to a care home
 *	11.5m forms were non-exact matched to a care home
