@@ -18,16 +18,16 @@ Almost two-thirds of care home patients aged 65 years and over who received pres
 
 ### Methodology
 
-Prescribing estimates are based on a sophisticated methodology which includes linking primary care prescription address data to care home addresses in [AddressBase Plus](https://www.ordnancesurvey.co.uk/business-government/products/addressbase) and [CQC data](https://anypoint.mulesoft.com/exchange/portals/care-quality-commission-5/4d36bd23-127d-4acf-8903-ba292ea615d4/cqc-syndication-1/). The address matching method has been made available as an R package named [{addressMatchR}](https://github.com/nhsbsa-data-analytics/addressMatchR). In addition, the R package [{nhsbsaR}](https://github.com/nhsbsa-data-analytics/nhsbsaR) is used. Many of the functions within the {nhsbsaR} and {addressMatchR} packages are scripted to work specifically with an Oracle database. The source code behind these functions may have to be edited for different database architectures, for them to work correctly.
+Prescribing estimates are based on a sophisticated methodology which includes linking primary care prescription address data to care home addresses in [AddressBase Plus](https://www.ordnancesurvey.co.uk/business-government/products/addressbase) and [CQC data](https://anypoint.mulesoft.com/exchange/portals/care-quality-commission-5/4d36bd23-127d-4acf-8903-ba292ea615d4/cqc-syndication-1/). The address matching method has been made available as an R package named [<code>{<u>addressMatchR</u>}</code>](https://github.com/nhsbsa-data-analytics/addressMatchR). In addition, the R package [<code>{<u>nhsbsaR</u>}</code>](https://github.com/nhsbsa-data-analytics/nhsbsaR) is used. Many of the functions within the <code>{nhsbsaR}</code> and <code>{addressMatchR}</code> packages are scripted to work specifically with an Oracle database. The source code behind these functions may have to be edited for different database architectures, for them to work correctly.
 
 This analysis addresses a key gap in knowledge and gives valuable insights which can inform the use and management of medicines in care homes to help improve health outcomes, quality of care and ensure value. Points to note:
 
-* Patient count estimates are of care home residents aged 65 years and over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the monthly actual care home population. These monthly estimates will be higher than 2021 Census estimates which are based on occupancy on Census day.
-* Prescribing patterns will be impacted by the COVID-19 pandemic and beyond. The pandemic started in March 2020 and included a series of national lockdowns during 2020/21.
-* There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the Annex for further sources of data available on the care home population.
-* Drug costs are particularly influenced by prices which have been rising rapidly over the past year due to price concessions and possibly general inflation.
+- Patient count estimates are of care home residents aged 65 years and over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the monthly actual care home population. These monthly estimates will be higher than 2021 Census estimates which are based on occupancy on Census day.
+- Prescribing patterns will be impacted by the COVID-19 pandemic and beyond. The pandemic started in March 2020 and included a series of national lockdowns during 2020/21.
+- There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the <a onclick="internalLink('Annex');">Annex</a> for further sources of data available on the care home population.
+- Drug costs are particularly influenced by prices which have been rising rapidly over the past year due to price concessions and possibly general inflation.
 
-See the Address Matching page for further details or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
+See the <a onclick="internalLink('Address Matching');">Address Matching</a> page for further details or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 
 ### Overall prescribing for care home patients aged 65 and over
 
@@ -42,7 +42,7 @@ The total number of care home patients who received at least one prescription it
 * The population is not stable – some patients turn 65 years old during the year, some move in or out of the care home and others may die.
 * Not all care home patients receive a prescription in every month they are in a care home.
 
-For this reason most Metrics were calculated on a patient-month basis.
+For this reason most <a onclick="internalLink('Metrics', 'prescribing-metrics');">Metrics</a> were calculated on a <a onclick="internalLink('Metrics', 'prescribing-per-patient-month-ppm');">patient-month</a> basis.
 
 The number of patients who received prescriptions in a care home peaked in April 2020, at 314,000 patients which was at the start of the COVID-19 pandemic. April 2020 also had the highest number of care home prescription items, at 3.3 million items.
 

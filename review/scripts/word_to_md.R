@@ -219,7 +219,7 @@ pwalk(
           "Heading 2" ~ paste0("## ", text),
           "Heading 3" ~ paste0("### ", text),
           "Heading 4" ~ paste0("#### ", text),
-          "Compact"   ~ paste0("* ", text),
+          "Compact"   ~ paste0("- ", text),
           .default    = text
         ),
         next_style = lead(style_name),
