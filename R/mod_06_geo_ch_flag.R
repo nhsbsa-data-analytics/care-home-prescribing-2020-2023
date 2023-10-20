@@ -204,6 +204,12 @@ mod_06_geo_ch_flag_server <- function(id) {
     }
     
     # Create datatable
+    # NOTE: There is no arrange on SUB_GEOGRAPHY_NAME. Original code did have 
+    # this, but it turned out that the underlying data is not sorted. This meant
+    # that JS code for map border highlighting was using a different order to 
+    # what was shown in the table. It should be possible to align the order in 
+    # JS with the order in an `arrange`d table, but in this case the data is 
+    # already well-ordered, so best solution is to just remove arrange.
     create_datatable <- function(data) {
       tdata <- data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>%
@@ -223,7 +229,6 @@ mod_06_geo_ch_flag_server <- function(id) {
           values_from = .data[[input$metric]],
           names_sep = " "
         ) %>%
-        dplyr::arrange(.data[[input$geography]]) %>%
         # Move CH cols left of sub-geography column, so it is in centre col
         dplyr::relocate(
           dplyr::matches(" CH"),
@@ -354,6 +359,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # When a table row is clicked, fire a custom Shiny message to toggle the
     # border of the same map area.
     observe({
+      browser()
       if (!is.null(previous_row_selected())) {
         session$sendCustomMessage(
           type = 'rowClicked',

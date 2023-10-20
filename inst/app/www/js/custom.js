@@ -43,6 +43,7 @@ $(document).ready(function () {
   // Handle clicks on mod_06 datatable, to outline selected map region
   Shiny.addCustomMessageHandler("rowClicked",
     function(message) {
+      debugger;
       // First, remove border from currently bordered areas
       // previous_row may be null, so only update if it has a value
       if(Number.isInteger(message.previous_row)) {
