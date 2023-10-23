@@ -4,10 +4,10 @@
 
 Analysis is based on primary care prescription data collected by the NHS Business Services Authority. The data are collected for the operational purpose of reimbursing and remunerating dispensing contractors for the costs of supplying drugs and devices, along with essential and advanced services, to NHS patients. This excludes:
 
-* prescriptions that were issued but not presented for dispensing
-* prescriptions that were not submitted to the NHSBSA for processing and reimbursement
-* prescriptions issued and dispensed in prisons, hospitals, and private prescriptions
-* prescription batches submitted late
+- prescriptions that were issued but not presented for dispensing
+- prescriptions that were not submitted to the NHSBSA for processing and reimbursement
+- prescriptions issued and dispensed in prisons, hospitals, and private prescriptions
+- prescription batches submitted late
 
 Prescription data relates to prescription batches submitted to the NHSBSA for payment between April 2020 and March 2023. The part month in NHSBSA data relates to the dispensing month for which the prescription batch was submitted. This is generally but not always the month in which the prescription was dispensed. This means there may be dispensing for given patients that has not been submitted to the NHSBSA for payment and is therefore not included. There may also be prescriptions included for a patient that were dispensed prior to the dispensing month.
 
