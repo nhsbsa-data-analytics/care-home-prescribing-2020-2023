@@ -28,38 +28,28 @@ style_map <- function(doc, t1, t2 = NULL, t3 = NULL, val3 = NULL, t4 = NULL, val
   num_elements <- length(doc)
   
   for (i in 1:num_elements) {
-    # browser()
-    # print(i)
     doc$officer_cursor$which <- i
     num_chars <- 0
     parent <- docx_current_block_xml(doc)
     first_children <- xml_children(parent)
     if(xml_text(parent) == "") num_blank <- num_blank + 1
     for (first_child in first_children) {
-      # browser()
-      # print(xml_contents(first_child))
       match_found <- FALSE
       num_chars <- num_chars + nchar(xml_text(first_child))
       if (!xml_name(first_child) == t1) next
       if (!is.null(t2)) {
         second_children <- xml_children(first_child)
         for (second_child in second_children) {
-          # browser()
-          # print(xml_contents(second_child))
           if (!xml_name(second_child) == t2) next
           if (!is.null(t3)) {
             third_children <- xml_children(second_child)
             for (third_child in third_children) {
-              # browser()
-              # print(xml_contents(third_child))
               if (!xml_name(third_child) == t3) next
               if (!is.null(val3) && is.na(xml_attr(third_child, "val"))) next
               if (!is.null(val3) && xml_attr(third_child, "val") != val3) next
               if (!is.null(t4)) {
                 fourth_children <- xml_children(third_child)
                 for (fourth_child in fourth_children) {
-                  # browser()
-                  # print(xml_contents(fourth_child))
                   if (!xml_name(fourth_child) == t4) next
                   if (!is.null(val4) && is.na(xml_attr(fourth_child, "val"))) next
                   if (xml_attr(fourth_child, "val") != val4) next
@@ -95,11 +85,13 @@ style_map <- function(doc, t1, t2 = NULL, t3 = NULL, val3 = NULL, t4 = NULL, val
   smap %>% map(unique)
 }
 
-bold_map <- style_map(doc, "r", "rPr", "b")
-ital_map <- style_map(doc, "r", "rPr", "i")
-hypl_map <- style_map(doc, "hyperlink", "r", "rPr", NULL, "rStyle", "Hyperlink")
-code_map <- style_map(doc, "r", "rPr", "rStyle", "VerbatimChar")
-chyp_map <- style_map(doc, "hyperlink", "r", "rPr", NULL, "rStyle", "VerbatimChar")
+maps <- list(
+  bold_map = style_map(doc, "r", "rPr", "b"),
+  ital_map = style_map(doc, "r", "rPr", "i"),
+  hypl_map = style_map(doc, "hyperlink", "r", "rPr", NULL, "rStyle", "Hyperlink"),
+  code_map = style_map(doc, "r", "rPr", "rStyle", "VerbatimChar"),
+  chyp_map = style_map(doc, "hyperlink", "r", "rPr", NULL, "rStyle", "VerbatimChar")
+)
 
 
 # Compute file breakpoints ------------------------------------------------
@@ -128,10 +120,10 @@ pwalk(
       filter(between(doc_index, begin, end))
 
     # Apply any bold styling
-    for (row in intersect(names(bold_map), begin:end)) {
+    for (row in intersect(names(maps$bold_map), begin:end)) {
       offset <- 0
       increment <- 4
-      for (style_data in bold_map[[row]]) {
+      for (style_data in maps$bold_map[[row]]) {
         rownum <- as.integer(row)
         start  <- style_data[[1]] + offset
         stop   <- style_data[[2]] + offset
@@ -158,15 +150,27 @@ pwalk(
             )
           )
         
+        # Add offsets to remaining maps
+        for (m in 2:5) {
+          if (row %in% names(maps[[m]])) {
+            for (i in seq(length(maps[[m]][[row]]))) {
+              if ((stop + offset) <= maps[[i]][[row]][[i]][[1]]) {
+                maps[[m]][[row]][[i]][[1]] <<- maps[[m]][[row]][[i]][[1]] + increment
+                maps[[m]][[row]][[i]][[2]] <<- maps[[m]][[row]][[i]][[2]] + increment
+              }
+            }
+          }
+        }
+        
         offset <- offset + increment
       }
     }
     
     # Apply any italics styling
-    for (row in intersect(names(ital_map), begin:end)) {
+    for (row in intersect(names(maps$ital_map), begin:end)) {
       offset <- 0
       increment <- 2
-      for (style_data in ital_map[[row]]) {
+      for (style_data in maps$ital_map[[row]]) {
         rownum <- as.integer(row)
         start  <- style_data[[1]] + offset
         stop   <- style_data[[2]] + offset
@@ -194,11 +198,13 @@ pwalk(
           )
         
         # Add offsets to remaining maps
-        if (row %in% names(hypl_map)) {
-          for (i in seq(length(hypl_map[[row]]))) {
-            if ((stop + offset) < hypl_map[[row]][[i]][[1]]) {
-              hypl_map[[row]][[i]][[1]] <<- hypl_map[[row]][[i]][[1]] + increment
-              hypl_map[[row]][[i]][[2]] <<- hypl_map[[row]][[i]][[2]] + increment
+        for (m in 3:5) {
+          if (row %in% names(maps[[m]])) {
+            for (i in seq(length(maps[[m]][[row]]))) {
+              if ((stop + offset) <= maps[[m]][[row]][[i]][[1]]) {
+                maps[[m]][[row]][[i]][[1]] <<- maps[[m]][[row]][[i]][[1]] + increment
+                maps[[m]][[row]][[i]][[2]] <<- maps[[m]][[row]][[i]][[2]] + increment
+              }
             }
           }
         }
@@ -208,10 +214,10 @@ pwalk(
     }
     
     # Add any hyperlinks
-    for (row in intersect(names(hypl_map), begin:end)) {
+    for (row in intersect(names(maps$hypl_map), begin:end)) {
       offset <- 0
       increment <- 4
-      for (style_data in hypl_map[[row]]) {
+      for (style_data in maps$hypl_map[[row]]) {
         rownum <- as.integer(row)
         start  <- style_data[[1]] + offset
         stop   <- style_data[[2]] + offset
@@ -250,20 +256,13 @@ pwalk(
           )
         
         # Add offsets to remaining maps
-        if (row %in% names(code_map)) {
-          for (i in seq(length(code_map[[row]]))) {
-            if ((stop + offset) < code_map[[row]][[i]][[1]]) {
-              code_map[[row]][[i]][[1]] <<- code_map[[row]][[i]][[1]] + increment + nchar(url)
-              code_map[[row]][[i]][[2]] <<- code_map[[row]][[i]][[2]] + increment + nchar(url)
-            }
-          }
-        }
-        
-        if (row %in% names(chyp_map)) {
-          for (i in seq(length(chyp_map[[row]]))) {
-            if ((stop + offset) < chyp_map[[row]][[i]][[1]]) {
-              chyp_map[[row]][[i]][[1]] <<- chyp_map[[row]][[i]][[1]] + increment + nchar(url)
-              chyp_map[[row]][[i]][[2]] <<- chyp_map[[row]][[i]][[2]] + increment + nchar(url)
+        for (m in 4:5) {
+          if (row %in% names(maps[[m]])) {
+            for (i in seq(length(maps[[m]][[row]]))) {
+              if ((stop + offset) <= maps[[m]][[row]][[i]][[1]]) {
+                maps[[m]][[row]][[i]][[1]] <<- maps[[m]][[row]][[i]][[1]] + increment + nchar(url)
+                maps[[m]][[row]][[i]][[2]] <<- maps[[m]][[row]][[i]][[2]] + increment + nchar(url)
+              }
             }
           }
         }
@@ -273,10 +272,10 @@ pwalk(
     }
     
     # Apply any code (monospace font) styling
-    for (row in intersect(names(code_map), begin:end)) {
+    for (row in intersect(names(maps$code_map), begin:end)) {
       offset <- 0
       increment <- 8
-      for (style_data in code_map[[row]]) {
+      for (style_data in maps$code_map[[row]]) {
         rownum <- as.integer(row)
         start  <- style_data[[1]] + offset
         stop   <- style_data[[2]] + offset
@@ -304,11 +303,13 @@ pwalk(
           )
         
         # Add offsets to remaining maps
-        if (row %in% names(chyp_map)) {
-          for (i in seq(length(chyp_map[[row]]))) {
-            if ((stop + offset) < chyp_map[[row]][[i]][[1]]) {
-              chyp_map[[row]][[i]][[1]] <<- chyp_map[[row]][[i]][[1]] + increment
-              chyp_map[[row]][[i]][[2]] <<- chyp_map[[row]][[i]][[2]] + increment
+        for (i in 5:5) {
+          if (row %in% names(maps[[m]])) {
+            for (i in seq(length(maps[[m]][[row]]))) {
+              if ((stop + offset) <= maps[[m]][[row]][[i]][[1]]) {
+                maps[[m]][[row]][[i]][[1]] <<- maps[[m]][[row]][[i]][[1]] + increment
+                maps[[m]][[row]][[i]][[2]] <<- maps[[m]][[row]][[i]][[2]] + increment
+              }
             }
           }
         }
@@ -318,10 +319,10 @@ pwalk(
     }
     
     # Add any code (monospace font) hyperlinks
-    for (row in intersect(names(chyp_map), begin:end)) {
+    for (row in intersect(names(maps$chyp_map), begin:end)) {
       offset <- 0
       increment <- 12
-      for (style_data in chyp_map[[row]]) {
+      for (style_data in maps$chyp_map[[row]]) {
         rownum <- as.integer(row)
         start  <- style_data[[1]] + offset
         stop   <- style_data[[2]] + offset
@@ -363,9 +364,31 @@ pwalk(
       }
     }
     
-    # Add heading and bullet markup and find where to add blank lines
+    # Numbered lists need special treatment, the XML is very convoluted...
+    numbering_xml <- file.path(
+      doc$package_dir,
+      "word",
+      "numbering.xml"
+    ) %>% read_xml()
+    
+    num_ids <- numbering_xml %>% 
+      xml_find_all("//w:num[w:abstractNumId/@w:val='99411']") %>%
+      xml_attr("numId") %>% 
+      as.numeric()
+    
+    # Add heading, bullet and list markup and find where to add blank lines
     doc_df <- doc_df %>%
       mutate(
+        next_style = lead(style_name),
+        blank_after = (
+          (style_name != "Compact") |
+            (style_name == "Compact" & lead(style_name) != "Compact")
+        ) &
+          (!is.na(lead(style_name))),
+        style_name = case_when(
+          num_id %in% num_ids ~ "Numbering",
+          TRUE ~ style_name
+        ),
         text = case_match(
           style_name,
           "Heading 2" ~ paste0("## ", text),
@@ -373,14 +396,17 @@ pwalk(
           "Heading 4" ~ paste0("#### ", text),
           "Compact"   ~ paste0("- ", text),
           .default    = text
-        ),
-        next_style = lead(style_name),
-        blank_after = (
-          (style_name != "Compact") |
-            (style_name == "Compact" & lead(style_name) != "Compact")
-        ) &
-          (!is.na(lead(style_name)))
-      )
+        )
+      ) %>%
+      group_by(num_id) %>%
+      mutate(
+        text = case_match(
+          style_name,
+          "Numbering" ~ paste0(seq(n()), ". ", text),
+          .default    = text
+        )
+      ) %>% 
+      ungroup()
 
     # Get the element indices which need a blank line afterward
     needs_blank_after <- which(doc_df$blank_after) +

@@ -1,0 +1,19 @@
+---
+title: "reviewing-text-changes"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{reviewing-text-changes}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(carehomes2)
+```
