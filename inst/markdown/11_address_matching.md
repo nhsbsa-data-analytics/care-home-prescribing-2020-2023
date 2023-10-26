@@ -19,9 +19,9 @@ When SLA could not be exact matched, a match score was generated using the indiv
 
 Two additional methods were applied to patient addresses that could not be exact or non-exact matched. The first of these was to assign care home status according to the following criteria:
 
-*	the patient address shared a postcode with a known care home
-*	five or more patients received prescribing at this address in a single month
-*	the patient address did not include some exclusion terms, such as ‘hospital’
+- the patient address shared a postcode with a known care home
+- five or more patients received prescribing at this address in a single month
+- the patient address did not include some exclusion terms, such as ‘hospital’
 
 The threshold of five or more patients was identified through a data validation process.
 
@@ -31,10 +31,10 @@ The final match type looked at keywords appearing in patient addresses. If a pat
 
 Each match type led to a different number of prescription forms classified as being from a care home. In 2020/21:
 
-*	3.9m forms were exact matched to a care home
-*	11.5m forms were non-exact matched to a care home
-*	0.3m forms were patient-count matched to a care home
-*	0.4m forms were keyword matched to a care home
+- 3.9m forms were exact matched to a care home
+- 11.5m forms were non-exact matched to a care home
+- 0.3m forms were patient-count matched to a care home
+- 0.4m forms were keyword matched to a care home
 
 A comprehensive validation exercise using the 2020/21 data estimated the overall accuracy of correctly classifying a prescription form to a care home at 99.6%. With the methodology being consistent a similar level of accuracy can be expected for the 2021/22 and 2022/23 data. The validation only focused on false-positive matches. This was where a patient address record was incorrectly labelled as being a care home. No work was done to gauge the extent of false-negatives, namely patient address records that were care homes although not labelled as such. More information around validation accuracy estimates can be found within part 6 of the full methodology. [This is described in full on a blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 

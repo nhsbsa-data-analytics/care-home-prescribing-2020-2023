@@ -26,7 +26,8 @@ $(document).ready(function () {
     
     
   // Add target='_blank' to external links so they open a new tab
-  $(document.body).on('mouseover', 'a[target!=_blank]:not(.local)', function (e) {
+  // Add internal link behaviour to internal links
+  $(document.body).on('mouseover', 'a[role!=tab][target!=_blank]:not(.local)', function (e) {
     var a = $(this);
     if (
       !a.attr('href').match(/^mailto\:/)
@@ -34,9 +35,16 @@ $(document).ready(function () {
          && !a.attr('href').match(/^javascript\:/)
          && !a.attr('href').match(/^$/)
     ) {
+        // External link
         a.attr('target', '_blank');
     } else {
-        a.addClass('local');
+        // Internal link
+        var tabName = a.attr('href').split("/")[3].split("?")[0].replace(/_/g, ' ');
+        var id = a.attr('href').split("?")[1] ?? '';
+        
+        a.addClass('local').
+          removeAttr('href').
+          attr('onclick', 'internalLink("' + tabName + '", "' + id + '");');
     }
   });
   
