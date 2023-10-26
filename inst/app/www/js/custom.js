@@ -48,21 +48,6 @@ $(document).ready(function () {
     }
   });
   
-  /* Add internal link behaviour to internal links
-  $(document.body).on('mouseover', 'a[target!=_blank]:not(.internal)', function (e) {
-    var a = $(this);
-    if (
-      !a.attr('href').match(/^mailto\:/)
-         && (a[0].hostname != window.location.hostname)
-         && !a.attr('href').match(/^javascript\:/)
-         && !a.attr('href').match(/^$/)
-    ) {
-        a.attr('onclick', 'internalLink("Address Matching");');
-    } else {
-        a.addClass('internal');
-    }
-  });*/
-  
   // Handle clicks on mod_06 datatable, to outline selected map region
   Shiny.addCustomMessageHandler("rowClicked",
     function(message) {
