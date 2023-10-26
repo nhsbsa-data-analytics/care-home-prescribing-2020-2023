@@ -39,8 +39,8 @@ $(document).ready(function () {
         a.attr('target', '_blank');
     } else {
         // Internal link
-        var tabName = a.attr('href').split("/")[3].split("#")[0].replace(/_/g, ' ');
-        var id = a.attr('href').split("#")[1];
+        var tabName = a.attr('href').split("/")[3].split("?")[0].replace(/_/g, ' ');
+        var id = a.attr('href').split("?")[1] ?? '';
         
         a.addClass('local').
           removeAttr('href').

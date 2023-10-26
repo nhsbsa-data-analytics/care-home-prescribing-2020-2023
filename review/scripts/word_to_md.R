@@ -70,9 +70,18 @@ style_map <- function(doc, t1, t2 = NULL, t3 = NULL, val3 = NULL, t4 = NULL, val
         if (length(xml_attr_names) & "id" %in% xml_attr_names) {
           style_data <- c(style_data, list(xml_attrs(first_child)[["id"]]))
         }
+        if (length(xml_attr_names) & "anchor" %in% xml_attr_names) {
+          style_data <- c(style_data, list(xml_attrs(first_child)[["anchor"]]))
+        }
         if (as.character(i - num_blank) %in% names(smap)) {
-          new_index <- as.character(length(smap[[as.character(i - num_blank)]]) + 1)
-          smap[[as.character(i - num_blank)]][[new_index]] <- style_data
+          prev_index <- length(smap[[as.character(i - num_blank)]])
+          new_index <- prev_index + 1
+          if (style_data[[1]] == 
+                smap[[as.character(i - num_blank)]][[prev_index]][[2]] + 1) {
+            smap[[as.character(i - num_blank)]][[prev_index]][[2]] <- style_data[[2]]
+          } else {
+            smap[[as.character(i - num_blank)]][[new_index]] <- style_data
+          }
         } else {
           smap[[as.character(i - num_blank)]] <- list(
             `1` = style_data
@@ -230,6 +239,11 @@ pwalk(
             filter(id == style_data[[3]]) %>%
             pull(target)
         ))
+        url <- if (length(style_data) == 4) {
+          paste0(url, "#", style_data[[4]])
+        } else {
+          url
+        }
 
         hypl_applied <- doc_df %>%
           filter(doc_index == rownum) %>%
@@ -371,10 +385,15 @@ pwalk(
       "numbering.xml"
     ) %>% read_xml()
     
-    num_ids <- numbering_xml %>% 
+    num_ids_alt_1 <- numbering_xml %>% 
       xml_find_all("//w:num[w:abstractNumId/@w:val='99411']") %>%
       xml_attr("numId") %>% 
       as.numeric()
+    num_ids_alt_2 <- numbering_xml %>% 
+      xml_find_all("//w:num[w:abstractNumId/@w:val='2']") %>%
+      xml_attr("numId") %>% 
+      as.numeric()
+    num_ids <- c(num_ids_alt_1, num_ids_alt_2)
     
     # Add heading, bullet and list markup and find where to add blank lines
     doc_df <- doc_df %>%
@@ -392,8 +411,11 @@ pwalk(
         text = case_match(
           style_name,
           "Heading 2" ~ paste0("## ", text),
+          "heading 2" ~ paste0("## ", text),
           "Heading 3" ~ paste0("### ", text),
+          "heading 3" ~ paste0("### ", text),
           "Heading 4" ~ paste0("#### ", text),
+          "heading 4" ~ paste0("#### ", text),
           "Compact"   ~ paste0("- ", text),
           .default    = text
         )

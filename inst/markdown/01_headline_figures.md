@@ -24,10 +24,10 @@ This analysis addresses a key gap in knowledge and gives valuable insights which
 
 - Patient count estimates are of care home residents aged 65 years and over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the monthly actual care home population. These monthly estimates will be higher than 2021 Census estimates which are based on occupancy on Census day.
 - Prescribing patterns will be impacted by the COVID-19 pandemic and beyond. The pandemic started in March 2020 and included a series of national lockdowns during 2020/21.
-- There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the [Annex](http://127.0.0.1/Annex#) for further sources of data available on the care home population.
+- There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the [Annex](http://127.0.0.1/Annex) for further sources of data available on the care home population.
 - Drug costs are particularly influenced by prices which have been rising rapidly over the past year due to price concessions and possibly general inflation.
 
-See the [Address Matching](http://127.0.0.1/Address_Matching#) page for further details or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
+See the [Address Matching](http://127.0.0.1/Address_Matching) page for further details or the methodology described in full on a [blog post on RPubs](https://rpubs.com/nhsbsa-data-analytics/methodology).
 
 ### Overall prescribing for care home patients aged 65 and over
 
@@ -42,7 +42,7 @@ The total number of care home patients who received at least one prescription it
 - The population is not stable – some patients turn 65 years old during the year, some move in or out of the care home and others may die.
 - Not all care home patients receive a prescription in every month they are in a care home.
 
-For this reason most [Metrics](http://127.0.0.1/Metrics#prescribing-metrics) were calculated on a [patient-month](http://127.0.0.1/Metrics#prescribing-per-patient-month-ppm) basis.
+For this reason most [Metrics](http://127.0.0.1/Metrics) were calculated on a [patient-month](http://127.0.0.1/Metrics?prescribing-per-patient-month-ppm) basis.
 
 The number of patients who received prescriptions in a care home peaked in April 2020, at 314,000 patients which was at the start of the COVID-19 pandemic. April 2020 also had the highest number of care home prescription items, at 3.3 million items.
 
