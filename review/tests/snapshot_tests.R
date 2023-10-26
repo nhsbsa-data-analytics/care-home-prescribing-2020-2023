@@ -33,56 +33,56 @@ local_edition(3)
 # each reference file. Use 'Run Tests' button above right.
 # You are basically saying "all these files should look as they are now in
 # future".
-test_that("01_headline_figures text is as expected", {
-  with_dir(find_package_root_file(), {
-    expect_snapshot_file("inst/markdown/01_headline_figures.md")
-    expect_snapshot_file("inst/markdown/02_patients_age_gender.md")
-    expect_snapshot_file("inst/markdown/03_patients_imd.md")
-    expect_snapshot_file("inst/markdown/04_metrics_ch_type.md")
-    expect_snapshot_file("inst/markdown/05_metrics_age_gender.md")
-    expect_snapshot_file("inst/markdown/06_geo_ch_flag.md")
-    expect_snapshot_file("inst/markdown/07_ch_flag_drug.md")
-    expect_snapshot_file("inst/markdown/08_geo_ch_flag_drug.md")
-    expect_snapshot_file("inst/markdown/09_metrics_1.md")
-    expect_snapshot_file("inst/markdown/09_metrics_2.md")
-    expect_snapshot_file("inst/markdown/09_metrics_3.md")
-    expect_snapshot_file("inst/markdown/09_metrics_4.md")
-    expect_snapshot_file("inst/markdown/10_datasets.md")
-    expect_snapshot_file("inst/markdown/11_address_matching.md")
-    expect_snapshot_file("inst/markdown/12_feedback.md")
-    expect_snapshot_file("inst/markdown/13_annex.md")
-    expect_snapshot_file("inst/markdown/final_thoughts.md")
-  })
-})
+# test_that("01_headline_figures text is as expected", {
+#   with_dir(find_package_root_file(), {
+#     expect_snapshot_file("inst/markdown/01_headline_figures.md")
+#     expect_snapshot_file("inst/markdown/02_patients_age_gender.md")
+#     expect_snapshot_file("inst/markdown/03_patients_imd.md")
+#     expect_snapshot_file("inst/markdown/04_metrics_ch_type.md")
+#     expect_snapshot_file("inst/markdown/05_metrics_age_gender.md")
+#     expect_snapshot_file("inst/markdown/06_geo_ch_flag.md")
+#     expect_snapshot_file("inst/markdown/07_ch_flag_drug.md")
+#     expect_snapshot_file("inst/markdown/08_geo_ch_flag_drug.md")
+#     expect_snapshot_file("inst/markdown/09_metrics_1.md")
+#     expect_snapshot_file("inst/markdown/09_metrics_2.md")
+#     expect_snapshot_file("inst/markdown/09_metrics_3.md")
+#     expect_snapshot_file("inst/markdown/09_metrics_4.md")
+#     expect_snapshot_file("inst/markdown/10_datasets.md")
+#     expect_snapshot_file("inst/markdown/11_address_matching.md")
+#     expect_snapshot_file("inst/markdown/12_feedback.md")
+#     expect_snapshot_file("inst/markdown/13_annex.md")
+#     expect_snapshot_file("inst/markdown/final_thoughts.md")
+#   })
+# })
 
 # 2. Comment the above block out now
 
 # 3. Uncomment the below block, ready for future changes
 
 # 4. When you make changes to the files, use 'Run Tests' button above right
-# test_that("01_headline_figures text is as expected", {
-#   with_dir(find_package_root_file(), {
-#     source("review/scripts/word_to_md.R")
-# 
-#     expect_snapshot_file("review/temp/01_headline_figures.md")
-#     expect_snapshot_file("review/temp/02_patients_age_gender.md")
-#     expect_snapshot_file("review/temp/03_patients_imd.md")
-#     expect_snapshot_file("review/temp/04_metrics_ch_type.md")
-#     expect_snapshot_file("review/temp/05_metrics_age_gender.md")
-#     expect_snapshot_file("review/temp/06_geo_ch_flag.md")
-#     expect_snapshot_file("review/temp/07_ch_flag_drug.md")
-#     expect_snapshot_file("review/temp/08_geo_ch_flag_drug.md")
-#     expect_snapshot_file("review/temp/09_metrics_1.md")
-#     expect_snapshot_file("review/temp/09_metrics_2.md")
-#     expect_snapshot_file("review/temp/09_metrics_3.md")
-#     expect_snapshot_file("review/temp/09_metrics_4.md")
-#     expect_snapshot_file("review/temp/10_datasets.md")
-#     expect_snapshot_file("review/temp/11_address_matching.md")
-#     expect_snapshot_file("review/temp/12_feedback.md")
-#     expect_snapshot_file("review/temp/13_annex.md")
-#     expect_snapshot_file("review/temp/final_thoughts.md")
-#   })
-# })
+test_that("01_headline_figures text is as expected", {
+  with_dir(find_package_root_file(), {
+    source("review/scripts/word_to_md.R")
+
+    expect_snapshot_file("review/temp/01_headline_figures.md")
+    expect_snapshot_file("review/temp/02_patients_age_gender.md")
+    expect_snapshot_file("review/temp/03_patients_imd.md")
+    expect_snapshot_file("review/temp/04_metrics_ch_type.md")
+    expect_snapshot_file("review/temp/05_metrics_age_gender.md")
+    expect_snapshot_file("review/temp/06_geo_ch_flag.md")
+    expect_snapshot_file("review/temp/07_ch_flag_drug.md")
+    expect_snapshot_file("review/temp/08_geo_ch_flag_drug.md")
+    expect_snapshot_file("review/temp/09_metrics_1.md")
+    expect_snapshot_file("review/temp/09_metrics_2.md")
+    expect_snapshot_file("review/temp/09_metrics_3.md")
+    expect_snapshot_file("review/temp/09_metrics_4.md")
+    expect_snapshot_file("review/temp/10_datasets.md")
+    expect_snapshot_file("review/temp/11_address_matching.md")
+    expect_snapshot_file("review/temp/12_feedback.md")
+    expect_snapshot_file("review/temp/13_annex.md")
+    expect_snapshot_file("review/temp/final_thoughts.md")
+  })
+})
 
 # 5. If any differences are present (there should be if you changed the
 # files...) a shiny app can be started showing the differences by running the
