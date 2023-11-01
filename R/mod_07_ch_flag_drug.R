@@ -110,9 +110,10 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
     p1 = "% of total annual number of prescription items"
     p2 = "% of total annual drug cost"
     c1 = "Mean drug cost PPM"
+    c2 = "Total annual drug cost"
 
     # Pound sign for pound metrics
-    prefix = reactive({ifelse(input$input_metric == c1, "£", "")})
+    prefix = reactive({ifelse(input$input_metric %in% c(c1, c2), "£", "")})
     suffix = reactive({ifelse(input$input_metric %in% c(p1,p2), "%", "")})
     
     # Generate highchart

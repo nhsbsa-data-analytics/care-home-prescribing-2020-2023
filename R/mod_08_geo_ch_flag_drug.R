@@ -495,17 +495,18 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     p1 = "% of total annual number of prescription items"
     p2 = "% of total annual drug cost"
     c1 = "Mean drug cost PPM"
+    c2 = "Total annual drug cost"
     
     # Pound sign for pound metrics
-    region_prefix = reactive({ifelse(input$input_region_metric == c1, "£", "")})
+    region_prefix = reactive({ifelse(input$input_region_metric %in% c(c1, c2), "£", "")})
     region_suffix = reactive({ifelse(input$input_region_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    ics_prefix = reactive({ifelse(input$input_ics_metric == c1, "£", "")})
+    ics_prefix = reactive({ifelse(input$input_ics_metric %in% c(c1, c2), "£", "")})
     ics_suffix = reactive({ifelse(input$input_ics_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    lad_prefix = reactive({ifelse(input$input_lad_metric == c1, "£", "")})
+    lad_prefix = reactive({ifelse(input$input_lad_metric %in% c(c1, c2), "£", "")})
     lad_suffix = reactive({ifelse(input$input_lad_metric %in% c(p1,p2), "%", "")})
 
     # Region: df after 4 initial filters applied

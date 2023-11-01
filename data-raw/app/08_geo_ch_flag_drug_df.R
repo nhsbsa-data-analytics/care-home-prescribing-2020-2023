@@ -8,7 +8,8 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  dplyr::tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  dplyr::tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) %>% 
+  filter(YEAR_MONTH %in% c(202101L, 202201L, 202301L))
 
 # BNF columns
 bnf_cols = c(
@@ -156,10 +157,12 @@ get_geo_bnf_prop = function(index){
       BNF_PARENT = rlang::as_string(bnf),
       BNF_CHILD := {{ bnf }},
       PROP_ITEMS = janitor::round_half_up(PROP_ITEMS, 3),
-      PROP_NIC = janitor::round_half_up(PROP_NIC, 3)
+      PROP_NIC = janitor::round_half_up(PROP_NIC, 3),
+      TOTAL_ITEMS,
+      TOTAL_NIC
       ) %>% 
     tidyr::pivot_longer(
-      c('PROP_ITEMS', 'PROP_NIC'),
+      c('PROP_ITEMS', 'PROP_NIC', 'TOTAL_ITEMS', 'TOTAL_NIC'),
       names_to = "METRIC",
       values_to = "VALUE"
       )
@@ -252,7 +255,9 @@ get_geo_bnf_ppm = function(index){
     group_by(FY, {{ geo }}, {{ bnf }}) %>% 
     summarise(
       PPM_ITEMS = mean(ITEMS),
-      PPM_NIC = mean(NIC)
+      PPM_NIC = mean(NIC),
+      TOTAL_ITEMS = sum(ITEMS),
+      TOTAL_NIC = sum(NIC)
     ) %>% 
     ungroup() %>% 
     nhsbsaR::collect_with_parallelism(., 16) %>% 
@@ -263,10 +268,12 @@ get_geo_bnf_ppm = function(index){
       BNF_PARENT = rlang::as_string(bnf),
       BNF_CHILD := {{ bnf }},
       PPM_ITEMS = janitor::round_half_up(PPM_ITEMS, 3),
-      PPM_NIC = janitor::round_half_up(PPM_NIC, 3)
+      PPM_NIC = janitor::round_half_up(PPM_NIC, 3),
+      TOTAL_ITEMS,
+      TOTAL_NIC
     ) %>% 
     tidyr::pivot_longer(
-      c('PPM_ITEMS', 'PPM_NIC'),
+      c('PPM_ITEMS', 'PPM_NIC', 'TOTAL_ITEMS', 'TOTAL_NIC'),
       names_to = "METRIC",
       values_to = "VALUE"
     )
@@ -304,7 +311,9 @@ mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
       METRIC == "PPM_ITEMS" ~ "Mean prescription items PPM",
       METRIC == "PPM_NIC" ~ "Mean drug cost PPM",
       METRIC == "PROP_ITEMS" ~ "% of total annual number of prescription items",
-      METRIC == "PROP_NIC" ~ "% of total annual drug cost"
+      METRIC == "PROP_NIC" ~ "% of total annual drug cost",
+      METRIC == "TOTAL_ITEMS" ~ "Total annual number of prescription items",
+      METRIC == "TOTAL_NIC" ~ "Total annual drug cost"
     ),
     PATS = ifelse(is.na(PATS), 0, PATS)
   ) %>% 

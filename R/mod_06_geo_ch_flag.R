@@ -359,7 +359,6 @@ mod_06_geo_ch_flag_server <- function(id) {
     # When a table row is clicked, fire a custom Shiny message to toggle the
     # border of the same map area.
     observe({
-      browser()
       if (!is.null(previous_row_selected())) {
         session$sendCustomMessage(
           type = 'rowClicked',
