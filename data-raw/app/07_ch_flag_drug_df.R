@@ -23,7 +23,6 @@ bnf_cols = c(
 
 # Function to generate data
 get_geo_bnf_prop = function(index){
-  
   # Get vars names
   bnf = rlang::sym(bnf_cols[index])
   
@@ -76,8 +75,8 @@ get_geo_bnf_prop = function(index){
       BNF_CHILD := {{ bnf }},
       PROP_ITEMS = janitor::round_half_up(PROP_ITEMS, 3),
       PROP_NIC = janitor::round_half_up(PROP_NIC, 3),
-      TOTAL_ITEMS,
-      TOTAL_NIC
+      TOTAL_ITEMS = ITEMS,
+      TOTAL_NIC = NIC
     ) %>%
     tidyr::pivot_longer(
       c('PROP_ITEMS', 'PROP_NIC', 'TOTAL_ITEMS', 'TOTAL_NIC'),

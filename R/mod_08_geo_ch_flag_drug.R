@@ -339,7 +339,12 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       # Process original df
       df = df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
-        dplyr::mutate(VALUE_LABEL = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
+        dplyr::mutate(
+          VALUE_LABEL = scales::label_comma(
+            accuracy = .01,
+            scale_cut = scales::cut_long_scale()
+          )(janitor::round_half_up(VALUE, 2))
+        ) %>%
         dplyr::arrange(VALUE) %>%
         dplyr::mutate(
           index = dplyr::row_number(),
@@ -374,8 +379,25 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         highcharter::hc_yAxis(
           min = 0, 
           max = y_axis_max_val,
-          labels = list(format = "{value:.2f}")
-          ) %>%
+          labels = list(
+            formatter = htmlwidgets::JS("
+              function() {
+                if(this.value >= 1000000000) {
+                    return (this.value / 1000000000) + 'B';
+                }
+                else if(this.value >= 1000000) {
+                    return (this.value / 1000000) + 'M';
+                }
+                else if(this.value >= 1000) {
+                    return (this.value / 1000) + 'K';
+                }
+                else {
+                    return this.value;
+                }
+              }
+            ")
+          )
+        ) %>%
         highcharter::hc_xAxis(categories = c(rep("", max(df$index)+1))) %>%
         highcharter::hc_plotOptions(
           spline = list(
@@ -596,11 +618,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           borderless = FALSE,
           columns = list(
             .selection = reactable::colDef(width = 15),
-            `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
-            `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
-            `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2))
+            `20/21` = reactable::colDef(width = 70),
+            `21/22` = reactable::colDef(width = 70),
+            `22/23` = reactable::colDef(width = 70)
           ),
-          defaultColDef = reactable::colDef(headerClass = "my-header"),
+          defaultColDef = reactable::colDef(
+            headerClass = "my-header",
+            format = reactable::colFormat(digits = 2),
+            cell = function(val, row, col_name) {
+              if (col_name %in% c(names(geographies), ".selection")) return (val)
+              
+              return (
+                scales::label_comma(
+                  accuracy = .01,
+                  scale_cut = scales::cut_long_scale()
+                )(val)
+              )
+            }
+          ),
           style = list(fontSize = "14px", fontFamily = "Arial"),
           theme = reactable::reactableTheme(stripedColor = "#f8f8f8"),
           class = "my-tbl",
