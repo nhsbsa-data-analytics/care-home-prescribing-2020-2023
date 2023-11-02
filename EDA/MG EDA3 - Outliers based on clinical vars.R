@@ -70,10 +70,26 @@ get_metrics <- function(init_db,
         )
       ),
       
+      # Opioid analgesics
+      OP_ANALG_ITEMS = sum(
+        case_when(
+          PARAGRAPH_DESCR == "Non-opioid analgesics and compound preparations" ~ 1,
+          TRUE ~ 0
+        )
+      ),
+      
       # Tube feed, excludes many other types of oral nutrition
       ENTERAL_NUTRITION_ITEMS = sum(
         case_when(
           SECTION_DESCR == "Enteral nutrition" ~ 1,
+          TRUE ~ 0
+        )
+      ),
+      
+      # Laxatives
+     LAXATIVE_ITEMS = sum(
+        case_when(
+          SECTION_DESCR == "Laxatives" ~ 1,
           TRUE ~ 0
         )
       ),
@@ -117,7 +133,9 @@ get_metrics <- function(init_db,
       # Various items PPM
       PARACETAMOL_ITEMS_PPM  = mean(PARACETAMOL_ITEMS),
       NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM = mean(NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS),
+      OP_ANALG_ITEMS_PPM = mean(OP_ANALG_ITEMS),
       ENTERAL_NUTRITION_ITEMS_PPM  = mean(ENTERAL_NUTRITION_ITEMS),
+      LAXATIVE_ITEMS_PPM = mean(LAXATIVE_ITEMS),
       ANTIBAC_EXCL_UTI_ITEMS_PPM = mean(ANTIBAC_EXCL_UTI_ITEMS),
       ANTIBAC_UTI_ITEMS_PPM = mean(ANTIBAC_UTI_ITEMS)
       
@@ -147,7 +165,7 @@ get_metrics <- function(init_db,
 # - mean distinct chem subs per PM
 # - % of PMs exceeding a certain distinct chem sub threshold
 # - mean items per PM (to be developed)
-# Ideally, these would be harmonised where possible
+# These may need to be harmonised where possible, e.g. use mean falls-risk items instead of distinct falls-risk substances
 
 
 # Running time <= 1 min
