@@ -8,8 +8,7 @@ library(ggplot2)
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 DB <- tbl(con, in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) |>
-  filter(FY == "2022/23" &
-           UPRN_FLAG==1)
+  filter(FY == "2022/23" & UPRN_FLAG==1)
 
 
 get_metrics <- function(init_db,
@@ -42,6 +41,7 @@ get_metrics <- function(init_db,
         n_distinct(BNF_CHEMICAL_SUBSTANCE[DAMN_CAT == 1]) >= 2 ~ 1L,
         TRUE ~ 0L
       ),
+      # More than 1 metric relating to one drug group will skew the overall picture
       # FALLS = case_when(
       #   n_distinct(BNF_CHEMICAL_SUBSTANCE[FALLS_CAT == 1]) >= 3 ~ 1L,
       #   TRUE ~ 0L
@@ -51,7 +51,51 @@ get_metrics <- function(init_db,
           FALLS_CAT == 1 ~ BNF_CHEMICAL_SUBSTANCE,
           TRUE ~ NA
         )
+      ),
+      
+      # Pure paracetamol not in combination with any other substances
+      PARACETAMOL_ITEMS = sum(
+        case_when(
+          BNF_CHEMICAL_SUBSTANCE == "0407010H0" ~ 1,
+          TRUE ~ 0
+        )
+      ),
+      
+      # Non-opioid analgesics excluding pure paracetamol
+      NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS = sum(
+        case_when(
+          PARAGRAPH_DESCR == "Non-opioid analgesics and compound preparations" &
+          BNF_CHEMICAL_SUBSTANCE != "0407010H0" ~ 1,
+          TRUE ~ 0
+        )
+      ),
+      
+      # Tube feed, excludes many other types of oral nutrition
+      ENTERAL_NUTRITION_ITEMS = sum(
+        case_when(
+          SECTION_DESCR == "Enteral nutrition" ~ 1,
+          TRUE ~ 0
+        )
+      ),
+      
+      # Antibacterials, excluding UTI drugs
+      ANTIBAC_EXCL_UTI_ITEMS = sum(
+        case_when(
+          SECTION_DESCR == "Antibacterial drugs" &
+          PARAGRAPH_DESCR != "Urinary-tract infections" ~ 1,
+          TRUE ~ 0
+        )
+      ),
+      
+      # Antibacterials for UTIs
+      ANTIBAC_UTI_ITEMS = sum(
+        case_when(
+          SECTION_DESCR == "Antibacterial drugs" &
+            PARAGRAPH_DESCR == "Urinary-tract infections" ~ 1,
+          TRUE ~ 0
+        )
       )
+      
     ) |>
     ungroup() |> 
     group_by(across(all_of(second_grouping))) |>
@@ -61,13 +105,6 @@ get_metrics <- function(init_db,
       TOTAL_PATIENTS      = n_distinct(NHS_NO),
       TOTAL_PM_ACB        = sum(ANY_ACB, na.rm = TRUE),
       TOTAL_PM_DAMN       = sum(ANY_DAMN, na.rm = TRUE),
-      # Items, cost and unique meds count
-      ITEMS_PPM           = mean(TOTAL_ITEMS, na.rm = TRUE),
-      COST_PPM            = mean(TOTAL_COST, na.rm = TRUE),
-      UNIQ_MEDS_PPM       = mean(UNIQUE_MEDICINES, na.rm = TRUE),
-      # Unique medicines numerators
-      RISK_PM_GTE_SIX     = sum(GTE_SIX, na.rm = TRUE),
-      RISK_PM_GTE_TEN     = sum(GTE_TEN, na.rm = TRUE),
       # ACB numerator
       RISK_PM_ACB         = sum(ACB, na.rm = TRUE),
       # DAMN numerator
@@ -76,6 +113,14 @@ get_metrics <- function(init_db,
       UNIQ_MEDS_FALLS_PPM = mean(UNIQUE_MEDICINES_FALLS, na.rm = TRUE),
       # Falls numerator
       # RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE)
+      
+      # Various items PPM
+      PARACETAMOL_ITEMS_PPM  = mean(PARACETAMOL_ITEMS),
+      NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM = mean(NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS),
+      ENTERAL_NUTRITION_ITEMS_PPM  = mean(ENTERAL_NUTRITION_ITEMS),
+      ANTIBAC_EXCL_UTI_ITEMS_PPM = mean(ANTIBAC_EXCL_UTI_ITEMS),
+      ANTIBAC_UTI_ITEMS_PPM = mean(ANTIBAC_UTI_ITEMS)
+      
     ) |>
     ungroup() |>
     mutate(
@@ -98,6 +143,13 @@ get_metrics <- function(init_db,
   
 }
 
+# Here we have 3 types of metric: 
+# - mean distinct chem subs per PM
+# - % of PMs exceeding a certain distinct chem sub threshold
+# - mean items per PM (to be developed)
+# Ideally, these would be harmonised where possible
+
+
 # Running time <= 1 min
 tictoc::tic()
 df <- get_metrics(
@@ -114,6 +166,12 @@ df <- get_metrics(
   )
 )
 tictoc::toc()
+
+
+#Exclude CHs with <5 patients...?
+df <- df |> filter(TOTAL_PATIENTS >= 5)
+
+
 
 
 
