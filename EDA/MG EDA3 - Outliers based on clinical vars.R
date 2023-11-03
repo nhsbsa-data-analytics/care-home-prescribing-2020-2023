@@ -185,9 +185,32 @@ df <- get_metrics(
 )
 tictoc::toc()
 
+df |> filter(TOTAL_PATIENTS <= 100) |>
+ggplot(aes(TOTAL_PATIENTS)) + geom_histogram(binwidth = 5)
 
 #Exclude CHs with <5 patients...?
 df <- df |> filter(TOTAL_PATIENTS >= 5)
+
+
+norm_minmax <- function(x, ...) {
+  return((x - min(x, ...)) /(max(x, ...) - min(x, ...)))
+}
+
+
+# Normalise metrics
+df <- df |> mutate(across(
+          UNIQ_MEDS_FALLS_PPM:ncol(df),
+          ~ norm_minmax(.x, na.rm = T),
+          .names = "{.col}_NORM"
+        ))
+
+
+
+
+
+# Overall outliers
+
+
 
 
 
