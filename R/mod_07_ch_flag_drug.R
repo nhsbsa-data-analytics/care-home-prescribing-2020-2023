@@ -107,13 +107,14 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
     # Chart --------------------------------------------------------------------
 
     # Metrics
-    p1 = "% of total annual number of prescription items"
-    p2 = "% of total annual drug cost"
-    c1 = "Mean drug cost PPM"
+    # p1 = "% of total annual number of prescription items"
+    # p2 = "% of total annual drug cost"
+    # c1 = "Mean drug cost PPM"
+    # c2 = "Total annual drug cost"
 
     # Pound sign for pound metrics
-    prefix = reactive({ifelse(input$input_metric == c1, "£", "")})
-    suffix = reactive({ifelse(input$input_metric %in% c(p1,p2), "%", "")})
+    # prefix = reactive({ifelse(input$input_metric %in% c(c1, c2), "£", "")})
+    # suffix = reactive({ifelse(input$input_metric %in% c(p1,p2), "%", "")})
     
     # Generate highchart
     output$ch_flag_drug_chart = highcharter::renderHighchart({
@@ -148,11 +149,77 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
           min = 0,
           title = list(
             text = input$input_metric
+          ),
+          labels = list(
+            formatter = htmlwidgets::JS("
+              function() {
+                if(this.value >= 10**9) {
+                    return (this.value / 10**9) + 'B';
+                }
+                else if(this.value >= 10**6) {
+                    return (this.value / 10**6) + 'M';
+                }
+                else if(this.value >= 10**3) {
+                    return (this.value / 10**3) + 'K';
+                }
+                else {
+                    return this.value;
+                }
+              }
+            ")
           )
         ) %>%
         highcharter::hc_tooltip(
           shared = TRUE,
-          pointFormat = paste0("<b>{series.name}: </b>", prefix(), "{point.VALUE:.2f}", suffix(), "<br>")
+          useHTML = TRUE,
+          formatter = htmlwidgets::JS("
+            function() {
+              var fmt_num = function(x) {
+                if(x >= 10**9){
+                    return Highcharts.numberFormat(x / 10**9, 2) + 'B';
+                }
+                else if(x >= 10**6) {
+                    return Highcharts.numberFormat(x / 10**6, 2) + 'M';
+                }
+                else if(x >= 10**3) {
+                    return Highcharts.numberFormat(x / 10**3, 2) + 'K';
+                }
+                else {
+                    return Highcharts.numberFormat(x, 2);
+                }
+              }
+            
+              var prefix = function(x) {
+                if(!x.startsWith('%') & x.includes('cost')) {
+                  return '£';
+                }
+                else {
+                  return '';
+                }
+              }
+            
+              var suffix = function(x) {
+                if(x.startsWith('%')) {
+                    return '%';
+                }
+                else {
+                    return '';
+                }
+              }
+            
+              return this.points.reduce(
+                function (s, point) {
+                  return s + '<br/>' + 
+                    point.series.name + ': ' +
+                    prefix(point.point.METRIC) + 
+                    fmt_num(point.y) + 
+                    suffix(point.point.METRIC);
+                },
+                '<b>' + this.x + '</b>'
+              );
+            }
+            "
+          )
         ) %>%
         highcharter::hc_plotOptions(
           series = list(

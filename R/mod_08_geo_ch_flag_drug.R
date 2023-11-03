@@ -339,7 +339,12 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       # Process original df
       df = df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
-        dplyr::mutate(VALUE_LABEL = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
+        dplyr::mutate(
+          VALUE_LABEL = scales::label_comma(
+            accuracy = .01,
+            scale_cut = scales::cut_long_scale()
+          )(janitor::round_half_up(VALUE, 2))
+        ) %>%
         dplyr::arrange(VALUE) %>%
         dplyr::mutate(
           index = dplyr::row_number(),
@@ -374,8 +379,25 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         highcharter::hc_yAxis(
           min = 0, 
           max = y_axis_max_val,
-          labels = list(format = "{value:.2f}")
-          ) %>%
+          labels = list(
+            formatter = htmlwidgets::JS("
+              function() {
+                if(this.value >= 10**9) {
+                    return (this.value / 10**9) + 'B';
+                }
+                else if(this.value >= 10**6) {
+                    return (this.value / 10**6) + 'M';
+                }
+                else if(this.value >= 10**3) {
+                    return (this.value / 10**3) + 'K';
+                }
+                else {
+                    return this.value;
+                }
+              }
+            ")
+          )
+        ) %>%
         highcharter::hc_xAxis(categories = c(rep("", max(df$index)+1))) %>%
         highcharter::hc_plotOptions(
           spline = list(
@@ -495,17 +517,18 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     p1 = "% of total annual number of prescription items"
     p2 = "% of total annual drug cost"
     c1 = "Mean drug cost PPM"
+    c2 = "Total annual drug cost"
     
     # Pound sign for pound metrics
-    region_prefix = reactive({ifelse(input$input_region_metric == c1, "£", "")})
+    region_prefix = reactive({ifelse(input$input_region_metric %in% c(c1, c2), "£", "")})
     region_suffix = reactive({ifelse(input$input_region_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    ics_prefix = reactive({ifelse(input$input_ics_metric == c1, "£", "")})
+    ics_prefix = reactive({ifelse(input$input_ics_metric %in% c(c1, c2), "£", "")})
     ics_suffix = reactive({ifelse(input$input_ics_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    lad_prefix = reactive({ifelse(input$input_lad_metric == c1, "£", "")})
+    lad_prefix = reactive({ifelse(input$input_lad_metric %in% c(c1, c2), "£", "")})
     lad_suffix = reactive({ifelse(input$input_lad_metric %in% c(p1,p2), "%", "")})
 
     # Region: df after 4 initial filters applied
@@ -595,11 +618,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           borderless = FALSE,
           columns = list(
             .selection = reactable::colDef(width = 15),
-            `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
-            `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
-            `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2))
+            `20/21` = reactable::colDef(width = 70),
+            `21/22` = reactable::colDef(width = 70),
+            `22/23` = reactable::colDef(width = 70)
           ),
-          defaultColDef = reactable::colDef(headerClass = "my-header"),
+          defaultColDef = reactable::colDef(
+            headerClass = "my-header",
+            format = reactable::colFormat(digits = 2),
+            cell = function(val, row, col_name) {
+              if (col_name %in% c(names(geographies), ".selection")) return (val)
+              
+              return (
+                scales::label_comma(
+                  accuracy = .01,
+                  scale_cut = scales::cut_long_scale()
+                )(val)
+              )
+            }
+          ),
           style = list(fontSize = "14px", fontFamily = "Arial"),
           theme = reactable::reactableTheme(stripedColor = "#f8f8f8"),
           class = "my-tbl",
