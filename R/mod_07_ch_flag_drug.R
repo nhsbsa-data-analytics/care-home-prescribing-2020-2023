@@ -153,14 +153,14 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
           labels = list(
             formatter = htmlwidgets::JS("
               function() {
-                if(this.value >= 1000000000) {
-                    return (this.value / 1000000000) + 'B';
+                if(this.value >= 10**9) {
+                    return (this.value / 10**9) + 'B';
                 }
-                else if(this.value >= 1000000) {
-                    return (this.value / 1000000) + 'M';
+                else if(this.value >= 10**6) {
+                    return (this.value / 10**6) + 'M';
                 }
-                else if(this.value >= 1000) {
-                    return (this.value / 1000) + 'K';
+                else if(this.value >= 10**3) {
+                    return (this.value / 10**3) + 'K';
                 }
                 else {
                     return this.value;
@@ -175,14 +175,14 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
           formatter = htmlwidgets::JS("
             function() {
               var fmt_num = function(x) {
-                if(x >= 1000000000){
-                    return Highcharts.numberFormat(x / 1000000000, 2) + 'B';
+                if(x >= 10**9){
+                    return Highcharts.numberFormat(x / 10**9, 2) + 'B';
                 }
-                else if(x >= 1000000) {
-                    return Highcharts.numberFormat(x / 1000000, 2) + 'M';
+                else if(x >= 10**6) {
+                    return Highcharts.numberFormat(x / 10**6, 2) + 'M';
                 }
-                else if(x >= 1000) {
-                    return Highcharts.numberFormat(x / 1000, 2) + 'K';
+                else if(x >= 10**3) {
+                    return Highcharts.numberFormat(x / 10**3, 2) + 'K';
                 }
                 else {
                     return Highcharts.numberFormat(x, 2);
