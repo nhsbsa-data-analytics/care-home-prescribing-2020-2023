@@ -1,6 +1,6 @@
 library(dplyr)
 library(dbplyr)
-#library(highcharter)
+library(highcharter)
 library(ggplot2)
 #devtools::install_github('nhsbsa-data-analytics/nhsbsaR')
 #source("data-raw/app/data_raw_helpers.R")
@@ -204,11 +204,40 @@ df <- df |> mutate(across(
           .names = "{.col}_NORM"
         ))
 
-
+# Remove non-UTF-8 characters in 3 addresses (interferes with highcharts)
+df <- df |> mutate(MATCH_SLA_STD = iconv(MATCH_SLA_STD, to="UTF-8", sub=""))
 
 
 
 # Overall outliers
+overall_out <- df |>
+  tidyr::pivot_longer(
+    cols = ends_with("_NORM"),
+    names_to = "metric"
+  ) |>
+  group_by(UPRN, MATCH_SLA_STD) |>
+  summarise(mean_normalised_value = mean(value, na.rm = T), .groups = "drop")
+
+
+myboxplotData <- data_to_boxplot(overall_out, mean_normalised_value, add_outliers  = T)
+
+highchart() |>
+  hc_xAxis(type ="category") |>
+  hc_add_series_list(myboxplotData) |>
+  hc_chart(inverted = T)
+
+highchart() |>
+  hc_add_series(
+    overall_out |> mutate(y = 0),
+    "scatter",
+    hcaes(mean_normalised_value, y)
+  ) |>
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = "{point.MATCH_SLA_STD}<br><b>Normalised value:</b> {point.mean_normalised_value:.3f}"
+    )
+
+
 
 
 
