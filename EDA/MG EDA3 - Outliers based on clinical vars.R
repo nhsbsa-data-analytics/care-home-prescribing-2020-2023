@@ -215,16 +215,31 @@ overall_out <- df |>
     cols = ends_with("_NORM"),
     names_to = "metric"
   ) |>
-  group_by(UPRN, MATCH_SLA_STD) |>
+  group_by(UPRN, MATCH_SLA_STD, TOTAL_PATIENTS, TOTAL_PM,
+           UNIQ_MEDS_FALLS_PPM,
+           PCT_PM_ACB,
+           PCT_PM_DAMN,
+           PARACETAMOL_ITEMS_PPM,
+           NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM,
+           OP_ANALG_ITEMS_PPM,
+           ENTERAL_NUTRITION_ITEMS_PPM,
+           LAXATIVE_ITEMS_PPM,
+           ANTIBAC_EXCL_UTI_ITEMS_PPM,
+           ANTIBAC_UTI_ITEMS_PPM) |>
   summarise(mean_normalised_value = mean(value, na.rm = T), .groups = "drop")
 
+overall_out <- overall_out |> left_join(
+  select(df, UPRN, ends_with("_NORM")),
+  by = "UPRN"
+)
 
-myboxplotData <- data_to_boxplot(overall_out, mean_normalised_value, add_outliers  = T)
 
-highchart() |>
-  hc_xAxis(type ="category") |>
-  hc_add_series_list(myboxplotData) |>
-  hc_chart(inverted = T)
+# myboxplotData <- data_to_boxplot(overall_out, mean_normalised_value, add_outliers  = T)
+# 
+# highchart() |>
+#   hc_xAxis(type ="category") |>
+#   hc_add_series_list(myboxplotData) |>
+#   hc_chart(inverted = T)
 
 highchart() |>
   hc_add_series(
@@ -234,14 +249,28 @@ highchart() |>
   ) |>
   hc_tooltip(
     headerFormat = "",
-    pointFormat = "{point.MATCH_SLA_STD}<br><b>Normalised value:</b> {point.mean_normalised_value:.3f}"
-    )
+    pointFormat = paste0(
+      "{point.MATCH_SLA_STD}<br>",
+      "<b>Mean normalised value:</b> {point.mean_normalised_value:.2f}<br>",
+      "<b>Patients:</b> {point.TOTAL_PATIENTS}<br>",
+      "<b>Patient-months:</b> {point.TOTAL_PM}<br>",
+      "<b>Norm unique falls meds PPM:</b> {point.UNIQ_MEDS_FALLS_PPM_NORM:.2f}<br>",
+      "<b>Norm prop PM 2+ ACB meds:</b> {point.PCT_PM_ACB_NORM:.1f}%<br>",
+      "<b>Norm prop PM 2+ DAMN meds:</b> {point.PCT_PM_DAMN_NORM:.1f}%<br>",
+      "<b>Norm paracetamol items PPM:</b> {point.PARACETAMOL_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm non-opioid analgesic (excl. paracetamol) items PPM:</b> {point.NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm opioid analgesic items PPM:</b> {point.OP_ANALG_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm enteral nutrition items PPM:</b> {point.ENTERAL_NUTRITION_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm laxative items PPM:</b> {point.LAXATIVE_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm antibacterial items (excl. UTI) PPM:</b> {point.ANTIBAC_EXCL_UTI_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm antibacterial UTI items PPM:</b> {point.ANTIBAC_UTI_ITEMS_PPM_NORM:.2f}"
+      )
+    ) |>
+  hc_chart(zoomType = "x")
 
 
 
-
-
-
+# 2d/3d outliers
 
 
 
