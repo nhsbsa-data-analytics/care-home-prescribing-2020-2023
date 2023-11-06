@@ -73,7 +73,7 @@ get_metrics <- function(init_db,
       # Opioid analgesics
       OP_ANALG_ITEMS = sum(
         case_when(
-          PARAGRAPH_DESCR == "Non-opioid analgesics and compound preparations" ~ 1,
+          PARAGRAPH_DESCR == "Opioid analgesics" ~ 1,
           TRUE ~ 0
         )
       ),
@@ -119,6 +119,7 @@ get_metrics <- function(init_db,
       # Total patient months - use for denominators
       TOTAL_PM            = n(),
       TOTAL_PATIENTS      = n_distinct(NHS_NO),
+      TOTAL_ITEMS         = sum(ITEM_COUNT, na.rm = TRUE),
       TOTAL_PM_ACB        = sum(ANY_ACB, na.rm = TRUE),
       TOTAL_PM_DAMN       = sum(ANY_DAMN, na.rm = TRUE),
       # ACB numerator
@@ -186,10 +187,17 @@ df <- get_metrics(
 tictoc::toc()
 
 df |> filter(TOTAL_PATIENTS <= 100) |>
-ggplot(aes(TOTAL_PATIENTS)) + geom_histogram(binwidth = 5)
+  ggplot(aes(TOTAL_PATIENTS)) + geom_histogram(binwidth = 5)
+
+df |> group_by(TOTAL_PATIENTS) |>
+  summarise(Carehomes = n()) |>
+  arrange(-Carehomes) -> t
+
+# ST LAURAS CARE HOME WD4 8BH has only 5 patients, but >60 beds (on its website)
+# Check what is going out in this and other carhomes with small pat counts
 
 #Exclude CHs with <5 patients...?
-df <- df |> filter(TOTAL_PATIENTS >= 5)
+df <- df |> filter(TOTAL_PATIENTS >= 10)
 
 
 norm_minmax <- function(x, ...) {
@@ -257,8 +265,8 @@ highchart() |>
       "<b>Patients:</b> {point.TOTAL_PATIENTS}<br>",
       "<b>Patient-months:</b> {point.TOTAL_PM}<br>",
       "<b>Norm unique falls meds PPM:</b> {point.UNIQ_MEDS_FALLS_PPM_NORM:.2f}<br>",
-      "<b>Norm prop PM 2+ ACB meds:</b> {point.PCT_PM_ACB_NORM:.1f}%<br>",
-      "<b>Norm prop PM 2+ DAMN meds:</b> {point.PCT_PM_DAMN_NORM:.1f}%<br>",
+      "<b>Norm prop PM 2+ ACB meds:</b> {point.PCT_PM_ACB_NORM:.2f}<br>",
+      "<b>Norm prop PM 2+ DAMN meds:</b> {point.PCT_PM_DAMN_NORM:.2f}<br>",
       "<b>Norm paracetamol items PPM:</b> {point.PARACETAMOL_ITEMS_PPM_NORM:.2f}<br>",
       "<b>Norm non-opioid analgesic (excl. paracetamol) items PPM:</b> {point.NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM_NORM:.2f}<br>",
       "<b>Norm opioid analgesic items PPM:</b> {point.OP_ANALG_ITEMS_PPM_NORM:.2f}<br>",
@@ -272,7 +280,37 @@ highchart() |>
 
 
 # Overall outliers + percentile in each dimension
+top <- overall_out |>
+  select(MATCH_SLA_STD, TOTAL_PATIENTS, TOTAL_PM, mean_normalised_value,
+         ends_with("_NORM")) |>
+  arrange(-mean_normalised_value) |>
+  mutate(across(
+    !c(1:3),
+    ~ round(.x, 3)
+  )) |> tidyr::pivot_longer(
+  cols = ends_with("_NORM"),
+  names_to = "metric") |>
+  head(10 * 10) |> # 10 CHs x 10 metrics
+  mutate(
+    metric = case_when(
+      metric == "UNIQ_MEDS_FALLS_PPM_NORM" ~ "Unique falls meds",
+      metric == "PCT_PM_ACB_NORM" ~ "Prop ACB 2+",
+      metric == "PCT_PM_DAMN_NORM" ~ "Prop DAMN 2+",
+      metric == "PARACETAMOL_ITEMS_PPM_NORM" ~ "Paracetamol",
+      metric == "NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM_NORM" ~ "Non-opioid analgesics (ex. paracet)",
+      metric == "OP_ANALG_ITEMS_PPM_NORM" ~ "Opioid analgesics",
+      metric == "ENTERAL_NUTRITION_ITEMS_PPM_NORM" ~ "Enteral nutrition",
+      metric == "LAXATIVE_ITEMS_PPM_NORM" ~ "Laxatives",
+      metric == "ANTIBAC_EXCL_UTI_ITEMS_PPM_NORM" ~ "Antibacterials (ex. UTI)",
+      metric == "ANTIBAC_UTI_ITEMS_PPM_NORM" ~ "Antibacterials (UTI)",
+      T ~ NA
+    )
+  )
 
+ggplot(top, aes(metric, value)) + geom_col() +
+  facet_wrap(~MATCH_SLA_STD, nrow = 2) +
+  coord_flip()
+  #theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 
 ### 2d/3d outliers
