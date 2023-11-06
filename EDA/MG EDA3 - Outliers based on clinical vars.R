@@ -228,7 +228,9 @@ overall_out <- df |>
            ANTIBAC_UTI_ITEMS_PPM) |>
   summarise(mean_normalised_value = mean(value, na.rm = T), .groups = "drop")
 
-overall_out <- overall_out |> left_join(
+# Add normalised metrics
+overall_out <- left_join(
+  overall_out,
   select(df, UPRN, ends_with("_NORM")),
   by = "UPRN"
 )
@@ -269,9 +271,129 @@ highchart() |>
   hc_chart(zoomType = "x")
 
 
+# Overall outliers + percentile in each dimension
 
-# 2d/3d outliers
 
+
+### 2d/3d outliers
+
+# Painkillers
+
+highchart() |>
+  hc_add_series(
+    overall_out,
+    "scatter",
+    hcaes(NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM_NORM, OP_ANALG_ITEMS_PPM_NORM, color = PARACETAMOL_ITEMS_PPM_NORM)
+  ) |>
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = paste0(
+      "{point.MATCH_SLA_STD}<br>",
+      "<b>Mean normalised value:</b> {point.mean_normalised_value:.2f}<br>",
+      "<b>Patients:</b> {point.TOTAL_PATIENTS}<br>",
+      "<b>Patient-months:</b> {point.TOTAL_PM}<br>",
+      "<b>Norm paracetamol items PPM:</b> {point.PARACETAMOL_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm non-opioid analgesic (excl. paracetamol) items PPM:</b> {point.NON_OP_ANALG_EXCL_PARACETAMOL_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm opioid analgesic items PPM:</b> {point.OP_ANALG_ITEMS_PPM_NORM:.2f}"
+    )
+  ) |>
+  hc_xAxis(
+    title = list(text = "Norm non-opioid analgesic (excl. paracetamol) items PPM"),
+    min = 0, max = 1
+    ) |>
+  hc_yAxis(
+    title = list(text = "Norm opioid analgesic items PPM"),
+    min = 0, max = 1
+    )
+
+
+# Nutrition
+
+highchart() |>
+  hc_add_series(
+    overall_out,
+    "scatter",
+    hcaes(ENTERAL_NUTRITION_ITEMS_PPM_NORM, LAXATIVE_ITEMS_PPM_NORM)
+  ) |>
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = paste0(
+      "{point.MATCH_SLA_STD}<br>",
+      "<b>Mean normalised value:</b> {point.mean_normalised_value:.2f}<br>",
+      "<b>Patients:</b> {point.TOTAL_PATIENTS}<br>",
+      "<b>Patient-months:</b> {point.TOTAL_PM}<br>",
+      "<b>Norm enteral nutrition items PPM:</b> {point.ENTERAL_NUTRITION_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm laxative items PPM:</b> {point.LAXATIVE_ITEMS_PPM_NORM:.2f}<br>"
+    )
+  ) |>
+  hc_xAxis(
+    title = list(text = "Norm enteral nutrition items PPM"),
+    min = 0, max = 1
+  ) |>
+  hc_yAxis(
+    title = list(text = "Norm laxative items PPM"),
+    min = 0, max = 1
+  )
+
+# Opioids & constipation
+
+# Note: Dowsvale Nursing Home, Dorking - top2 outlier on mean norm value
+
+highchart() |>
+  hc_add_series(
+    overall_out,
+    "scatter",
+    hcaes(OP_ANALG_ITEMS_PPM_NORM, LAXATIVE_ITEMS_PPM_NORM),
+    regression = TRUE
+  ) |>
+  hc_add_dependency("plugins/highcharts-regression.js") |>
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = paste0(
+      "{point.MATCH_SLA_STD}<br>",
+      "<b>Mean normalised value:</b> {point.mean_normalised_value:.2f}<br>",
+      "<b>Patients:</b> {point.TOTAL_PATIENTS}<br>",
+      "<b>Patient-months:</b> {point.TOTAL_PM}<br>",
+      "<b>Norm opioid analgesic items PPM:</b> {point.OP_ANALG_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm laxative items PPM:</b> {point.LAXATIVE_ITEMS_PPM_NORM:.2f}<br>"
+    )
+  ) |>
+  hc_xAxis(
+    title = list(text = "Norm opioid analgesic items PPM"),
+    min = 0, max = 1
+  ) |>
+  hc_yAxis(
+    title = list(text = "Norm laxative items PPM"),
+    min = 0, max = 1
+  )
+
+# Antibacterials
+
+highchart() |>
+  hc_add_series(
+    overall_out,
+    "scatter",
+    hcaes(ANTIBAC_EXCL_UTI_ITEMS_PPM_NORM, ANTIBAC_UTI_ITEMS_PPM_NORM)
+  ) |>
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = paste0(
+      "{point.MATCH_SLA_STD}<br>",
+      "<b>Mean normalised value:</b> {point.mean_normalised_value:.2f}<br>",
+      "<b>Patients:</b> {point.TOTAL_PATIENTS}<br>",
+      "<b>Patient-months:</b> {point.TOTAL_PM}<br>",
+      "<b>Norm antibacterial items (excl. UTI) PPM:</b> {point.ANTIBAC_EXCL_UTI_ITEMS_PPM_NORM:.2f}<br>",
+      "<b>Norm antibacterial UTI items PPM:</b> {point.ANTIBAC_UTI_ITEMS_PPM_NORM:.2f}"
+    )
+  ) |>
+  hc_xAxis(
+    title = list(text = "Norm antibacterial items (excl. UTI) PPM"),
+    min = 0, max = 1
+  ) |>
+  hc_yAxis(
+    title = list(text = "Norm antibacterial UTI items PPM"),
+    min = 0, max = 1
+  )
 
 
 DBI::dbDisconnect(con)
