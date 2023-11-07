@@ -180,13 +180,11 @@ df <- get_metrics(
     "YEAR_MONTH",
     "NHS_NO",
     "UPRN",
-    "MATCH_SLA_STD",
-    "MATCH_TYPE"
+    "MATCH_SLA_STD"
   ),
   second_grouping = c(
     "UPRN",
-    "MATCH_SLA_STD",
-    "MATCH_TYPE"
+    "MATCH_SLA_STD"
   )
 )
 tictoc::toc()
@@ -196,7 +194,9 @@ cqc_df <- tbl(con, in_schema("MAMCP", "INT646_CQC_20230602")) |>
   summarise(BEDS = max(NUMBER_OF_BEDS, na.rm = T)) |>
   nhsbsaR::collect_with_parallelism(24)
 
-df <- df |> left_join(cqc_df, by="UPRN"); rm(cqc_df)
+df <- df |> left_join(cqc_df, by="UPRN")#; rm(cqc_df)
+
+df <- df |> mutate(PB_RATIO = TOTAL_PATIENTS / BEDS)
 
 
 df |> filter(TOTAL_PATIENTS <= 100) |>
@@ -206,7 +206,7 @@ df |> group_by(TOTAL_PATIENTS) |>
   summarise(Carehomes = n()) |>
   arrange(TOTAL_PATIENTS) -> t
 
-df |> arrange(TOTAL_PATIENTS) |> select(UPRN, MATCH_SLA_STD, TOTAL_PATIENTS, TOTAL_PM, MATCH_TYPE, BEDS) -> t
+df |> arrange(TOTAL_PATIENTS) |> select(UPRN, MATCH_SLA_STD, TOTAL_PATIENTS, TOTAL_PM, BEDS) -> t
 
 # ST LAURAS CARE HOME WD4 8BH has only 5 patients, but >60 beds (on its website)
 # Check what is going out in this and other carhomes with small pat counts
