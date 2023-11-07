@@ -19,6 +19,9 @@ get_metrics <- function(init_db,
   init_db |> 
     group_by(across(all_of(first_grouping))) |>
     summarise(
+      
+      TOTAL_ITEMS = sum(ITEM_COUNT, na.rm = TRUE),
+      
       ANY_ACB = any(
         case_when(
           ACB_CAT > 0 ~ 1L,
@@ -119,7 +122,7 @@ get_metrics <- function(init_db,
       # Total patient months - use for denominators
       TOTAL_PM            = n(),
       TOTAL_PATIENTS      = n_distinct(NHS_NO),
-      TOTAL_ITEMS         = sum(ITEM_COUNT, na.rm = TRUE),
+      TOTAL_ITEMS         = sum(TOTAL_ITEMS, na.rm = TRUE),
       TOTAL_PM_ACB        = sum(ANY_ACB, na.rm = TRUE),
       TOTAL_PM_DAMN       = sum(ANY_DAMN, na.rm = TRUE),
       # ACB numerator
@@ -177,21 +180,31 @@ df <- get_metrics(
     "YEAR_MONTH",
     "NHS_NO",
     "UPRN",
-    "MATCH_SLA_STD"
+    "MATCH_SLA_STD",
+    "MATCH_TYPE"
   ),
   second_grouping = c(
     "UPRN",
-    "MATCH_SLA_STD"
+    "MATCH_SLA_STD",
+    "MATCH_TYPE"
   )
 )
 tictoc::toc()
+
+cqc_df <- tbl(con, in_schema("MAMCP", "INT646_CQC_20230602")) |>
+  group_by(UPRN) |>
+  summarise(BEDS = max(NUMBER_OF_BEDS, na.rm = T)) |>
+  nhsbsaR::collect_with_parallelism(24)
+
+df <- df |> left_join(cqc_df, by="UPRN"); rm(cqc_df)
+
 
 df |> filter(TOTAL_PATIENTS <= 100) |>
   ggplot(aes(TOTAL_PATIENTS)) + geom_histogram(binwidth = 5)
 
 df |> group_by(TOTAL_PATIENTS) |>
   summarise(Carehomes = n()) |>
-  arrange(-Carehomes) -> t
+  arrange(TOTAL_PATIENTS) -> t
 
 # ST LAURAS CARE HOME WD4 8BH has only 5 patients, but >60 beds (on its website)
 # Check what is going out in this and other carhomes with small pat counts
