@@ -206,6 +206,8 @@ df |> group_by(TOTAL_PATIENTS) |>
   summarise(Carehomes = n()) |>
   arrange(TOTAL_PATIENTS) -> t
 
+df |> arrange(TOTAL_PATIENTS) |> select(UPRN, MATCH_SLA_STD, TOTAL_PATIENTS, TOTAL_PM, MATCH_TYPE, BEDS) -> t
+
 # ST LAURAS CARE HOME WD4 8BH has only 5 patients, but >60 beds (on its website)
 # Check what is going out in this and other carhomes with small pat counts
 
