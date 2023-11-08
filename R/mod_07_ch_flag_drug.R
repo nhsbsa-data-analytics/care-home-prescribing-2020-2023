@@ -73,7 +73,12 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
     # Filter by select inputs
     data = reactive({
       carehomes2::mod_ch_flag_drug_df %>%
-        dplyr::mutate(VALUE = janitor::round_half_up(VALUE, 2)) %>%
+        dplyr::mutate(
+          VALUE = dplyr::case_when(
+            startsWith(METRIC, "Total") ~ bespoke_round(VALUE),
+            TRUE ~ janitor::round_half_up(VALUE, 2)
+          )
+        ) %>%
         dplyr::filter(
           FY == input$input_financial_year,
           BNF_PARENT == input$input_bnf,
@@ -225,8 +230,13 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
     # Downloads ----------------------------------------------------------------
     
     # Create download data
-    download_data = carehomes2::mod_ch_flag_drug_df %>%
-      dplyr::mutate(VALUE = janitor::round_half_up(VALUE, 2)) %>%
+    download_data <- carehomes2::mod_ch_flag_drug_df %>%
+      dplyr::mutate(
+        VALUE = dplyr::case_when(
+          startsWith(METRIC, "Total") ~ bespoke_round(VALUE),
+          TRUE ~ janitor::round_half_up(VALUE, 2)
+        )
+      ) %>%
       tidyr::pivot_wider(
         names_from = METRIC,
         values_from = VALUE

@@ -533,9 +533,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Region: df after 4 initial filters applied
     region_df = reactive({
-
       # Filter, pivot an rename
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "Region",
@@ -552,13 +551,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_region_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+
+      df
     })
 
     # ICS: df after 4 initial filters applied
     ics_df = reactive({
 
       # Filter, pivot an rename
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "ICS",
@@ -575,13 +585,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_ics_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+
+      df
     })
 
     # Lad: df after 4 initial filters applied
     lad_df = reactive({
 
       # Filter, pivot an rename
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "Local Authority",
@@ -598,6 +619,17 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_lad_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+
+      df
     })
 
     # LHS: Initial table ------------------------------------------------------
@@ -865,7 +897,12 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         tidyr::pivot_wider(
           names_from = .data$METRIC,
           values_from = .data$VALUE
-        ) 
+        ) %>%
+        dplyr::mutate(
+          dplyr::across(
+            dplyr::starts_with("Total"), bespoke_round
+          )
+        )
       
       # Need to start a new chain to prevent dplyr trying to arrange the
       # original longer vectors
