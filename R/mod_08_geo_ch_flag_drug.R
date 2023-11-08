@@ -331,17 +331,23 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Helper functions ---------------------------------------------------------
 
     # One: spline chart
-    spline_chart_plot = function(df, df_select, fy, prefix, suffix, bottom_plot = FALSE){
+    spline_chart_plot = function(df, df_select, fy, metric, prefix, suffix,
+                                 bottom_plot = FALSE){
 
       # Shared y axis max value across all 3 plots
       y_axis_max_val = max(df$`20/21`, df$`21/22`, df$`22/23`)
+      accuracy = \(val) ifelse(
+        startsWith(metric, "Total") & (val < 10^3), 
+        1,
+        0.01
+      )
       
       # Process original df
       df = df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
         dplyr::mutate(
           VALUE_LABEL = scales::label_comma(
-            accuracy = .01,
+            accuracy = accuracy(VALUE),
             scale_cut = scales::cut_long_scale()
           )(janitor::round_half_up(VALUE, 2))
         ) %>%
@@ -659,7 +665,11 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
             cell = function(val, row, col_name) {
               if (col_name %in% c(names(geographies), ".selection")) return (val)
               
-              accuracy = ifelse(startsWith(metric, "Total"), 1, 0.01)
+              accuracy = ifelse(
+                startsWith(metric, "Total") & (val < 10^3), 
+                1,
+                0.01
+              )
               
               return (
                 scales::label_comma(
@@ -846,49 +856,115 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region charts
     output$region_chart_one = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "20/21", region_prefix(), region_suffix())
+      spline_chart_plot(
+        region_df(),
+        selected_region(),
+        "20/21",
+        input$input_region_metric,
+        region_prefix(),
+        region_suffix()
+      )
     })
 
     output$region_chart_two = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "21/22", region_prefix(), region_suffix())
+      spline_chart_plot(
+        region_df(),
+        selected_region(),
+        "21/22",
+        input$input_region_metric,
+        region_prefix(),
+        region_suffix()
+      )
     })
 
     output$region_chart_three = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "22/23", region_prefix(), region_suffix(), bottom_plot = TRUE)
+      spline_chart_plot(
+        region_df(),
+        selected_region(),
+        "22/23",
+        input$input_region_metric,
+        region_prefix(),
+        region_suffix(),
+        bottom_plot = TRUE
+      )
     })
 
     # Ics charts
     output$ics_chart_one = highcharter::renderHighchart({
       req(index_ics())
-      spline_chart_plot(ics_df(), selected_ics(), "20/21", ics_prefix(), ics_suffix())
+      spline_chart_plot(
+        ics_df(),
+        selected_ics(),
+        "20/21",
+        input$input_ics_metric,
+        ics_prefix(),
+        ics_suffix()
+      )
     })
-
+    
     output$ics_chart_two = highcharter::renderHighchart({
       req(index_ics())
-      spline_chart_plot(ics_df(), selected_ics(), "21/22", ics_prefix(), ics_suffix())
+      spline_chart_plot(
+        ics_df(),
+        selected_ics(),
+        "21/22",
+        input$input_ics_metric,
+        ics_prefix(),
+        ics_suffix()
+      )
     })
-
+    
     output$ics_chart_three = highcharter::renderHighchart({
       req(index_ics())
-      spline_chart_plot(ics_df(), selected_ics(), "22/23", ics_prefix(), ics_suffix(), bottom_plot = TRUE)
+      spline_chart_plot(
+        ics_df(),
+        selected_ics(),
+        "22/23",
+        input$input_ics_metric,
+        ics_prefix(),
+        ics_suffix(),
+        bottom_plot = TRUE
+      )
     })
 
     # Lad charts
     output$lad_chart_one = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "20/21", lad_prefix(), lad_suffix())
+      spline_chart_plot(
+        lad_df(),
+        selected_lad(),
+        "20/21",
+        input$input_lad_metric,
+        lad_prefix(),
+        lad_suffix()
+      )
     })
-
+    
     output$lad_chart_two = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "21/22", lad_prefix(), lad_suffix())
+      spline_chart_plot(
+        lad_df(),
+        selected_lad(),
+        "21/22",
+        input$input_lad_metric,
+        lad_prefix(),
+        lad_suffix()
+      )
     })
-
+    
     output$lad_chart_three = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "22/23", lad_prefix(), lad_suffix(), bottom_plot = TRUE)
+      spline_chart_plot(
+        lad_df(),
+        selected_lad(),
+        "22/23",
+        input$input_lad_metric,
+        lad_prefix(),
+        lad_suffix(),
+        bottom_plot = TRUE
+      )
     })
     
     # Downloads ----------------------------------------------------------------
