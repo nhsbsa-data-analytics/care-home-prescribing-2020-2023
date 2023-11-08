@@ -635,7 +635,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # LHS: Initial table ------------------------------------------------------
 
     # Function for each table
-    geo_table = function(df, df_select, geo_name){
+    geo_table = function(df, df_select, metric, geo_name){
       df %>%
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
@@ -659,9 +659,11 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
             cell = function(val, row, col_name) {
               if (col_name %in% c(names(geographies), ".selection")) return (val)
               
+              accuracy = ifelse(startsWith(metric, "Total"), 1, 0.01)
+              
               return (
                 scales::label_comma(
-                  accuracy = .01,
+                  accuracy = accuracy,
                   scale_cut = scales::cut_long_scale()
                 )(janitor::round_half_up(val, 2))
               )
@@ -697,7 +699,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     output$region_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(region_df(), index_region(), "Region") %>% 
+      geo_table(region_df(), index_region(), input$input_region_metric, "Region") %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
@@ -705,7 +707,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     output$ics_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(ics_df(), index_ics(), "ICS") %>% 
+      geo_table(ics_df(), index_ics(), input$input_ics_metric, "ICS") %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
@@ -713,7 +715,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     output$lad_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(lad_df(), index_lad(), "Local Authority") %>% 
+      geo_table(lad_df(), index_lad(), input$input_lad_metric, "Local Authority") %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
     
