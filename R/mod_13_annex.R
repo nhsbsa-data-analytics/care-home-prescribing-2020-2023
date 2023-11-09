@@ -21,7 +21,7 @@ mod_13_annex_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_13_annex_ui("12_feedback_1")
+# mod_13_annex_ui("13_annex_1")
     
 ## To be copied in the server
-# mod_13_annex_server("12_feedback_1")
+# mod_13_annex_server("13_annex_1")
