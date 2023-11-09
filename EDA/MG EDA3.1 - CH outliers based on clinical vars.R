@@ -168,7 +168,7 @@ get_metrics <- function(init_db,
 # Here we have 3 types of metric: 
 # - mean distinct chem subs per PM
 # - % of PMs exceeding a certain distinct chem sub threshold
-# - mean items per PM (to be developed)
+# - mean items per PM
 # These may need to be harmonised where possible, e.g. use mean falls-risk items instead of distinct falls-risk substances
 
 
