@@ -1,4 +1,4 @@
-#' 13_annex UI Function
+#' 14_updates UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -6,14 +6,14 @@
 #'
 #' @noRd 
 #'
-mod_13_annex_ui <- function(id){
-  includeMarkdown("inst/markdown/13_annex.md")
+mod_14_updates_ui <- function(id){
+  includeMarkdown("inst/markdown/14_updates.md")
 }
     
-#' 13_annex Server Functions
+#' 14_updates Server Functions
 #'
 #' @noRd 
-mod_13_annex_server <- function(id){
+mod_14_updates_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -21,7 +21,7 @@ mod_13_annex_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_13_annex_ui("13_annex_1")
+# mod_14_updates_ui("14_updates_1")
     
 ## To be copied in the server
-# mod_13_annex_server("13_annex_1")
+# mod_14_updates_server("14_updates_1")

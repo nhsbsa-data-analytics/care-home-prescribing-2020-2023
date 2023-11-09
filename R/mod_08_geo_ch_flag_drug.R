@@ -331,15 +331,26 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Helper functions ---------------------------------------------------------
 
     # One: spline chart
-    spline_chart_plot = function(df, df_select, fy, prefix, suffix, bottom_plot = FALSE){
+    spline_chart_plot = function(df, df_select, fy, metric, prefix, suffix,
+                                 bottom_plot = FALSE){
 
       # Shared y axis max value across all 3 plots
       y_axis_max_val = max(df$`20/21`, df$`21/22`, df$`22/23`)
+      accuracy = \(val) ifelse(
+        startsWith(metric, "Total") & (val < 10^3), 
+        1,
+        0.01
+      )
       
       # Process original df
       df = df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
-        dplyr::mutate(VALUE_LABEL = sprintf("%.2f", janitor::round_half_up(VALUE, 2))) %>% 
+        dplyr::mutate(
+          VALUE_LABEL = scales::label_comma(
+            accuracy = accuracy(VALUE),
+            scale_cut = scales::cut_long_scale()
+          )(janitor::round_half_up(VALUE, 2))
+        ) %>%
         dplyr::arrange(VALUE) %>%
         dplyr::mutate(
           index = dplyr::row_number(),
@@ -374,8 +385,25 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         highcharter::hc_yAxis(
           min = 0, 
           max = y_axis_max_val,
-          labels = list(format = "{value:.2f}")
-          ) %>%
+          labels = list(
+            formatter = htmlwidgets::JS("
+              function() {
+                if(this.value >= 10**9) {
+                    return (this.value / 10**9) + 'B';
+                }
+                else if(this.value >= 10**6) {
+                    return (this.value / 10**6) + 'M';
+                }
+                else if(this.value >= 10**3) {
+                    return (this.value / 10**3) + 'K';
+                }
+                else {
+                    return this.value;
+                }
+              }
+            ")
+          )
+        ) %>%
         highcharter::hc_xAxis(categories = c(rep("", max(df$index)+1))) %>%
         highcharter::hc_plotOptions(
           spline = list(
@@ -495,24 +523,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     p1 = "% of total annual number of prescription items"
     p2 = "% of total annual drug cost"
     c1 = "Mean drug cost PPM"
+    c2 = "Total annual drug cost"
     
     # Pound sign for pound metrics
-    region_prefix = reactive({ifelse(input$input_region_metric == c1, "£", "")})
+    region_prefix = reactive({ifelse(input$input_region_metric %in% c(c1, c2), "£", "")})
     region_suffix = reactive({ifelse(input$input_region_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    ics_prefix = reactive({ifelse(input$input_ics_metric == c1, "£", "")})
+    ics_prefix = reactive({ifelse(input$input_ics_metric %in% c(c1, c2), "£", "")})
     ics_suffix = reactive({ifelse(input$input_ics_metric %in% c(p1,p2), "%", "")})
     
     # Pound sign for pound metrics
-    lad_prefix = reactive({ifelse(input$input_lad_metric == c1, "£", "")})
+    lad_prefix = reactive({ifelse(input$input_lad_metric %in% c(c1, c2), "£", "")})
     lad_suffix = reactive({ifelse(input$input_lad_metric %in% c(p1,p2), "%", "")})
 
     # Region: df after 4 initial filters applied
     region_df = reactive({
-
       # Filter, pivot an rename
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "Region",
@@ -529,13 +557,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_region_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+
+      df
     })
 
     # ICS: df after 4 initial filters applied
     ics_df = reactive({
 
       # Filter, pivot an rename
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "ICS",
@@ -552,13 +591,24 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_ics_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+
+      df
     })
 
     # Lad: df after 4 initial filters applied
     lad_df = reactive({
 
       # Filter, pivot an rename
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>% 
         dplyr::filter(
           GEOGRAPHY_PARENT == "Local Authority",
@@ -575,12 +625,23 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           `22/23` = `2022/23`
         ) %>%
         dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_lad_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+
+      df
     })
 
     # LHS: Initial table ------------------------------------------------------
 
     # Function for each table
-    geo_table = function(df, df_select, geo_name, prefix, suffix){
+    geo_table = function(df, df_select, metric, geo_name){
       df %>%
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
@@ -595,11 +656,29 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           borderless = FALSE,
           columns = list(
             .selection = reactable::colDef(width = 15),
-            `20/21` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
-            `21/22` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2)),
-            `22/23` = reactable::colDef(width = 70, format = reactable::colFormat(digits = 2))
+            `20/21` = reactable::colDef(width = 70),
+            `21/22` = reactable::colDef(width = 70),
+            `22/23` = reactable::colDef(width = 70)
           ),
-          defaultColDef = reactable::colDef(headerClass = "my-header"),
+          defaultColDef = reactable::colDef(
+            headerClass = "my-header",
+            cell = function(val, row, col_name) {
+              if (col_name %in% c(names(geographies), ".selection")) return (val)
+              
+              accuracy = ifelse(
+                startsWith(metric, "Total") & (val < 10^3), 
+                1,
+                0.01
+              )
+              
+              return (
+                scales::label_comma(
+                  accuracy = accuracy,
+                  scale_cut = scales::cut_long_scale()
+                )(janitor::round_half_up(val, 2))
+              )
+            }
+          ),
           style = list(fontSize = "14px", fontFamily = "Arial"),
           theme = reactable::reactableTheme(stripedColor = "#f8f8f8"),
           class = "my-tbl",
@@ -630,7 +709,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     output$region_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(region_df(), index_region(), "Region", region_prefix(), region_suffix()) %>% 
+      geo_table(region_df(), index_region(), input$input_region_metric, "Region") %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
@@ -638,7 +717,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     output$ics_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(ics_df(), index_ics(), "ICS", ics_prefix(), ics_suffix()) %>% 
+      geo_table(ics_df(), index_ics(), input$input_ics_metric, "ICS") %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
 
@@ -646,7 +725,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     output$lad_table = reactable::renderReactable({
 
       # Plot table
-      geo_table(lad_df(), index_lad(), "Local Authority", lad_prefix(), lad_suffix()) %>% 
+      geo_table(lad_df(), index_lad(), input$input_lad_metric, "Local Authority") %>% 
         htmlwidgets::onRender("() => {$('.rt-no-data').removeAttr('aria-live')}")
     })
     
@@ -777,49 +856,115 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region charts
     output$region_chart_one = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "20/21", region_prefix(), region_suffix())
+      spline_chart_plot(
+        region_df(),
+        selected_region(),
+        "20/21",
+        input$input_region_metric,
+        region_prefix(),
+        region_suffix()
+      )
     })
 
     output$region_chart_two = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "21/22", region_prefix(), region_suffix())
+      spline_chart_plot(
+        region_df(),
+        selected_region(),
+        "21/22",
+        input$input_region_metric,
+        region_prefix(),
+        region_suffix()
+      )
     })
 
     output$region_chart_three = highcharter::renderHighchart({
       req(index_region())
-      spline_chart_plot(region_df(), selected_region(), "22/23", region_prefix(), region_suffix(), bottom_plot = TRUE)
+      spline_chart_plot(
+        region_df(),
+        selected_region(),
+        "22/23",
+        input$input_region_metric,
+        region_prefix(),
+        region_suffix(),
+        bottom_plot = TRUE
+      )
     })
 
     # Ics charts
     output$ics_chart_one = highcharter::renderHighchart({
       req(index_ics())
-      spline_chart_plot(ics_df(), selected_ics(), "20/21", ics_prefix(), ics_suffix())
+      spline_chart_plot(
+        ics_df(),
+        selected_ics(),
+        "20/21",
+        input$input_ics_metric,
+        ics_prefix(),
+        ics_suffix()
+      )
     })
-
+    
     output$ics_chart_two = highcharter::renderHighchart({
       req(index_ics())
-      spline_chart_plot(ics_df(), selected_ics(), "21/22", ics_prefix(), ics_suffix())
+      spline_chart_plot(
+        ics_df(),
+        selected_ics(),
+        "21/22",
+        input$input_ics_metric,
+        ics_prefix(),
+        ics_suffix()
+      )
     })
-
+    
     output$ics_chart_three = highcharter::renderHighchart({
       req(index_ics())
-      spline_chart_plot(ics_df(), selected_ics(), "22/23", ics_prefix(), ics_suffix(), bottom_plot = TRUE)
+      spline_chart_plot(
+        ics_df(),
+        selected_ics(),
+        "22/23",
+        input$input_ics_metric,
+        ics_prefix(),
+        ics_suffix(),
+        bottom_plot = TRUE
+      )
     })
 
     # Lad charts
     output$lad_chart_one = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "20/21", lad_prefix(), lad_suffix())
+      spline_chart_plot(
+        lad_df(),
+        selected_lad(),
+        "20/21",
+        input$input_lad_metric,
+        lad_prefix(),
+        lad_suffix()
+      )
     })
-
+    
     output$lad_chart_two = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "21/22", lad_prefix(), lad_suffix())
+      spline_chart_plot(
+        lad_df(),
+        selected_lad(),
+        "21/22",
+        input$input_lad_metric,
+        lad_prefix(),
+        lad_suffix()
+      )
     })
-
+    
     output$lad_chart_three = highcharter::renderHighchart({
       req(index_lad())
-      spline_chart_plot(lad_df(), selected_lad(), "22/23", lad_prefix(), lad_suffix(), bottom_plot = TRUE)
+      spline_chart_plot(
+        lad_df(),
+        selected_lad(),
+        "22/23",
+        input$input_lad_metric,
+        lad_prefix(),
+        lad_suffix(),
+        bottom_plot = TRUE
+      )
     })
     
     # Downloads ----------------------------------------------------------------
@@ -830,7 +975,12 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         tidyr::pivot_wider(
           names_from = .data$METRIC,
           values_from = .data$VALUE
-        ) 
+        ) %>%
+        dplyr::mutate(
+          dplyr::across(
+            dplyr::starts_with("Total"), bespoke_round
+          )
+        )
       
       # Need to start a new chain to prevent dplyr trying to arrange the
       # original longer vectors
@@ -859,7 +1009,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       filename = "BNF level prescribing in care homes.xlsx",
       export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
       currency_xl_fmt_str = "£#,##0.00",
-      number_xl_fmt_str = "#,##0"
+      number_xl_fmt_str = "#,##0.00"
     )
   })
 }
