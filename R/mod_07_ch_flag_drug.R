@@ -14,7 +14,7 @@ mod_07_ch_flag_drug_ui <- function(id) {
     includeMarkdown("inst/markdown/07_ch_flag_drug.md"),
     
     nhs_card(
-      heading = "National BNF level prescribing analysis for care home patients aged 65 years and over in England",
+      heading = "National BNF-level prescribing analysis for care home patients aged 65 years and over in England",
       
       # 3 column select input
       nhs_grid_3_col(
