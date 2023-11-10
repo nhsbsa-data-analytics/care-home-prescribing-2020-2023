@@ -1,4 +1,4 @@
-#' 14_updates UI Function
+#' 11_datasets UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -6,14 +6,14 @@
 #'
 #' @noRd 
 #'
-mod_14_updates_ui <- function(id){
-  includeMarkdown("inst/markdown/14_updates.md")
+mod_11_datasets_ui <- function(id){
+  includeMarkdown("inst/markdown/11_datasets.md")
 }
     
-#' 14_updates Server Functions
+#' 11_datasets Server Functions
 #'
 #' @noRd 
-mod_14_updates_server <- function(id){
+mod_11_datasets_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -21,7 +21,7 @@ mod_14_updates_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_14_updates_ui("14_updates_1")
+# mod_11_datasets_ui("11_datasets_1")
     
 ## To be copied in the server
-# mod_14_updates_server("14_updates_1")
+# mod_11_datasets_server("11_datasets_1")

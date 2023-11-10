@@ -34,7 +34,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
     nhs_card(
       
       # Overall Mod heading
-      heading = "BNF-level prescribing analysis by geography for care home 
+      heading = "BNF-level prescribing estimates by geography for care home 
                  patients aged 65 years and over in England",
       
       # 3 Tabs for differing geographies
@@ -117,17 +117,24 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
               ),
             
             # Chart caption
-            tags$p(
+            tags$text(
               class = "highcharts-caption",
               style = "font-size: 9pt",
-              "Click on a row to display chart for one of the 7 NHS regions. Only the top 50 
-               elements nationally by total item count across the three years per BNF level are presented.
-               For example, only the top 50 paragraphs are presented, determined
-               by the 50 paragraphs with the largest total item count nationally. 
-               The number of patients contributing to each metric are provided 
-               in the data download, offering additional context to metric value
-               calculations. Patient counts between one and four have been rounded
-               to five, otherwise to the nearest ten."
+              "Click on a row to display chart for one of the 7 NHS regions.",
+              tags$br(),
+              "Only the top 50 elements nationally by total item count across 
+              the three years per BNF level are presented. For example, only the
+              top 50 paragraphs are presented, determined by the 50 paragraphs
+              with the largest total item count nationally.",
+              tags$br(),
+              "The number of patients contributing to each metric are provided 
+              in the data download, offering additional context to metric value
+              calculations.",
+              tags$br(),
+              "Patient counts and annual totals between one and four have been
+              rounded to five, otherwise to the nearest ten. Values over 1,000
+              have been shortened with an appropriate suffix and then rounded to
+              2 decimal places. All other values are rounded to 2 decimal places."
             )
           )
         ),
@@ -971,42 +978,47 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     
     # Create download data
     create_download_data <- function(data) {
-      data <- data %>%
-        tidyr::pivot_wider(
-          names_from = .data$METRIC,
-          values_from = .data$VALUE
-        ) %>%
-        dplyr::mutate(
-          dplyr::across(
-            dplyr::starts_with("Total"), bespoke_round
-          )
-        )
-      
-      # Need to start a new chain to prevent dplyr trying to arrange the
-      # original longer vectors
-      data %>% 
-        dplyr::arrange(
-          .data$FY,
-          .data$GEOGRAPHY_PARENT,
-          .data$GEOGRAPHY_CHILD,
-          .data$BNF_PARENT,
-          .data$BNF_CHILD
-        ) %>%
-        dplyr::rename(
-          `Financial year` = .data$FY,
-          Geography = .data$GEOGRAPHY_PARENT,
-          `Sub-geography name` = .data$GEOGRAPHY_CHILD,
-          `BNF level` = .data$BNF_PARENT,
-          `BNF sub-level` = .data$BNF_CHILD,
-          `Patient count` = .data$PATS
-        ) %>% 
-        dplyr::mutate(`Patient count` = bespoke_round(`Patient count`))
+      tryCatch(
+        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_df),
+        error = \(e) {
+          data <- data %>%
+            tidyr::pivot_wider(
+              names_from = .data$METRIC,
+              values_from = .data$VALUE
+            ) %>%
+            dplyr::mutate(
+              dplyr::across(
+                dplyr::starts_with("Total"), bespoke_round
+              )
+            )
+          
+          # Need to start a new chain to prevent dplyr trying to arrange the
+          # original longer vectors
+          data %>% 
+            dplyr::arrange(
+              .data$FY,
+              .data$GEOGRAPHY_PARENT,
+              .data$GEOGRAPHY_CHILD,
+              .data$BNF_PARENT,
+              .data$BNF_CHILD
+            ) %>%
+            dplyr::rename(
+              `Financial year` = .data$FY,
+              Geography = .data$GEOGRAPHY_PARENT,
+              `Sub-geography name` = .data$GEOGRAPHY_CHILD,
+              `BNF level` = .data$BNF_PARENT,
+              `BNF sub-level` = .data$BNF_CHILD,
+              `Patient count` = .data$PATS
+            ) %>% 
+            dplyr::mutate(`Patient count` = bespoke_round(`Patient count`))
+        }
+      )
     }
     
     # Download button
     mod_nhs_download_server(
       id = "download_data",
-      filename = "BNF level prescribing in care homes.xlsx",
+      filename = "BNF-level prescribing estimates in care homes.xlsx",
       export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"

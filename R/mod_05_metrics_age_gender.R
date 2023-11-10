@@ -89,30 +89,32 @@ mod_05_metrics_age_gender_server <- function(id){
         class = "highcharts-caption",
         style = "font-size: 9pt;",
         
-          if (!any_excl_unk & !any_excl_ind) {
-            
-            paste0("This chart does not show ",
-                   excluded_unk(), "%",
-                   " and ",
-                   excluded_ind(), "%",
-                   " patients where the gender was not known and not specified, respectively. ")
-            
-          } else if (!any_excl_unk & any_excl_ind) {
-            
-            paste0("This chart does not show ",
-                   excluded_unk(), "%",
-                   " patients where the gender was not known. ")
-            
-          } else if (any_excl_unk & !any_excl_ind) {
-            
-            paste0("This chart does not show ",
-                   excluded_ind(), "%",
-                   " patients where the gender was not specified. ")
-            
-          } else NULL
+        if (!any_excl_unk & !any_excl_ind) {
           
+          paste0("This chart does not show ",
+                 excluded_unk(), "%",
+                 " and ",
+                 excluded_ind(), "%",
+                 " patients where the gender was not known and not specified,
+                 respectively. ")
+          
+        } else if (!any_excl_unk & any_excl_ind) {
+          
+          paste0("This chart does not show ",
+                 excluded_unk(), "%",
+                 " patients where the gender was not known. ")
+          
+        } else if (any_excl_unk & !any_excl_ind) {
+          
+          paste0("This chart does not show ",
+                 excluded_ind(), "%",
+                 " patients where the gender was not specified. ")
+          
+        } else NULL,
+        tags$br(),
+        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
+        are rounded to 2 decimal places."
       )
-      
     })
     
     # Create download data

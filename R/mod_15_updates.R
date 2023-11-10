@@ -1,4 +1,4 @@
-#' 12_feedback UI Function
+#' 15_updates UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -6,14 +6,14 @@
 #'
 #' @noRd 
 #'
-mod_12_feedback_ui <- function(id){
-  includeMarkdown("inst/markdown/12_feedback.md")
+mod_15_updates_ui <- function(id){
+  includeMarkdown("inst/markdown/15_updates.md")
 }
     
-#' 12_feedback Server Functions
+#' 14_updates Server Functions
 #'
 #' @noRd 
-mod_12_feedback_server <- function(id){
+mod_15_updates_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -21,7 +21,7 @@ mod_12_feedback_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_12_feedback_ui("12_feedback_1")
+# mod_15_updates_ui("15_updates_1")
     
 ## To be copied in the server
-# mod_12_feedback_server("12_feedback_1")
+# mod_15_updates_server("15_updates_1")

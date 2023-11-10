@@ -58,13 +58,16 @@ mod_06_geo_ch_flag_ui <- function(id) {
         highcharter::highchartOutput(ns("map_non_ch"), height = "500px")
       ),
       div(DT::DTOutput(ns("table"))),
-      tags$p(
+      tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
         "Clicking a row will outline the selected area on the maps.",
         tags$br(),
         "The Isles of Scilly were removed due to the number of care homes in the
-         Local Authority."
+         Local Authority.",
+        tags$br(),
+        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
+        are rounded to 2 decimal places."
       ),
       mod_nhs_download_ui(ns("download_data"))
     )
