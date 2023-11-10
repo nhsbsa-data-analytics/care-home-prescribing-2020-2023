@@ -52,7 +52,7 @@ tictoc::toc()
 tictoc::tic()
 df2 <- DB |> 
   #tbl(con, "TEMP") |> # Testing
-  group_by(NHS_NO, YEAR_MONTH, SECTION_DESCR) |>
+  group_by(NHS_NO, AGE, YEAR_MONTH, SECTION_DESCR) |>
   summarise(
     
     TOTAL_ITEMS = sum(ITEM_COUNT, na.rm = TRUE),
@@ -76,7 +76,7 @@ df2 <- DB |>
   #   MEAN_MONTHLY_UNIQUE_MEDS = sum(UNIQUE_MEDICINES) / TOTAL_MONTHS
   # ) |>
   
-  group_by(NHS_NO, TOTAL_MONTHS, SECTION_DESCR) |>
+  group_by(NHS_NO, AGE, TOTAL_MONTHS, SECTION_DESCR) |>
   summarise(
     TOTAL_ITEMS = sum(TOTAL_ITEMS),
     SUM_MONTHLY_UNIQUE_MEDS = sum(UNIQUE_MEDICINES)
@@ -91,25 +91,53 @@ df2 <- DB |>
 tictoc::toc()
 # Runnning time ~1.5 min
 
+DBI::dbDisconnect(con); rm(con, DB)
 
 df1 |> ggplot(aes(MEAN_MONTHLY_ITEMS)) + geom_histogram(binwidth = 5)
 df1 |> filter(MEAN_MONTHLY_ITEMS >= 50) |> ggplot(aes(MEAN_MONTHLY_ITEMS)) + geom_histogram(binwidth = 5)
 df1 |> filter(MEAN_MONTHLY_ITEMS >= 100) |> ggplot(aes(MEAN_MONTHLY_ITEMS)) + geom_histogram(binwidth = 5)
 df1 |> filter(MEAN_MONTHLY_ITEMS >= 100) |> summarise(PATIENTS = n_distinct(NHS_NO))
 
+
 highchart() |>
   hc_add_series(
-    df1 |> filter(MEAN_MONTHLY_ITEMS >= 100),
-    "histogram",
-    hcaes(MEAN_MONTHLY_ITEMS)
+    df1 |> filter(MEAN_MONTHLY_ITEMS >= 100) |> arrange(-MEAN_MONTHLY_ITEMS),
+    "column",
+    hcaes(NHS_NO, MEAN_MONTHLY_ITEMS),
   )
 
 
 
 
+df2 <- df2 |> group_by(NHS_NO) |>
+  mutate(ALL_MEAN_MONTHLY_ITEMS = sum(MEAN_MONTHLY_ITEMS)) |> # Window-rollup across all sections
+  ungroup() |>
+  arrange(-ALL_MEAN_MONTHLY_ITEMS)
+
+
+highchart() |>
+  hc_add_series(
+    df2 |> filter(ALL_MEAN_MONTHLY_ITEMS >= 100),
+    "column",
+    hcaes(NHS_NO, MEAN_MONTHLY_ITEMS, group = SECTION_DESCR),
+    stacking = "normal"
+  ) |>
+  hc_xAxis(
+    type = "category"
+    ) |>
+  hc_yAxis(
+    min = 0, max = 180
+  ) |>
+  hc_tooltip(
+    headerFormat = "",
+    pointFormat = "Age: {point.AGE}<br>{series.name}: {point.y}"
+  ) |>
+  hc_legend(enabled = F) 
 
 
 
 
 
-DBI::dbDisconnect(con)
+
+
+
