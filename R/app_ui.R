@@ -40,31 +40,31 @@ app_ui <- function(request) {
             mod_06_geo_ch_flag_ui("geo_ch_flag"),
             mod_07_ch_flag_drug_ui("ch_flag_drug"),
             mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug"),
-            includeMarkdown("inst/markdown/final_thoughts.md")
+            mod_09_final_thoughts_ui("final_thoughts")
           ),
           tabPanel(
             title = "Metrics",
-            mod_09_metrics_ui("metrics")
+            mod_10_metrics_ui("metrics")
           ),
           tabPanel(
             title = "Datasets",
-            mod_10_datasets_ui("datasets")
+            mod_11_datasets_ui("datasets")
           ),
           tabPanel(
             title = "Address Matching",
-            mod_11_address_matching_ui("address_matching")
+            mod_12_address_matching_ui("address_matching")
           ),
           tabPanel(
             title = "Feedback",
-            mod_12_feedback_ui("feedback")
+            mod_13_feedback_ui("feedback")
           ),
           tabPanel(
             title = "Annex",
-            mod_13_annex_ui("annex")
+            mod_14_annex_ui("annex")
           ),
           tabPanel(
             title = "Updates",
-            mod_14_updates_ui("updates")
+            mod_15_updates_ui("updates")
           )
         )
       )

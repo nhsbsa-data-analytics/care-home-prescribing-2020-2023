@@ -1,4 +1,4 @@
-#' 09_definitions UI Function
+#' 10_metrics UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -6,9 +6,9 @@
 #'
 #' @noRd 
 #'
-mod_09_metrics_ui <- function(id){
+mod_10_metrics_ui <- function(id){
   tagList(
-    includeMarkdown("inst/markdown/09_metrics_1.md"),
+    includeMarkdown("inst/markdown/10_metrics_1.md"),
     HTML(
       tibble::tribble(
         ~Patient,       ~Month,     ~`Prescription items`, ~`Unique medicines`,
@@ -29,7 +29,7 @@ mod_09_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    includeMarkdown("inst/markdown/09_metrics_2.md"),
+    includeMarkdown("inst/markdown/10_metrics_2.md"),
     HTML(
       tibble::tribble(
         ~`BNF Level`,         ~Category,   ~Name,
@@ -44,7 +44,7 @@ mod_09_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    includeMarkdown("inst/markdown/09_metrics_3.md"),
+    includeMarkdown("inst/markdown/10_metrics_3.md"),
     HTML(
       tibble::tribble(
         ~`Metric name`,                                     ~`Metric Type`,    ~Numerator,                                                                      ~Denominator,                                                    ~Description,
@@ -64,21 +64,21 @@ mod_09_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    includeMarkdown("inst/markdown/09_metrics_4.md")
+    includeMarkdown("inst/markdown/10_metrics_4.md")
   )
 }
     
-#' 09_metrics Server Functions
+#' 10_metrics Server Functions
 #'
 #' @noRd 
-mod_09_metrics_server <- function(id) {
+mod_10_metrics_server <- function(id) {
   moduleServer( id, function(input, output, session) {
     ns <- session$ns
   })
 }
     
 ## To be copied in the UI
-# mod_09_metrics_ui("09_metrics_1")
+# mod_10_metrics_ui("10_metrics_1")
     
 ## To be copied in the server
-# mod_09_metrics_server("09_metrics_1")
+# mod_10_metrics_server("10_metrics_1")

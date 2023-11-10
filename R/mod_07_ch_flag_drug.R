@@ -14,7 +14,8 @@ mod_07_ch_flag_drug_ui <- function(id) {
     includeMarkdown("inst/markdown/07_ch_flag_drug.md"),
     
     nhs_card(
-      heading = "National BNF-level prescribing analysis for care home patients aged 65 years and over in England",
+      heading = "National BNF-level prescribing estimates for care home patients
+                aged 65 years and over in England",
       
       # 3 column select input
       nhs_grid_3_col(
@@ -55,7 +56,12 @@ mod_07_ch_flag_drug_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "For all metrics, only the top 20 drugs or drug groups by total care home item count are presented."
+        "For all metrics, only the top 20 drugs or drug groups by total care
+        home item count are presented.",
+        tags$br(),
+        "Values over 1,000 have been shortened with an appropriate suffix and
+        then rounded to 2 decimal places. All other values are rounded to 2 
+        decimal places."
       ),
       
       # Data download
@@ -253,7 +259,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
     # Download button
     mod_nhs_download_server(
       id = "download_data",
-      filename = "National BNF level prescribing.xlsx",
+      filename = "National BNF-level prescribing estimates.xlsx",
       export_data = download_data,
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"

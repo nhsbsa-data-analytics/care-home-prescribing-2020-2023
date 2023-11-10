@@ -12,7 +12,8 @@ mod_03_patients_imd_ui <- function(id) {
   tagList(
     includeMarkdown("inst/markdown/03_patients_imd.md"),
     nhs_card(
-      heading = "Deprivation decile of care home patients aged 65 years and over in England",
+      heading = "Deprivation decile of care home patients aged 65 years and over
+                in England",
       
       # Metric select input
       nhs_selectInput(
@@ -36,14 +37,17 @@ mod_03_patients_imd_ui <- function(id) {
       ),
       
       # Chart caption
-      tags$p(
+      tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
         "IMD deciles were attributed to care homes based on their address. If 
-           a patient moved between care homes they could potentially be double 
-           counted across multiple IMD deciles. Only 6 patients across the three
-           financial years could not be attributed an IMD decile. Decile patient
-           counts were rounded to the nearest 10."
+        a patient moved between care homes they could potentially be double 
+        counted across multiple IMD deciles.",
+        tags$br(),
+        "Only 6 patients across the three financial years could not be 
+        attributed an IMD decile.",
+        tags$br(),
+        "Decile patient counts were rounded to the nearest 10."
       ),
       
       # Data download option

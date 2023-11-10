@@ -1,7 +1,10 @@
 mod_04_metrics_ch_type_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    gsub("&gt;", ">", gsub("&lt;", "<", includeMarkdown("inst/markdown/04_metrics_ch_type.md"))),
+    gsub(
+      "&gt;", ">", 
+      gsub("&lt;", "<", includeMarkdown("inst/markdown/04_metrics_ch_type.md"))
+    ),
     nhs_card(
       heading = "Estimated prescribing metrics by prescribing setting for 
                  patients aged 65 years and over in England",
@@ -65,10 +68,11 @@ mod_04_metrics_ch_type_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        paste0(
-          "Nursing home and residential home patients are subsets of the care 
-           home patient population."
-        )
+        "Nursing home and residential home patients are subsets of the care 
+        home patient population.",
+        tags$br(),
+        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
+        are rounded to 2 decimal places."
       ),
       mod_nhs_download_ui(id = ns("download_data"))
     )

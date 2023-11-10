@@ -1,4 +1,4 @@
-#' 10_datasets UI Function
+#' 13_feedback UI Function
 #'
 #' @description A shiny Module.
 #'
@@ -6,14 +6,14 @@
 #'
 #' @noRd 
 #'
-mod_10_datasets_ui <- function(id){
-  includeMarkdown("inst/markdown/10_datasets.md")
+mod_13_feedback_ui <- function(id){
+  includeMarkdown("inst/markdown/13_feedback.md")
 }
     
-#' 10_datasets Server Functions
+#' 12_feedback Server Functions
 #'
 #' @noRd 
-mod_10_datasets_server <- function(id){
+mod_13_feedback_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
  
@@ -21,7 +21,7 @@ mod_10_datasets_server <- function(id){
 }
     
 ## To be copied in the UI
-# mod_10_datasets_ui("10_datasets_1")
+# mod_13_feedback_ui("13_feedback_1")
     
 ## To be copied in the server
-# mod_10_datasets_server("10_datasets_1")
+# mod_13_feedback_server("13_feedback_1")

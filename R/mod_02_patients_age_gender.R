@@ -12,7 +12,8 @@ mod_02_patients_age_gender_ui <- function(id){
   tagList(
     includeMarkdown("inst/markdown/02_patients_age_gender.md"),
     nhs_card(
-      heading = "Age band and gender of care home patients aged 65 years and over in England",
+      heading = "Age band and gender of care home patients aged 65 years and 
+                over in England",
       nhs_grid_3_col(
         nhs_selectInput(inputId = ns("fy"),
                         label = "Financial year",
@@ -175,65 +176,49 @@ mod_02_patients_age_gender_server <- function(id){
       any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
       any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
       
-      list(
-        
-      tags$p(
+      tags$text(
         class = "highcharts-caption",
-        style = "font-size: 9pt; margin-bottom: 0.5em;",
-      
-      HTML(
-      paste0(ifelse(input$sub_geography == "Overall", "", "In "),
-             input$sub_geography, ", there were an estimated ", tags$b(total()),
-             " care home patients in ", input$fy, ", of which ",
-             tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
-             tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
-             " females aged 85 or over.")
-       )
-      ),
-      
-      tags$p(
-        class = "highcharts-caption",
-        style = "font-size: 9pt; margin-top: 0em; margin-bottom: 0.5em;",
-
-        paste0(
+        style = "font-size: 9pt;",
+        HTML(paste0(
+          ifelse(input$sub_geography == "Overall", "", "In "),
+          input$sub_geography, ", there were an estimated ", tags$b(total()),
+          " care home patients in ", input$fy, ", of which ",
+          tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
+          tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
+          " females aged 85 or over."
+        )),
+        tags$br(),
+        # Example for testing: unk and ind shown in the same caption: 2022/23,
+        # LA = Hinckley and Bosworth
+        if (!any_excl_unk & !any_excl_ind) {
           
-          # Example for testing: unk and ind shown in the same caption: 2022/23, LA = Hinckley and Bosworth
+          paste0("This chart does not show ",
+          excluded_unk(), "%",
+          " and ",
+          excluded_ind(), "%",
+          " patients where the gender was not known and not specified, respectively. ")
           
-          if (!any_excl_unk & !any_excl_ind) {
-            
-            paste0("This chart does not show ",
-            excluded_unk(), "%",
-            " and ",
-            excluded_ind(), "%",
-            " patients where the gender was not known and not specified, respectively. ")
-            
-          } else if (!any_excl_unk & any_excl_ind) {
-            
-            paste0("This chart does not show ",
-                   excluded_unk(), "%",
-                   " patients where the gender was not known. ")
-            
-          } else if (any_excl_unk & !any_excl_ind) {
-            
-            paste0("This chart does not show ",
-                   excluded_ind(), "%",
-                   " patients where the gender was not specified. ")
-            
-          } else NULL,
+        } else if (!any_excl_unk & any_excl_ind) {
           
-          "Patient counts between one and four have been rounded to five, otherwise
-           to the nearest ten; and the percentages are based on rounded counts."
-        )
-       ),
-      
-      tags$p(
-        class = "highcharts-caption",
-        style = "font-size: 9pt; margin-top: 0em; margin-bottom: 0em;",
-        
-        "The Isles of Scilly were removed due to the number of care homes in the Local Authority.")
-      
+          paste0("This chart does not show ",
+                 excluded_unk(), "%",
+                 " patients where the gender was not known. ")
+          
+        } else if (any_excl_unk & !any_excl_ind) {
+          
+          paste0("This chart does not show ",
+                 excluded_ind(), "%",
+                 " patients where the gender was not specified. ")
+          
+        } else NULL,
+        tags$br(),
+        "Patient counts between one and four have been rounded to five,
+        otherwise to the nearest ten; and the percentages are based on rounded
+        counts.",
+        tags$br(),
+        "The Isles of Scilly were removed due to the number of care homes in the
+        Local Authority."
       )
-      
     })
     
     
