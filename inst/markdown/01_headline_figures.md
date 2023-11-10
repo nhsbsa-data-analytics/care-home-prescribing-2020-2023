@@ -4,7 +4,7 @@
 
 In this article we provide unique insight into primary care prescribing patterns for care home patients aged 65 years and over in England during 2020/21, 2021/22 and 2022/23.
 
-Patient address classification is based on experimental data linkage work. We welcome feedback, collaboration, and refinement of the methodology to see if it can be used in NHSBSA information systems in the future and how we can develop additional analyses.
+Patient address classification is based on experimental data linkage work. As such values are indicative. We welcome feedback, collaboration, and refinement of the methodology to see if it can be used in NHSBSA information systems in the future and how we can develop additional analyses.
 
 ### Key findings
 
