@@ -143,7 +143,7 @@ highchart() |>
   hc_legend(enabled = F) 
 
 
-
+# Mean monthly cost per patient distribution
 df1 |>
   ggplot(aes(MEAN_MONTHLY_COST)) + geom_histogram(binwidth = 5)
 
@@ -157,23 +157,9 @@ highchart() |>
   hc_xAxis(
     type = "category"
   ) |>
-  #hc_yAxis(
-    #min = 0, max = 180
-  #) |>
   hc_tooltip(
     headerFormat = "",
     pointFormat = "Age: {point.AGE}<br>{series.name}: {point.y}"
   ) |>
   hc_legend(enabled = F) 
-
-t <- df2 |> filter(NHS_NO == 4483170988)
-
-t <- tbl(con, in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) |>
-  filter(NHS_NO == 4483170988,
-         SECTION_DESCR == "Drugs used in psychoses and related disorders",
-         FY == "2022/23",
-         CH_FLAG==1) |>
-  nhsbsaR::collect_with_parallelism(28)
-
-
 
