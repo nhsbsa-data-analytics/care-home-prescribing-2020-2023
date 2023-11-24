@@ -16,7 +16,7 @@ pivot -- remove columns named in 'for': https://stackoverflow.com/a/33220953/851
   IN () -- no values here...
 );
 
-alter table int646_base_20200401_20230331_pseudo rename column nhs_no_hash TO nhs_no;
+alter table int646_base_20200401_20230331_pseudo rename column nhs_no_hash to nhs_no;
 
 grant select on int646_base_20200401_20230331_pseudo to migar, adnsh, mamcp;
 
