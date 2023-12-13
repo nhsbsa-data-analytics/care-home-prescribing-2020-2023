@@ -9,6 +9,19 @@ select
     opdd.lsoa_code
 from dall_ref.int646_base_20200401_20230331 base
 left join (
+    -- This LHS of the join uses the code produced by dplyr in lines 37-45 of 06_postcode_lookup.R script.
+    -- An alternative (code below) was considered, using the package function lib.pkg_postcode_utils.replace_homoglyph()
+    -- but was unsure if the postcodes produced by that would give us exactly the same postcodes as we already
+    -- have using the R code in our local version of the personMatchR::format_postcode
+    --
+    -- select * from (
+    --   select 
+    --       rank() over (partition by postcode order by year_month desc) rank,
+    --       lib.pkg_postcode_utils.replace_homoglyph(postcode) postcode,
+    --       census_lower lsoa_code
+    --   from dim.ons_postcode_data_dim
+    -- )
+    -- where rank = 1.0
     select
       postcode,
       census_lower as lsoa_code
