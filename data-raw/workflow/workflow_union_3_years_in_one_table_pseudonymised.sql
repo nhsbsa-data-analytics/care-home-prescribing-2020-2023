@@ -173,11 +173,11 @@ left join (
 ) opdd
 on base.bsa_postcode = opdd.postcode;
 
-alter table int646_base_20200401_20210331_pseudo drop column bsa_sla;
-alter table int646_base_20200401_20210331_pseudo drop column match_sla;
-alter table int646_base_20200401_20210331_pseudo drop column match_sla_std;
-alter table int646_base_20200401_20210331_pseudo drop column nhs_no;
-alter table int646_base_20200401_20210331_pseudo rename column nhs_no_hash to nhs_no;
+alter table int646_base_20200401_20230331_pseudo drop column bsa_sla;
+alter table int646_base_20200401_20230331_pseudo drop column match_sla;
+alter table int646_base_20200401_20230331_pseudo drop column match_sla_std;
+alter table int646_base_20200401_20230331_pseudo drop column nhs_no;
+alter table int646_base_20200401_20230331_pseudo rename column nhs_no_hash to nhs_no;
 commit;
 
 grant select on int646_base_20200401_20230331_pseudo to migar, adnsh, mamcp;
