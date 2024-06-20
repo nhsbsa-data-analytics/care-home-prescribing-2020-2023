@@ -1,7 +1,33 @@
 
+# Functions and variables ------------------------------------------------------
 
 # Get cqc primary key from environ file
 key = Sys.getenv("CQC_PRIMARY_KEY")
+
+# Define cqc columns of interest 
+cqc_cols = c(
+  'name', 
+  'postalCode',
+  'uprn',
+  'locationId',
+  'providerId',
+  'organisationType',
+  'type',
+  'lastInspection',
+  'deregistrationDate',
+  'registrationStatus',
+  'registrationDate',
+  'postalAddressLine1', 
+  'postalAddressLine2',
+  'postalAddressTownCity',
+  'postalAddressCounty',
+  'numberOfBeds',
+  'gacServicesTypes',
+  'regulatedActivities',
+  'specialisms',
+  'current_ratings',
+  'odsCode'
+)
 
 # Function to get api content from url
 get_api_content <- function(url){
@@ -20,7 +46,7 @@ get_api_content <- function(url){
 get_number_of_pages = function(){
   
   # Define url
-  url = "https://api.service.cqc.org.uk/public/v1/locations"
+  url = "https://api.service.cqc.org.uk/public/v1/locations?careHome=Y"
   
   # Get locations overview
   api_content = get_api_content(url)
@@ -37,7 +63,7 @@ get_location_ids_per_page = function(page_num){
   
   # Define url
   url = paste0(
-    "https://api.service.cqc.org.uk/public/v1/locations?page=",
+    "https://api.service.cqc.org.uk/public/v1/locations?careHome=Y&page=",
     page_num,
     "&perPage=1000"
     )
@@ -57,27 +83,29 @@ get_location_info_by_id <- function(loc_num) {
   
   # Paste location url with location_id
   url = paste0(
-    "https://api.service.cqc.org.uk/public/v1/locations", 
+    "https://api.service.cqc.org.uk/public/v1/locations/", 
     location_vec[loc_num]
   )
   
   # Get data
-  data = get_api_content(url) %>% 
-    unlist() %>% 
-    bind_rows()
+  data = get_api_content(url)
   
-  # Sleep if less than 2 rows 
-  while (ncol(data) <= 2) {
-    Sys.sleep(0.05)
-    
-    data = get_api_content(url) %>% 
-      unlist() %>% 
-      bind_rows()
-  }
+  print(data)
+  
+  # Filter data 
+  filtered_data = data[names(data) %in% cqc_cols]
+  
+  # Flat data
+  flat_data = filtered_data %>% 
+    unlist() %>% 
+    bind_rows() %>% 
+    janitor::clean_names()
   
   # Return data
-  return(data)
+  return(flat_data)
 }
+
+# Generate Output --------------------------------------------------------------
 
 # Get total pages
 total_pages = get_number_of_pages()
@@ -86,35 +114,50 @@ total_pages = get_number_of_pages()
 location_vec = lapply(1:total_pages, get_location_ids_per_page)
 
 # Unlist into a single vector
-location_vec = unlist(all_locations)
+location_vec = unlist(location_vec)
+
+# Generate appropriate number of cores
+n_cores <- parallel::detectCores() - 1
+
+# Set up parallel
+clust <- parallel::makeCluster(n_cores)
+
+# Export libraries to cluster
+parallel::clusterEvalQ(
+  cl = clust,
+  {
+    library(dplyr); 
+    library(janitor);
+    library(httr);
+    library(jsonlite);
+  }
+)
+
+# Export required objects to cluster
+parallel::clusterExport(
+  cl = clust,
+  varlist = c(
+    "get_api_content",
+    "location_vec",
+    "key",
+    "cqc_cols"
+  ),
+  envir = environment()
+)
+
+# Generate cqc details
+Sys.time()
+cqc_data <- parallel::parLapply(
+  cl = clust, 
+  X = 1:length(location_vec), 
+  fun = get_location_info_by_id
+)
+Sys.time()
+
+# Stop Cluster
+parallel::stopCluster(clust)
 
 
-# Get columns names from a location id
-get_col_names = function(index){
-  
-  # Create url
-  url = paste0(
-    "https://api.service.cqc.org.uk/public/v1/locations/", 
-    location_vec[index]
-  )
-  
-  # Get data
-  data = get_api_content(url)
-  
-  # Column names
-  cols = names(data)
-  
-  # Return
-  return(cols)
-}
-
-cols = lapply(1:length(location_vec), get_col_names)
-
-
-data$assessment
-
-  unlist() %>% 
-  bind_rows()
 
 
 data$uprn
@@ -136,101 +179,8 @@ names(data)
 
 
 
-data$assessment
-data$assessmentServiceGroup
-data$numberOfBeds
-
-data$type
-data$locationTypes
-
-cqc_cols = c(
-  'name', 
-  'postalCode',
-  'uprn',
-  'locationId',
-  'providerId',
-  'organisationType',
-  'type',
-  'lastInspection',
-  'deregistrationDate',
-  'registrationStatus',
-  'registrationDate',
-  'postalAddressLine1', 
-  'postalAddressLine2',
-  'postalAddressTownCity',
-  'postalAddressCounty',
-  'numberOfBeds',
-  'gacServicesTypes',
-  'gacServicesTypesNames',
-  'regulatedActivities',
-  'specialisms',
-  
-)
 
 
-uprn = as.numeric(uprn),
-location_id,
-provider_id,
-last_inspection_date,
-registration_date,
-deregistration_date,
-single_line_address,
-postcode = toupper(gsub("[^[:alnum:]]", "", postal_code)),
-nursing_home_flag = as.integer(grepl(
-  "Nursing home", gac_service_types_names
-)),
-residential_home_flag = as.integer(grepl(
-  "Residential home", gac_service_types_names
-)),
-# type,
-number_of_beds = as.integer(number_of_beds),
-current_rating = current_ratings_overall_rating,
-key_question_names = current_ratings_overall_key_question_ratings_names,
-key_question_ratings = current_ratings_overall_key_question_ratings_ratings,
-cqc_date = download_date,
-ods_code,
-specialisms,
-regulated_activities_names,
-gac_service_types = gac_service_types_names,
-
-
-which
-
-c = data[names(data) %in% cqc_cols] %>% 
-  unlist() %>% 
-  bind_rows()
-c
-
-
-data$uprn
-
-
-
-get_cqc_locations_details <- function(page_num) {
-  
-  # Url with page number pasted inside
-  url = paste0(
-    "https://api.cqc.org.uk/public/v1/locations?careHome=Y&page=", 
-    page_num, 
-    "&perPage=10000"
-  )
-  
-  # Get api data
-  data = get_api_content(url)
-  
-  # Get location info as df within list
-  locations = data$locations
-  
-  # Return location info df
-  return(locations)
-}
-
-# Get all location info, with 10k records per page retrieved
-cqc_locations <- lapply(1:no_of_pages, get_cqc_locations_details) %>% 
-  bind_rows()
-
-# Vector of locations
-location_vec = cqc_locations %>% pull(locationId)
 
 # Function to query cqc api
 get_cqc_api_location_data <- function(loc_num) {
