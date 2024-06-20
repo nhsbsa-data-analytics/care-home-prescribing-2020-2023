@@ -40,6 +40,8 @@ extra_caps <- list(
 rD <- RSelenium::rsDriver(
   browser = "chrome",
   chromever = getChromeDriverVersion(),
+  geckover = NULL,
+  phantomver = NULL,
   port = netstat::free_port(),
   verbose = FALSE,
   check = FALSE, # AVDs have restricted access; use TRUE with unrestricted access.
