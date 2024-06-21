@@ -8,7 +8,7 @@ keep_vars = c(ls(), 'keep_vars')
 
 # FY 22/23 ---------------------------------------------------------------------
 
-# 1. Get latest cqc data: 0.5hr - Run once in first epoch script
+# 1. Get latest cqc data: ~1hr - Run once in first epoch script (new API code)
 get_latest_cqc_data()
 
 # 2. Get latest ab plus epoch: ~2hr
