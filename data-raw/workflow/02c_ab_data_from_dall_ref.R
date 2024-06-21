@@ -87,7 +87,7 @@ ab_plus = con %>%
   ) 
 
 # Define table name
-table_name = paste0("ABP_", db_date)
+table_name = paste0("ADDRESSBASE_PLUS_", db_date)
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
