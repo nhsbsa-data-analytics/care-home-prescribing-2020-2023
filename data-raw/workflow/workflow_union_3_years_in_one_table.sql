@@ -1,13 +1,13 @@
 -- To run from DALL_REF
 
-drop table int646_base_20200401_20230331 purge;
-create table int646_base_20200401_20230331 nologging compress for query low as
+drop table int646_base_20200401_20240331 purge;
+create table int646_base_20200401_20240331 nologging compress for query low as
 
-select '2020/21' fy, y1.* from migar.int646_base_20200401_20210331 y1
+select '2020/21' fy, y1.* from mamcp.int646_base_20200401_20210331 y1
 union all
-select '2021/22' fy, y2.* from migar.int646_base_20210401_20220331 y2
+select '2021/22' fy, y2.* from mamcp.int646_base_20210401_20220331 y2
 union all
-select '2022/23' fy, y3.* from migar.int646_base_20220401_20230331 y3
+select '2022/23' fy, y3.* from mamcp.int646_base_20220401_20230331 y3
 ;
 
 grant select on int646_base_20200401_20230331 to migar, adnsh, mamcp;

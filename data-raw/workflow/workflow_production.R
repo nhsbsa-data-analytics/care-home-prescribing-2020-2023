@@ -35,6 +35,19 @@ get_abp_from_os = function(epoch_year){
 
 
 #' @description downloads a single epoch of ab plus closest to end_date
+#' @param end_date: end date as a char in format 'YYYY-MM-DD'
+#' @noRd
+get_abp_from_dall_ref = function(end_date){
+  
+  # Assign function inputs to global env
+  assign("end_date", end_date, envir = globalenv())
+  
+  # Get nearest ab plus to end date with cqc postcodes within time frame
+  tictoc::tic(); source("data-raw/workflow/02c_ab_data_from_dall_ref.R"); tictoc::toc(); print(Sys.time())
+}
+
+
+#' @description downloads a single epoch of ab plus closest to end_date
 #' @param ab_plus_data: name of the ab plus db table
 #' @param cqc_data: the name of the cqc db table
 #' @noRd
@@ -79,13 +92,13 @@ create_care_home_address_match = function(patient_address_data, lookup_address_d
   tictoc::tic(); source("data-raw/workflow/05_address_match.R"); tictoc::toc(); print(Sys.time())
 }
 
+
 #' @description creates the postcode lookup table in the DB containing latest available (hard-coded) mappings
 create_postcode_lookup = function(){
   
   # Write postcode lookup table to the DB for the appropriate FY
   tic(); source("data-raw/workflow/06_postcode_lookup.R"); toc(); print(Sys.time())
 }
-
 
 
 #' @description gets prescription info for matched records
