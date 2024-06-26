@@ -1,10 +1,5 @@
-source("data-raw/workflow/workflow_packages.R")
-source("data-raw/workflow/workflow_helpers.R")
 
 # Identify closest dall_ref release date ---------------------------------------
-
-# Define end date
-end_date = "2024-03-31"
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
