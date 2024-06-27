@@ -8,6 +8,8 @@ union all
 select '2021/22' fy, y2.* from mamcp.int646_base_20210401_20220331 y2
 union all
 select '2022/23' fy, y3.* from mamcp.int646_base_20220401_20230331 y3
+union all
+select '2023/24' fy, y4.* from adnsh.int646_base_20230401_20240331 y4
 ;
 
 grant select on int646_base_20200401_20230331 to migar, adnsh, mamcp;
