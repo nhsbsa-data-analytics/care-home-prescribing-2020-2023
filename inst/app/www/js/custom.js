@@ -7,14 +7,21 @@ $(document).ready(function () {
   // Add new tab icon for external links and set to open in new tab
   var links = $("a[target!=_blank]");
   links.each(function(){
+    // Current link
     var a = $(this);
+    // If no href attribute, exit early (internal links will not have href)
+    if (!$(this).attr("href")) return;
     if (
-      !a.attr('href').match(/^mailto\:/)
-         && (a[0].hostname != window.location.hostname)
-         && !a.attr('href').match(/^javascript\:/)
-         && !a.attr('href').match(/^$/)
+      !a.attr('href').match(/^mailto\:/)                    // Email links
+         && (a[0].hostname != window.location.hostname)     // Internal links
+         && !a.attr('href').match(/^javascript\:/)          // Starting javascript
+         && !a.attr('href').match(/^$/)                     // Empty links
+         && !a.attr('href').match(/^#maincontent$/)         // Skip link
+         && !a.attr('class').match(/^nhsuk-header__link$/)  // NHSBSA header icon
     ) {
+        // Append space then icon to link
         a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
+        // Force open in new tab
         a.attr('target', '_blank');
     }
   });
