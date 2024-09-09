@@ -21,7 +21,8 @@ nhs_footer <- function() {
                 style = "text-decoration: underline;",
                 href = "https://www.nhsbsa.nhs.uk/accessibility-statement-website-estimated-prescribing-patterns-care-home-patients-aged-65-years-or",
                 target = "_blank",
-                "Accessibility statement"
+                "Accessibility statement",
+                icon("up-right-from-square")
               )
             ),
             tags$li(
@@ -41,7 +42,8 @@ nhs_footer <- function() {
                 style = "text-decoration: underline;",
                 href = "https://github.com/nhsbsa-data-analytics/care-home-prescribing-2020-2023",
                 target = "_blank",
-                "GitHub"
+                "GitHub",
+                icon("up-right-from-square")
               )
             )
           ),

@@ -4,6 +4,20 @@ $(document).ready(function () {
     window.scrollTo(0, 0);
   });
   
+  // Add new tab icon for external links and set to open in new tab
+  var links = $("a[target!=_blank]");
+  links.each(function(){
+    var a = $(this);
+    if (
+      !a.attr('href').match(/^mailto\:/)
+         && (a[0].hostname != window.location.hostname)
+         && !a.attr('href').match(/^javascript\:/)
+         && !a.attr('href').match(/^$/)
+    ) {
+        a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
+        a.attr('target', '_blank');
+    }
+  });
   
   // Remove aria attributes from anchor tags to prevent accessibility issues
   var observer = new MutationObserver(function(mutations) {
@@ -25,21 +39,6 @@ $(document).ready(function () {
     });
     
     
-  // Add target='_blank' to external links so they open a new tab
-  $(document.body).on('mouseover', 'a[target!=_blank]:not(.local)', function (e) {
-    var a = $(this);
-    if (
-      !a.attr('href').match(/^mailto\:/)
-         && (a[0].hostname != window.location.hostname)
-         && !a.attr('href').match(/^javascript\:/)
-         && !a.attr('href').match(/^$/)
-    ) {
-        a.attr('target', '_blank');
-    } else {
-        a.addClass('local');
-    }
-  });
-  
   // Handle clicks on mod_06 datatable, to outline selected map region
   Shiny.addCustomMessageHandler("rowClicked",
     function(message) {
