@@ -9,7 +9,8 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from year month dim table in DWCP
 data <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_BASE_20210401_20220331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) %>% 
+  filter(FY == "2020/21")
 
 # Get chapter info
 chapters = con %>% 
@@ -39,7 +40,7 @@ df_std = data %>%
     NURSING_HOME_FLAG = max(NURSING_HOME_FLAG),
     RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG),
     MAX_MONTHLY_PATIENTS = max(MAX_MONTHLY_PATIENTS),
-    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS),
+    #NUMBER_OF_BEDS = max(NUMBER_OF_BEDS),
     MONTHS = n_distinct(YEAR_MONTH),
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
@@ -65,7 +66,7 @@ df_merge = data %>%
     NURSING_HOME_FLAG = max(NURSING_HOME_FLAG),
     RESIDENTIAL_HOME_FLAG = max(RESIDENTIAL_HOME_FLAG),
     MAX_MONTHLY_PATIENTS = max(MAX_MONTHLY_PATIENTS),
-    NUMBER_OF_BEDS = max(NUMBER_OF_BEDS),
+    #NUMBER_OF_BEDS = max(NUMBER_OF_BEDS),
     MONTHS = n_distinct(YEAR_MONTH),
     PATS = n_distinct(NHS_NO),
     ITEMS = sum(ITEM_COUNT),
