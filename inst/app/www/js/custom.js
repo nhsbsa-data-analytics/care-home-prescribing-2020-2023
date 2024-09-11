@@ -10,14 +10,15 @@ $(document).ready(function () {
     // Current link
     var a = $(this);
     // If no href attribute, exit early (internal links will not have href)
-    if (!$(this).attr("href")) return;
+    if (!a.attr("href")) return;
     if (
       !a.attr('href').match(/^mailto\:/)                    // Email links
          && (a[0].hostname != window.location.hostname)     // Internal links
          && !a.attr('href').match(/^javascript\:/)          // Starting javascript
          && !a.attr('href').match(/^$/)                     // Empty links
          && !a.attr('href').match(/^#maincontent$/)         // Skip link
-         && !a.attr('class').match(/^nhsuk-header__link$/)  // NHSBSA header icon
+         && !(a.attr('class') &&                            // NHSBSA header icon
+              a.attr('class').match(/^nhsuk-header__link$/))
     ) {
         // Append space then icon to link
         a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
