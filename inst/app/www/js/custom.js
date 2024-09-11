@@ -4,6 +4,28 @@ $(document).ready(function () {
     window.scrollTo(0, 0);
   });
   
+  // Add new tab icon for external links and set to open in new tab
+  var links = $("a[target!=_blank]");
+  links.each(function(){
+    // Current link
+    var a = $(this);
+    // If no href attribute, exit early (internal links will not have href)
+    if (!a.attr("href")) return;
+    if (
+      !a.attr('href').match(/^mailto\:/)                    // Email links
+         && (a[0].hostname != window.location.hostname)     // Internal links
+         && !a.attr('href').match(/^javascript\:/)          // Starting javascript
+         && !a.attr('href').match(/^$/)                     // Empty links
+         && !a.attr('href').match(/^#maincontent$/)         // Skip link
+         && !(a.attr('class') &&                            // NHSBSA header icon
+              a.attr('class').match(/^nhsuk-header__link$/))
+    ) {
+        // Append space then icon to link
+        a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
+        // Force open in new tab
+        a.attr('target', '_blank');
+    }
+  });
   
   // Remove aria attributes from anchor tags to prevent accessibility issues
   var observer = new MutationObserver(function(mutations) {
@@ -25,21 +47,6 @@ $(document).ready(function () {
     });
     
     
-  // Add target='_blank' to external links so they open a new tab
-  $(document.body).on('mouseover', 'a[target!=_blank]:not(.local)', function (e) {
-    var a = $(this);
-    if (
-      !a.attr('href').match(/^mailto\:/)
-         && (a[0].hostname != window.location.hostname)
-         && !a.attr('href').match(/^javascript\:/)
-         && !a.attr('href').match(/^$/)
-    ) {
-        a.attr('target', '_blank');
-    } else {
-        a.addClass('local');
-    }
-  });
-  
   // Handle clicks on mod_06 datatable, to outline selected map region
   Shiny.addCustomMessageHandler("rowClicked",
     function(message) {
