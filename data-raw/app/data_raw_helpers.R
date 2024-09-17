@@ -5,7 +5,7 @@
 #' @param first_grouping A vector of col names to do initial grouping by.
 #' @param second_grouping A vector of col names to do secondary grouping by.
 #' @param nest_cols A vector of col names to use nesting on when completing.
-#' @param num_parallel By default, query will ask for 36 parallel, but can ask 
+#' @param num_parallel By default, query will ask for 24 parallel, but can ask 
 #'   for different value if you think it is needed.
 #'
 #' @return
@@ -34,13 +34,13 @@
 #'     "SUB_GEOGRAPHY_CODE",
 #'     "SUB_GEOGRAPHY_NAME"
 #'   ),
-#'   num_parallel = 36
+#'   num_parallel = 32
 #' )
 get_metrics <- function(init_db,
                         first_grouping,
                         second_grouping,
                         nest_cols = c(),
-                        num_parallel = 36) {
+                        num_parallel = 24) {
   # Collect data and calculate raw metrics
   init_db %>% 
     group_by(across(all_of(first_grouping))) %>%
