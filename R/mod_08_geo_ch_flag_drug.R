@@ -340,7 +340,6 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # One: spline chart
     spline_chart_plot = function(df, df_select, fy, metric, prefix, suffix,
                                  bottom_plot = FALSE){
-
       # Shared y axis max value across all 3 plots
       y_axis_max_val = max(df$`20/21`, df$`21/22`, df$`22/23`)
       accuracy = \(val) ifelse(
@@ -355,7 +354,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::mutate(
           VALUE_LABEL = scales::label_comma(
             accuracy = accuracy(VALUE),
-            scale_cut = scales::cut_long_scale()
+            # See this issue for reason why append of 1 is necessary:
+            # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071
+            scale_cut = append(scales::cut_long_scale(), 1, 1)
           )(janitor::round_half_up(VALUE, 2))
         ) %>%
         dplyr::arrange(VALUE) %>%
@@ -681,7 +682,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
               return (
                 scales::label_comma(
                   accuracy = accuracy,
-                  scale_cut = scales::cut_long_scale()
+                  # See this issue for reason why append of 1 is necessary:
+                  # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071
+                  scale_cut = append(scales::cut_long_scale(), 1, 1)
                 )(janitor::round_half_up(val, 2))
               )
             }
