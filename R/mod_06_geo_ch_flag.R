@@ -16,12 +16,11 @@ mod_06_geo_ch_flag_ui <- function(id) {
             choices = c(
               "2020/21",
               "2021/22",
-              "2022/23",
-              "2023/24"
+              "2022/23"
             ),
             selected = carehomes2::metrics_by_geo_and_ch_flag_df$FY %>%
               levels() %>%
-              max(),
+              max,
             full_width = TRUE
           )
         ),
@@ -248,7 +247,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               span(
                 class = "nhsuk-body-s",
                 style = "font-size: 12px;",
-                gsub("^20", "", gsub(" NCH", " ", gsub(" CH", "", col)))
+                gsub(" NCH", " ", gsub(" CH", "", col))
               ) %>%
                 as.character()
             }
@@ -308,11 +307,11 @@ mod_06_geo_ch_flag_server <- function(id) {
           ),
           rowCallback = DT::JS(rowCallback)
         ),
-        height = "500px",
+        height = "400px",
         filter = "none",
         selection = "single"
       ) %>%
-        DT::formatStyle(columns = 1:9, `font-size` = "12px")
+        DT::formatStyle(columns = 1:7, `font-size` = "12px")
     }
     
     # Create download data (all data)

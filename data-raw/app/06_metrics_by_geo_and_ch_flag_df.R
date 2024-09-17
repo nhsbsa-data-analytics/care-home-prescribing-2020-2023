@@ -1,30 +1,28 @@
-# Initial setup ----------------------------------------------------------------
+# Initial setup -----------------------------------------------------------
 
 # Expected run time ~40 minutes @parallel 24
 
-# Library and functions
 library(dplyr)
 library(dbplyr)
 library(stringr)
 library(glue)
 library(purrr)
+
 devtools::load_all()
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Data validation --------------------------------------------------------------
+# Data validation ---------------------------------------------------------
 
-## Setup -----------------------------------------------------------------------
+## Setup ------------------------------------------------------------------
 
-# Distinct postcode-related fields
 PCD <- con %>%
   tbl(from = "INT646_POSTCODE_LOOKUP") %>%
   select(ends_with("CODE"), ends_with("NAME")) %>%
   distinct() %>%
   collect()
 
-# function to transform fields by geography fields
 transform_PCD <- function(data, geography) {
   data %>%
     select(starts_with(glue("PCD_{geography}"))) %>%
@@ -35,22 +33,19 @@ transform_PCD <- function(data, geography) {
     filter(!is.na(SUB_GEOGRAPHY_NAME))
 }
 
-# Generate function output
 PCD_list <- list(
   REGION = PCD %>% transform_PCD("REGION"),
   ICB    = PCD %>% transform_PCD("ICB"),
   LAD    = PCD %>% transform_PCD("LAD")
 )
 
-# Define gis list
 GIS_list <- geo_data_validation
 
 # Check sub-geography codes and names match exactly between PCD and GIS; script
 # will stop if not
 
-## Check sub-geography codes ---------------------------------------------------
+## Check sub-geography codes ----------------------------------------------
 
-# Generate check
 check_sub_geo_codes <- list(
   in_GIS_only = map2(
     GIS_list,
@@ -64,7 +59,6 @@ check_sub_geo_codes <- list(
   )
 )
 
-# Stop if check fails
 stopifnot(
   "Some difference in geo codes: check `check_sub_geo_codes`"= {
     character(0) == check_sub_geo_codes %>%
@@ -73,9 +67,8 @@ stopifnot(
   }
 )
 
-## Check sub-geography names ---------------------------------------------------
+## Check sub-geography names ----------------------------------------------
 
-# Generate check
 check_sub_geo_names <- list(
   in_GIS_only = map2(
     GIS_list,
@@ -89,7 +82,6 @@ check_sub_geo_names <- list(
   )
 )
 
-# Stop if check fails
 stopifnot(
   "Some difference in geo names: check `check_sub_geo_names`"= {
     character(0) == check_sub_geo_names %>%
@@ -98,13 +90,13 @@ stopifnot(
   }
 )
 
-# Data prep --------------------------------------------------------------------
+# Data prep ---------------------------------------------------------------
 
-## Setup -----------------------------------------------------------------------
+## Setup ------------------------------------------------------------------
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {
@@ -149,28 +141,21 @@ aggregate_by_geo <- function(geography_name) {
     rename(!!!geography_cols)
 }
 
-## Process ---------------------------------------------------------------------
+## Process ----------------------------------------------------------------
 metrics_by_geo_and_ch_flag_df <- names(geographies)[-1] %>% 
   map(aggregate_by_geo) %>%
   list_rbind()
 
-## Format ----------------------------------------------------------------------
+## Format -----------------------------------------------------------------
 metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
   format_data_raw("CH_FLAG") %>% 
   suppressWarnings() # We do not have Overall in this data
 
-## Save ------------------------------------------------------------------------
+## Save -------------------------------------------------------------------
 usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
 
-# Cleanup ----------------------------------------------------------------------
-
-# Disconnect
+# Cleanup -----------------------------------------------------------------
 DBI::dbDisconnect(con)
-
-# Remove vars specific to script
-remove_vars <- setdiff(ls(), keep_vars)
-
-# Remove objects and clean environment
-rm(list = remove_vars, remove_vars); gc()
+rm(list = ls())

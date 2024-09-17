@@ -1,9 +1,11 @@
 # Initial setup -----------------------------------------------------------
 
-# Expected run time ~35 minutes @parallel 36
+# Expected run time ~35 minutes @parallel 24
+
 library(dplyr)
 library(dbplyr)
 library(tidyr)
+
 devtools::load_all()
 
 # Set up connection to DALP
@@ -15,7 +17,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
 
 # Initial manipulation to create CH_TYPE column, later to be grouped by
 init_db <- base_db %>%
@@ -46,7 +48,6 @@ init_db <- base_db %>%
     )
   ) 
 
-# Union both initi_db variants
 init_db <- init_db %>% 
   union(
     init_db %>% 
@@ -56,7 +57,6 @@ init_db <- init_db %>%
 
 ## Process ----------------------------------------------------------------
 
-# Get metrics
 metrics_by_ch_type_85_split_df <- get_metrics(
   init_db,
   first_grouping = c(
@@ -73,7 +73,6 @@ metrics_by_ch_type_85_split_df <- get_metrics(
   )
 )
 
-# Generate age band categories
 metrics_by_ch_type_85_split_df <- metrics_by_ch_type_85_split_df %>% 
   mutate(
     AGE_BAND = dplyr::case_match(
@@ -85,16 +84,9 @@ metrics_by_ch_type_85_split_df <- metrics_by_ch_type_85_split_df %>%
   ) %>% 
   dplyr::relocate(AGE_BAND, .after = CH_TYPE)
   
-## Save ------------------------------------------------------------------------
+## Save -------------------------------------------------------------------
 usethis::use_data(metrics_by_ch_type_85_split_df, overwrite = TRUE)
 
-# Cleanup ----------------------------------------------------------------------
-
-# Disconnect
+# Cleanup -----------------------------------------------------------------
 DBI::dbDisconnect(con)
-
-# Remove vars specific to script
-remove_vars <- setdiff(ls(), keep_vars)
-
-# Remove objects and clean environment
-rm(list = remove_vars, remove_vars); gc()
+rm(list = ls())

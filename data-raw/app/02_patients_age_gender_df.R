@@ -1,5 +1,5 @@
-
 # Running time ~10 min
+
 library(dplyr)
 library(dbplyr)
 devtools::load_all()
@@ -9,13 +9,14 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
 base_db <- con |>
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
  
 # Add a dummy overall column
 base_db <- base_db |>
    mutate(OVERALL = "Overall")
  
 # Loop over each geography and aggregate using purrr's map function approach
+
 patients_by_fy_geo_age_gender_fun <- function(geography_name) {
   
   # Identify geography cols
@@ -58,7 +59,6 @@ patients_by_fy_geo_age_gender_fun <- function(geography_name) {
   
 }
 
-# Map function
 patients_by_fy_geo_age_gender_df <- purrr::map(
   names(geographies),
   patients_by_fy_geo_age_gender_fun
@@ -74,7 +74,6 @@ patients_by_fy_geo_age_gender_df <-
     #PCT_PATIENTS = janitor::round_half_up(PCT_PATIENTS, 1)
   )
 
-# Calculate patient proportions
 patients_by_fy_geo_age_gender_df <- patients_by_fy_geo_age_gender_df |>
   group_by(CH_FLAG, FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME) |>
   mutate(
@@ -122,9 +121,4 @@ usethis::use_data(
 
 # Disconnect from database
 DBI::dbDisconnect(con)
-
-# Remove vars specific to script
-remove_vars <- setdiff(ls(), keep_vars)
-
-# Remove objects and clean environment
-rm(list = remove_vars, remove_vars); gc()
+rm(list = ls()); gc()
