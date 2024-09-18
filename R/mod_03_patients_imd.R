@@ -19,7 +19,13 @@ mod_03_patients_imd_ui <- function(id) {
       nhs_selectInput(
         inputId = ns("financial_year"),
         label = "Financial year",
-        choices = unique(carehomes2::mod_patients_by_imd_df$`Financial Year`),
+        choices = carehomes2::mod_patients_by_imd_df$`Financial Year` %>% 
+          unique() %>% 
+          sort(),
+        selected = carehomes2::mod_patients_by_imd_df$`Financial Year` %>% 
+          unique() %>% 
+          sort() %>% 
+          max(),
         full_width = FALSE
       ),
       

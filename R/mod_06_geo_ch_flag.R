@@ -13,12 +13,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
           nhs_selectInput(
             inputId = ns("fy"),
             label = "Financial year",
-            choices = c(
-              "2020/21",
-              "2021/22",
-              "2022/23",
-              "2023/24"
-            ),
+            choices = carehomes2::metrics_by_geo_and_ch_flag_df$FY %>%
+              levels(),
             selected = carehomes2::metrics_by_geo_and_ch_flag_df$FY %>%
               levels() %>%
               max(),
