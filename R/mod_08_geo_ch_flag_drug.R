@@ -626,7 +626,11 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           highlight = TRUE,
           borderless = FALSE,
           columns = list(
-            .selection = reactable::colDef(width = 15)
+            .selection = reactable::colDef(width = 15),
+            `20/21` = reactable::colDef(width = 70),
+            `21/22` = reactable::colDef(width = 70),
+            `22/23` = reactable::colDef(width = 70),
+            `23/24` = reactable::colDef(width = 70)
           ),
           defaultColDef = reactable::colDef(
             headerClass = "my-header",
