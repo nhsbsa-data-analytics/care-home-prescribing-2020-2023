@@ -51,6 +51,7 @@ a {
   position: absolute;
   transform: translateY(-100%);
 }
+
 #skiplink:focus {
   transform: translateY(0%);
   background-color: lightyellow;
@@ -65,4 +66,11 @@ table:not(.dataTable) thead tr{
 
 table:not(.dataTable) tbody:nth-child(odd){
   background-color: #005EB81F;
+}
+
+/* Hid everything except y-axis and labels for first chart */
+#geo_ch_flag_drug-region_splines > div > div:first-child
+ g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
+#geo_ch_flag_drug-region_splines > div > div:first-child > div > div > svg > text {
+  display: none;
 }
