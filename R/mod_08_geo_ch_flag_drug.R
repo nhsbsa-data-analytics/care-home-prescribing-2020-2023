@@ -318,9 +318,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           )
         ) %>%
         highcharter::hc_add_series(df,
-                                   "spline",
-                                   highcharter::hcaes(rank, VALUE),
-                                   showInLegend = FALSE
+          "spline",
+          highcharter::hcaes(rank, VALUE),
+          showInLegend = FALSE
         ) %>%
         highcharter::hc_add_series(
           df %>% dplyr::filter(GEOGRAPHY_CHILD == df_select),
