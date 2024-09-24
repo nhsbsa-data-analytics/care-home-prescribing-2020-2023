@@ -3,7 +3,7 @@
 /* Force scrolly sections to be the full width of the container-fluid ^ */
 .scrolly-sections { width: 100% !important; }
 
-/* Fix accessibility issue with scrolly contrast (increase gap between sections 
+/* Fix accessibility issue with scrolly contrast (increase gap between sections
 and prevent them fading in / out) */
 .scrolly-section {
   margin-bottom: 0px;
@@ -29,8 +29,8 @@ and prevent them fading in / out) */
    stroke-width: 1;
    stroke: #9c5b00;
  }
- 
-#patients_age_gender-patients_by_fy_geo_age_gender_chart 
+
+#patients_age_gender-patients_by_fy_geo_age_gender_chart
  g.highcharts-legend-item.highcharts-column-series.highcharts-color-3.highcharts-series-3 > rect {
 	stroke-width: 1;
 	stroke: #001f57;
@@ -65,4 +65,17 @@ table:not(.dataTable) thead tr{
 
 table:not(.dataTable) tbody:nth-child(odd){
   background-color: #005EB81F;
+}
+
+/* Hide everything except y-axis and labels for first chart */
+#geo_ch_flag_drug-region_splines > div > div:first-child
+ g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
+#geo_ch_flag_drug-region_splines > div > div:first-child > div > div > svg > text,
+#geo_ch_flag_drug-ics_splines > div > div:first-child
+ g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
+#geo_ch_flag_drug-ics_splines > div > div:first-child > div > div > svg > text,
+#geo_ch_flag_drug-lad_splines > div > div:first-child
+ g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
+#geo_ch_flag_drug-lad_splines > div > div:first-child > div > div > svg > text {
+  display: none;
 }
