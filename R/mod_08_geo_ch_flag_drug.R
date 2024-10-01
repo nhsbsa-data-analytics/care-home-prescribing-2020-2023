@@ -352,7 +352,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
               return positions;
             }
           "),
-          title = list(text = "Rank")
+          title = list(text = "Rank"),
+          reversed = TRUE
         ) %>%
         highcharter::hc_plotOptions(
           spline = list(
