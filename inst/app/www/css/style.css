@@ -67,15 +67,21 @@ table:not(.dataTable) tbody:nth-child(odd){
   background-color: #005EB81F;
 }
 
-/* Hide everything except y-axis and labels for first chart */
+/* Remove everything except y-axis and labels and text for first chart */
+/* display:none will also free up the space the removed element took up */
 #geo_ch_flag_drug-region_splines > div > div:first-child
  g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
-#geo_ch_flag_drug-region_splines > div > div:first-child > div > div > svg > text,
 #geo_ch_flag_drug-ics_splines > div > div:first-child
  g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
-#geo_ch_flag_drug-ics_splines > div > div:first-child > div > div > svg > text,
 #geo_ch_flag_drug-lad_splines > div > div:first-child
- g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels),
-#geo_ch_flag_drug-lad_splines > div > div:first-child > div > div > svg > text {
+ g:not(.highcharts-yaxis):not(.highcharts-yaxis-labels) {
   display: none;
+}
+
+/* Make text for first chart invisible */
+/* visibility: hidden will NOT free up the space the element took up */
+#geo_ch_flag_drug-region_splines > div > div:first-child > div > div > svg > text,
+#geo_ch_flag_drug-ics_splines > div > div:first-child > div > div > svg > text,
+#geo_ch_flag_drug-lad_splines > div > div:first-child > div > div > svg > text {
+  visibility: hidden;
 }

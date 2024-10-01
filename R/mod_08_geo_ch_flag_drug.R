@@ -284,14 +284,6 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       # Process original df
       df <- df %>%
         dplyr::rename_at(fy, ~"VALUE") %>%
-        dplyr::mutate(
-          VALUE_LABEL = scales::label_comma(
-            accuracy = accuracy(VALUE),
-            # See this issue for reason why append of 1 is necessary:
-            # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071
-            scale_cut = append(scales::cut_long_scale(), 1, 1)
-          )(janitor::round_half_up(VALUE, 2))
-        ) %>%
         dplyr::arrange(VALUE) %>%
         dplyr::mutate(
           index = dplyr::row_number(),
@@ -310,7 +302,11 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
       hc <- highcharter::highchart() %>%
         highcharter::hc_title(
-          text = title,
+          text = ifelse(
+            plot_pos == "first",
+            "Shared<br>y-axis",
+            title
+          ),
           style = list(
             fontSize = "12px",
             fontFamily = "arial",
