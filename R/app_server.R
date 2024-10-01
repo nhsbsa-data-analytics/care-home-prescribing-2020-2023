@@ -5,6 +5,14 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
+  eval_lines(".google-sheets-credentials")
+  
+  shinyusertracking::set_user_tracking(
+    GOOGLE_SHEET_USER,
+    GOOGLE_SHEET_ID,
+    session
+  )
+  
   mod_01_headline_figures_server("headline_figures")
   mod_02_patients_age_gender_server("patients_age_gender")
   mod_03_patients_imd_server("patients_imd")
