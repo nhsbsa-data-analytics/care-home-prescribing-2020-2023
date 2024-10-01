@@ -7,3 +7,5 @@
 data/*
 rsconnect
 .Renviron
+.google-sheets-credentials
+.secret/
