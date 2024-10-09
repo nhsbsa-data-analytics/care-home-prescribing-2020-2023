@@ -1,6 +1,13 @@
 ### Estimated prescribing metrics for care home vs non-care home patients aged 65 years and over
 
-In this section, we compare general prescribing volumes as well as established prescribing metrics including multiple medicines to a patient (polypharmacy), medicines associated with acute kidney injury (DAMN) and medicines associated with impaired cognition and falls (ACB). We also consider some new metrics associated with patient falls. See Metrics for more details.
+In this section, we compare general prescribing volumes as well as established prescribing metrics including:
+
+- multiple medicines to a patient (polypharmacy)
+- medicines associated with acute kidney injury (DAMN)
+- medicines associated with anti-cholinergic burden (ACB)
+- medicines associated with an increased falls-risk
+
+See [Metrics](http://127.0.0.1/Metrics?prescribing-metrics) for more details.
 
 __Care home patients aged 65 years and over had higher levels of prescribing than non-care home patients across most metrics. Care home patients in nursing homes had higher levels of prescribing than those in residential homes.__
 
