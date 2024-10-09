@@ -199,7 +199,6 @@ presc_db = presc_db %>%
     PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
     )
 
-
 # Process form fact
 form_db = form_db %>% 
   select(

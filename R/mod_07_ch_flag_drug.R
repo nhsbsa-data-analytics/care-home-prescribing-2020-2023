@@ -25,7 +25,7 @@ mod_07_ch_flag_drug_ui <- function(id) {
           inputId = ns("input_financial_year"),
           label = "Financial year",
           choices = sort(unique(carehomes2::mod_ch_flag_drug_df$FY)),
-          selected = "2022/23",
+          selected = max(sort(unique(carehomes2::mod_ch_flag_drug_df$FY))),
           full_width = T
           ),
         

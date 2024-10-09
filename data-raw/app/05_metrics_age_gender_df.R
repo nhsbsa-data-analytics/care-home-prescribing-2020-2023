@@ -1,5 +1,6 @@
 # Running time ~35 min
 
+# Libraries and functions
 library(dplyr)
 library(dbplyr)
 devtools::load_all()
@@ -10,10 +11,10 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
 base_db <- con |>
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331")) |>
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331")) %>% 
   filter(GENDER %in% c("Male", "Female"))
  
-
+# Get metrics
 metrics_by_age_gender_and_ch_flag_df <- get_metrics(
   base_db,
   first_grouping = c(
@@ -46,4 +47,9 @@ usethis::use_data(
 
 # Disconnect from database
 DBI::dbDisconnect(con)
-rm(list = ls()); gc()
+
+# Remove vars specific to script
+remove_vars <- setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()

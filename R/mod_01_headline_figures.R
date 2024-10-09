@@ -13,8 +13,7 @@ mod_01_headline_figures_ui <- function(id) {
     includeMarkdown("inst/markdown/01_headline_figures.md"),
     nhs_card(
       heading = "Estimated number of patients, prescription items and drug cost 
-                for care home patients aged 65 years and over in England 2020/21
-                to 2022/23",
+                for care home patients aged 65 years and over in England",
 
       # Metric select input
       nhs_selectInput(

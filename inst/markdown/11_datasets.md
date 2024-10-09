@@ -4,12 +4,12 @@
 
 Analysis is based on primary care prescription data collected by the NHS Business Services Authority. The data are collected for the operational purpose of reimbursing and remunerating dispensing contractors for the costs of supplying drugs and devices, along with essential and advanced services, to NHS patients. This excludes:
 
-  *	prescriptions that were issued but not presented for dispensing
-  *	prescriptions that were not submitted to the NHSBSA for processing and reimbursement
-  *	prescriptions issued and dispensed in prisons, hospitals, and private prescriptions
-  *	prescription batches submitted late
+- prescriptions that were issued but not presented for dispensing
+- prescriptions that were not submitted to the NHSBSA for processing and reimbursement
+- prescriptions issued and dispensed in prisons, hospitals, and private prescriptions
+- prescription batches submitted late
 
-Prescription data relates to prescription batches submitted to the NHSBSA for payment between April 2020 and March 2023. The part month in NHSBSA data relates to the dispensing month for which the prescription batch was submitted. This is generally but not always the month in which the prescription was dispensed. This means there may be dispensing for given patients that has not been submitted to the NHSBSA for payment and is therefore not included. There may also be prescriptions included for a patient that were dispensed prior to the dispensing month.
+Prescription data relates to prescription batches submitted to the NHSBSA for payment between April 2020 and March 2024. The part month in NHSBSA data relates to the dispensing month for which the prescription batch was submitted. This is generally but not always the month in which the prescription was dispensed. This means there may be dispensing for given patients that has not been submitted to the NHSBSA for payment and is therefore not included. There may also be prescriptions included for a patient that were dispensed prior to the dispensing month.
 
 Patients may receive prescription items that have not been prescribed to them personally and will not be accounted for. This may occur in the case of high-volume vaccines such as flu vaccines, and in the case of bulk prescribing of products, which can be bought in a pharmacy or supermarket such as Lactulose syrup and small volumes of Paracetamol. There is no means of quantifying the extent of this in NHSBSA data.
 
@@ -45,13 +45,13 @@ The NHSBSA periodically investigate the accuracy of NHS numbers captured from pa
 
 ### Lookup address
 
-Patient geography information was determined using the [National Statistics Postcode Lookup](https://geoportal.statistics.gov.uk/datasets/9ac0331178b0435e839f62f41cc61c16/about) (NSPL) from the [ONS Open Geography portal](https://geoportal.statistics.gov.uk/). An NHS region, Integrated Care System (ICS) or Local Authority could not be attributed to a patient address record if they had an unknown postcode, or if their postcode was not contained within the NSPL. We use 2022 boundaries for NHS regions and ICSs. For Local Authorities we use 2021 boundaries since our internal data is currently being updated. 
+Patient geography information was determined using the [National Statistics Postcode Lookup](https://geoportal.statistics.gov.uk/datasets/9ac0331178b0435e839f62f41cc61c16/about) (NSPL) from the [ONS Open Geography portal](https://geoportal.statistics.gov.uk/). An NHS region, Integrated Care System (ICS) or Local Authority could not be attributed to a patient address record if they had an unknown postcode, or if their postcode was not contained within the NSPL. We use 2022 boundaries for NHS regions and ICSs. For Local Authorities we use 2021 boundaries since our internal data is currently being updated.
 
 [Ordnance Survey AddressBase](https://www.ordnancesurvey.co.uk/business-government/products/addressbase) (AB) was the foundation of the lookup address data, which was matched against patient address information. AB is available in three formats, Core, Plus and Premium. This analysis used AB Plus.
 
 AB Plus is a product that is in a continual state of refinement, with epochs released on a six-weekly schedule. For each of the three financial years, the extract with date closest to the end of the financial year was used.
 
-[AB building classifications (PDF format)](https://www.ordnancesurvey.co.uk/documents/product-support/tech-spec/addressbase-technical-specification.pdf) were critical to matching a patient record to an address classified as being a care home. These classifications are maintained by Ordnance Survey based on information supplied by external agencies (e.g. Care Quality Commission) and rely on accurate information being supplied to Ordnance Survey. To remove potential mismatches a selection of AB building classification types were removed from the lookup data, such as street records, objects of interest, car parks, garages, and others. However, although this reduces the scope for mismatching there may be other building classification types that could also be excluded.
+[AB building classifications (PDF format)](https://www.ordnancesurvey.co.uk/documents/product-support/tech-spec/addressbase-technical-specification.pdf) were critical to matching a patient record to an address classified as being a care home. These classifications are maintained by Ordnance Survey based on information supplied by external agencies (e.g. Care Quality Commission) and rely on accurate information being supplied to Ordnance Survey. To remove potential mismatches a selection of AB building classification types were removed from the lookup data, such as street records, objects of interest, car parks, garages, and others. However, although this reduces the scope for mismatching there may be other building classification types that could also be excluded.
 
 [Care Quality Commission](https://www.cqc.org.uk/) (CQC) data was used to supplement the AB address information. This increased the pool of care home addresses and resulted in more accurate identification of prescriptions for care home residents.
 

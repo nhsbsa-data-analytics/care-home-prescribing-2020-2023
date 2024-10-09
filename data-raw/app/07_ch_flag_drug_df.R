@@ -1,5 +1,4 @@
 
-
 # Library
 library(dplyr)
 library(dbplyr)
@@ -9,7 +8,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  dplyr::tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
 
 # BNF columns
 bnf_cols = c(
@@ -91,7 +90,7 @@ get_geo_bnf_prop = function(index){
     BNF_PARENT = unique(df$BNF_PARENT),
     BNF_CHILD = unique(df$BNF_CHILD),
     METRIC = unique(df$METRIC)
-  ) %>%
+    ) %>%
     left_join(df) %>%
     mutate(VALUE = ifelse(is.na(VALUE), 0, VALUE))
 }
@@ -211,6 +210,10 @@ mod_ch_flag_drug_df %>% count(FY, CH_FLAG, BNF_PARENT)
 usethis::use_data(mod_ch_flag_drug_df, overwrite = TRUE)
 
 # Disconnect
-DBI::dbDisconnect(con); rm(list = ls()); gc()
+DBI::dbDisconnect(con)
 
-#-------------------------------------------------------------------------------
+# Remove vars specific to script
+remove_vars <- setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()

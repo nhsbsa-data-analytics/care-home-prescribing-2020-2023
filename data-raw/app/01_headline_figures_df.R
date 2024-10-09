@@ -8,7 +8,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from year month dim table in DWCP
 data_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
 
 # Key findings used within analysis summary text
 data_db %>% 
@@ -104,4 +104,10 @@ mod_headline_figures_df = rbind(annual_df, monthly_df)
 usethis::use_data(mod_headline_figures_df, overwrite = TRUE)
 
 # Disconnect from database
-DBI::dbDisconnect(con); rm(list = ls()); gc()
+DBI::dbDisconnect(con)
+
+# Remove vars specific to script
+remove_vars <- setdiff(ls(), keep_vars)
+
+# Remove objects and clean environment
+rm(list = remove_vars, remove_vars); gc()
