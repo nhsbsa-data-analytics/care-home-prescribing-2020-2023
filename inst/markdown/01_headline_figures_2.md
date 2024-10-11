@@ -11,7 +11,7 @@ The total number of care home patients who received at least one prescription it
 - The population is not stable – some patients turn 65 years old during the year, some move in or out of the care home and others may die.
 - Not all care home patients receive a prescription in every month they are in a care home.
 
-For this reason most Metrics were calculated on a patient-month basis.
+For this reason most [Metrics](http://127.0.0.1/Metrics?prescribing-metrics) were calculated on a [patient-month](http://127.0.0.1/Metrics?prescribing-per-patient-month-ppm) basis.
 
 The number of patients who received prescriptions in a care home peaked in January 2024, at 328,000 patients. January 2024 also had the highest number of care home prescription items, at 3.6 million items. Prior to 2024, patient counts peaked around the start of the COVID-19 pandemic.
 
