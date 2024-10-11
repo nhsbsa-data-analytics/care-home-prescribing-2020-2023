@@ -5,11 +5,8 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
-  eval_lines(".google-sheets-credentials")
-  
   shinyusertracking::set_user_tracking(
-    GOOGLE_SHEET_USER,
-    GOOGLE_SHEET_ID,
+    c("login", "logout", "duration"),
     session
   )
   
