@@ -9,3 +9,4 @@ rsconnect
 .Renviron
 .google-sheets-credentials
 .secret/
+**/review/*

@@ -1,9 +1,0 @@
-__There was some slight variation in the number of care home patients aged 65 years and over across deprivation deciles.__
-
-Care home patient prescriptions were allocated an [Index of Multiple Deprivation (IMD)](https://www.gov.uk/government/statistics/english-indices-of-deprivation-2019) decile based on the area ([Lower Layer Super Output Area](https://www.datadictionary.nhs.uk/nhs_business_definitions/lower_layer_super_output_area.html#:~:text=Description,statistics%20in%20England%20and%20Wales)) where the care home was located. There was some variation in patient numbers, with the most and least deprived deciles having lower numbers of patients. 
-
-It is possible many residents changed LSOA when they moved into a care home, so this analysis provides information on the types of areas in which care homes are located rather than providing a measure of the deprivation levels of the areas from which residents came. Decisions on the locations of care homes will be influenced by many factors including the local demand for residential care but also by supply side factors such as local property costs and the availability and cost of the care workforce required.
-
-__Similar proportions of care home patients aged 65 years or over live in residential homes and nursing homes.__
-
-On average each month, we estimate similar proportions of care home patients aged 65 years or over living in residential homes (44.5%) and nursing homes (42.5%). A small percentage (2.1%) appear in both settings each month. There were 10.9% which we were unable to link to the [CQC dataset](https://anypoint.mulesoft.com/exchange/portals/care-quality-commission-5/4d36bd23-127d-4acf-8903-ba292ea615d4/cqc-syndication-1/) in order to attribute to a residential or nursing home, due to incomplete address information.

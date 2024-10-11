@@ -7,23 +7,34 @@ $(document).ready(function () {
   // Add new tab icon for external links and set to open in new tab
   var links = $("a[target!=_blank]");
   links.each(function(){
+    debugger;
     // Current link
     var a = $(this);
-    // If no href attribute, exit early (internal links will not have href)
-    if (!a.attr("href")) return;
+    // Exit early for various types of link
     if (
-      !a.attr('href').match(/^mailto\:/)                    // Email links
-         && (a[0].hostname != window.location.hostname)     // Internal links
-         && !a.attr('href').match(/^javascript\:/)          // Starting javascript
-         && !a.attr('href').match(/^$/)                     // Empty links
-         && !a.attr('href').match(/^#maincontent$/)         // Skip link
-         && !(a.attr('class') &&                            // NHSBSA header icon
+      a.attr('href').match(/^mailto\:/)                   // Email links
+        || a.attr('href').match(/^javascript\:/)          // Starting javascript
+        || a.attr('href').match(/^#/)                     // Starting # (e.g. tabs)
+        || a.attr('href').match(/^$/)                     // Empty links
+        || a.attr('href').match(/^#maincontent$/)         // Skip link
+        || (a.attr('class') &&                            // NHSBSA header icon
               a.attr('class').match(/^nhsuk-header__link$/))
-    ) {
-        // Append space then icon to link
-        a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
-        // Force open in new tab
-        a.attr('target', '_blank');
+    ) { return; }
+    
+    if (!(a[0].hostname == window.location.hostname)) {
+      // External link
+      // Append space then icon to link
+      a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
+      // Force open in new tab
+      a.attr('target', '_blank');
+    } else {
+      // Internal link
+      var tabName = a.attr('href').split("/")[3].split("?")[0].replace(/_/g, ' ');
+      var id = a.attr('href').split("?")[1] ?? '';
+      
+      a.addClass('local').
+      removeAttr('href').
+      attr('onclick', 'internalLink("' + tabName + '", "' + id + '");');
     }
   });
   
