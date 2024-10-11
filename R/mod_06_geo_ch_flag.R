@@ -67,7 +67,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
         are rounded to 2 decimal places."
       ),
       mod_nhs_download_ui(ns("download_data"))
-    )
+    ),
+    tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
   )
 }
 

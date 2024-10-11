@@ -93,19 +93,22 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             style = "font-size: 9pt",
             "Click on a row to display chart for one of the 7 NHS regions.",
             tags$br(),
-            "Only the top 50 elements nationally by total item count across
-              the three years per BNF level are presented. For example, only the
-              top 50 paragraphs are presented, determined by the 50 paragraphs
-              with the largest total item count nationally.",
+            "Only the top 50 elements nationally by total item count across all 
+             years per BNF level are presented.",
             tags$br(),
-            "The number of patients contributing to each metric are provided
-              in the data download, offering additional context to metric value
-              calculations.",
+            "For example, only the 50 paragraphs with the largest national item
+             count are described.",
+            tags$br(),
+            "The number of patients contributing to each metric are provided in 
+             the data download, offering additional context.",
             tags$br(),
             "Patient counts and annual totals between one and four have been
-              rounded to five, otherwise to the nearest ten. Values over 1,000
-              have been shortened with an appropriate suffix and then rounded to
-              2 decimal places. All other values are rounded to 2 decimal places."
+             rounded to five, otherwise to the nearest ten.",
+            tags$br(),
+            "Values over 1,000 have been shortened with an appropriate suffix and
+             then rounded to 2 decimal places.",
+            tags$br(),
+            "All other values are rounded to 2 decimal places."
           )
         ),
 
@@ -166,19 +169,22 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             style = "font-size: 9pt",
             "Click on a row to display chart for one of the 42 ICSs.",
             tags$br(),
-            "Only the top 50 elements nationally by total item count across
-              the three years per BNF level are presented. For example, only the
-              top 50 paragraphs are presented, determined by the 50 paragraphs
-              with the largest total item count nationally.",
+            "Only the top 50 elements nationally by total item count across all 
+             years per BNF level are presented.",
             tags$br(),
-            "The number of patients contributing to each metric are provided
-              in the data download, offering additional context to metric value
-              calculations.",
+            "For example, only the 50 paragraphs with the largest national item
+             count are described.",
+            tags$br(),
+            "The number of patients contributing to each metric are provided in 
+             the data download, offering additional context.",
             tags$br(),
             "Patient counts and annual totals between one and four have been
-              rounded to five, otherwise to the nearest ten. Values over 1,000
-              have been shortened with an appropriate suffix and then rounded to
-              2 decimal places. All other values are rounded to 2 decimal places."
+             rounded to five, otherwise to the nearest ten.",
+            tags$br(),
+            "Values over 1,000 have been shortened with an appropriate suffix and
+             then rounded to 2 decimal places.",
+            tags$br(),
+            "All other values are rounded to 2 decimal places."
           )
         ),
 
@@ -237,23 +243,27 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to display chart for one of the 307 Local Authorities.
-             The Isles of Scilly were removed due to the number of care homes in
+            "Click on a row to display chart for one of the 307 Local Authorities.",
+            tags$br(),
+            "The Isles of Scilly were removed due to the number of care homes in
              the Local Authority.",
             tags$br(),
-            "Only the top 50 elements nationally by total item count across
-             the three years per BNF level are presented. For example, only the
-             top 50 paragraphs are presented, determined by the 50 paragraphs
-             with the largest total item count nationally.",
+            "Only the top 50 elements nationally by total item count across all 
+             years per BNF level are presented.",
             tags$br(),
-            "The number of patients contributing to each metric are provided
-             in the data download, offering additional context to metric value
-             calculations.",
+            "For example, only the 50 paragraphs with the largest national item
+             count are described.",
+            tags$br(),
+            "The number of patients contributing to each metric are provided in 
+             the data download, offering additional context.",
             tags$br(),
             "Patient counts and annual totals between one and four have been
-             rounded to five, otherwise to the nearest ten. Values over 1,000
-             have been shortened with an appropriate suffix and then rounded to
-             2 decimal places. All other values are rounded to 2 decimal places."
+             rounded to five, otherwise to the nearest ten.",
+            tags$br(),
+            "Values over 1,000 have been shortened with an appropriate suffix and
+             then rounded to 2 decimal places.",
+            tags$br(),
+            "All other values are rounded to 2 decimal places."
           )
         )
       ),
@@ -262,7 +272,8 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
       mod_nhs_download_ui(
         id = ns("download_data")
       )
-    )
+    ),
+    tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
   )
 }
 
