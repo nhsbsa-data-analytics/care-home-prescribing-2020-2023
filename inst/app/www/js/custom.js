@@ -31,9 +31,8 @@ $(document).ready(function () {
       var tabName = a.attr('href').split("/")[3].split("?")[0].replace(/_/g, ' ');
       var id = a.attr('href').split("?")[1] ?? '';
       
-      a.addClass('local').
-      removeAttr('href').
-      attr('onclick', 'internalLink("' + tabName + '", "' + id + '");');
+      a.removeAttr('href').
+      attr('onclick', 'internalLink(\'' + tabName + '\', \'' + id + '\');');
     }
   });
   
@@ -132,7 +131,7 @@ var internalLink = function(tabName, id) {
       tab.click();
       
       // check for target id, exit early if not present
-      var $id = $(id);
+      var $id = $('#' + id);
       if ($id.length === 0) {
           return;
       }
