@@ -23,8 +23,8 @@ app_ui <- function(request) {
         class = "nhsuk-main-wrapper",
         role = "main",
         h1(
-          "Estimated prescribing patterns for care home patients aged 65 years
-           and over from 2020/21 until 2022/23"
+          "Estimated prescribing patterns for care home patients aged 65 years 
+           and over in England"
         ),
         nhs_navlistPanel(
           id = "mainTabs",
@@ -34,7 +34,7 @@ app_ui <- function(request) {
             title = "Article",
             mod_01_headline_figures_ui("headline_figures"),
             mod_02_patients_age_gender_ui("patients_age_gender"),
-            mod_03_patients_imd_ui("patients_imd"),
+            mod_03_patients_ch_type_ui("patients_ch_type"),
             mod_04_metrics_ch_type_ui("metrics_ch_type"),
             mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_06_geo_ch_flag_ui("geo_ch_flag"),

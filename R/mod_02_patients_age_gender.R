@@ -32,9 +32,7 @@ mod_02_patients_age_gender_ui <- function(id){
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
       shiny::htmlOutput(outputId = ns("caption")),
       mod_nhs_download_ui(id = ns("download_data"))
-    ),
-    tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
-    
+    )
   )
 }
     
@@ -176,50 +174,96 @@ mod_02_patients_age_gender_server <- function(id){
       any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
       any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
       
+      maybe_in <- ifelse(input$sub_geography == "Overall", "", "In ")
+      
+      # Example for testing: unk and ind shown in the same caption: 2022/23,
+      # LA = Hinckley and Bosworth
+      maybe_exc_or_ind <- if (!any_excl_unk & !any_excl_ind) {
+        glue::glue("
+          This chart does not show {excluded_unk()}% and {excluded_ind()}% of patients \\
+          where the gender was not known and not specified, respectively.
+        ")
+      } else if (!any_excl_unk & any_excl_ind) {
+        glue::glue("
+          This chart does not show {excluded_unk()}% of patients where the gender was \\
+          not known.
+        ")
+      } else if (any_excl_unk & !any_excl_ind) {
+        glue::glue("
+          This chart does not show {excluded_ind()}% of patients where the gender was \\
+          not specified.
+        ")
+      } else {
+        NULL
+      }
+      
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
-        HTML(paste0(
-          ifelse(input$sub_geography == "Overall", "", "In "),
-          input$sub_geography, ", there were an estimated ", tags$b(total()),
-          " care home patients in ", input$fy, ", of which ",
-          tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
-          tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
-          " females aged 85 or over."
-        )),
-        tags$br(),
-        # Example for testing: unk and ind shown in the same caption: 2022/23,
-        # LA = Hinckley and Bosworth
-        if (!any_excl_unk & !any_excl_ind) {
-          
-          paste0("This chart does not show ",
-          excluded_unk(), "%",
-          " and ",
-          excluded_ind(), "%",
-          " patients where the gender was not known and not specified, respectively. ")
-          
-        } else if (!any_excl_unk & any_excl_ind) {
-          
-          paste0("This chart does not show ",
-                 excluded_unk(), "%",
-                 " patients where the gender was not known. ")
-          
-        } else if (any_excl_unk & !any_excl_ind) {
-          
-          paste0("This chart does not show ",
-                 excluded_ind(), "%",
-                 " patients where the gender was not specified. ")
-          
-        } else NULL,
-        tags$br(),
-        "Patient counts between one and four have been rounded to five,
-        otherwise to the nearest ten; and the percentages are based on rounded
-        counts.",
-        tags$br(),
-        "The Isles of Scilly were removed due to the number of care homes in the
-        Local Authority."
+        HTML(glue::glue("
+          {maybe_in}{input$sub_geography}, there were an estimated <b>{total()}</b> \\
+          care home patients in {input$fy}.
+          <br>
+          Of these, <b>{percentage_female_patients()}%</b> were females and \\
+          <b>{percentage_elderly_female_patients()}%</b> were females aged 85 or over.
+          <br>
+          {maybe_exc_or_ind}
+          <br>
+          Patient counts between one and four have been rounded to five, otherwise \\
+          to the nearest ten.
+          <br>
+          The percentages are based on rounded counts.
+          <br>
+          The Isles of Scilly were removed due to the number of care homes in the \\
+          Local Authority.
+        "))
       )
     })
+      
+    #   tags$text(
+    #     class = "highcharts-caption",
+    #     style = "font-size: 9pt;",
+    #     HTML(paste0(
+    #       ifelse(input$sub_geography == "Overall", "", "In "),
+    #       input$sub_geography, ", there were an estimated ", tags$b(total()),
+    #       " care home patients in ", input$fy, ", of which ",
+    #       tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
+    #       tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
+    #       " females aged 85 or over."
+    #     )),
+    #     tags$br(),
+    #     # Example for testing: unk and ind shown in the same caption: 2022/23,
+    #     # LA = Hinckley and Bosworth
+    #     if (!any_excl_unk & !any_excl_ind) {
+    #       
+    #       paste0("This chart does not show ",
+    #       excluded_unk(), "%",
+    #       " and ",
+    #       excluded_ind(), "%",
+    #       " patients where the gender was not known and not specified, respectively. ")
+    #       
+    #     } else if (!any_excl_unk & any_excl_ind) {
+    #       
+    #       paste0("This chart does not show ",
+    #              excluded_unk(), "%",
+    #              " patients where the gender was not known. ")
+    #       
+    #     } else if (any_excl_unk & !any_excl_ind) {
+    #       
+    #       paste0("This chart does not show ",
+    #              excluded_ind(), "%",
+    #              " patients where the gender was not specified. ")
+    #       
+    #     } else NULL,
+    #     tags$br(),
+    #     "Patient counts between one and four have been rounded to five,
+    #     otherwise to the nearest ten; and the percentages are based on rounded
+    #     counts.",
+    #     tags$br(),
+    #     "The Isles of Scilly were removed due to the number of care homes in the
+    #     Local Authority."
+    #   )
+    # })
     
     
     # Patients by geography and gender and age band chart

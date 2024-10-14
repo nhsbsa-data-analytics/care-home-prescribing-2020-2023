@@ -29,9 +29,7 @@ mod_05_metrics_age_gender_ui <- function(id){
       highcharter::highchartOutput(outputId = ns("metrics_by_gender_and_age_band_and_ch_flag_chart"), height = "350px"),
       shiny::htmlOutput(outputId = ns("excluded_patients")),
       mod_nhs_download_ui(id = ns("download_data"))
-    ),
-    tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
-    
+    )
   )
 }
 

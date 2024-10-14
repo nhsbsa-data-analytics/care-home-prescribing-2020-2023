@@ -25,7 +25,7 @@ mod_07_ch_flag_drug_ui <- function(id) {
           inputId = ns("input_financial_year"),
           label = "Financial year",
           choices = sort(unique(carehomes2::mod_ch_flag_drug_df$FY)),
-          selected = "2022/23",
+          selected = max(sort(unique(carehomes2::mod_ch_flag_drug_df$FY))),
           full_width = T
           ),
         
@@ -60,8 +60,9 @@ mod_07_ch_flag_drug_ui <- function(id) {
         home item count are presented.",
         tags$br(),
         "Values over 1,000 have been shortened with an appropriate suffix and
-        then rounded to 2 decimal places. All other values are rounded to 2 
-        decimal places."
+        then rounded to 2 decimal places.",
+        tags$br(),
+        "All other values are rounded to 2 decimal places."
       ),
       
       # Data download

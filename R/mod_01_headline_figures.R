@@ -10,11 +10,12 @@
 mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown("inst/markdown/01_headline_figures.md"),
+    includeMarkdown("inst/markdown/01_headline_figures_1.md"),
+    tags$div(style = "margin-top: 25vh"),
+    includeMarkdown("inst/markdown/01_headline_figures_2.md"),
     nhs_card(
       heading = "Estimated number of patients, prescription items and drug cost 
-                for care home patients aged 65 years and over in England 2020/21
-                to 2022/23",
+                for care home patients aged 65 years and over in England",
 
       # Metric select input
       nhs_selectInput(
@@ -62,7 +63,8 @@ mod_01_headline_figures_ui <- function(id) {
       mod_nhs_download_ui(
         id = ns("download_data")
       )
-    )
+    ),
+    tags$div(style = "margin-top: 25vh")
   )
 }
 
