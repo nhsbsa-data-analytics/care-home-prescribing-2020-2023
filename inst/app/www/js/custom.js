@@ -7,7 +7,6 @@ $(document).ready(function () {
   // Add new tab icon for external links and set to open in new tab
   var links = $("a[target!=_blank]");
   links.each(function(){
-    debugger;
     // Current link
     var a = $(this);
     // Exit early for various types of link
@@ -21,7 +20,7 @@ $(document).ready(function () {
               a.attr('class').match(/^nhsuk-header__link$/))
     ) { return; }
     
-    if (!(a[0].hostname == window.location.hostname)) {
+    if (!(a[0].hostname === "localhost" || a[0].hostname === "127.0.0.1")) {
       // External link
       // Append space then icon to link
       a.after('&nbsp;<i class="fa-solid fa-arrow-up-right-from-square"></i>');
