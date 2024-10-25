@@ -126,7 +126,15 @@ mod_01_headline_figures_server <- function(id, export_data) {
       headline_figures_df() %>% 
         dplyr::filter(TYPE == "Monthly sum") %>% 
         highcharter::hchart(., "line", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
-        highcharter::hc_xAxis(title = list(text = "")) %>% 
+        highcharter::hc_xAxis(
+          title = list(text = ""),
+          plotBands = list(list(
+            label = list(text = "COVID-19"),
+            from = 0,
+            to = 20,
+            color = "#f0f0f0"
+          ))
+        ) %>% 
         highcharter::hc_yAxis(
           min = 0,
           title = list(
