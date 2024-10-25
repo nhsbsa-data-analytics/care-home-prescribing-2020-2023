@@ -72,7 +72,9 @@ mod_04_metrics_ch_type_ui <- function(id) {
         home patient population.",
         tags$br(),
         "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 2 decimal places."
+        are rounded to 2 decimal places.",
+        tags$br(),
+        "Ages 65+ includes all patients aged 65 or over, even those aged over 85."
       ),
       mod_nhs_download_ui(id = ns("download_data"))
     )
