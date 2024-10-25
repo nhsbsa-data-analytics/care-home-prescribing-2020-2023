@@ -441,7 +441,7 @@ mod_02_patients_age_gender_server <- function(id){
               ) 
           )
         ) %>% 
-        hc_annotations(
+        highcharter::hc_annotations(
           list(
             labels = 
               list(
