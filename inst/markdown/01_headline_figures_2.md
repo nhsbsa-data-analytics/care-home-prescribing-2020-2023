@@ -1,6 +1,6 @@
 ### Overall prescribing for care home patients aged 65 and over
 
-__The number of patients aged 65 years and over who received prescription items in care homes increased each year, as did the number of prescription items and drug cost.__
+__The number of patients aged 65 years and over who received prescription items in care homes increased each year. The number of prescription items and drug cost increased also.__
 
 There was an estimated monthly average of 323,000 care home patients aged 65 years and over receiving at least one prescription item in 2023/24. They received around 40 million prescription items at a drug cost of £396 million.
 
@@ -13,6 +13,6 @@ The total number of care home patients who received at least one prescription it
 
 For this reason most [Metrics](http://127.0.0.1/Metrics?prescribing-metrics) were calculated on a [patient-month](http://127.0.0.1/Metrics?prescribing-per-patient-month-ppm) basis.
 
-The number of patients who received prescriptions in a care home peaked in January 2024, at 328,000 patients. January 2024 also had the highest number of care home prescription items, at 3.6 million items. Prior to 2024, patient counts peaked around the start of the COVID-19 pandemic.
+By month, patient counts dropped during the COVID-19 pandemic then steadily rose again from March 2021. The number of patients who received prescriptions in a care home peaked in January 2024, at 328,000 patients. January 2024 also had the highest number of care home prescription items, at 3.6 million items. 
 
-Patient counts initially dropped during the pandemic then steadily rose again from March 2021. There may be some seasonality, with a declining care home population during and around winter months.
+There is some seasonality in the data, but the effect is small compared to the overall trend.
