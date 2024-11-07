@@ -6,8 +6,8 @@
 #' @noRd
 app_server <- function(input, output, session) {
   shinyusertracking::set_user_tracking(
-    c("login", "logout", "duration"),
-    session
+    session,
+    columns = c("login", "logout", "duration")
   )
   
   mod_01_headline_figures_server("headline_figures")
