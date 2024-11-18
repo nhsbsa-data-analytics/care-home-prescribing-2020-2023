@@ -605,7 +605,6 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
               )
             },
             footer = function(values, name) {
-              browser()
               # Do nothing for selection column
               if (name == ".selection") return ()
               
