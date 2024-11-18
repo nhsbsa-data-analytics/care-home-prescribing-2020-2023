@@ -5,7 +5,7 @@
 #' @import shiny
 #' @noRd
 app_server <- function(input, output, session) {
-  shinyusertracking::set_user_tracking()
+  shinyusertracking::use_logging()
   
   mod_01_headline_figures_server("headline_figures")
   mod_02_patients_age_gender_server("patients_age_gender")
