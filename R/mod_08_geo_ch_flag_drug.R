@@ -603,6 +603,35 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                   scale_cut = append(scales::cut_long_scale(), 1, 1)
                 )(janitor::round_half_up(val, 2))
               )
+            },
+            footer = function(values, name) {
+              # Do nothing for selection column
+              if (name == ".selection") return ()
+              
+              # Get mean values of column
+              val = mean(values, na.rm = TRUE)
+              
+              # Control behaviour for sub 1K Total values vs others
+              accuracy = ifelse(
+                startsWith(metric, "Total") & (val < 10^3),
+                1,
+                0.01
+              )
+              
+              # If numeric column, apply usual formatting
+              if (is.numeric(values)) {
+                htmltools::div(tags$b(
+                  scales::label_comma(
+                    accuracy = accuracy,
+                    # See this issue for reason why append of 1 is necessary:
+                    # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071
+                    scale_cut = append(scales::cut_long_scale(), 1, 1)
+                  )(janitor::round_half_up(val, 2))
+                ))
+              # If character column set row name
+              } else if (is.character(values)) {
+                htmltools::div(tags$b("National average"))
+              }
             }
           ),
           style = list(fontSize = "14px", fontFamily = "Arial"),
