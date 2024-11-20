@@ -56,15 +56,15 @@ foi_yearly_final_df <- foi_yearly_df %>%
   mutate(
     TOTAL_PATS = case_when(
       TOTAL_PATS < 5 ~ NA_integer_,
-      TRUE ~ TOTAL_PATS
+      TRUE ~ bespoke_round(TOTAL_PATS)
     ),
     TOTAL_ITEMS = case_when(
       is.na(TOTAL_PATS) ~ NA_integer_,
-      TRUE ~ TOTAL_ITEMS
+      TRUE ~ bespoke_round(TOTAL_ITEMS)
     ),
     TOTAL_COST = case_when(
       is.na(TOTAL_PATS) ~ NA_real_,
-      TRUE ~ TOTAL_COST
+      TRUE ~ bespoke_round(TOTAL_COST)
     )
   )
 
@@ -74,7 +74,7 @@ perc_redacted_yearly <- round(
   100 * nrow(filter(foi_yearly_final_df, is.na(TOTAL_PATS))) / nrow(foi_yearly_final_df)
 )
 
-## Query 1: Monthly --------------------------------------------------------
+## Query 2: Monthly --------------------------------------------------------
 
 # REQUEST:
 # For financial years from 2020/21 to 2022/23, provide totals of
@@ -112,15 +112,15 @@ foi_monthly_final_df <- foi_monthly_df %>%
   mutate(
     TOTAL_PATS = case_when(
       TOTAL_PATS < 5 ~ NA_integer_,
-      TRUE ~ TOTAL_PATS
+      TRUE ~ bespoke_round(TOTAL_PATS)
     ),
     TOTAL_ITEMS = case_when(
       is.na(TOTAL_PATS) ~ NA_integer_,
-      TRUE ~ TOTAL_ITEMS
+      TRUE ~ bespoke_round(TOTAL_ITEMS)
     ),
     TOTAL_COST = case_when(
       is.na(TOTAL_PATS) ~ NA_real_,
-      TRUE ~ TOTAL_COST
+      TRUE ~ bespoke_round(TOTAL_COST)
     )
   )
 
