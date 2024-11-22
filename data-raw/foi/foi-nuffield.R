@@ -104,3 +104,26 @@ foi_monthly_final_df <- foi_monthly_df %>%
   )
 
 saveRDS(foi_monthly_final_df, "foi-final-nuffield-monthly.rds")
+
+foi_final_df <- bind_rows(
+  foi_yearly_final_df %>% mutate(PERIOD_TYPE = "ANNUALLY"),
+  foi_monthly_final_df %>% mutate(PERIOD_TYPE = "MONTHLY")
+) %>% 
+  mutate(
+    "Period type" = PERIOD_TYPE,
+    "Financial year" = FY,
+    "Year Month (YYYYMM)" = YEAR_MONTH,
+    "Age band" = AGE_BAND,
+    "Gender" = GENDER,
+    "Care-home" = CH_FLAG,
+    "IMD decile" = IMD_DECILE,
+    "Chapter description" = CHAPTER_DESCR,
+    "Total items" = TOTAL_ITEMS,  
+    "Total cost" = TOTAL_COST,
+    "Total distinct patients" = TOTAL_PATS,
+    .keep = "none"
+  )
+
+saveRDS(foi_final_df, "foi-final-nuffield.rds")
+
+write.csv(foi_final_df, "foi-nuffield.csv", row.names = FALSE)
