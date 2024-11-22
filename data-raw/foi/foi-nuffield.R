@@ -49,30 +49,18 @@ foi_yearly_df <- base_db %>%
   ) %>% 
   collect()
 
-saveRDS(foi_df, "foi-nuffield-yearly.rds")
+saveRDS(foi_yearly_df, "foi-nuffield-yearly.rds")
 
 foi_yearly_final_df <- foi_yearly_df %>% 
   filter(!is.na(IMD_DECILE)) %>% 
   mutate(
-    TOTAL_PATS = case_when(
-      TOTAL_PATS < 5 ~ NA_integer_,
-      TRUE ~ bespoke_round(TOTAL_PATS)
-    ),
-    TOTAL_ITEMS = case_when(
-      is.na(TOTAL_PATS) ~ NA_integer_,
-      TRUE ~ bespoke_round(TOTAL_ITEMS)
-    ),
-    TOTAL_COST = case_when(
-      is.na(TOTAL_PATS) ~ NA_real_,
-      TRUE ~ bespoke_round(TOTAL_COST)
-    )
+    TOTAL_PATS = bespoke_round(TOTAL_PATS),
+    TOTAL_ITEMS = bespoke_round(TOTAL_ITEMS),
+    TOTAL_COST = bespoke_round(TOTAL_COST)
   )
 
 saveRDS(foi_yearly_final_df, "foi-final-nuffield-yearly.rds")
 
-perc_redacted_yearly <- round(
-  100 * nrow(filter(foi_yearly_final_df, is.na(TOTAL_PATS))) / nrow(foi_yearly_final_df)
-)
 
 ## Query 2: Monthly --------------------------------------------------------
 
@@ -105,27 +93,14 @@ foi_monthly_df <- base_db %>%
   ) %>% 
   collect()
 
-saveRDS(foi_df, "foi-nuffield-monthly.rds")
+saveRDS(foi_monthly_df, "foi-nuffield-monthly.rds")
 
 foi_monthly_final_df <- foi_monthly_df %>% 
   filter(!is.na(IMD_DECILE)) %>% 
   mutate(
-    TOTAL_PATS = case_when(
-      TOTAL_PATS < 5 ~ NA_integer_,
-      TRUE ~ bespoke_round(TOTAL_PATS)
-    ),
-    TOTAL_ITEMS = case_when(
-      is.na(TOTAL_PATS) ~ NA_integer_,
-      TRUE ~ bespoke_round(TOTAL_ITEMS)
-    ),
-    TOTAL_COST = case_when(
-      is.na(TOTAL_PATS) ~ NA_real_,
-      TRUE ~ bespoke_round(TOTAL_COST)
-    )
+    TOTAL_PATS = bespoke_round(TOTAL_PATS),
+    TOTAL_ITEMS = bespoke_round(TOTAL_ITEMS),
+    TOTAL_COST = bespoke_round(TOTAL_COST)
   )
 
 saveRDS(foi_monthly_final_df, "foi-final-nuffield-monthly.rds")
-
-perc_redacted_monthly <- round(
-  100 * nrow(filter(foi_monthly_final_df, is.na(TOTAL_PATS))) / nrow(foi_monthly_final_df)
-)
