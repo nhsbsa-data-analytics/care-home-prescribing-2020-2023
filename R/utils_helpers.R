@@ -181,23 +181,23 @@ fa_to_png_to_datauri <- function(name, ...) {
 bespoke_round <- function(vec) {
   
   result <- rep(0L, length(vec)) # Empty vector for storing the result
+  
+  for (i in seq_along(vec)) {
     
-    for (i in seq_along(vec)) {
-
-        if (dplyr::between(vec[i], 1, 5)) {
-
-          result[i] <- 5L
-
-        } else if (dplyr::between(vec[i], 6, 10)) {
-
-          result[i] <- 10L
-
-        } else {
-
-          result[i] <- janitor::round_half_up(vec[i], -1) |> as.integer()
-
-        }
+    if (dplyr::between(vec[i], 1, 5)) {
+      
+      result[i] <- 5L
+      
+    } else if (dplyr::between(vec[i], 6, 10)) {
+      
+      result[i] <- 10L
+      
+    } else {
+      
+      result[i] <- janitor::round_half_up(vec[i], -1) |> as.integer()
+      
     }
+  }
   
   return(result)
   
@@ -209,105 +209,105 @@ bespoke_round <- function(vec) {
 
 # NSAID metric other drugs
 other_drug_vec = c(
-  '0601022B0', 
-  '0601023AD',
-  '0601023AF',
-  '0601023AH',
-  '0601023AJ',
-  '0601023AL',
-  '0601023AP',
-  '0601023AR',
-  '0601023V0',
-  '0601023W0',
-  '0601023Z0'
+  "0601022B0",
+  "0601023AD",
+  "0601023AF",
+  "0601023AH",
+  "0601023AJ",
+  "0601023AL",
+  "0601023AP",
+  "0601023AR",
+  "0601023V0",
+  "0601023W0",
+  "0601023Z0"
 )
 
 # Medicines with moderate to high anticholinergic burde
 acb_drugs <- c(
-  "0304010Y0",
-  "0403010B0",
-  "0403010C0",
   "0102000AC",
-  "0104020H0",
   "0102000H0",
-  "0409020E0",
-  "0304010F0",
-  "0309020U0",
-  "0304010G0",
-  "0304010AD",
-  "0402010D0",
-  "0403030D0",
-  "0403030Z0",
-  "0304010H0",
-  "0403010F0",
-  "0402010C0",
-  "1001040G0",
-  "0304010K0",
-  "0704020AC",
   "0102000J0",
   "0102000K0",
-  "0406000H0",
-  "0406000AC",
+  "0102000N0",
+  "0102000Y0",
+  "0104020H0",
+  "0304010AD",
+  "0304010F0",
+  "0304010G0",
+  "0304010H0",
+  "0304010J0",
+  "0304010K0",
   "0304010N0",
+  "0304010W0",
+  "0304010Y0",
   "030902040",
   "0309020AB",
   "0309020AH",
-  "0403010J0",
-  "0403010L0",
-  "0406000AA",
-  "0704020AD",
-  "0704020G0",
+  "0309020U0",
+  "0402010C0",
+  "0402010D0",
   "0402010I0",
-  "0304010J0",
-  "0406000A0",
-  "0102000N0",
-  "0406000L0",
-  "0403010N0",
-  "0402010L0",
   "0402010K0",
-  "0403010R0",
-  "0406000N0",
-  "0407010P0",
-  "0403010V0",
-  "0409020N0",
-  "0704020J0",
-  "0704040G0",
+  "0402010L0",
   "0402010P0",
   "0402010Q0",
-  "0407020V0",
-  "0409020S0",
-  "0304010W0",
-  "0406000V0",
-  "0102000Y0",
-  "0704020P0",
   "0402010W0",
-  "1002020T0",
-  "0704020N0",
   "0402010X0",
+  "0403010B0",
+  "0403010C0",
+  "0403010F0",
+  "0403010J0",
+  "0403010L0",
+  "0403010N0",
+  "0403010R0",
+  "0403010V0",
+  "0403010Y0",
+  "0403030D0",
+  "0403030Z0",
+  "0406000A0",
+  "0406000AA",
+  "0406000AC",
+  "0406000H0",
+  "0406000L0",
+  "0406000N0",
+  "0406000V0",
+  "0407010P0",
+  "0407020V0",
   "0409020C0",
-  "0403010Y0"
+  "0409020E0",
+  "0409020N0",
+  "0409020S0",
+  "0704020AC",
+  "0704020AD",
+  "0704020G0",
+  "0704020J0",
+  "0704020N0",
+  "0704020P0",
+  "0704040G0",
+  "1001040G0",
+  "1002020T0"
 )
 
 # Falls section level drug groups
 falls_section_vec = c(
-  'Antidepressant drugs',
-  'Antiepileptic drugs',
-  'Diuretics',
-  'Hypertension and heart failure',
-  'Hypnotics and anxiolytics'
+  "Antidepressant drugs",
+  "Antiepileptic drugs",
+  "Diuretics",
+  "Hypertension and heart failure",
+  "Hypnotics and anxiolytics"
 )
 
 # Falls paragraph level drug groups
 falls_paragraph_vec = c(
-  'Antipsychotic depot injections',
-  'Antipsychotic drugs',
-  'Opioid analgesics',
-  'Opioid dependence',
-  'Alpha-adrenoceptor blocking drugs',
-  'Antihistamines',
-  'Vasodilator antihypertensive drugs',
-  'Drugs for urinary frequency enuresis and incontinence',
-  'Nitrates'
+  "Alpha-adrenoceptor blocking drugs",
+  "Antihistamines",
+  "Antipsychotic depot injections",
+  "Antipsychotic drugs",
+  "Drugs for urinary frequency enuresis and incontinence",
+  "Nitrates",
+  "Opioid analgesics",
+  "Opioid dependence",
+  "Vasodilator antihypertensive drugs"
 )
 
 # Falls chem sub level groups
@@ -315,11 +315,25 @@ falls_chem_vec = c('Midazolam hydrochloride')
 
 # Falls risk chem sub exclusions
 falls_exclude_chem_vec = c(
-  'Paraldehyde',
-  'Mirabegron',
-  'Mannitol',
-  'Loratadine',
-  'Desloratadine',
-  'Bilastine',
-  'Minoxidil'
+  "Paraldehyde",
+  "Mirabegron",
+  "Mannitol",
+  "Loratadine",
+  "Desloratadine",
+  "Bilastine",
+  "Minoxidil",
+  "Vibegron"
 )
+
+# Useful for defining character vectors. It orders elements alphabetically for
+# ease of adding or removing entries. Output can be copied from console into definition.
+order_char_vec <- function(x) {
+  ordered <- sort(x)
+  cat(paste(shQuote(ordered, type="cmd"), collapse=",\n"))
+}
+
+# Orders elements alphabetically and combine into html string for a listing.
+char_vec_html <- function(x) {
+  ordered <- sort(x)
+  paste0(ordered, collapse = "<br>")
+}
