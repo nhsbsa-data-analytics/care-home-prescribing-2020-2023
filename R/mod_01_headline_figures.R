@@ -10,11 +10,12 @@
 mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown("inst/markdown/01_headline_figures.md"),
+    includeMarkdown("inst/markdown/01_headline_figures_1.md"),
+    tags$div(style = "margin-top: 25vh"),
+    includeMarkdown("inst/markdown/01_headline_figures_2.md"),
     nhs_card(
       heading = "Estimated number of patients, prescription items and drug cost 
-                for care home patients aged 65 years and over in England 2020/21
-                to 2022/23",
+                for care home patients aged 65 years and over in England",
 
       # Metric select input
       nhs_selectInput(
@@ -62,7 +63,8 @@ mod_01_headline_figures_ui <- function(id) {
       mod_nhs_download_ui(
         id = ns("download_data")
       )
-    )
+    ),
+    tags$div(style = "margin-top: 25vh")
   )
 }
 
@@ -124,7 +126,15 @@ mod_01_headline_figures_server <- function(id, export_data) {
       headline_figures_df() %>% 
         dplyr::filter(TYPE == "Monthly sum") %>% 
         highcharter::hchart(., "line", highcharter::hcaes(TIME, METRIC, color = nhsbsaR::palette_nhsbsa()[1])) %>% 
-        highcharter::hc_xAxis(title = list(text = "")) %>% 
+        highcharter::hc_xAxis(
+          title = list(text = ""),
+          plotBands = list(list(
+            label = list(text = "COVID-19"),
+            from = 0,
+            to = 20,
+            color = "#f0f0f0"
+          ))
+        ) %>% 
         highcharter::hc_yAxis(
           min = 0,
           title = list(

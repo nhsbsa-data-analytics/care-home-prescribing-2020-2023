@@ -32,9 +32,7 @@ mod_02_patients_age_gender_ui <- function(id){
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
       shiny::htmlOutput(outputId = ns("caption")),
       mod_nhs_download_ui(id = ns("download_data"))
-    ),
-    tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
-    
+    )
   )
 }
     
@@ -176,52 +174,52 @@ mod_02_patients_age_gender_server <- function(id){
       any_excl_unk <- stringr::str_extract(excluded_unk(), "[\\d\\.]+") == 0
       any_excl_ind <- stringr::str_extract(excluded_ind(), "[\\d\\.]+") == 0
       
+      maybe_in <- ifelse(input$sub_geography == "Overall", "", "In ")
+      
+      # Example for testing: unk and ind shown in the same caption: 2022/23,
+      # LA = Hinckley and Bosworth
+      maybe_exc_or_ind <- if (!any_excl_unk & !any_excl_ind) {
+        glue::glue("
+          This chart does not show {excluded_unk()}% and {excluded_ind()}% of patients \\
+          where the gender was not known and not specified, respectively.
+        ")
+      } else if (!any_excl_unk & any_excl_ind) {
+        glue::glue("
+          This chart does not show {excluded_unk()}% of patients where the gender was \\
+          not known.
+        ")
+      } else if (any_excl_unk & !any_excl_ind) {
+        glue::glue("
+          This chart does not show {excluded_ind()}% of patients where the gender was \\
+          not specified.
+        ")
+      } else {
+        NULL
+      }
+      
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
-        HTML(paste0(
-          ifelse(input$sub_geography == "Overall", "", "In "),
-          input$sub_geography, ", there were an estimated ", tags$b(total()),
-          " care home patients in ", input$fy, ", of which ",
-          tags$b(paste0(percentage_female_patients(), "%")), " were females and ",
-          tags$b(paste0(percentage_elderly_female_patients(), "%")), " were",
-          " females aged 85 or over."
-        )),
-        tags$br(),
-        # Example for testing: unk and ind shown in the same caption: 2022/23,
-        # LA = Hinckley and Bosworth
-        if (!any_excl_unk & !any_excl_ind) {
-          
-          paste0("This chart does not show ",
-          excluded_unk(), "%",
-          " and ",
-          excluded_ind(), "%",
-          " patients where the gender was not known and not specified, respectively. ")
-          
-        } else if (!any_excl_unk & any_excl_ind) {
-          
-          paste0("This chart does not show ",
-                 excluded_unk(), "%",
-                 " patients where the gender was not known. ")
-          
-        } else if (any_excl_unk & !any_excl_ind) {
-          
-          paste0("This chart does not show ",
-                 excluded_ind(), "%",
-                 " patients where the gender was not specified. ")
-          
-        } else NULL,
-        tags$br(),
-        "Patient counts between one and four have been rounded to five,
-        otherwise to the nearest ten; and the percentages are based on rounded
-        counts.",
-        tags$br(),
-        "The Isles of Scilly were removed due to the number of care homes in the
-        Local Authority."
+        HTML(glue::glue("
+          {maybe_in}{input$sub_geography}, there were an estimated <b>{total()}</b> \\
+          care home patients in {input$fy}.
+          <br>
+          Of these, <b>{percentage_female_patients()}%</b> were females and \\
+          <b>{percentage_elderly_female_patients()}%</b> were females aged 85 or over.
+          <br>
+          {maybe_exc_or_ind}
+          <br>
+          Patient counts between one and four have been rounded to five, otherwise \\
+          to the nearest ten.
+          <br>
+          The percentages are based on rounded counts.
+          <br>
+          The Isles of Scilly were removed due to the number of care homes in the \\
+          Local Authority.
+        "))
       )
     })
-    
-    
+      
     # Patients by geography and gender and age band chart
     
     # Filter to relevant data for this chart
@@ -382,56 +380,55 @@ mod_02_patients_age_gender_server <- function(id){
         ) %>%
         highcharter::hc_xAxis(
             title = list(text = "Age band"),
-            categories =
-              patients_by_fy_geo_age_gender_plot_df()$AGE_BAND %>%
+            categories = patients_by_fy_geo_age_gender_plot_df()$AGE_BAND %>%
               unique() %>%
               sort(),
             reversed = FALSE
-          ) %>%
-          highcharter::hc_yAxis(
-            title = list(text = "Proportion of patients (%)"),
-            min = -40,
-            max = 40,
-            labels = list(
-              formatter = highcharter::JS(
-                "
-                function() {
-
-                  outHTML = this.axis.defaultLabelFormatter.call(this)
-
-                  return outHTML.replace('-', '')
-
-                }
-                "
-              )
-            )
-          ) %>%
-          highcharter::hc_tooltip(
-            shared = FALSE,
-            useHTML = TRUE,
-            formatter = htmlwidgets::JS(
+        ) %>%
+        highcharter::hc_yAxis(
+          title = list(text = "Proportion of patients (%)"),
+          min = -40,
+          max = 40,
+          labels = list(
+            formatter = highcharter::JS(
               "
               function() {
-                var num_fmt = function(x) {
-                  result = Highcharts.numberFormat(Math.abs(x), 0, '.', ',');
-                  if (result > 1000000) { result = Highcharts.numberFormat(result / 1000000, 2) + 'm' }
-                  return result;
-                }
 
-                outHTML =
-                  '<b>Gender: </b>' + this.point.GENDER + '<br>' +
-                  '<b>Age band: </b>' + this.point.category + '<br/>' +
-                  '<b>Number of care home patients: </b>' + num_fmt(this.point.TOTAL_PATIENTS_CH) + '<br>' +
-                  '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' + '<br>' +
-                  '<b>Number of non-care home patients: </b>' + num_fmt(this.point.TOTAL_PATIENTS_NCH) + '<br>' +    
-                  '<b>Percentage of non-care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_NCH), 1) + '%'
+                outHTML = this.axis.defaultLabelFormatter.call(this)
 
-                return outHTML
+                return outHTML.replace('-', '')
 
               }
               "
             )
-          ) %>%
+          )
+        ) %>%
+        highcharter::hc_tooltip(
+          shared = FALSE,
+          useHTML = TRUE,
+          formatter = htmlwidgets::JS(
+            "
+            function() {
+              var num_fmt = function(x) {
+                result = Highcharts.numberFormat(Math.abs(x), 0, '.', ',');
+                if (result > 1000000) { result = Highcharts.numberFormat(result / 1000000, 2) + 'm' }
+                return result;
+              }
+
+              outHTML =
+                '<b>Gender: </b>' + this.point.GENDER + '<br>' +
+                '<b>Age band: </b>' + this.point.category + '<br/>' +
+                '<b>Number of care home patients: </b>' + num_fmt(this.point.TOTAL_PATIENTS_CH) + '<br>' +
+                '<b>Percentage of care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_CH), 1) + '%' + '<br>' +
+                '<b>Number of non-care home patients: </b>' + num_fmt(this.point.TOTAL_PATIENTS_NCH) + '<br>' +    
+                '<b>Percentage of non-care home patients: </b>' + Highcharts.numberFormat(Math.abs(this.point.PCT_PATIENTS_NCH), 1) + '%'
+
+              return outHTML
+
+            }
+            "
+          )
+        ) %>%
         highcharter::hc_plotOptions(
           series = list(
             states = list(
@@ -442,7 +439,41 @@ mod_02_patients_age_gender_server <- function(id){
               # Disables turning the series off
               legendItemClick = htmlwidgets::JS("function () { return false; }")
               ) 
-        )
+          )
+        ) %>% 
+        highcharter::hc_annotations(
+          list(
+            labels = 
+              list(
+                list(
+                  point = list(
+                    x = 2,
+                    y = -35,
+                    xAxis = 0,
+                    yAxis = 0
+                  ),
+                  text = "Female",
+                  shape = 'rect',
+                  style = list(
+                    fontSize = "20px"
+                  )
+                ),
+                list(
+                  point = list(
+                    x = 2,
+                    y = 35,
+                    xAxis = 0,
+                    yAxis = 0
+                  ),
+                  text = "Male",
+                  shape = 'rect',
+                  style = list(
+                    fontSize = "20px"
+                  )
+                )
+              ),
+            draggable = ''
+          )
         )
       })
  

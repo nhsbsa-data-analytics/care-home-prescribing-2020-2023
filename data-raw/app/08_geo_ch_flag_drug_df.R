@@ -8,7 +8,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  dplyr::tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20230331"))
+  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
 
 # BNF columns
 bnf_cols = c(
@@ -323,6 +323,47 @@ mod_geo_ch_flag_drug_df %>% count(GEOGRAPHY_PARENT, BNF_PARENT)
 
 # Use this
 usethis::use_data(mod_geo_ch_flag_drug_df, overwrite = TRUE)
+
+
+# Part Five: pre-compute download data -----------------------------------------
+# Computing this on the fly takes ~60s, so compute and save for instant download
+
+source("R/utils_helpers.R")
+
+bnf_level_prescribing_estimates_in_care_homes_df <- mod_geo_ch_flag_drug_df %>%
+  tidyr::pivot_wider(
+    names_from = "METRIC",
+    values_from = "VALUE"
+  ) %>%
+  dplyr::mutate(
+    dplyr::across(
+      dplyr::starts_with("Total"), bespoke_round
+    )
+  )
+
+# Need to start a new chain to prevent dplyr trying to arrange the
+# original longer vectors
+bnf_level_prescribing_estimates_in_care_homes_df <- 
+  bnf_level_prescribing_estimates_in_care_homes_df %>% 
+  dplyr::arrange(
+    .data$FY,
+    .data$GEOGRAPHY_PARENT,
+    .data$GEOGRAPHY_CHILD,
+    .data$BNF_PARENT,
+    .data$BNF_CHILD
+  ) %>%
+  dplyr::rename(
+    `Financial year` = "FY",
+    Geography = "GEOGRAPHY_PARENT",
+    `Sub-geography name` = "GEOGRAPHY_CHILD",
+    `BNF level` = "BNF_PARENT",
+    `BNF sub-level` = "BNF_CHILD",
+    `Patient count` = "PATS"
+  ) %>% 
+  dplyr::mutate(`Patient count` = bespoke_round(`Patient count`))
+
+# Use this
+usethis::use_data(bnf_level_prescribing_estimates_in_care_homes_df, overwrite = TRUE)
 
 # Disconnect
 DBI::dbDisconnect(con); rm(list = ls()); gc()
