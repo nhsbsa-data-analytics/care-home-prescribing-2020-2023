@@ -61,10 +61,6 @@ app_ui <- function(request) {
           tabPanel(
             title = "Annex",
             mod_14_annex_ui("annex")
-          ),
-          tabPanel(
-            title = "Updates",
-            mod_15_updates_ui("updates")
           )
         )
       )
