@@ -6,4 +6,4 @@ Prescribing metrics were closest amongst care home and non-care home patients ag
 
 Except for prescribing of DAMN medicines, prescribing was higher among care home patients than non-care home patients across all age groups.
 
-Male and female care home patients in each age band had broadly similar prescribing metric values. The same was true for non-care home patients.
+Male and female care home patients in a given age band had broadly similar prescribing metric values. The same was true for non-care home patients.
