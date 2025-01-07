@@ -4,6 +4,9 @@
 # Get cqc primary key from environ file
 key = Sys.getenv("CQC_PRIMARY_KEY")
 
+# Number of results per page in API calls
+api_perPage = 1000
+
 # Get current year_month
 download_date <- as.integer(format(today(), "%Y%m%d"))
 
@@ -82,7 +85,8 @@ get_location_ids_per_page = function(page_num){
   url = paste0(
     "https://api.service.cqc.org.uk/public/v1/locations?careHome=Y&page=",
     page_num,
-    "&perPage=1000"
+    "&perPage=",
+    api_perPage
     )
   
   # Get locations overview
@@ -145,12 +149,17 @@ get_provider_info_by_id = function(loc_num){
   return(flat_data)
 }
 
-# Concatenate all columns (uniquely and without NA) with same prefix
-concatenate_by_prefix = function(df, prefix){
+# Concatenate all columns with same prefix (optionally uniquely and without NA)
+concatenate_by_prefix = function(df, prefix, .unique = TRUE, na.rm = TRUE){
+  maybe_na.rm <- if(na.rm) na.omit else \(x) x
+  maybe_unique <- if(.unique) unique else \(x) x
+  
+  before_collapse <- \(x) maybe_unique(maybe_na.rm(x))
+  
   df %>% 
     mutate({{ prefix }} := pmap_chr(
       select(., starts_with(prefix)), 
-      ~ paste(unique(na.omit(c(...))), collapse = "|")
+      ~ paste(before_collapse(c(...)), collapse = "|")
       ))
 }
 
@@ -208,11 +217,20 @@ parallel::stopCluster(clust)
 
 # Bind all dfs together and clean column names
 cqc_details_df <- cqc_data %>%
-  bind_rows() %>% 
+  bind_rows() %>%
+  # Expect total locations to be at least the number on 'full' pages
+  verify(nrow(.) > ((total_pages - 1) * api_perPage)) %>% 
   janitor::clean_names() %>% 
-  concatenate_by_prefix(., 'specialisms') %>% 
+  # Expect location_id to be unique
+  assert(is_uniq, location_id) %>% 
+  concatenate_by_prefix('specialisms') %>% 
   concatenate_by_prefix('current_ratings_overall_key_question_ratings_name') %>% 
-  concatenate_by_prefix('current_ratings_overall_key_question_ratings_rating') %>% 
+  # Want each entry to be kept, as multiple ratings may be the same value, or missing
+  concatenate_by_prefix(
+    'current_ratings_overall_key_question_ratings_rating',
+    .unique = FALSE,
+    na.rm = FALSE
+  ) %>% 
   concatenate_by_prefix('gac_service_types_name') %>% 
   tidyr::unite(
     single_line_address,
@@ -244,15 +262,21 @@ cqc_details_df <- cqc_data %>%
     # type,
     number_of_beds = as.integer(number_of_beds),
     current_rating = current_ratings_overall_rating,
-    key_question_names = current_ratings_overall_key_question_ratings_name,
-    key_question_ratings = current_ratings_overall_key_question_ratings_rating,
+    key_question_names = case_when(
+      current_ratings_overall_key_question_ratings_name == "" ~ NA,
+      TRUE ~ current_ratings_overall_key_question_ratings_name
+    ),
+    key_question_ratings = case_when(
+      is.na(key_question_names) ~ NA,
+      TRUE ~ current_ratings_overall_key_question_ratings_rating
+    ),
     cqc_date = download_date,
     ods_code,
     specialisms,
     gac_service_types = gac_service_types_name,
     .keep = "none"
-  ) %>% 
-  addressMatchR::tidy_single_line_address(single_line_address)
+  ) %>%
+  addressMatchR::tidy_single_line_address_df(single_line_address)
 
 # Generate provider output -----------------------------------------------------
 
@@ -305,8 +329,12 @@ parallel::stopCluster(clust)
 
 # Process the provider data
 cqc_providers_df = provider_data %>% 
-  bind_rows() %>% 
+  bind_rows() %>%
+  # Expect total locations to be at least the number on 'full' pages
+  verify(nrow(.) == length(provider_vec)) %>% 
   janitor::clean_names() %>% 
+  # Expect location_id to be unique
+  assert(is_uniq, provider_id) %>% 
   tidyr::unite(
     provider_sla,
     c(
@@ -328,9 +356,9 @@ cqc_providers_df = provider_data %>%
     provider_postcode = postal_code,
     provider_last_inspection_date = last_inspection_date
   ) %>% 
-  addressMatchR::tidy_single_line_address(provider_sla)
+  addressMatchR::tidy_single_line_address_df(provider_sla)
 
-# Join location and providder data then save -----------------------------------
+# Join location and provider data then save -----------------------------------
 
 # Process the cqc df output, in preparation for matching
 cqc_final_df <- cqc_details_df %>% 
