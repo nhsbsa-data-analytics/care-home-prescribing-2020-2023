@@ -12,7 +12,7 @@ keep_vars = c(ls(), 'keep_vars')
 # get_latest_cqc_data()
 
 # 2. Get latest ab plus epoch: ~2hr
-get_abp_from_api(
+get_abp_from_dall_ref(
   end_date = "2023-03-31"
 )
 
