@@ -27,7 +27,10 @@ pacman::p_load(
   # AddressBase Packages
   'archive',
   'readr',
-  'lubridate'
+  'lubridate',
+  
+  # testing
+  'assertr'
 )
 
 # Libraries from github
