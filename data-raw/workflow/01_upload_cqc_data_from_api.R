@@ -259,13 +259,14 @@ cqc_details_df <- cqc_data %>%
     residential_home_flag = as.integer(grepl(
       "Residential home", gac_service_types_name
     )),
-    # type,
     number_of_beds = as.integer(number_of_beds),
     current_rating = current_ratings_overall_rating,
+    # When blank, all values were NA ...
     key_question_names = case_when(
       current_ratings_overall_key_question_ratings_name == "" ~ NA,
       TRUE ~ current_ratings_overall_key_question_ratings_name
     ),
+    # When key_question_names, created just before this, is NA, make this NA also
     key_question_ratings = case_when(
       is.na(key_question_names) ~ NA,
       TRUE ~ current_ratings_overall_key_question_ratings_rating
@@ -333,7 +334,7 @@ cqc_providers_df = provider_data %>%
   # Expect total locations to be at least the number on 'full' pages
   verify(nrow(.) == length(provider_vec)) %>% 
   janitor::clean_names() %>% 
-  # Expect location_id to be unique
+  # Expect provider_id to be unique
   assert(is_uniq, provider_id) %>% 
   tidyr::unite(
     provider_sla,
