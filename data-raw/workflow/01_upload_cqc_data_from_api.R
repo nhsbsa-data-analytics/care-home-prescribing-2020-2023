@@ -331,7 +331,7 @@ parallel::stopCluster(clust)
 # Process the provider data
 cqc_providers_df = provider_data %>% 
   bind_rows() %>%
-  # Expect total locations to be at least the number on 'full' pages
+  # Expect total providers to be same as length of vector of provider ids
   verify(nrow(.) == length(provider_vec)) %>% 
   janitor::clean_names() %>% 
   # Expect provider_id to be unique
