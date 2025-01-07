@@ -12,8 +12,8 @@ keep_vars = c(ls(), 'keep_vars')
 # get_latest_cqc_data()
 
 # 2. Get a select ab plus epoch: ~130 mins
-get_abp_from_os(
-  epoch_year = "2022"
+get_abp_from_dall_ref(
+  end_date = "2022-03-31"
 )
 
 # 3. Merge and process cqc and ab plus: ~3 mins
