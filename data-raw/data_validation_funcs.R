@@ -1,0 +1,173 @@
+has_all_names.alt <- function (...) {
+  check_this <- list(...)
+  given_names <- dbplyr::op_vars(parent.frame()$.top_env$lazy_query)
+  all(check_this %in% given_names)
+}
+
+
+nrow.alt <- function(lt) {
+  dplyr::tally(lt) %>%
+    dplyr::collect() %>%
+    dplyr::pull()
+}
+
+
+make.assertr.assert.error.alt <- function (verb, name.of.predicate, col.name,
+                                          num.violations, error_lt) {
+  time.or.times <- if (num.violations == 1) "time" else "times"
+  msg <- paste0(
+    "Column '", col.name, "' violates assertion '", name.of.predicate, "' ",
+    num.violations, " ", time.or.times)
+  
+  this_error <- list()
+  
+  this_error$error_df <- error_lt %>% 
+    dplyr::mutate(
+      verb = verb,
+      redux_fn = NA,
+      predicate = name.of.predicate,
+      column = col.name
+    ) %>%
+    dplyr::relocate(index, value, .after = tidyr::last_col()) %>% 
+    head(1000) %>% 
+    dplyr::collect()
+  
+  this_error$message <- msg
+  this_error$num.violations <- num.violations
+  this_error$call <- name.of.predicate
+  class(this_error) <- c("assertr_assert_error", "assertr_error", "error", "condition")
+  
+  return(this_error)
+}
+
+
+assert.alt <- function(data, predicate, ...) {
+  keeper.vars <- substitute(list(...))[-1] %>%
+    as.list() %>% 
+    purrr::map(\(x) if(is.character(x)) x else deparse(x))
+  
+  if (length(keeper.vars) == 0) {
+    stop(
+      "assert requires columns to be selected. Check number of arguments",
+      call. = FALSE
+    )
+  }
+  
+  name.of.predicate <- rlang::expr_text(rlang::enexpr(predicate))
+  
+  res <- predicate(data, keeper.vars)
+  
+  is_successful <- res %>% 
+    dplyr::summarise(
+      dplyr::across(dplyr::ends_with("_result"), \(x) sum(x, na.rm = TRUE))
+    ) %>%
+    {
+      if(inherits(., "tbl_lazy")) {
+        dplyr::collect(.)
+      } else {
+        .
+      }
+    } %>%
+    rowSums() %>% 
+    as.logical() %>% 
+    magrittr::not()
+  
+  if (is_successful) return(data)
+  
+  errors <- purrr::map(
+    keeper.vars,
+    \(col.name) {
+      num.violations <- res %>% 
+        dplyr::select(dplyr::starts_with(col.name) & dplyr::ends_with("_result")) %>% 
+        dplyr::summarise(
+          dplyr::across(dplyr::everything(), \(x) sum(x, na.rm = TRUE))
+        ) %>%
+        {
+          if(inherits(., "tbl_lazy")) {
+            dplyr::collect(.)
+          } else {
+            .
+          }
+        } %>% 
+        dplyr::pull()
+      if(is.na(num.violations) || !num.violations) return(NULL)
+      
+      error_lt <- res %>%
+        dplyr::select(index, dplyr::starts_with(col.name)) %>%
+        dplyr::rename(value = 2, result = 3) %>% 
+        dplyr::filter(result == 1) %>% 
+        dplyr::select(-result)
+      
+      make.assertr.assert.error.alt(
+        "assert",
+        name.of.predicate,
+        col.name,
+        num.violations,
+        error_lt
+      )
+    }
+  )
+  
+  errors <- Filter(\(x) !is.null(x), errors)
+  assertr::error_stop(errors, data = data)
+}
+
+
+is_uniq.alt <- function (lt, cols) {
+  cols %>%
+    purrr::reduce(
+      \(x, y) {
+        new_column <- paste0(y, "_result")
+        dplyr::add_count(x, !!dplyr::sym(y), name = new_column) %>% 
+        dplyr::mutate(
+          !!dplyr::sym(new_column) := ifelse(
+            is.na(!!dplyr::sym(y)),
+            NA,
+            !!dplyr::sym(new_column)
+          )
+        )
+      },
+      .init = lt %>%
+        dplyr::select(!!!cols) %>% 
+        dplyr::mutate(.TEMP = 1) %>%
+        {
+          if(inherits(., "tbl_lazy")) {
+            dbplyr::window_order(., .TEMP)
+          } else {
+            .
+          }
+        } %>%
+        dplyr::mutate(index = dplyr::row_number())
+    ) %>% 
+    dplyr::mutate(
+      dplyr::across(
+        dplyr::ends_with("_result"),
+        \(x) ifelse(is.na(x) | x == 1, 0, 1)
+      )
+    ) %>% 
+    dplyr::select(-.TEMP) %>% 
+    dplyr::ungroup()
+}
+
+not_na.alt <- function (lt) {
+  lt %>%
+    colnames() %>%
+    purrr::reduce(
+      \(x, y) {
+        new_column <- paste0(y, "_result")
+        x %>% 
+          dplyr::mutate(
+            !!dplyr::sym(new_column) := ifelse(
+              is.na(!!dplyr::sym(y)),
+              1,
+              0
+            )
+          )
+      },
+      .init = lt %>%
+        dplyr::mutate(.TEMP = 1) %>%
+        dbplyr::window_order(.TEMP) %>%
+        dplyr::mutate(index = dplyr::row_number())
+    ) %>% 
+    dplyr::select(-.TEMP)
+}
