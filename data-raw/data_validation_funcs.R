@@ -1,18 +1,30 @@
-has_all_names.alt <- function (...) {
-  check_this <- list(...)
-  given_names <- dbplyr::op_vars(parent.frame()$.top_env$lazy_query)
+has_all_names.alt <- function(...) {
+  check_this <- substitute(list(...))[-1] %>%
+    as.list() %>% 
+    purrr::map(\(x) if(is.character(x)) x else deparse(x))
+  parent <- parent.frame()
+  
+  given_names <- rlang::env_names(parent$.top_env)
+  if("lazy_query" %in% given_names) {
+    given_names <- dbplyr::op_vars(parent$.top_env$lazy_query)
+  }
+  
   all(check_this %in% given_names)
 }
 
 
-nrow.alt <- function(lt) {
-  dplyr::tally(lt) %>%
-    dplyr::collect() %>%
-    dplyr::pull()
+nrow.alt <- function(tbl) {
+  if(inherits(tbl, "tbl_lazy")) {
+    dplyr::tally(tbl) %>%
+      dplyr::collect() %>%
+      dplyr::pull()
+  } else {
+    nrow(tbl)
+  }
 }
 
 
-make.assertr.assert.error.alt <- function (verb, name.of.predicate, col.name,
+make.assertr.assert.error.alt <- function(verb, name.of.predicate, col.name,
                                           num.violations, error_lt) {
   time.or.times <- if (num.violations == 1) "time" else "times"
   msg <- paste0(
@@ -41,7 +53,7 @@ make.assertr.assert.error.alt <- function (verb, name.of.predicate, col.name,
 }
 
 
-assert.alt <- function(data, predicate, ...) {
+assert.alt <- function(tbl, predicate, ...) {
   keeper.vars <- substitute(list(...))[-1] %>%
     as.list() %>% 
     purrr::map(\(x) if(is.character(x)) x else deparse(x))
@@ -55,7 +67,7 @@ assert.alt <- function(data, predicate, ...) {
   
   name.of.predicate <- rlang::expr_text(rlang::enexpr(predicate))
   
-  res <- predicate(data, keeper.vars)
+  res <- predicate(tbl, keeper.vars)
   
   is_successful <- res %>% 
     dplyr::summarise(
@@ -72,7 +84,7 @@ assert.alt <- function(data, predicate, ...) {
     as.logical() %>% 
     magrittr::not()
   
-  if (is_successful) return(data)
+  if (is_successful) return(tbl)
   
   errors <- purrr::map(
     keeper.vars,
@@ -109,11 +121,11 @@ assert.alt <- function(data, predicate, ...) {
   )
   
   errors <- Filter(\(x) !is.null(x), errors)
-  assertr::error_stop(errors, data = data)
+  assertr::error_stop(errors, data = tbl)
 }
 
 
-is_uniq.alt <- function (lt, cols) {
+is_uniq.alt <- function(tbl, cols) {
   cols %>%
     purrr::reduce(
       \(x, y) {
@@ -127,7 +139,7 @@ is_uniq.alt <- function (lt, cols) {
           )
         )
       },
-      .init = lt %>%
+      .init = tbl %>%
         dplyr::select(!!!cols) %>% 
         dplyr::mutate(.TEMP = 1) %>%
         {
@@ -149,9 +161,9 @@ is_uniq.alt <- function (lt, cols) {
     dplyr::ungroup()
 }
 
-not_na.alt <- function (lt) {
-  lt %>%
-    colnames() %>%
+
+not_na.alt <- function(tbl, cols) {
+  cols %>%
     purrr::reduce(
       \(x, y) {
         new_column <- paste0(y, "_result")
@@ -164,9 +176,15 @@ not_na.alt <- function (lt) {
             )
           )
       },
-      .init = lt %>%
+      .init = tbl %>%
         dplyr::mutate(.TEMP = 1) %>%
-        dbplyr::window_order(.TEMP) %>%
+        {
+          if(inherits(., "tbl_lazy")) {
+            dbplyr::window_order(., .TEMP)
+          } else {
+            .
+          }
+        } %>%
         dplyr::mutate(index = dplyr::row_number())
     ) %>% 
     dplyr::select(-.TEMP)
