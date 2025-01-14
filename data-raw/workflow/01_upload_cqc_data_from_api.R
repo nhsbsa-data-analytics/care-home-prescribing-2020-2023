@@ -222,7 +222,7 @@ cqc_details_df <- cqc_data %>%
   verify(nrow(.) > ((total_pages - 1) * api_perPage)) %>% 
   janitor::clean_names() %>% 
   # Expect location_id to be unique
-  assert(is_uniq, location_id) %>% 
+  assert.alt(is_uniq.alt, location_id) %>% 
   concatenate_by_prefix('specialisms') %>% 
   concatenate_by_prefix('current_ratings_overall_key_question_ratings_name') %>% 
   # Want each entry to be kept, as multiple ratings may be the same value, or missing
@@ -335,7 +335,7 @@ cqc_providers_df = provider_data %>%
   verify(nrow(.) == length(provider_vec)) %>% 
   janitor::clean_names() %>% 
   # Expect provider_id to be unique
-  assert(is_uniq, provider_id) %>% 
+  assert.alt(is_uniq.alt, provider_id) %>% 
   tidyr::unite(
     provider_sla,
     c(
@@ -367,7 +367,7 @@ cqc_final_df <- cqc_details_df %>%
   rename_with(toupper)
 
 # Create table name
-table_name <- paste0("CQC_BASE_", download_date)
+table_name <- paste0("INT646_CQC_", download_date)
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
