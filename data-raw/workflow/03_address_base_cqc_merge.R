@@ -117,9 +117,14 @@ cqc_dedup_db <- cqc_db %>%
     RESIDENTIAL_HOME_FLAG = last(RESIDENTIAL_HOME_FLAG, order_by = order_cols),
     CH_FLAG = last(CH_FLAG)
   ) %>%
-  slice_max(tibble(!!!syms(order_cols)), with_ties = FALSE) %>%
-  assert.alt(is_uniq.alt, LOCATION_ID, UPRN) %>% 
-  ungroup() %>% 
+  slice_max(tibble(!!!syms(order_cols)), with_ties = FALSE) %>% 
+  ungroup() %>%
+  assert.alt(
+    is_uniq.alt,
+    LOCATION_ID,
+    UPRN,
+    pred_args = list(.by = c(POSTCODE, SINGLE_LINE_ADDRESS))
+  ) %>% 
   mutate(
     # Flag records having either no, or multiple, UPRN
     EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
