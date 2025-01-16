@@ -2,6 +2,8 @@
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+million <- 10^6
+
 # Get start and end dates
 start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
 end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]
@@ -42,11 +44,11 @@ postcode_db <- con %>%
 
 # Label CH postcodes
 postcode_db = postcode_db %>%
-  select(POSTCODE) %>%
-  distinct() %>%
+  distinct(POSTCODE) %>%
+  verify(nrow.alt(.) > 20000) %>%
   mutate(POSTCODE_CH = 1)
 
-# Get appropriate year month fields as a table
+# Get appropriate year month fields as a vector
 year_month = year_month_db %>%
   select(YEAR_MONTH) %>%
   filter(
@@ -55,27 +57,54 @@ year_month = year_month_db %>%
   ) %>%
   pull()
 
-# Initial fact table filter
+# # Initial fact table filter
+# fact_db1 = fact_db %>%
+#   select(
+#     # Group by vars
+#     YEAR_MONTH,
+#     PF_ID,
+#     NHS_NO,
+#     CALC_AGE,
+#     EPS_PART_DATE,
+#     EPM_ID,
+#     # filter vars
+#     PATIENT_IDENTIFIED,
+#     PAY_DA_END,
+#     PAY_ND_END,
+#     PAY_RB_END,
+#     CD_REQ,
+#     OOHC_IND,
+#     PRIVATE_IND,
+#     IGNORE_FLAG,
+#     ITEM_COUNT
+#   ) %>%
+#   filter(
+#     CALC_AGE >= 65,
+#     YEAR_MONTH %in% year_month,
+#     PATIENT_IDENTIFIED == "Y",
+#     PAY_DA_END == "N", # excludes disallowed items
+#     PAY_ND_END == "N", # excludes not dispensed items
+#     PAY_RB_END == "N", # excludes referred back items
+#     CD_REQ == "N", # excludes controlled drug requisitions
+#     OOHC_IND == 0L, # excludes out of hours dispensing
+#     PRIVATE_IND == 0L, # excludes private dispensers
+#     IGNORE_FLAG == "N", # remove dummy ldp forms
+#     ITEM_COUNT >= 1 # remove element-level rows
+#   ) %>%
+#   group_by(
+#     YEAR_MONTH,
+#     PF_ID,
+#     NHS_NO,
+#     CALC_AGE,
+#     PART_DATE = EPS_PART_DATE,
+#     EPM_ID
+#   ) %>%
+#   summarise() %>%
+#   ungroup()
+
+# Initial fact table filter, above, it is not clear what the code is doing. In
+# the following it is clear what is being done and less verbose.
 fact_db = fact_db %>%
-  select(
-    # Group by vars
-    YEAR_MONTH,
-    PF_ID,
-    NHS_NO,
-    CALC_AGE,
-    EPS_PART_DATE,
-    EPM_ID,
-    # filter vars
-    PATIENT_IDENTIFIED,
-    PAY_DA_END,
-    PAY_ND_END,
-    PAY_RB_END,
-    CD_REQ,
-    OOHC_IND,
-    PRIVATE_IND,
-    IGNORE_FLAG,
-    ITEM_COUNT
-  ) %>%
   filter(
     CALC_AGE >= 65,
     YEAR_MONTH %in% year_month,
@@ -89,20 +118,22 @@ fact_db = fact_db %>%
     IGNORE_FLAG == "N", # remove dummy ldp forms
     ITEM_COUNT >= 1 # remove element-level rows
   ) %>%
-  group_by(
+  distinct(
     YEAR_MONTH,
     PF_ID,
     NHS_NO,
     CALC_AGE,
-    PART_DATE = EPS_PART_DATE,
+    EPS_PART_DATE,
     EPM_ID
-  ) %>%
-  summarise() %>%
-  ungroup()
+  ) %>% 
+  verify(nrow.alt(.) > 240 * million) %>% 
+  rename(PART_DATE = EPS_PART_DATE)
 
 # Process paper info
 paper_db = paper_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
+  verify(nrow.alt(.) > 50 * million) %>%
+  # assert.alt(is_uniq.alt, PF_ID) %>%  CHECK: PF_ID is unique for 20/21 data - expected?
   select(
     YEAR_MONTH,
     PF_ID,
@@ -117,6 +148,8 @@ eps_db = eps_db %>%
     PART_DATE >= eps_start_date,
     PART_DATE <= eps_end_date
   ) %>%
+  verify(nrow.alt(.) > 600 * million) %>%
+  # assert.alt(is_uniq.alt, EPM_ID) %>% CHECK: EPM_ID is unique for 20/21 data - expected?
   # Concatenate fields together by a single space for the single line address
   mutate(
     EPS_SINGLE_LINE_ADDRESS = paste(
@@ -137,6 +170,8 @@ eps_db = eps_db %>%
 
 # Join all tables and clean
 fact_join_db = fact_db %>%
+  # CHECK: can these not be joined simply on PF_ID and EPM_ID? They appear to be
+  # unique at least in the data range we use.
   left_join(y = paper_db, by = c("YEAR_MONTH", "PF_ID")) %>%
   left_join(y = eps_db, by = c("PART_DATE", "EPM_ID")) %>%
   mutate(
@@ -151,7 +186,8 @@ fact_join_db = fact_db %>%
   ) %>%
   addressMatchR::tidy_single_line_address(col = SINGLE_LINE_ADDRESS) %>%
   addressMatchR::tidy_postcode(POSTCODE) %>% 
-  left_join(postcode_db, by = "POSTCODE") %>%
+  left_join(postcode_db, by = "POSTCODE") %>% 
+  personMatchR::format_postcode_db(POSTCODE) %>%
   select(
     YEAR_MONTH,
     PF_ID,
@@ -164,20 +200,20 @@ fact_join_db = fact_db %>%
 
 # Part three: stack paper and eps info and save --------------------------------
 
-# Define temp output table name - the postcode format will be done separately on this
-table_name_temp = paste0("INT646_FORMS_TEMP_", start_date, "_", end_date)
+# # Define temp output table name - the postcode format will be done separately on this
+# table_name_temp = paste0("INT646_FORMS_TEMP_", start_date, "_", end_date)
 
-# Drop table if it exists already
-drop_table_if_exists_db(table_name_temp)
+# # Drop table if it exists already
+# drop_table_if_exists_db(table_name_temp)
 
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
 
-# Write the table back to DALP
-fact_join_db %>% compute_with_parallelism(table_name_temp, 8)
+# # Write the table back to DALP
+# fact_join_db %>% compute_with_parallelism(table_name_temp, 8)
 
-fact_db <- con %>%
-  tbl(from = table_name_temp)
+# fact_db <- con %>%
+#   tbl(from = table_name_temp)
 
 table_name = paste0("INT646_FORMS_", start_date, "_", end_date)
 
@@ -185,15 +221,15 @@ table_name = paste0("INT646_FORMS_", start_date, "_", end_date)
 drop_table_if_exists_db(table_name)
 
 # Just format postcode
-fact_db %>% 
-  personMatchR::format_postcode_db(POSTCODE) %>% 
+fact_join_db %>% 
+  # personMatchR::format_postcode_db(POSTCODE) %>% 
   compute_with_parallelism(table_name, 32)
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
 
-# Drop temp table
-drop_table_if_exists_db(table_name_temp)
+# # Drop temp table
+# drop_table_if_exists_db(table_name_temp)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)
