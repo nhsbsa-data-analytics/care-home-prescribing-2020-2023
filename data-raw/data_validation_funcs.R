@@ -53,9 +53,9 @@ make.assertr.assert.error.alt <- function(verb, name.of.predicate, col.name,
 }
 
 
-assert.alt <- function(tbl, predicate, ...) {
+assert.alt <- function(tbl, predicate, ..., pred_args = list()) {
   keeper.vars <- substitute(list(...))[-1] %>%
-    as.list() %>% 
+    as.list() %>%
     purrr::map(\(x) if(is.character(x)) x else deparse(x))
   
   if (length(keeper.vars) == 0) {
@@ -66,10 +66,19 @@ assert.alt <- function(tbl, predicate, ...) {
   }
   
   name.of.predicate <- rlang::expr_text(rlang::enexpr(predicate))
+  # browser()
   
-  res <- predicate(tbl, keeper.vars)
+  pred_args <- as.list(substitute(pred_args))[-1]
   
-  is_successful <- res %>% 
+  additional_arg_names <- names(pred_args)
+  predicate_arg_names <- names(formals(predicate))
+  do_args = list(tbl = tbl, cols = keeper.vars)
+  for(arg in intersect(additional_arg_names, predicate_arg_names)) {
+    do_args[[arg]] = pred_args[[arg]]
+  }
+  res <- do.call(predicate, do_args)
+  
+  is_successful <- res %>%
     dplyr::summarise(
       dplyr::across(dplyr::ends_with("_result"), \(x) sum(x, na.rm = TRUE))
     ) %>%
@@ -80,8 +89,8 @@ assert.alt <- function(tbl, predicate, ...) {
         .
       }
     } %>%
-    rowSums() %>% 
-    as.logical() %>% 
+    rowSums() %>%
+    as.logical() %>%
     magrittr::not()
   
   if (is_successful) return(tbl)
@@ -89,8 +98,8 @@ assert.alt <- function(tbl, predicate, ...) {
   errors <- purrr::map(
     keeper.vars,
     \(col.name) {
-      num.violations <- res %>% 
-        dplyr::select(dplyr::starts_with(col.name) & dplyr::ends_with("_result")) %>% 
+      num.violations <- res %>%
+        dplyr::select(dplyr::starts_with(col.name) & dplyr::ends_with("_result")) %>%
         dplyr::summarise(
           dplyr::across(dplyr::everything(), \(x) sum(x, na.rm = TRUE))
         ) %>%
@@ -100,14 +109,14 @@ assert.alt <- function(tbl, predicate, ...) {
           } else {
             .
           }
-        } %>% 
+        } %>%
         dplyr::pull()
       if(is.na(num.violations) || !num.violations) return(NULL)
       
       error_lt <- res %>%
         dplyr::select(index, dplyr::starts_with(col.name)) %>%
-        dplyr::rename(value = 2, result = 3) %>% 
-        dplyr::filter(result == 1) %>% 
+        dplyr::rename(value = 2, result = 3) %>%
+        dplyr::filter(result == 1) %>%
         dplyr::select(-result)
       
       make.assertr.assert.error.alt(
@@ -125,22 +134,26 @@ assert.alt <- function(tbl, predicate, ...) {
 }
 
 
-is_uniq.alt <- function(tbl, cols) {
+is_uniq.alt <- function(tbl, cols, .by = NULL) {
+  by <- as.list(substitute(.by))
+  if (length(by) > 1) by <- by[-1]
+  by <- purrr::map_chr(by, rlang::as_string)
+  
   cols %>%
     purrr::reduce(
       \(x, y) {
         new_column <- paste0(y, "_result")
-        dplyr::add_count(x, !!dplyr::sym(y), name = new_column) %>% 
-        dplyr::mutate(
-          !!dplyr::sym(new_column) := ifelse(
-            is.na(!!dplyr::sym(y)),
-            NA,
-            !!dplyr::sym(new_column)
+        dplyr::add_count(x, !!dplyr::sym(y), name = new_column) %>%
+          dplyr::mutate(
+            !!dplyr::sym(new_column) := ifelse(
+              is.na(!!dplyr::sym(y)),
+              NA,
+              !!dplyr::sym(new_column)
+            )
           )
-        )
       },
       .init = tbl %>%
-        dplyr::select(!!!cols) %>% 
+        dplyr::select(!!!cols, dplyr::all_of(by)) %>%
         dplyr::mutate(.TEMP = 1) %>%
         {
           if(inherits(., "tbl_lazy")) {
@@ -149,15 +162,16 @@ is_uniq.alt <- function(tbl, cols) {
             .
           }
         } %>%
-        dplyr::mutate(index = dplyr::row_number())
-    ) %>% 
+        dplyr::mutate(index = dplyr::row_number()) %>%
+        dplyr::group_by(!!!dplyr::syms(by))
+    ) %>%
     dplyr::mutate(
       dplyr::across(
         dplyr::ends_with("_result"),
         \(x) ifelse(is.na(x) | x == 1, 0, 1)
       )
-    ) %>% 
-    dplyr::select(-.TEMP) %>% 
+    ) %>%
+    dplyr::select(-.TEMP) %>%
     dplyr::ungroup()
 }
 
