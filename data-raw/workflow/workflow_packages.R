@@ -37,4 +37,5 @@ pacman::p_load(
 pacman::p_load_gh("nhsbsa-data-analytics/nhsbsaR")
 pacman::p_load_gh("nhsbsa-data-analytics/addressMatchR")
 pacman::p_load_gh("nhsbsa-data-analytics/personMatchR")
+pacman::p_load_gh("nhsbsa-data-analytics/assertr.alt") # inline data validation
 pacman::p_load_gh("MarkMc1089/netstat") # fixed version of netstat CRAN package
