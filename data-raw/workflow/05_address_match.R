@@ -1,6 +1,7 @@
-
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+thousand <- 10^3
 
 # Get start and end dates
 start_date = stringr::str_extract_all(patient_address_data, "\\d{8}")[[1]][1]
@@ -12,8 +13,10 @@ patient_db <- con %>%
 
 # Create a lazy table from the AddressBase Plus and CQC care home table
 address_db <- con %>%
-  tbl(from = lookup_address_data) %>% 
+  tbl(from = lookup_address_data) %>%
+  assert.alt(not_na.alt, POSTCODE, SINGLE_LINE_ADDRESS) %>% 
   rename(AB_FLAG = CH_FLAG)
+
 
 # Address Base plus for parent uprn join
 parent_db <- con %>% 
@@ -25,14 +28,15 @@ parent_db <- con %>%
 parent_uprn_db = address_db %>% 
   filter(!is.na(PARENT_UPRN)) %>% 
   select(UPRN = PARENT_UPRN) %>% 
-  distinct()
+  distinct() %>%
+  verify(nrow.alt(.) > 10 * thousand)
 
 # Get single GEO SLA per parent uprn
 parent_db = parent_db %>% 
   inner_join(parent_uprn_db) %>% 
   mutate(SINGLE_LINE_ADDRESS_PARENT = paste0(GEO_SINGLE_LINE_ADDRESS, " ", POSTCODE)) %>% 
   group_by(SINGLE_LINE_ADDRESS_PARENT) %>% 
-  summarise(PARENT_UPRN = max(UPRN)) %>%
+  summarise(PARENT_UPRN = max(UPRN, na.rm = TRUE)) %>%
   ungroup()
 
 # Get distinct patient-level address-postcode information
@@ -43,6 +47,8 @@ patient_address_db = patient_db %>%
     CALC_AGE >= 65,
     POSTCODE_CH == 1
   ) %>%
+  # No check for null SLA, as already filtered to non-null
+  assert.alt(not_na.alt, POSTCODE) %>% 
   # Add monthly patient count
   group_by(YEAR_MONTH, POSTCODE, SINGLE_LINE_ADDRESS) %>%
   mutate(MONTHLY_PATIENTS = n_distinct(NHS_NO)) %>%
@@ -50,7 +56,8 @@ patient_address_db = patient_db %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
-  ungroup()
+  ungroup() %>%
+  verify(nrow.alt(.) > 240 * thousand)
 
 # Match the patients address to the AddressBase Plus and CQC care home addresses
 match_db = addressMatchR::calc_match_addresses(
