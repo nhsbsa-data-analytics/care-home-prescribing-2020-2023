@@ -141,7 +141,8 @@ cqc_dedup_db <- cqc_db %>%
     UPRN,
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG,
-    CH_FLAG
+    CH_FLAG,
+    EXCLUDE_FOR_CH_LEVEL_ANALYSIS
   )
 
 # cqc_df2 <- cqc_dedup_db %>% collect()
@@ -288,8 +289,12 @@ ab_plus_cqc_db = ab_plus_db %>%
   # unique SLA (in case any SLAs have 2+ UPRNs)
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   slice_max(order_by = UPRN, with_ties = FALSE) %>% 
-  assert.alt(is_uniq.alt, UPRN) %>% 
   ungroup() %>% 
+  assert.alt(
+    is_uniq.alt,
+    UPRN,
+    pred_args = list(.by = c(POSTCODE, SINGLE_LINE_ADDRESS))
+  ) %>% 
   mutate(
     START_DATE = start_date,
     END_DATE = end_date,
