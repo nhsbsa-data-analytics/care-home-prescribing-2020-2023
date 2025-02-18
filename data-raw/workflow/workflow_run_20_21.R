@@ -2,7 +2,6 @@
 source("data-raw/workflow/workflow_packages.R")
 source("data-raw/workflow/workflow_helpers.R")
 source("data-raw/workflow/workflow_production.R")
-source("data-raw/data_validation_funcs.R")
 
 # Specify variables to retain at end of each script
 keep_vars = c(ls(), 'keep_vars')
