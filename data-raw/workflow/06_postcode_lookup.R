@@ -11,9 +11,9 @@ library(dbplyr)
 # newer LSOA->REG/ICB/LAD mappings.
 # The latest mappings which use the 2011-LSOAs (i.e. usable here) are hard-coded below:
 
-LSOA_NHSREG = "LSOA_NHSREG2022"
-LSOA_ICB = "LSOA_ICB2022"
-LSOA_LAD = "LSOA_LAD2021"
+LSOA_NHSREG = "LSOA21_NHSREG2023"
+LSOA_ICB = "LSOA21_ICB2023"
+LSOA_LAD = "LSOA21_LAD2023"
 
 
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
