@@ -491,3 +491,25 @@ simple_format_postcode_db <- function(df, postcode) {
   return(df)
 }
 
+get_abp_epoch <- function(end_date) {
+  con <- nhsbsaR::con_nhsbsa(database = "DALP")
+  
+  # Connect to ab plus in dall_ref
+  ab <- con %>%
+    tbl(from = in_schema("DALL_REF", "ADDRESSBASE_PLUS"))
+  
+  # Get closest release date
+  ab %>% 
+    select(RELEASE_DATE) %>% 
+    distinct() %>% 
+    collect() %>% 
+    mutate(
+      SELECT_DATE = as.Date(end_date),
+      RELEASE_DATE = as.Date(RELEASE_DATE),
+      DIFF = as.integer(abs(RELEASE_DATE - SELECT_DATE)),
+      DB_DATE = as.integer(gsub("-", "", RELEASE_DATE))
+    ) %>% 
+    filter(DIFF == min(DIFF)) %>% 
+    select(DB_DATE) %>% 
+    pull()
+}
