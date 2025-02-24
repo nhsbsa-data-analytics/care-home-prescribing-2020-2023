@@ -7,9 +7,6 @@ key = Sys.getenv("CQC_PRIMARY_KEY")
 # Number of results per page in API calls
 api_perPage = 1000
 
-# Get current year_month
-download_date <- as.integer(format(today(), "%Y%m%d"))
-
 # Define cqc columns of interest 
 cqc_cols = c(
   'name', 
@@ -271,7 +268,7 @@ cqc_details_df <- cqc_data %>%
       is.na(key_question_names) ~ NA,
       TRUE ~ current_ratings_overall_key_question_ratings_rating
     ),
-    cqc_date = download_date,
+    cqc_date = cqc_date,
     ods_code,
     specialisms,
     gac_service_types = gac_service_types_name,
@@ -367,7 +364,7 @@ cqc_final_df <- cqc_details_df %>%
   rename_with(toupper)
 
 # Create table name
-table_name <- paste0("INT646_CQC_", download_date)
+table_name <- paste0("INT646_CQC_", cqc_date)
 
 # Set up connection to the DB
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
