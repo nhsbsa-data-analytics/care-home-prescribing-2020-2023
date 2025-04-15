@@ -6,11 +6,11 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the CQC care home table
 cqc_db <- con %>%
-  tbl(from = cqc_data)
+  tbl(from = cqc_tbl)
 
 # Create a lazy table addressbase data
 ab_plus_db <- con %>%
-  tbl(from = ab_plus_data) %>% 
+  tbl(from = abp_tbl) %>% 
   rename(EPOCH = RELEASE_DATE)
 
 # Get 4 values for final output
@@ -303,10 +303,11 @@ ab_plus_cqc_db = ab_plus_db %>%
   ) %>% 
   personMatchR::format_postcode_db(POSTCODE)
 
+
 # Part Three: Save as table in dw ----------------------------------------------
 
 # Specify db table name
-table_name = gsub('-', '', paste0("INT646_ABP_CQC_", start_date, "_", end_date))
+table_name = address_tbl
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
@@ -322,7 +323,20 @@ ab_plus_cqc_db %>%
     temporary = FALSE
   )
 
-# # Drop temp tables
+########## TEMP CHECKING ##########
+if(!is.null(pc_sample)) {
+  con %>%
+    tbl(from = table_name) %>%
+    # Limit data to given postcodes
+    assert.alt(
+      is_in.alt,
+      POSTCODE,
+      pred_args = list(.in = pc_sample_f)
+    )
+}
+###################################
+
+# Drop temp tables
 # drop_table_if_exists_db(cqc_table_temp)
 # drop_table_if_exists_db(cqc_attr_table_temp)
 
