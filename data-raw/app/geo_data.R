@@ -58,27 +58,27 @@ create_geo_data_validation <- function(dataset, fields) {
 # All BUC boundary files @ CRS 27700
 geo_data <- list(
   Region = create_geo_data(
-    "NHS_England_Regions_July_2022_EN_BUC_2022",
-    "NHSER22CD,NHSER22NM"
+    "NHS_England_Regions_December_2023_EN_BSC",
+    "NHSER23CD,NHSER23NM"
   ),
   ICS = create_geo_data(
-    "ICB_JUL_2022_EN_BUC_V3",
-    "ICB22CD,ICB22NM"
+    "Integrated_Care_Boards_April_2023_EN_BSC",
+    "ICB23CD,ICB23NM"
   ),
   `Local Authority` = create_geo_data(
-    "Local_Authority_Districts_December_2021_GB_BUC_2022",
-    "LAD21CD,LAD21NM"
+    "Local_Authority_Districts_December_2023_Boundaries_UK_BSC",
+    "LAD23CD,LAD23NM"
   )
 )
 
 geo_data_validation <- list(
   Region = create_geo_data_validation(
-    "NHS_England_Regions_July_2022_EN_BUC_2022",
-    "NHSER22CD,NHSER22NM"
+    "NHS_England_Regions_December_2023_EN_BSC",
+    "NHSER23CD,NHSER23NM"
   ),
   ICB = create_geo_data_validation(
-    "ICB_JUL_2022_EN_BUC_V3",
-    "ICB22CD,ICB22NM"
+    "Integrated_Care_Boards_April_2023_EN_BSC",
+    "ICB23CD,ICB23NM"
   ) %>%
     # Some small differences in ICB data between ours and ArcGIS; the data used
     # in the app does not need corrected as only the code is used to join to our
@@ -89,8 +89,8 @@ geo_data_validation <- list(
       SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " of ", " Of ")
     ),
   `Local Authority` = create_geo_data_validation(
-    "Local_Authority_Districts_December_2021_GB_BUC_2022",
-    "LAD21CD,LAD21NM"
+    "Local_Authority_Districts_December_2023_Boundaries_UK_BSC",
+    "LAD23CD,LAD23NM"
   )
 )
 
