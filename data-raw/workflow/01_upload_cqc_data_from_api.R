@@ -363,14 +363,6 @@ cqc_final_df <- cqc_details_df %>%
   left_join(cqc_providers_df, by = "provider_id") %>% 
   rename_with(toupper)
 
-########## TEMP CHECKING ##########
-# Limit data to given postcodes
-if(!is.null(pc_sample)) {
-  cqc_final_df <- cqc_final_df %>%
-    filter(POSTCODE %in% pc_sample_f)  
-}
-###################################
-
 # Create table name
 table_name <- cqc_tbl
 

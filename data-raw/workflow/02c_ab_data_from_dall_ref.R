@@ -23,14 +23,6 @@ select_date = ab %>%
   select(DB_DATE) %>% 
   pull()
 
-########## TEMP CHECKING ##########
-# Limit data to given postcodes
-if(!is.null(pc_sample)) {
-  ab <- ab %>%
-    filter(POSTCODE %in% pc_sample)
-}
-###################################
-
 # Filter ab by most appropriate release date
 ab = ab %>% filter(TO_NUMBER(TO_CHAR(RELEASE_DATE, 'YYYYMMDD')) == select_date) %>%
   # Expect UPRN to be unique in epoch

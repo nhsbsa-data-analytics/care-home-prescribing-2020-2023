@@ -11,18 +11,18 @@ million <- 10^6
 
 # Create a lazy table from the item level FACT table
 patient_db <- con %>%
-  tbl(from = patient_address_tbl)
+  tbl(from = patient_tbl)
 
 # Create a lazy table from the AddressBase Plus and CQC care home table
 address_db <- con %>%
-  tbl(from = lookup_address_tbl) %>%
+  tbl(from = address_tbl) %>%
   assert.alt(not_na.alt, POSTCODE, SINGLE_LINE_ADDRESS) %>% 
   rename(AB_FLAG = CH_FLAG)
 
 
 # Address Base plus for parent uprn join
 parent_db <- con %>% 
-  tbl(from = parent_uprn_tbl)
+  tbl(from = abp_tbl)
 
 # Process and match address data -----------------------------------------------
 
@@ -30,8 +30,8 @@ parent_db <- con %>%
 parent_uprn_db = address_db %>% 
   filter(!is.na(PARENT_UPRN)) %>% 
   select(UPRN = PARENT_UPRN) %>% 
-  distinct() #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 10 * thousand) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE 
+  distinct() %>%
+  verify(nrow.alt(.) > 10 * thousand)
 
 # Get single GEO SLA per parent uprn
 parent_db = parent_db %>% 
@@ -58,8 +58,8 @@ patient_address_db = patient_db %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
-  ungroup() #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 240 * thousand) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  ungroup() %>%
+  verify(nrow.alt(.) > 240 * thousand)
 
 # Original step here was to use addressMatchR::calc_match_addresses. However, at
 # some point something has broken. It used to take ~40 mins to run, but now takes
@@ -242,7 +242,7 @@ match_db = match_db %>%
   ungroup() %>% 
   # Ensure 1 uprn per SLA
   group_by(SINGLE_LINE_ADDRESS_STANDARDISED) %>%
-  mutate(UPRN = max(UPRN)) %>% 
+  mutate(UPRN = max(UPRN, na.rm = TRUE)) %>% 
   ungroup() %>% 
   # Get parent uprn info
   left_join(parent_db, by = "PARENT_UPRN") %>%
@@ -255,7 +255,7 @@ patient_match_db <- patient_db %>%
     CALC_AGE >= 65,
     POSTCODE_CH == 1
   ) %>%
-  # verify(nrow.alt(.) > 15 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  verify(nrow.alt(.) > 15 * million) %>%
   left_join(y = match_db, by = c("POSTCODE", "SINGLE_LINE_ADDRESS")) %>% 
   tidyr::replace_na(
     list(
@@ -282,19 +282,6 @@ patient_match_db %>%
     indexes = list(c("PF_ID", "YEAR_MONTH")),
     temporary = FALSE
   )
-
-########## TEMP CHECKING ##########
-if(!is.null(pc_sample)) {
-  con %>%
-    tbl(from = table_name) %>%
-    # Limit data to given postcodes
-    assert.alt(
-      is_in.alt,
-      POSTCODE,
-      pred_args = list(.in = pc_sample_f)
-    )
-}
-###################################
 
 # Can now drop the temporary match table
 drop_table_if_exists_db("MATCH_TEMP")

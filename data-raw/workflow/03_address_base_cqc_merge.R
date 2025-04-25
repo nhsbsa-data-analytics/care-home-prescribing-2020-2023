@@ -323,19 +323,6 @@ ab_plus_cqc_db %>%
     temporary = FALSE
   )
 
-########## TEMP CHECKING ##########
-if(!is.null(pc_sample)) {
-  con %>%
-    tbl(from = table_name) %>%
-    # Limit data to given postcodes
-    assert.alt(
-      is_in.alt,
-      POSTCODE,
-      pred_args = list(.in = pc_sample_f)
-    )
-}
-###################################
-
 # Drop temp tables
 # drop_table_if_exists_db(cqc_table_temp)
 # drop_table_if_exists_db(cqc_attr_table_temp)

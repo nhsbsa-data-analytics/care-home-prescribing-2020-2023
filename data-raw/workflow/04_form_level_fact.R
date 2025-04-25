@@ -10,8 +10,8 @@ million <- 10^6
 # end_date = stringr::str_extract_all(address_tbl, "\\d{8}")[[1]][2]
 
 # Convert to year_months
-start_year_month = as.integer(substr(start_date, 1, 6))
-end_year_month = as.integer(substr(end_date, 1, 6))
+start_year_month = as.integer(substr(start_str, 1, 6))
+end_year_month = as.integer(substr(end_str, 1, 6))
 
 # Modify dates for eps buffer
 eps_start_date = ymd(start_date) %m-% months(2)
@@ -46,7 +46,7 @@ postcode_db <- con %>%
 # Label CH postcodes
 postcode_db = postcode_db %>%
   distinct(POSTCODE) %>%
-  # verify(nrow.alt(.) > 20000) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  verify(nrow.alt(.) > 20000) %>%
   mutate(POSTCODE_CH = 1)
 
 # Get appropriate year month fields as a vector
@@ -127,28 +127,20 @@ fact_db = fact_db %>%
     EPS_PART_DATE,
     EPM_ID
   ) %>% 
-  # verify(nrow.alt(.) > 240 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE 
+  verify(nrow.alt(.) > 240 * million) %>% 
   rename(PART_DATE = EPS_PART_DATE)
 
 # Process paper info
 paper_db = paper_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
-  # verify(nrow.alt(.) > 50 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # assert.alt(is_uniq.alt, PF_ID) %>%  CHECK: PF_ID is unique for 20/21 data - expected?
+  verify(nrow.alt(.) > 50 * million) %>%
+  assert.alt(is_uniq.alt, PF_ID) %>% # CHECK: PF_ID is unique for 20/21 data - expected?
   select(
     YEAR_MONTH,
     PF_ID,
     PAPER_SINGLE_LINE_ADDRESS = ADDRESS,
     PAPER_POSTCODE = POSTCODE
   )
-
-########## TEMP CHECKING ##########
-# Limit data to given postcodes
-if(!is.null(pc_sample)) {
-  paper_db <- paper_db %>%
-    filter(PAPER_POSTCODE %in% pc_sample)
-}
-###################################
 
 # Process electronic info
 eps_db = eps_db %>%
@@ -157,8 +149,8 @@ eps_db = eps_db %>%
     PART_DATE >= eps_start_date,
     PART_DATE <= eps_end_date
   ) %>%
-  # verify(nrow.alt(.) > 600 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # assert.alt(is_uniq.alt, EPM_ID) %>% CHECK: EPM_ID is unique for 20/21 data - expected?
+  verify(nrow.alt(.) > 600 * million) %>%
+  assert.alt(is_uniq.alt, EPM_ID) %>% # CHECK: EPM_ID is unique for 20/21 data - expected?
   # Concatenate fields together by a single space for the single line address
   mutate(
     EPS_SINGLE_LINE_ADDRESS = paste(
@@ -174,14 +166,6 @@ eps_db = eps_db %>%
     EPS_SINGLE_LINE_ADDRESS,
     EPS_POSTCODE = PAT_ADDRESS_POSTCODE
   )
-
-########## TEMP CHECKING ##########
-# Limit data to given postcodes
-if(!is.null(pc_sample)) {
-  eps_db <- eps_db %>%
-    filter(EPS_POSTCODE %in% pc_sample)
-}
-###################################
 
 # Part two: fact join and postcode & SLA tidy ----------------------------------
 
