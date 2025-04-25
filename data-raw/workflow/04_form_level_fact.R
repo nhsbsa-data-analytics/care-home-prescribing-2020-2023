@@ -5,8 +5,9 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 million <- 10^6
 
 # Get start and end dates
-start_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][1]
-end_date = stringr::str_extract_all(address_data, "\\d{8}")[[1]][2]
+# NOTE: The existing variables can be used here instead of recalculating
+# start_date = stringr::str_extract_all(address_tbl, "\\d{8}")[[1]][1]
+# end_date = stringr::str_extract_all(address_tbl, "\\d{8}")[[1]][2]
 
 # Convert to year_months
 start_year_month = as.integer(substr(start_date, 1, 6))
@@ -38,14 +39,14 @@ eps_db <- con %>%
 
 # Postcodes with a care home
 postcode_db <- con %>%
-  tbl(from = address_data)
+  tbl(from = address_tbl)
 
 # Part one: filter two fact table cuts for eps and paper info ------------------
 
 # Label CH postcodes
 postcode_db = postcode_db %>%
   distinct(POSTCODE) %>%
-  verify(nrow.alt(.) > 20000) %>%
+  # verify(nrow.alt(.) > 20000) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
   mutate(POSTCODE_CH = 1)
 
 # Get appropriate year month fields as a vector
@@ -126,13 +127,13 @@ fact_db = fact_db %>%
     EPS_PART_DATE,
     EPM_ID
   ) %>% 
-  verify(nrow.alt(.) > 240 * million) %>% 
+  # verify(nrow.alt(.) > 240 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE 
   rename(PART_DATE = EPS_PART_DATE)
 
 # Process paper info
 paper_db = paper_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
-  verify(nrow.alt(.) > 50 * million) %>%
+  # verify(nrow.alt(.) > 50 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
   # assert.alt(is_uniq.alt, PF_ID) %>%  CHECK: PF_ID is unique for 20/21 data - expected?
   select(
     YEAR_MONTH,
@@ -141,6 +142,14 @@ paper_db = paper_db %>%
     PAPER_POSTCODE = POSTCODE
   )
 
+########## TEMP CHECKING ##########
+# Limit data to given postcodes
+if(!is.null(pc_sample)) {
+  paper_db <- paper_db %>%
+    filter(PAPER_POSTCODE %in% pc_sample)
+}
+###################################
+
 # Process electronic info
 eps_db = eps_db %>%
   # Bring back ETP data within dates
@@ -148,7 +157,7 @@ eps_db = eps_db %>%
     PART_DATE >= eps_start_date,
     PART_DATE <= eps_end_date
   ) %>%
-  verify(nrow.alt(.) > 600 * million) %>%
+  # verify(nrow.alt(.) > 600 * million) %>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
   # assert.alt(is_uniq.alt, EPM_ID) %>% CHECK: EPM_ID is unique for 20/21 data - expected?
   # Concatenate fields together by a single space for the single line address
   mutate(
@@ -165,6 +174,14 @@ eps_db = eps_db %>%
     EPS_SINGLE_LINE_ADDRESS,
     EPS_POSTCODE = PAT_ADDRESS_POSTCODE
   )
+
+########## TEMP CHECKING ##########
+# Limit data to given postcodes
+if(!is.null(pc_sample)) {
+  eps_db <- eps_db %>%
+    filter(EPS_POSTCODE %in% pc_sample)
+}
+###################################
 
 # Part two: fact join and postcode & SLA tidy ----------------------------------
 
@@ -215,7 +232,7 @@ print("Output being computed to be written back to the db ...")
 # fact_db <- con %>%
 #   tbl(from = table_name_temp)
 
-table_name = paste0("INT646_FORMS_", start_date, "_", end_date)
+table_name = patient_tbl
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)

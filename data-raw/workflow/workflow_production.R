@@ -3,8 +3,8 @@
 #' @noRd
 get_latest_cqc_data = function(cqc_date, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("cqc_date", cqc_date, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("cqc_date", cqc_date, envir = globalenv())
   
   if (dry_run) {
     print("Running step 1 with:")
@@ -17,7 +17,6 @@ get_latest_cqc_data = function(cqc_date, dry_run = FALSE){
   tictoc::tic()
   source("data-raw/workflow/01_upload_cqc_data_from_api.R")
   tictoc::toc()
-  print(Sys.time())
 }
 
 
@@ -26,8 +25,8 @@ get_latest_cqc_data = function(cqc_date, dry_run = FALSE){
 #' @noRd
 get_abp_from_api = function(end_date, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("end_date", end_date, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("end_date", end_date, envir = globalenv())
   
   if (dry_run) {
     print("Running step 2 with:")
@@ -48,8 +47,8 @@ get_abp_from_api = function(end_date, dry_run = FALSE){
 #' @noRd
 get_abp_from_os = function(epoch_year, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("epoch_year", epoch_year, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("epoch_year", epoch_year, envir = globalenv())
   
   if (dry_run) {
     print("Running step 2 with:")
@@ -70,8 +69,8 @@ get_abp_from_os = function(epoch_year, dry_run = FALSE){
 #' @noRd
 get_abp_from_dall_ref = function(end_date, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("end_date", end_date, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("end_date", end_date, envir = globalenv())
   
   if (dry_run) {
     print("Running step 2 with:")
@@ -88,21 +87,21 @@ get_abp_from_dall_ref = function(end_date, dry_run = FALSE){
 
 
 #' @description downloads a single epoch of ab plus closest to end_date
-#' @param ab_plus_data: name of the ab plus db table
-#' @param cqc_data: the name of the cqc db table
+#' @param abp_tbl: name of the ab plus db table
+#' @param cqc_tbl: the name of the cqc db table
 #' @noRd
-create_ab_plus_cqc_data = function(cqc_data, ab_plus_data, start_date, end_date, dry_run = FALSE){
+create_ab_plus_cqc_data = function(cqc_tbl, abp_tbl, start_date, end_date, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("cqc_data", cqc_data, envir = globalenv())
-  assign("ab_plus_data", ab_plus_data, envir = globalenv())
-  assign("start_date", start_date, envir = globalenv())
-  assign("end_date", end_date, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("cqc_tbl", cqc_tbl, envir = globalenv())
+  # assign("abp_tbl", abp_tbl, envir = globalenv())
+  # assign("start_date", start_date, envir = globalenv())
+  # assign("end_date", end_date, envir = globalenv())
   
   if (dry_run) {
     print("Running step 3 with:")
-    print(glue("cqc_data = {cqc_data}"))
-    print(glue("ab_plus_data = {ab_plus_data}"))
+    print(glue("cqc_tbl = {cqc_tbl}"))
+    print(glue("abp_tbl = {abp_tbl}"))
     print(glue("start_date = {start_date}"))
     print(glue("end_date = {end_date}"))
     
@@ -117,16 +116,16 @@ create_ab_plus_cqc_data = function(cqc_data, ab_plus_data, start_date, end_date,
 
 
 #' @description creates a patient address for each form within time period
-#' @param address_data: name of the lookup address db table
+#' @param address_tbl: name of the lookup address db table
 #' @noRd
-create_form_level_patient_addresses = function(address_data, dry_run = FALSE){
+create_form_level_patient_addresses = function(address_tbl, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("address_data", address_data, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("address_tbl", address_tbl, envir = globalenv())
   
   if (dry_run) {
     print("Running step 4 with:")
-    print(glue("address_data = {address_data}"))
+    print(glue("address_tbl = {address_tbl}"))
     
     return(invisible())
   }
@@ -139,21 +138,21 @@ create_form_level_patient_addresses = function(address_data, dry_run = FALSE){
 
 
 #' @description matches two address tables then process for ch flag
-#' @param patient_address_data: patient address data
-#' @param lookup_address_data: address data to be matched against
+#' @param patient_address_tbl: patient address data
+#' @param lookup_address_tbl: address data to be matched against
 #' @noRd
-create_care_home_address_match = function(patient_address_data, lookup_address_data, parent_uprn_data, dry_run = FALSE){
+create_care_home_address_match = function(patient_address_tbl, lookup_address_tbl, parent_uprn_tbl, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("patient_address_data", patient_address_data, envir = globalenv())
-  assign("lookup_address_data", lookup_address_data, envir = globalenv())
-  assign("parent_uprn_data", parent_uprn_data, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("patient_address_tbl", patient_address_tbl, envir = globalenv())
+  # assign("lookup_address_tbl", lookup_address_tbl, envir = globalenv())
+  # assign("parent_uprn_tbl", parent_uprn_tbl, envir = globalenv())
   
   if (dry_run) {
     print("Running step 5 with:")
-    print(glue("patient_address_data = {patient_address_data}"))
-    print(glue("lookup_address_data = {lookup_address_data}"))
-    print(glue("parent_uprn_data = {parent_uprn_data}"))
+    print(glue("patient_address_tbl = {patient_address_tbl}"))
+    print(glue("lookup_address_tbl = {lookup_address_tbl}"))
+    print(glue("parent_uprn_tbl = {parent_uprn_tbl}"))
     
     return(invisible())
   }
@@ -182,18 +181,18 @@ create_postcode_lookup = function(dry_run = FALSE){
 
 
 #' @description gets prescription info for matched records
-#' @param match_data: matched address data
+#' @param match_tbl: matched address data
 #' @noRd
-create_matched_prescription_base_table = function(match_data, form_data, dry_run = FALSE){
+create_matched_prescription_base_table = function(match_tbl, form_tbl, dry_run = FALSE){
   
-  # Assign function inputs to global env
-  assign("match_data", match_data, envir = globalenv())
-  assign("form_data", form_data, envir = globalenv())
+  # Assign function inputs to global env - not necessary
+  # assign("match_tbl", match_tbl, envir = globalenv())
+  # assign("form_tbl", form_tbl, envir = globalenv())
 
   if (dry_run) {
     print("Running step 7 with:")
-    print(glue("match_data = {match_data}"))
-    print(glue("form_data = {form_data}"))
+    print(glue("match_tbl = {match_tbl}"))
+    print(glue("form_tbl = {form_tbl}"))
     
     return(invisible())
   }
