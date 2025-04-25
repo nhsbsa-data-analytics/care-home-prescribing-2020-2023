@@ -118,14 +118,6 @@ postcode_db <- postcode_db %>%
     IMD_DECILE
   )
 
-########## TEMP CHECKING ##########
-# Limit data to given postcodes
-if(!is.null(pc_sample)) {
-  postcode_db <- postcode_db %>%
-    filter(POSTCODE %in% pc_sample_f)
-}
-###################################
-
 # Write the table back to the DB with indexes
 table_name = "INT646_POSTCODE_LOOKUP"
 drop_table_if_exists_db(table_name)

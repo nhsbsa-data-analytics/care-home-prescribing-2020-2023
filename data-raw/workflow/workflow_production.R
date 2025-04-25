@@ -1,11 +1,7 @@
 #' @description downloads the latest cqc data from the cqc api
 #' @param none: date for data generated from Sys.date()
 #' @noRd
-get_latest_cqc_data = function(cqc_date, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("cqc_date", cqc_date, envir = globalenv())
-  
+get_latest_cqc_data = function(dry_run = FALSE){
   if (dry_run) {
     print("Running step 1 with:")
     print(glue("cqc_date = {cqc_date}"))
@@ -13,7 +9,7 @@ get_latest_cqc_data = function(cqc_date, dry_run = FALSE){
     return(invisible())
   }
   
-  # source single script with no date input required
+  # Source single script with no date input required
   tictoc::tic()
   source("data-raw/workflow/01_upload_cqc_data_from_api.R")
   tictoc::toc()
@@ -24,10 +20,6 @@ get_latest_cqc_data = function(cqc_date, dry_run = FALSE){
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
 get_abp_from_api = function(end_date, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("end_date", end_date, envir = globalenv())
-  
   if (dry_run) {
     print("Running step 2 with:")
     print(glue("end_date = {end_date}"))
@@ -46,10 +38,6 @@ get_abp_from_api = function(end_date, dry_run = FALSE){
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
 get_abp_from_os = function(epoch_year, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("epoch_year", epoch_year, envir = globalenv())
-  
   if (dry_run) {
     print("Running step 2 with:")
     print(glue("epoch_year = {epoch_year}"))
@@ -68,10 +56,6 @@ get_abp_from_os = function(epoch_year, dry_run = FALSE){
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
 get_abp_from_dall_ref = function(end_date, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("end_date", end_date, envir = globalenv())
-  
   if (dry_run) {
     print("Running step 2 with:")
     print(glue("end_date = {end_date}"))
@@ -91,13 +75,6 @@ get_abp_from_dall_ref = function(end_date, dry_run = FALSE){
 #' @param cqc_tbl: the name of the cqc db table
 #' @noRd
 create_ab_plus_cqc_data = function(cqc_tbl, abp_tbl, start_date, end_date, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("cqc_tbl", cqc_tbl, envir = globalenv())
-  # assign("abp_tbl", abp_tbl, envir = globalenv())
-  # assign("start_date", start_date, envir = globalenv())
-  # assign("end_date", end_date, envir = globalenv())
-  
   if (dry_run) {
     print("Running step 3 with:")
     print(glue("cqc_tbl = {cqc_tbl}"))
@@ -108,7 +85,7 @@ create_ab_plus_cqc_data = function(cqc_tbl, abp_tbl, start_date, end_date, dry_r
     return(invisible())
   }
   
-  # stack and process the cqc and ab plus address data
+  # Stack and process the cqc and ab plus address data
   tictoc::tic()
   source("data-raw/workflow/03_address_base_cqc_merge.R")
   tictoc::toc()
@@ -119,10 +96,6 @@ create_ab_plus_cqc_data = function(cqc_tbl, abp_tbl, start_date, end_date, dry_r
 #' @param address_tbl: name of the lookup address db table
 #' @noRd
 create_form_level_patient_addresses = function(address_tbl, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("address_tbl", address_tbl, envir = globalenv())
-  
   if (dry_run) {
     print("Running step 4 with:")
     print(glue("address_tbl = {address_tbl}"))
@@ -130,7 +103,7 @@ create_form_level_patient_addresses = function(address_tbl, dry_run = FALSE){
     return(invisible())
   }
   
-  # Get nearest ab plus to end date with cqc postcodes within time frame
+  # Join relevant fact tables and save as single table
   tictoc::tic()
   source("data-raw/workflow/04_form_level_fact.R")
   tictoc::toc()
@@ -141,23 +114,17 @@ create_form_level_patient_addresses = function(address_tbl, dry_run = FALSE){
 #' @param patient_address_tbl: patient address data
 #' @param lookup_address_tbl: address data to be matched against
 #' @noRd
-create_care_home_address_match = function(patient_address_tbl, lookup_address_tbl, parent_uprn_tbl, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("patient_address_tbl", patient_address_tbl, envir = globalenv())
-  # assign("lookup_address_tbl", lookup_address_tbl, envir = globalenv())
-  # assign("parent_uprn_tbl", parent_uprn_tbl, envir = globalenv())
-  
+create_care_home_address_match = function(patient_tbl, address_tbl, abp_tbl, dry_run = FALSE){
   if (dry_run) {
     print("Running step 5 with:")
-    print(glue("patient_address_tbl = {patient_address_tbl}"))
-    print(glue("lookup_address_tbl = {lookup_address_tbl}"))
-    print(glue("parent_uprn_tbl = {parent_uprn_tbl}"))
+    print(glue("patient_tbl = {patient_tbl}"))
+    print(glue("address_tbl = {address_tbl}"))
+    print(glue("abp_tbl = {abp_tbl}"))
     
     return(invisible())
   }
   
-  # Get nearest ab plus to end date with cqc postcodes within time frame
+  # Perform address matching and save results
   tictoc::tic()
   source("data-raw/workflow/05_address_match.R")
   tictoc::toc()
@@ -166,7 +133,6 @@ create_care_home_address_match = function(patient_address_tbl, lookup_address_tb
 
 #' @description creates the postcode lookup table in the DB containing latest available (hard-coded) mappings
 create_postcode_lookup = function(dry_run = FALSE){
-  
   if (dry_run) {
     print("Running step 6")
     
@@ -183,21 +149,16 @@ create_postcode_lookup = function(dry_run = FALSE){
 #' @description gets prescription info for matched records
 #' @param match_tbl: matched address data
 #' @noRd
-create_matched_prescription_base_table = function(match_tbl, form_tbl, dry_run = FALSE){
-  
-  # Assign function inputs to global env - not necessary
-  # assign("match_tbl", match_tbl, envir = globalenv())
-  # assign("form_tbl", form_tbl, envir = globalenv())
-
+create_matched_prescription_base_table = function(match_tbl, patient_tbl, dry_run = FALSE){
   if (dry_run) {
     print("Running step 7 with:")
     print(glue("match_tbl = {match_tbl}"))
-    print(glue("form_tbl = {form_tbl}"))
+    print(glue("patient_tbl = {patient_tbl}"))
     
     return(invisible())
   }
   
-  # Get nearest ab plus to end date with cqc postcodes within time frame
+  # Create final base table for FY
   tictoc::tic()
   source("data-raw/workflow/07_item_level_base.R")
   tictoc::toc()

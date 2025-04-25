@@ -23,7 +23,7 @@ match_db <- con %>%
 
 # Create a lazy table from the matched patient address care home table
 form_db <- con %>%
-  tbl(from = form_tbl)
+  tbl(from = patient_tbl)
 
 # Create a lazy table from the drug DIM table
 drug_db <- con %>%
@@ -47,8 +47,8 @@ postcode_db <- con %>%
 # end_date = stringr::str_extract_all(match_tbl, "\\d{8}")[[1]][2]
 
 # Derive start and end year months
-start_year_month = as.integer(substr(start_date, 1, 6))
-end_year_month = as.integer(substr(end_date, 1, 6))
+start_year_month = as.integer(substr(start_str, 1, 6))
+end_year_month = as.integer(substr(end_str, 1, 6))
 
 # Define 'buffered' eps date range: for query efficiency
 eps_start_date = as.Date(start_date, format = "%Y%m%d") %m-% months(2)
@@ -134,8 +134,8 @@ fact_db = fact_db %>%
     DISP_CODE = DISPENSER_CODE,
     DISP_ID,
     DISP_OUPDT_TYPE
-  ) #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 500 * million) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  ) %>%
+  verify(nrow.alt(.) > 500 * million)
   
 
 # Get drug info
@@ -180,8 +180,8 @@ drug_db = drug_db %>%
     ACB_CAT,
     DAMN_CAT,
     FALLS_CAT
-  ) #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 3 * million) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  ) %>%
+  verify(nrow.alt(.) > 3 * million)
 
 # Process prescriber information
 presc_db = presc_db %>% 
@@ -203,8 +203,8 @@ presc_db = presc_db %>%
     PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
     PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
-  ) #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 2 * million) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  ) %>%
+  verify(nrow.alt(.) > 2 * million)
 
 # Process form fact
 # NOTE: End up with around 100k NA postcodes/125k NA SLAs for 20/21.
@@ -239,8 +239,8 @@ disp_db = disp_db %>%
     DISP_TRADING_NM = TRADING_LTST_NM,
     DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
-  ) #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 1 * million) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  ) %>%
+  verify(nrow.alt(.) > 1 * million)
 
 # Get a single latest gender and age for the period 
 pat_db <- pat_db %>% 
@@ -293,8 +293,8 @@ pat_db <- pat_db %>%
       TRUE ~ "90+"
     )
   ) %>%
-  select(NHS_NO, GENDER, AGE, AGE_BAND) #%>% # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
-  # verify(nrow.alt(.) > 8 * million) # TEMP REMOVAL WHILE CHECKING E2E PIPELINE
+  select(NHS_NO, GENDER, AGE, AGE_BAND) %>%
+  verify(nrow.alt(.) > 8 * million)
 
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
@@ -433,19 +433,6 @@ fact_join_db %>% compute_with_parallelism(table_name, 32)
 
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
-
-########## TEMP CHECKING ##########
-if(!is.null(pc_sample)) {
-  con %>%
-    tbl(from = table_name) %>%
-    # Limit data to given postcodes
-    assert.alt(
-      is_in.alt,
-      BSA_POSTCODE,
-      pred_args = list(.in = pc_sample_f)
-    )
-}
-###################################
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
