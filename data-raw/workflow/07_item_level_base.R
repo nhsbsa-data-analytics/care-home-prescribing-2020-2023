@@ -3,6 +3,8 @@ source("R/utils_helpers.R")
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+million <- 10^6
+
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
   tbl(from = in_schema("DIM", "YEAR_MONTH_DIM"))
@@ -17,11 +19,11 @@ pat_db <- con %>%
 
 # Create a lazy table from the matched patient address care home table
 match_db <- con %>%
-  tbl(from = match_data)
+  tbl(from = match_tbl)
 
 # Create a lazy table from the matched patient address care home table
 form_db <- con %>%
-  tbl(from = form_data)
+  tbl(from = patient_tbl)
 
 # Create a lazy table from the drug DIM table
 drug_db <- con %>%
@@ -40,12 +42,13 @@ postcode_db <- con %>%
   tbl(from = "INT646_POSTCODE_LOOKUP")
 
 # Get start and end dates
-start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
-end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
+# NOTE: The existing variables can be used here instead of recalculating
+# start_date = stringr::str_extract_all(match_tbl, "\\d{8}")[[1]][1]
+# end_date = stringr::str_extract_all(match_tbl, "\\d{8}")[[1]][2]
 
 # Derive start and end year months
-start_year_month = as.integer(substr(start_date, 1, 6))
-end_year_month = as.integer(substr(end_date, 1, 6))
+start_year_month = as.integer(substr(start_str, 1, 6))
+end_year_month = as.integer(substr(end_str, 1, 6))
 
 # Define 'buffered' eps date range: for query efficiency
 eps_start_date = as.Date(start_date, format = "%Y%m%d") %m-% months(2)
@@ -95,7 +98,7 @@ match_db = match_db %>%
     CQC_DATE
   )
 
-# Filter to elderly patients in 2020/2021 and required columns
+# Filter to elderly patients in current year and required columns
 fact_db = fact_db %>%
   filter(
     CALC_AGE >= 65L,
@@ -131,7 +134,9 @@ fact_db = fact_db %>%
     DISP_CODE = DISPENSER_CODE,
     DISP_ID,
     DISP_OUPDT_TYPE
-  )
+  ) %>%
+  verify(nrow.alt(.) > 500 * million)
+  
 
 # Get drug info
 drug_db = drug_db %>% 
@@ -175,7 +180,8 @@ drug_db = drug_db %>%
     ACB_CAT,
     DAMN_CAT,
     FALLS_CAT
-  )
+  ) %>%
+  verify(nrow.alt(.) > 3 * million)
 
 # Process prescriber information
 presc_db = presc_db %>% 
@@ -197,9 +203,12 @@ presc_db = presc_db %>%
     PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
     PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
-    )
+  ) %>%
+  verify(nrow.alt(.) > 2 * million)
 
 # Process form fact
+# NOTE: End up with around 100k NA postcodes/125k NA SLAs for 20/21.
+# Should these be removed?
 form_db = form_db %>% 
   select(
     YEAR_MONTH_FORMS = YEAR_MONTH,
@@ -230,7 +239,8 @@ disp_db = disp_db %>%
     DISP_TRADING_NM = TRADING_LTST_NM,
     DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
-  )
+  ) %>%
+  verify(nrow.alt(.) > 1 * million)
 
 # Get a single latest gender and age for the period 
 pat_db <- pat_db %>% 
@@ -283,7 +293,8 @@ pat_db <- pat_db %>%
       TRUE ~ "90+"
     )
   ) %>%
-  select(NHS_NO, GENDER, AGE, AGE_BAND)
+  select(NHS_NO, GENDER, AGE, AGE_BAND) %>%
+  verify(nrow.alt(.) > 8 * million)
 
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
@@ -409,7 +420,7 @@ fact_join_db = fact_db %>%
 # Part four: save output -------------------------------------------------------
 
 # Define table name
-table_name = paste0("INT646_BASE_", start_date, "_", end_date)
+table_name = paste0("INT646_BASE_", start_str, "_", end_str)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)

@@ -4,13 +4,7 @@ library(dplyr)
 library(dbplyr)
 
 # Postcodes are mapped to REG/ICB/LAD mappings via LSOAs
-# Currently PCD-LSOA mappings are available in the DWCP, but include only the old
-# 2011-LSOA structure. The LSOA structure was updated in 2021 and is entirely different.
-# The mappings from https://geoportal.statistics.gov.uk which feed DALL_REF.ONS_GEOGRAPHY_MAPPING
-# have switched to using the 2021-LSOA structure in recent years, so we cannot use the
-# newer LSOA->REG/ICB/LAD mappings.
-# The latest mappings which use the 2011-LSOAs (i.e. usable here) are hard-coded below:
-
+# The mappings from https://geoportal.statistics.gov.uk feed DALL_REF.ONS_GEOGRAPHY_MAPPING
 LSOA_NHSREG = "LSOA21_NHSREG2023"
 LSOA_ICB = "LSOA21_ICB2023"
 LSOA_LAD = "LSOA21_LAD2023"
