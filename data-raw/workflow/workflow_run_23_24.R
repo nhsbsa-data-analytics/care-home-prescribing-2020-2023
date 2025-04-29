@@ -11,7 +11,7 @@ source("data-raw/workflow/workflow_production.R")
 # Set these manually ...
 # Set to TRUE to not run scripts, but instead get printouts of variable values
 # that would be used.
-dry_run       <- FALSE
+dry_run       <- TRUE
 
 # Start year of run
 year_from     <- 2023
@@ -22,9 +22,6 @@ cqc_date      <- "202500415"
 
 # ... then these are set automatically
 year_to       <- year_from + 1
-if(!is.null(pc_sample)) {
-  pc_sample_f <- pc_sample %>% map_vec(\(x) gsub(" ", "", x))
-}
 run_cqc       <- is.null(cqc_date)
 if(is.null(cqc_date)) {
   cqc_date    <- as.integer(format(today(), "%Y%m%d"))
