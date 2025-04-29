@@ -134,7 +134,7 @@ fact_db = fact_db %>%
 paper_db = paper_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
   verify(nrow.alt(.) > 50 * million) %>%
-  assert.alt(is_uniq.alt, PF_ID) %>% # CHECK: PF_ID is unique for 20/21 data - expected?
+  assert.alt(is_uniq.alt, PF_ID) %>%
   select(
     YEAR_MONTH,
     PF_ID,
@@ -150,7 +150,7 @@ eps_db = eps_db %>%
     PART_DATE <= eps_end_date
   ) %>%
   verify(nrow.alt(.) > 600 * million) %>%
-  assert.alt(is_uniq.alt, EPM_ID) %>% # CHECK: EPM_ID is unique for 20/21 data - expected?
+  assert.alt(is_uniq.alt, EPM_ID) %>%
   # Concatenate fields together by a single space for the single line address
   mutate(
     EPS_SINGLE_LINE_ADDRESS = paste(
@@ -171,8 +171,6 @@ eps_db = eps_db %>%
 
 # Join all tables and clean
 fact_join_db = fact_db %>%
-  # CHECK: can these not be joined simply on PF_ID and EPM_ID? They appear to be
-  # unique at least in the data range we use.
   left_join(y = paper_db, by = c("YEAR_MONTH", "PF_ID")) %>%
   left_join(y = eps_db, by = c("PART_DATE", "EPM_ID")) %>%
   mutate(
