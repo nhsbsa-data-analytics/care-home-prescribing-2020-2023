@@ -4,7 +4,7 @@ Recreate base table using newer mappings
 Version 1.0
 
 AMENDMENTS:
-	2025-30-04  : Mark McPherson    : Script creation
+    2025-30-04  : Mark McPherson    : Script creation
     date        : name              : details
 
 
