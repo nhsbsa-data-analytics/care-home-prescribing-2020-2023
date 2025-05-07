@@ -17,14 +17,16 @@ select_date = ab %>%
     SELECT_DATE = as.Date(end_date),
     RELEASE_DATE = as.Date(RELEASE_DATE),
     DIFF = as.integer(abs(RELEASE_DATE - SELECT_DATE)),
-    DB_DATE = as.integer(gsub("-", "", SELECT_DATE))
+    DB_DATE = as.integer(gsub("-", "", RELEASE_DATE))
     ) %>% 
   filter(DIFF == min(DIFF)) %>% 
   select(DB_DATE) %>% 
   pull()
 
 # Filter ab by most appropriate release date
-ab = ab %>% filter(TO_NUMBER(TO_CHAR(RELEASE_DATE, 'YYYYMMDD')) == db_date)
+ab = ab %>% filter(TO_NUMBER(TO_CHAR(RELEASE_DATE, 'YYYYMMDD')) == select_date) %>%
+  # Expect UPRN to be unique in epoch
+  assert.alt(is_uniq.alt, UPRN)
 
 # Temp table just with cleaned geo and dpa sla ---------------------------------
 
@@ -37,7 +39,8 @@ drop_table_if_exists_db(table_name_temp)
 # Sla generation and clean
 ab_sla = ab %>% 
   # Create CH flag
-  mutate(CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)) %>% 
+  mutate(CH_FLAG = ifelse(CLASS == "RI01", 1L, 0L)) %>%
+  assert.alt(not_na.alt, CH_FLAG) %>% 
   # SLA creation plus formatting
   addressMatchR::calc_addressbase_plus_dpa_single_line_address() %>%
   addressMatchR::calc_addressbase_plus_geo_single_line_address() %>%
@@ -82,7 +85,7 @@ ab_plus = con %>%
   ) 
 
 # Define table name
-table_name = paste0("ADDRESSBASE_PLUS_", db_date)
+table_name <- abp_tbl
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
@@ -106,9 +109,6 @@ DBI::dbDisconnect(con)
 
 # Print that table has been created
 print(paste0("This script has created table: ", table_name))
-
-# Return to project directory
-setwd(project_dir)
 
 # Remove vars specific to script
 remove_vars <- setdiff(ls(), keep_vars)
