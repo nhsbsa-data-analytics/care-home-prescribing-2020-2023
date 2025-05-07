@@ -58,18 +58,18 @@ get_integer_from_date = function(x) as.integer(gsub("-", "", x))
 
 
 #' @description gets a list of distinct cqc postcodes within a timeframe
-#' @param  cqc_data: the name of the cqc db table
+#' @param  cqc_tbl: the name of the cqc db table
 #' @param start_date: start date as a char in format 'YYYY-MM-DD'
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_cqc_postcodes = function(cqc_data, start_date, end_date){
+get_cqc_postcodes = function(cqc_tbl, start_date, end_date){
   
   # Set up connection to the DB
   con <- nhsbsaR::con_nhsbsa(database = "DALP")
   
   # Create a lazy table from the CQC care home table
   cqc_db <- con %>%
-    dplyr::tbl(from = cqc_data)
+    dplyr::tbl(from = cqc_tbl)
   
   # Get cqc postcodes to include within later ab plus join
   cqc_postcodes = cqc_db %>% 
@@ -192,12 +192,20 @@ write_table_long_chars <- function(data, con, table_name) {
     }
   })
   
-  dbWriteTable(
-    con,
-    Id(schema = toupper(con@info$username), table = table_name),
-    data,
-    field.types = field.types
-  )
+  if(purrr::is_empty(field.types)) {
+    dbWriteTable(
+      con,
+      Id(schema = toupper(con@info$username), table = table_name),
+      data
+    )
+  } else {
+    dbWriteTable(
+      con,
+      Id(schema = toupper(con@info$username), table = table_name),
+      data,
+      field.types = field.types
+    )
+  }
 }
 
 
@@ -491,3 +499,25 @@ simple_format_postcode_db <- function(df, postcode) {
   return(df)
 }
 
+get_abp_epoch <- function(end_date) {
+  con <- nhsbsaR::con_nhsbsa(database = "DALP")
+  
+  # Connect to ab plus in dall_ref
+  ab <- con %>%
+    tbl(from = in_schema("DALL_REF", "ADDRESSBASE_PLUS"))
+  
+  # Get closest release date
+  ab %>% 
+    select(RELEASE_DATE) %>% 
+    distinct() %>% 
+    collect() %>% 
+    mutate(
+      SELECT_DATE = as.Date(end_date),
+      RELEASE_DATE = as.Date(RELEASE_DATE),
+      DIFF = as.integer(abs(RELEASE_DATE - SELECT_DATE)),
+      DB_DATE = as.integer(gsub("-", "", RELEASE_DATE))
+    ) %>% 
+    filter(DIFF == min(DIFF)) %>% 
+    select(DB_DATE) %>% 
+    pull()
+}
