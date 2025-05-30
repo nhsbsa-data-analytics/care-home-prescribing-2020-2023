@@ -255,10 +255,11 @@ cqc_attributes_db <- cqc_db %>%
 # Add PARENT_UPRN to CQC data from ABP data, such that, when we later
 # select one record per SLA (which could come from either CQC or ABP)
 # it would always have PARENT_UPRN
-cqc_db <- cqc_dedup_db %>% left_join(
-  ab_plus_db %>% select(UPRN, PARENT_UPRN),
-  by = "UPRN"
-)
+cqc_db <- cqc_dedup_db %>%
+  left_join(
+    ab_plus_db %>% select(UPRN, PARENT_UPRN),
+    by = "UPRN"
+  )
 
 # Part Two: Process ab plus data and stack with cqc data -----------------------
 
