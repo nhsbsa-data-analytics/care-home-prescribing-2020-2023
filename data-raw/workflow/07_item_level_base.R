@@ -96,7 +96,9 @@ match_db = match_db %>%
     RESIDENTIAL_HOME_FLAG,
     AB_DATE,
     CQC_DATE
-  )
+  ) %>% 
+  assert.alt(not_na.alt, PF_ID_MATCH) %>% 
+  assert.alt(is_uniq.alt, PF_ID_MATCH)
 
 # Filter to elderly patients in current year and required columns
 fact_db = fact_db %>%
@@ -140,7 +142,7 @@ fact_db = fact_db %>%
 
 # Get drug info
 drug_db = drug_db %>% 
-  filter(YEAR_MONTH %in% year_month) %>%
+  filter(YEAR_MONTH %in% year_month) %>% 
   mutate(
     CHAPTER_1_4_6_10_CAT = case_when(
       as.integer(
@@ -181,7 +183,11 @@ drug_db = drug_db %>%
     DAMN_CAT,
     FALLS_CAT
   ) %>%
-  verify(nrow.alt(.) > 3 * million)
+  verify(nrow.alt(.) > 3 * million) %>%
+  # Checking combination of cols is unique requires merging to a single column
+  mutate(YM_RECORD_ID = paste(YEAR_MONTH, PAY_DRUG_RECORD_ID)) %>% 
+  assert.alt(is_uniq.alt, YM_RECORD_ID) %>% 
+  select(-YM_RECORD_ID)
 
 # Process prescriber information
 presc_db = presc_db %>% 
@@ -204,7 +210,19 @@ presc_db = presc_db %>%
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
     PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
   ) %>%
-  verify(nrow.alt(.) > 2 * million)
+  verify(nrow.alt(.) > 2 * million) %>% 
+  # Checking combination of cols is unique requires merging to a single column
+  mutate(
+    YM_OU_PD = paste(
+      YEAR_MONTH,
+      LVL_5_OU,
+      LVL_5_OUPDT,
+      PD_CDE,
+      PD_OUPDT
+    )
+  ) %>% 
+  assert.alt(is_uniq.alt, YM_OU_PD) %>% 
+  select(-YM_OU_PD)
 
 # Process form fact
 # NOTE: End up with around 100k NA postcodes/125k NA SLAs for 20/21.
@@ -215,7 +233,9 @@ form_db = form_db %>%
     PF_ID_FORMS = PF_ID,
     BSA_POSTCODE = POSTCODE,
     BSA_SLA = SINGLE_LINE_ADDRESS
-  )
+  ) %>% 
+  assert.alt(is_uniq.alt, PF_ID_FORMS) %>% 
+  assert.alt(not_na.alt, PF_ID_FORMS)
 
 # Process Dispenser data
 disp_db = disp_db %>% 
@@ -239,8 +259,21 @@ disp_db = disp_db %>%
     DISP_TRADING_NM = TRADING_LTST_NM,
     DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
-  ) %>%
-  verify(nrow.alt(.) > 1 * million)
+  ) %>% 
+  verify(nrow.alt(.) > 1 * million) %>% 
+  assert.alt(not_na.alt, LVL_5_OU) %>% 
+  assert.alt(not_na.alt, LVL_5_OUPDT) %>%
+  # Checking combination of cols is unique requires merging to a single column
+  mutate(
+    YM_OU = paste(
+      YEAR_MONTH,
+      LVL_5_OU,
+      LVL_5_OUPDT
+    )
+  ) %>% 
+  assert.alt(is_uniq.alt, YM_OU) %>% 
+  select(-YM_OU)
+
 
 # Get a single latest gender and age for the period 
 pat_db <- pat_db %>% 
@@ -294,7 +327,9 @@ pat_db <- pat_db %>%
     )
   ) %>%
   select(NHS_NO, GENDER, AGE, AGE_BAND) %>%
-  verify(nrow.alt(.) > 8 * million)
+  verify(nrow.alt(.) > 8 * million) %>% 
+  assert.alt(is_uniq.alt, NHS_NO) %>% 
+  assert.alt(not_na.alt, NHS_NO)
 
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
