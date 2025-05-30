@@ -154,10 +154,12 @@ concatenate_by_prefix = function(df, prefix, .unique = TRUE, na.rm = TRUE){
   before_collapse <- \(x) maybe_unique(maybe_na.rm(x))
   
   df %>% 
-    mutate({{ prefix }} := pmap_chr(
-      select(., starts_with(prefix)), 
-      ~ paste(before_collapse(c(...)), collapse = "|")
-      ))
+    mutate(
+      {{ prefix }} := pmap_chr(
+        select(., starts_with(prefix)), 
+        ~ paste(before_collapse(c(...)), collapse = "|")
+      )
+    )
 }
 
 # Generate location output -----------------------------------------------------
