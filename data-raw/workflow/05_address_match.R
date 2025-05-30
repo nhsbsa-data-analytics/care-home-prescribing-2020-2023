@@ -63,7 +63,7 @@ patient_address_db = patient_db %>%
 
 # Original step here was to use addressMatchR::calc_match_addresses. However, at
 # some point something has broken. It used to take ~40 mins to run, but now takes
-# an infeasible time to run (for context, running with just 5 addresses in each
+# an unfeasible time to run (for context, running with just 5 addresses in each
 # table takes several minutes, so projected time to run the full tables would be
 # weeks!).
 
@@ -246,6 +246,9 @@ match_db = match_db %>%
   ungroup() %>% 
   # Get parent uprn info
   left_join(parent_db, by = "PARENT_UPRN") %>%
+  # Check that the final row count is the same as for the original patient
+  # address table - the current table is derived from that one and uses left
+  # joins only, so should have same count
   verify(nrow.alt(.) == nrow.alt(patient_address_db))
 
 # Join the matches back to the patient addresses
