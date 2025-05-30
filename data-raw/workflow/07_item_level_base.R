@@ -1,9 +1,28 @@
+
+# Verification variables --------------------------------------------------
+
+thousand <- 10^3
+million <- 10^6
+
+# Thresholds based off 2020-21 run.
+# We use values around 10% lower than the count for this year, or when numbers.
+# relatively small just take a step down to a round number - e.g. 3,000 or 1 million.
+# Expectation is that these will vary, so don't want thresholds to be too close.
+# Overall trend is likely to be upward, so these values should be good for future
+# runs, but can be adjusted if necessary.
+
+FACT_DB_ROW_COUNT_THRESHOLD <- 500 * million
+DRUG_DB_ROW_COUNT_THRESHOLD <- 3 * million
+PRESC_DB_ROW_COUNT_THRESHOLD <- 2 * million
+DISP_DB_ROW_COUNT_THRESHOLD <- 1 * million
+PAT_DB_ROW_COUNT_THRESHOLD <- 8 * million
+
+# END - Verification variables ---
+
 source("R/utils_helpers.R")
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
-
-million <- 10^6
 
 # Create a lazy table from year month dim table in DWCP
 year_month_db <- con %>%
@@ -137,7 +156,7 @@ fact_db = fact_db %>%
     DISP_ID,
     DISP_OUPDT_TYPE
   ) %>%
-  verify(nrow.alt(.) > 500 * million)
+  verify(nrow.alt(.) > FACT_DB_ROW_COUNT_THRESHOLD)
   
 
 # Get drug info
@@ -183,7 +202,7 @@ drug_db = drug_db %>%
     DAMN_CAT,
     FALLS_CAT
   ) %>%
-  verify(nrow.alt(.) > 3 * million) %>%
+  verify(nrow.alt(.) > DRUG_DB_ROW_COUNT_THRESHOLD) %>%
   # Checking combination of cols is unique requires merging to a single column
   mutate(YM_RECORD_ID = paste(YEAR_MONTH, PAY_DRUG_RECORD_ID)) %>% 
   assert.alt(is_uniq.alt, YM_RECORD_ID) %>% 
@@ -210,7 +229,7 @@ presc_db = presc_db %>%
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
     PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
   ) %>%
-  verify(nrow.alt(.) > 2 * million) %>% 
+  verify(nrow.alt(.) > PRESC_DB_ROW_COUNT_THRESHOLD) %>% 
   # Checking combination of cols is unique requires merging to a single column
   mutate(
     YM_OU_PD = paste(
@@ -260,7 +279,7 @@ disp_db = disp_db %>%
     DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
   ) %>% 
-  verify(nrow.alt(.) > 1 * million) %>% 
+  verify(nrow.alt(.) > DISP_DB_ROW_COUNT_THRESHOLD) %>% 
   assert.alt(not_na.alt, LVL_5_OU) %>% 
   assert.alt(not_na.alt, LVL_5_OUPDT) %>%
   # Checking combination of cols is unique requires merging to a single column
@@ -327,7 +346,7 @@ pat_db <- pat_db %>%
     )
   ) %>%
   select(NHS_NO, GENDER, AGE, AGE_BAND) %>%
-  verify(nrow.alt(.) > 8 * million) %>% 
+  verify(nrow.alt(.) > PAT_DB_ROW_COUNT_THRESHOLD) %>% 
   assert.alt(is_uniq.alt, NHS_NO) %>% 
   assert.alt(not_na.alt, NHS_NO)
 
@@ -365,7 +384,7 @@ fact_join_db = fact_db %>%
       is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
       TRUE ~ MATCH_TYPE
     ),
-    #Zeroes for nas after left-join
+    # Zeroes for NAs after left-join
     AB_FLAG = case_when(is.na(AB_FLAG) ~ 0, T ~ AB_FLAG),
     UPRN_FLAG = case_when(is.na(UPRN_FLAG) ~ 0, T ~ UPRN_FLAG),
     CH_FLAG = case_when(is.na(CH_FLAG) ~ 0, T ~ CH_FLAG),

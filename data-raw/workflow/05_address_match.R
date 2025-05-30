@@ -1,8 +1,24 @@
-# Set up connection to DALP
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
+
+# Verification variables --------------------------------------------------
 
 thousand <- 10^3
 million <- 10^6
+
+# Thresholds based off 2020-21 run.
+# We use values around 10% lower than the count for this year, or when numbers.
+# relatively small just take a step down to a round number - e.g. 3,000 or 1 million.
+# Expectation is that these will vary, so don't want thresholds to be too close.
+# Overall trend is likely to be upward, so these values should be good for future
+# runs, but can be adjusted if necessary.
+
+PARENT_UPRN_DB_ROW_COUNT_THRESHOLD <- 10 * thousand
+PATIENT_ADDRESS_DB_ROW_COUNT_THRESHOLD <- 240 * million
+PATIENT_MATCH_DB_ROW_COUNT_THRESHOLD <- 15 * million
+
+# END - Verification variables ---
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Get start and end dates
 # NOTE: The existing variables can be used here instead of recalculating
@@ -31,7 +47,7 @@ parent_uprn_db = address_db %>%
   filter(!is.na(PARENT_UPRN)) %>% 
   select(UPRN = PARENT_UPRN) %>% 
   distinct() %>%
-  verify(nrow.alt(.) > 10 * thousand)
+  verify(nrow.alt(.) > PARENT_UPRN_DB_ROW_COUNT_THRESHOLD)
 
 # Get single GEO SLA per parent uprn
 parent_db = parent_db %>% 
@@ -59,7 +75,7 @@ patient_address_db = patient_db %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
   ungroup() %>%
-  verify(nrow.alt(.) > 240 * thousand)
+  verify(nrow.alt(.) > PATIENT_ADDRESS_DB_ROW_COUNT_THRESHOLD)
 
 # Original step here was to use addressMatchR::calc_match_addresses. However, at
 # some point something has broken. It used to take ~40 mins to run, but now takes
@@ -258,7 +274,7 @@ patient_match_db <- patient_db %>%
     CALC_AGE >= 65,
     POSTCODE_CH == 1
   ) %>%
-  verify(nrow.alt(.) > 15 * million) %>%
+  verify(nrow.alt(.) > PATIENT_MATCH_DB_ROW_COUNT_THRESHOLD) %>%
   left_join(y = match_db, by = c("POSTCODE", "SINGLE_LINE_ADDRESS")) %>% 
   tidyr::replace_na(
     list(

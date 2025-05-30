@@ -1,8 +1,25 @@
 
+# Verification variables --------------------------------------------------
+
+thousand <- 10^3
+million <- 10^6
+
+# Thresholds based off 2020-21 run.
+# We use values around 10% lower than the count for this year, or when numbers.
+# relatively small just take a step down to a round number - e.g. 3,000 or 1 million.
+# Expectation is that these will vary, so don't want thresholds to be too close.
+# Overall trend is likely to be upward, so these values should be good for future
+# runs, but can be adjusted if necessary.
+
+POSTCODE_DB_ROW_COUNT_THRESHOLD <- 20 * thousand
+FACT_DB_ROW_COUNT_THRESHOLD <- 240 * million
+PAPER_DB_ROW_COUNT_THRESHOLD <- 50 * million
+EPS_DB_ROW_COUNT_THRESHOLD <- 600 * million
+
+# END - Verification variables ---
+
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
-
-million <- 10^6
 
 # Get start and end dates
 # NOTE: The existing variables can be used here instead of recalculating
@@ -46,7 +63,7 @@ postcode_db <- con %>%
 # Label CH postcodes
 postcode_db = postcode_db %>%
   distinct(POSTCODE) %>%
-  verify(nrow.alt(.) > 20000) %>%
+  verify(nrow.alt(.) > POSTCODE_DB_ROW_COUNT_THRESHOLD) %>%
   mutate(POSTCODE_CH = 1)
 
 # Get appropriate year month fields as a vector
@@ -127,13 +144,13 @@ fact_db = fact_db %>%
     EPS_PART_DATE,
     EPM_ID
   ) %>% 
-  verify(nrow.alt(.) > 240 * million) %>% 
+  verify(nrow.alt(.) > FACT_DB_ROW_COUNT_THRESHOLD) %>% 
   rename(PART_DATE = EPS_PART_DATE)
 
 # Process paper info
 paper_db = paper_db %>%
   filter(YEAR_MONTH %in% year_month) %>%
-  verify(nrow.alt(.) > 50 * million) %>%
+  verify(nrow.alt(.) > PAPER_DB_ROW_COUNT_THRESHOLD) %>%
   assert.alt(is_uniq.alt, PF_ID) %>%
   select(
     YEAR_MONTH,
@@ -149,7 +166,7 @@ eps_db = eps_db %>%
     PART_DATE >= eps_start_date,
     PART_DATE <= eps_end_date
   ) %>%
-  verify(nrow.alt(.) > 600 * million) %>%
+  verify(nrow.alt(.) > EPS_DB_ROW_COUNT_THRESHOLD) %>%
   assert.alt(is_uniq.alt, EPM_ID) %>%
   # Concatenate fields together by a single space for the single line address
   mutate(
