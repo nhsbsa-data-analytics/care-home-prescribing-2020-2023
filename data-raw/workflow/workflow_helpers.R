@@ -62,37 +62,36 @@ get_integer_from_date = function(x) as.integer(gsub("-", "", x))
 #' @param start_date: start date as a char in format 'YYYY-MM-DD'
 #' @param end_date: end date as a char in format 'YYYY-MM-DD'
 #' @noRd
-get_cqc_postcodes = function(cqc_tbl, start_date, end_date){
-  
-  # Set up connection to the DB
-  con <- nhsbsaR::con_nhsbsa(database = "DALP")
-  
-  # Create a lazy table from the CQC care home table
-  cqc_db <- con %>%
-    dplyr::tbl(from = cqc_tbl)
-  
-  # Get cqc postcodes to include within later ab plus join
-  cqc_postcodes = cqc_db %>% 
-    dplyr::mutate(
-      REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
-      DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD")
-    ) %>% 
-    dplyr::filter(
-      !is.na(UPRN),
-      REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
-      is.na(DEREGISTRATION_DATE) | 
-        DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
-    ) %>% 
-    dplyr::select(POSTCODE_LOCATOR = POSTCODE) %>% 
-    dplyr::distinct() %>% 
-    dplyr::collect()
-  
-  # Disconnect now, in case the function crashes due to memory restriction
-  DBI::dbDisconnect(con)
-  
-  # Assign postcodes to global env for ab plus script to use
-  assign("cqc_postcodes", cqc_postcodes, envir = globalenv())
-}
+# get_cqc_postcodes = function(cqc_tbl, start_date, end_date){
+#   
+#   # Set up connection to the DB
+#   con <- nhsbsaR::con_nhsbsa(database = "DALP")
+#   
+#   # Create a lazy table from the CQC care home table
+#   cqc_db <- con %>%
+#     dplyr::tbl(from = cqc_tbl)
+#   
+#   # Get cqc postcodes to include within later ab plus join
+#   cqc_postcodes = cqc_db %>% 
+#     dplyr::mutate(
+#       REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
+#       DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD")
+#     ) %>% 
+#     dplyr::filter(
+#       REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
+#       is.na(DEREGISTRATION_DATE) | 
+#         DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
+#     ) %>% 
+#     dplyr::select(POSTCODE_LOCATOR = POSTCODE) %>% 
+#     dplyr::distinct() %>% 
+#     dplyr::collect()
+#   
+#   # Disconnect now, in case the function crashes due to memory restriction
+#   DBI::dbDisconnect(con)
+#   
+#   # Assign postcodes to global env for ab plus script to use
+#   assign("cqc_postcodes", cqc_postcodes, envir = globalenv())
+# }
 
 #' @description Get single distinct value from select column
 #' @noRd
@@ -129,27 +128,27 @@ pull_date_string = function(data, string_date){
 #' #  <chr> <chr>
 #' # 1 a|c   e|g  
 #' # 2 b|d   f|h 
-unite_to_plural <- function(data, ...) {
-  args <- as.character(match.call(expand.dots = FALSE)$`...`)
-  
-  united_cols <- lapply(
-    args,
-    function(x) {
-      tidyr::unite(
-        data %>% select(starts_with(substr(x, 1, nchar(x) - 1))),
-        x,
-        everything(),
-        sep = "|",
-        na.rm = TRUE
-      ) %>% 
-        rename({{x}} := 1)
-    }
-  )
-  
-  data %>%
-    select(-starts_with(substr(args, 1, nchar(args) - 1))) %>%
-    bind_cols(united_cols)
-}
+# unite_to_plural <- function(data, ...) {
+#   args <- as.character(match.call(expand.dots = FALSE)$`...`)
+#   
+#   united_cols <- lapply(
+#     args,
+#     function(x) {
+#       tidyr::unite(
+#         data %>% select(starts_with(substr(x, 1, nchar(x) - 1))),
+#         x,
+#         everything(),
+#         sep = "|",
+#         na.rm = TRUE
+#       ) %>% 
+#         rename({{x}} := 1)
+#     }
+#   )
+#   
+#   data %>%
+#     select(-starts_with(substr(args, 1, nchar(args) - 1))) %>%
+#     bind_cols(united_cols)
+# }
 
 
 #' Write data.frame or tibble to database, with datatype set to appropriate
