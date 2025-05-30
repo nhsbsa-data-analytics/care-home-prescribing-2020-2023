@@ -107,7 +107,8 @@ postcode_db <- postcode_db %>%
     PCD_NORTHING,
     PCD_EASTING,
     IMD_DECILE
-  )
+  ) %>% 
+  assert.alt(is_uniq.alt, POSTCODE)
 
 # Write the table back to the DB with indexes
 table_name = "INT646_POSTCODE_LOOKUP"
