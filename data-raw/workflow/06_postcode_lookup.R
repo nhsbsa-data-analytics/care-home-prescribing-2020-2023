@@ -4,9 +4,9 @@ library(dbplyr)
 
 # Postcodes are mapped to REG/ICB/LAD mappings via LSOAs
 # The mappings from https://geoportal.statistics.gov.uk feed DALL_REF.ONS_GEOGRAPHY_MAPPING
-LSOA_NHSREG = "LSOA_NHSREG2023"
-LSOA_ICB = "LSOA_ICB2023"
-LSOA_LAD = "LSOA_LAD2023"
+LSOA_NHSREG = "LSOA21_NHSREG2023"
+LSOA_ICB = "LSOA21_ICB2023"
+LSOA_LAD = "LSOA21_LAD2023"
 
 # Connect to dalp
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -28,7 +28,7 @@ postcode_db <- postcode_db %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   ungroup() %>% 
-  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH)
+  select(POSTCODE, LSOA_CODE = LSOA21_CODE, YEAR_MONTH)
 
 # Join to the postcode lookup to get NHS Region, ICB and LA based on their mappings to LSOAs
 postcode_db <- postcode_db %>%
