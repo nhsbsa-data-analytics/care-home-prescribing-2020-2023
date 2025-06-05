@@ -1,15 +1,14 @@
 # The script creates a postcode lookup table using the latest available mappings
-
 library(dplyr)
 library(dbplyr)
 
 # Postcodes are mapped to REG/ICB/LAD mappings via LSOAs
 # The mappings from https://geoportal.statistics.gov.uk feed DALL_REF.ONS_GEOGRAPHY_MAPPING
-LSOA_NHSREG = "LSOA21_NHSREG2023"
-LSOA_ICB = "LSOA21_ICB2023"
-LSOA_LAD = "LSOA21_LAD2023"
+LSOA_NHSREG = "LSOA_NHSREG2023"
+LSOA_ICB = "LSOA_ICB2023"
+LSOA_LAD = "LSOA_LAD2023"
 
-
+# Connect to dalp
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the geography mapping table
@@ -20,14 +19,7 @@ geography_db <- con %>%
 postcode_db <- con %>%
   tbl(from = in_schema("DIM", sql("ONS_POSTCODE_DATA_DIM")))
 
-# Create a lazy table from postcode to lat-long mappings
-postcode_latlong <- con %>%
-  tbl(from = in_schema("DIM", sql("ONS_POSTCODE_LAT_LON_DIM")))
-
-# Create a lazy table for IMD data
-imd_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "ONS_INDEX_OF_MULTIPLE_DEPRIVATION"))
-
+# Single record per postcode (7200 records have NA lsoa code information)
 postcode_db <- postcode_db %>%
   filter(COUNTRY_CODE == "E92000001") %>%
   simple_format_postcode_db(POSTCODE) %>%
@@ -36,17 +28,8 @@ postcode_db <- postcode_db %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   ungroup() %>% 
-  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) 
+  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH)
 
-postcode_latlong <- postcode_latlong %>%
-  simple_format_postcode_db(POSTCODE) %>%
-  group_by(POSTCODE) %>%
-  window_order(desc(YEAR_MONTH)) %>%
-  mutate(RANK = rank()) %>%
-  filter(RANK == 1) %>%
-  ungroup() %>%
-  select(POSTCODE, PCD_LAT = LATITUDE, PCD_LONG = LONGITUDE)
-  
 # Join to the postcode lookup to get NHS Region, ICB and LA based on their mappings to LSOAs
 postcode_db <- postcode_db %>%
   # ICB
@@ -81,19 +64,8 @@ postcode_db <- postcode_db %>%
         PCD_REGION_NAME = PARENT_NAME
       ),
     by = "LSOA_CODE"
-  ) %>%
-  # Latitude & Longitude
-  left_join(postcode_latlong, by = "POSTCODE") %>%
-  # Index of Multiple Deprivation
-  left_join(
-    y = imd_db %>%
-      filter(IMD_YEAR == 2019) %>%
-      select(LSOA_CODE, IMD_DECILE = INDEX_OF_MULT_DEPRIV_DECILE),
-    by = "LSOA_CODE"
-  )
-
-# Reorder the columns
-postcode_db <- postcode_db %>%
+  ) %>% 
+  # Reorder the columns
   select(
     POSTCODE,
     PCD_REGION_CODE,
@@ -101,17 +73,16 @@ postcode_db <- postcode_db %>%
     PCD_ICB_CODE,
     PCD_ICB_NAME,
     PCD_LAD_CODE,
-    PCD_LAD_NAME,
-    PCD_LAT,
-    PCD_LONG,
-    PCD_NORTHING,
-    PCD_EASTING,
-    IMD_DECILE
+    PCD_LAD_NAME
   )
 
-# Write the table back to the DB with indexes
+# Define table name
 table_name = "INT646_POSTCODE_LOOKUP"
+
+# Drop table if already exists
 drop_table_if_exists_db(table_name)
+
+# Write the table back to the DB with indexes
 postcode_db %>%
   compute(
     name = table_name,
