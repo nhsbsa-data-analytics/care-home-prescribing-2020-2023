@@ -1,3 +1,24 @@
+
+# Verification variables --------------------------------------------------
+
+thousand <- 10^3
+million <- 10^6
+
+# Thresholds based off 2020-21 run.
+# We use values around 10% lower than the count for this year, or when numbers.
+# relatively small just take a step down to a round number - e.g. 3,000 or 1 million.
+# Expectation is that these will vary, so don't want thresholds to be too close.
+# Overall trend is likely to be upward, so these values should be good for future
+# runs, but can be adjusted if necessary.
+
+FACT_DB_ROW_COUNT_THRESHOLD <- 500 * million
+DRUG_DB_ROW_COUNT_THRESHOLD <- 3 * million
+PRESC_DB_ROW_COUNT_THRESHOLD <- 2 * million
+DISP_DB_ROW_COUNT_THRESHOLD <- 1 * million
+PAT_DB_ROW_COUNT_THRESHOLD <- 8 * million
+
+# END - Verification variables ---
+
 source("R/utils_helpers.R")
 
 # Set up connection to DALP
@@ -17,11 +38,11 @@ pat_db <- con %>%
 
 # Create a lazy table from the matched patient address care home table
 match_db <- con %>%
-  tbl(from = match_data)
+  tbl(from = match_tbl)
 
 # Create a lazy table from the matched patient address care home table
 form_db <- con %>%
-  tbl(from = form_data)
+  tbl(from = patient_tbl)
 
 # Create a lazy table from the drug DIM table
 drug_db <- con %>%
@@ -39,13 +60,9 @@ disp_db <- con %>%
 postcode_db <- con %>%
   tbl(from = "INT646_POSTCODE_LOOKUP")
 
-# Get start and end dates
-start_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][1]
-end_date = stringr::str_extract_all(match_data, "\\d{8}")[[1]][2]
-
 # Derive start and end year months
-start_year_month = as.integer(substr(start_date, 1, 6))
-end_year_month = as.integer(substr(end_date, 1, 6))
+start_year_month = as.integer(substr(start_str, 1, 6))
+end_year_month = as.integer(substr(end_str, 1, 6))
 
 # Define 'buffered' eps date range: for query efficiency
 eps_start_date = as.Date(start_date, format = "%Y%m%d") %m-% months(2)
@@ -93,9 +110,11 @@ match_db = match_db %>%
     RESIDENTIAL_HOME_FLAG,
     AB_DATE,
     CQC_DATE
-  )
+  ) %>% 
+  assert.alt(not_na.alt, PF_ID_MATCH) %>% 
+  assert.alt(is_uniq.alt, PF_ID_MATCH)
 
-# Filter to elderly patients in 2020/2021 and required columns
+# Filter to elderly patients in current year and required columns
 fact_db = fact_db %>%
   filter(
     CALC_AGE >= 65L,
@@ -131,11 +150,13 @@ fact_db = fact_db %>%
     DISP_CODE = DISPENSER_CODE,
     DISP_ID,
     DISP_OUPDT_TYPE
-  )
+  ) %>%
+  verify(nrow.alt(.) > FACT_DB_ROW_COUNT_THRESHOLD)
+  
 
 # Get drug info
 drug_db = drug_db %>% 
-  filter(YEAR_MONTH %in% year_month) %>%
+  filter(YEAR_MONTH %in% year_month) %>% 
   mutate(
     CHAPTER_1_4_6_10_CAT = case_when(
       as.integer(
@@ -175,7 +196,12 @@ drug_db = drug_db %>%
     ACB_CAT,
     DAMN_CAT,
     FALLS_CAT
-  )
+  ) %>%
+  verify(nrow.alt(.) > DRUG_DB_ROW_COUNT_THRESHOLD) %>%
+  # Checking combination of cols is unique requires merging to a single column
+  mutate(YM_RECORD_ID = paste(YEAR_MONTH, PAY_DRUG_RECORD_ID)) %>% 
+  assert.alt(is_uniq.alt, YM_RECORD_ID) %>% 
+  select(-YM_RECORD_ID)
 
 # Process prescriber information
 presc_db = presc_db %>% 
@@ -197,16 +223,33 @@ presc_db = presc_db %>%
     PRESCRIBER_SUB_TYPE = PRESCRIBER_LTST_SUB_TYPE,
     PRESCRIBER_NM = PRESCRIBER_LTST_NM,
     PRESCRIBER_CODE = PRESCRIBER_LTST_CDE
+  ) %>%
+  verify(nrow.alt(.) > PRESC_DB_ROW_COUNT_THRESHOLD) %>% 
+  # Checking combination of cols is unique requires merging to a single column
+  mutate(
+    YM_OU_PD = paste(
+      YEAR_MONTH,
+      LVL_5_OU,
+      LVL_5_OUPDT,
+      PD_CDE,
+      PD_OUPDT
     )
+  ) %>% 
+  assert.alt(is_uniq.alt, YM_OU_PD) %>% 
+  select(-YM_OU_PD)
 
 # Process form fact
+# NOTE: End up with around 100k NA postcodes/125k NA SLAs for 20/21.
+# Should these be removed?
 form_db = form_db %>% 
   select(
     YEAR_MONTH_FORMS = YEAR_MONTH,
     PF_ID_FORMS = PF_ID,
     BSA_POSTCODE = POSTCODE,
     BSA_SLA = SINGLE_LINE_ADDRESS
-  )
+  ) %>% 
+  assert.alt(is_uniq.alt, PF_ID_FORMS) %>% 
+  assert.alt(not_na.alt, PF_ID_FORMS)
 
 # Process Dispenser data
 disp_db = disp_db %>% 
@@ -230,7 +273,21 @@ disp_db = disp_db %>%
     DISP_TRADING_NM = TRADING_LTST_NM,
     DISP_SLA = LVL_5_HIST_FULL_ADDRESS,
     DISP_POSTCODE = LVL_5_HIST_POSTCODE
-  )
+  ) %>% 
+  verify(nrow.alt(.) > DISP_DB_ROW_COUNT_THRESHOLD) %>% 
+  assert.alt(not_na.alt, LVL_5_OU) %>% 
+  assert.alt(not_na.alt, LVL_5_OUPDT) %>%
+  # Checking combination of cols is unique requires merging to a single column
+  mutate(
+    YM_OU = paste(
+      YEAR_MONTH,
+      LVL_5_OU,
+      LVL_5_OUPDT
+    )
+  ) %>% 
+  assert.alt(is_uniq.alt, YM_OU) %>% 
+  select(-YM_OU)
+
 
 # Get a single latest gender and age for the period 
 pat_db <- pat_db %>% 
@@ -283,7 +340,10 @@ pat_db <- pat_db %>%
       TRUE ~ "90+"
     )
   ) %>%
-  select(NHS_NO, GENDER, AGE, AGE_BAND)
+  select(NHS_NO, GENDER, AGE, AGE_BAND) %>%
+  verify(nrow.alt(.) > PAT_DB_ROW_COUNT_THRESHOLD) %>% 
+  assert.alt(is_uniq.alt, NHS_NO) %>% 
+  assert.alt(not_na.alt, NHS_NO)
 
 # Part two: multiple left joins, coalesce and identify new keyword matches -----
 
@@ -319,7 +379,7 @@ fact_join_db = fact_db %>%
       is.na(AB_FLAG) & CH_FLAG == 1 ~ "SINGLE_KEYWORD",
       TRUE ~ MATCH_TYPE
     ),
-    #Zeroes for nas after left-join
+    # Zeroes for NAs after left-join
     AB_FLAG = case_when(is.na(AB_FLAG) ~ 0, T ~ AB_FLAG),
     UPRN_FLAG = case_when(is.na(UPRN_FLAG) ~ 0, T ~ UPRN_FLAG),
     CH_FLAG = case_when(is.na(CH_FLAG) ~ 0, T ~ CH_FLAG),
@@ -409,7 +469,7 @@ fact_join_db = fact_db %>%
 # Part four: save output -------------------------------------------------------
 
 # Define table name
-table_name = paste0("INT646_BASE_", start_date, "_", end_date)
+table_name = paste0("INT646_BASE_", start_str, "_", end_str)
 
 # Remove table if exists
 drop_table_if_exists_db(table_name)
