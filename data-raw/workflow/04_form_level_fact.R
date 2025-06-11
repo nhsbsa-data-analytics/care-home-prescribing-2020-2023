@@ -21,11 +21,6 @@ EPS_DB_ROW_COUNT_THRESHOLD <- 600 * million
 # Set up connection to DWCP and DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Get start and end dates
-# NOTE: The existing variables can be used here instead of recalculating
-# start_date = stringr::str_extract_all(address_tbl, "\\d{8}")[[1]][1]
-# end_date = stringr::str_extract_all(address_tbl, "\\d{8}")[[1]][2]
-
 # Convert to year_months
 start_year_month = as.integer(substr(start_str, 1, 6))
 end_year_month = as.integer(substr(end_str, 1, 6))
@@ -75,53 +70,7 @@ year_month = year_month_db %>%
   ) %>%
   pull()
 
-# # Initial fact table filter
-# fact_db1 = fact_db %>%
-#   select(
-#     # Group by vars
-#     YEAR_MONTH,
-#     PF_ID,
-#     NHS_NO,
-#     CALC_AGE,
-#     EPS_PART_DATE,
-#     EPM_ID,
-#     # filter vars
-#     PATIENT_IDENTIFIED,
-#     PAY_DA_END,
-#     PAY_ND_END,
-#     PAY_RB_END,
-#     CD_REQ,
-#     OOHC_IND,
-#     PRIVATE_IND,
-#     IGNORE_FLAG,
-#     ITEM_COUNT
-#   ) %>%
-#   filter(
-#     CALC_AGE >= 65,
-#     YEAR_MONTH %in% year_month,
-#     PATIENT_IDENTIFIED == "Y",
-#     PAY_DA_END == "N", # excludes disallowed items
-#     PAY_ND_END == "N", # excludes not dispensed items
-#     PAY_RB_END == "N", # excludes referred back items
-#     CD_REQ == "N", # excludes controlled drug requisitions
-#     OOHC_IND == 0L, # excludes out of hours dispensing
-#     PRIVATE_IND == 0L, # excludes private dispensers
-#     IGNORE_FLAG == "N", # remove dummy ldp forms
-#     ITEM_COUNT >= 1 # remove element-level rows
-#   ) %>%
-#   group_by(
-#     YEAR_MONTH,
-#     PF_ID,
-#     NHS_NO,
-#     CALC_AGE,
-#     PART_DATE = EPS_PART_DATE,
-#     EPM_ID
-#   ) %>%
-#   summarise() %>%
-#   ungroup()
-
-# Initial fact table filter, above, it is not clear what the code is doing. In
-# the following it is clear what is being done and less verbose.
+# Initial fact table filter
 fact_db = fact_db %>%
   filter(
     CALC_AGE >= 65,
@@ -216,20 +165,8 @@ fact_join_db = fact_db %>%
 
 # Part three: stack paper and eps info and save --------------------------------
 
-# # Define temp output table name - the postcode format will be done separately on this
-# table_name_temp = paste0("INT646_FORMS_TEMP_", start_date, "_", end_date)
-
-# # Drop table if it exists already
-# drop_table_if_exists_db(table_name_temp)
-
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
-
-# # Write the table back to DALP
-# fact_join_db %>% compute_with_parallelism(table_name_temp, 8)
-
-# fact_db <- con %>%
-#   tbl(from = table_name_temp)
 
 table_name = patient_tbl
 
@@ -238,14 +175,10 @@ drop_table_if_exists_db(table_name)
 
 # Just format postcode
 fact_join_db %>% 
-  # personMatchR::format_postcode_db(POSTCODE) %>% 
   compute_with_parallelism(table_name, 32)
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)
-
-# # Drop temp table
-# drop_table_if_exists_db(table_name_temp)
 
 # Disconnect connection to database
 DBI::dbDisconnect(con)

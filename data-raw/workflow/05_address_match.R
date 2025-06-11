@@ -20,11 +20,6 @@ PATIENT_MATCH_DB_ROW_COUNT_THRESHOLD <- 15 * million
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
-# Get start and end dates
-# NOTE: The existing variables can be used here instead of recalculating
-# start_date = stringr::str_extract_all(patient_address_tbl, "\\d{8}")[[1]][1]
-# end_date = stringr::str_extract_all(patient_address_tbl, "\\d{8}")[[1]][2]
-
 # Create a lazy table from the item level FACT table
 patient_db <- con %>%
   tbl(from = patient_tbl)
@@ -33,6 +28,9 @@ patient_db <- con %>%
 address_db <- con %>%
   tbl(from = address_tbl) %>%
   assert.alt(not_na.alt, POSTCODE, SINGLE_LINE_ADDRESS) %>% 
+  mutate(POSTCODE_SLA = paste(POSTCODE, SINGLE_LINE_ADDRESS)) %>% 
+  assert.alt(is_uniq.alt, POSTCODE_SLA) %>% 
+  select(-POSTCODE_SLA)
   rename(AB_FLAG = CH_FLAG)
 
 

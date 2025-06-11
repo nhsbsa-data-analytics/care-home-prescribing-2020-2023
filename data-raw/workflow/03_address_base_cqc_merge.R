@@ -19,70 +19,18 @@ cqc_date = pull_date_string(cqc_db, CQC_DATE)
 
 # Part one: Process cqc data ---------------------------------------------------
 
-# Ensure reproducible ordering. Almost all locations with same postcode and SLA
-# will have a different set of dates. For the few that don't, taking location ID
-# breaks the tie. The logic being that the higher the location ID the more recently
-# it was added, so more likely to be the current situation for that location.
+# We need some way of tie-breaking for de-duplicating rows (partial duplication).
+# Without being sure, it seems likely that the higher the location ID, the later
+# it was added to the data.
+# Also, almost all locations with same postcode and SLA will have a different
+# set of dates. Seems best to prefer last inspection, and if the same use
+# registration then de-registration.
 order_cols <- c(
   "LAST_INSPECTION_DATE",
   "REGISTRATION_DATE",
   "DEREGISTRATION_DATE",
   "LOCATION_ID"
 )
-
-# # Distinct SLA and postcode per uprn and location-id
-# cqc_df = cqc_db %>% 
-#   mutate(
-#     REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
-#     DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
-#     LAST_INSPECTION_DATE = TO_DATE(LAST_INSPECTION_DATE, "YYYY-MM-DD"),
-#     CH_FLAG = 1L
-#   ) %>% 
-#   filter(
-#     REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
-#     is.na(DEREGISTRATION_DATE) | 
-#       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
-#   ) %>% 
-#   collect() %>% # Collected, because function arrange() does not work with dbplyr
-#   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-#   arrange(!!!syms(order_cols)) %>% 
-#   # After arranging by date columns, we fill NA values downwards by carrying the
-#   # last non NA value downward
-#   fill(
-#     LOCATION_ID,
-#     UPRN,
-#     NURSING_HOME_FLAG,
-#     RESIDENTIAL_HOME_FLAG,
-#     .direction = "down" # only need down, since we want the last row
-#   ) %>% 
-#   # We take last value of each group (equivalent to taking last row since NAs
-#   # were filled)
-#   summarise(
-#     LOCATION_ID = last(LOCATION_ID, order_by = syms(order_cols)),
-#     # Ignore NAs, o/w they count as one distinct value
-#     N_DISTINCT_UPRN = n_distinct(UPRN, na.rm = TRUE),
-#     UPRN = last(as.numeric(UPRN), order_by = syms(order_cols)),
-#     NURSING_HOME_FLAG = last(as.integer(NURSING_HOME_FLAG), order_by = syms(order_cols)),
-#     RESIDENTIAL_HOME_FLAG = last(
-#       as.integer(RESIDENTIAL_HOME_FLAG),
-#       order_by = syms(order_cols)
-#     ),
-#     CH_FLAG = last(CH_FLAG),
-#     # Keep groups for validation check next, and drop after that.
-#     .groups = "keep"
-#   ) %>%
-#   assert.alt(is_uniq.alt, LOCATION_ID, UPRN) %>% 
-#   ungroup() %>% 
-#   mutate(
-#     # Note, this is done after summarise(), so we'd later exclude only SLAs that
-#     # had null UPRNs in all CQC records, not just one record
-#     EXCLUDE_FOR_CH_LEVEL_ANALYSIS = case_when(
-#       is.na(UPRN) ~ "CQC SLA where UPRN was null in all records pulled",
-#       N_DISTINCT_UPRN > 1 ~ "CQC SLA associated with 2+ UPRNs",
-#       # ...of which all UPRNs except one have already been discarded at this point
-#       T ~ NA_character_
-#     )
-#   )
 
 cqc_dedup_db <- cqc_db %>% 
   mutate(
@@ -145,46 +93,6 @@ cqc_dedup_db <- cqc_db %>%
     EXCLUDE_FOR_CH_LEVEL_ANALYSIS
   )
 
-# cqc_df2 <- cqc_dedup_db %>% collect()
-# 
-# # Same result, bar integer vs double, but latter one is done in DB 100%
-# waldo::compare(cqc_df, cqc_df2)
-
-# # Extract one row of CQC attributes per UPRN (e.g. residential and nursing home flags)
-# cqc_attributes_df = cqc_db %>%
-#   mutate(
-#     REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
-#     DEREGISTRATION_DATE = TO_DATE(DEREGISTRATION_DATE, "YYYY-MM-DD"),
-#     LAST_INSPECTION_DATE = TO_DATE(LAST_INSPECTION_DATE, "YYYY-MM-DD")
-#   ) %>% 
-#   filter(
-#     REGISTRATION_DATE <= TO_DATE(end_date, "YYYY-MM-DD"),
-#     is.na(DEREGISTRATION_DATE) | 
-#       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
-#   ) %>%
-#   collect() %>% # Collected, because function arrange() does not work with dbplyr
-#   group_by(UPRN) %>%
-#   arrange(!!!syms(order_cols)) %>% 
-#   # After arranging by date columns, we fill NA values downwards by carrying the
-#   # last non NA value downward
-#   fill(
-#     LOCATION_ID,
-#     UPRN,
-#     NURSING_HOME_FLAG,
-#     RESIDENTIAL_HOME_FLAG,
-#     .direction = "down" # only need down, since we want the last row
-#   ) %>% 
-#   # We take last value of each group (equivalent to taking last row since NAs
-#   # were filled)
-#   summarise(
-#     LOCATION_ID = last(LOCATION_ID, order_by = syms(order_cols)),
-#     NURSING_HOME_FLAG = last(NURSING_HOME_FLAG, order_by = syms(order_cols)),
-#     RESIDENTIAL_HOME_FLAG = last(RESIDENTIAL_HOME_FLAG, order_by = syms(order_cols)),
-#     .groups = "drop"
-#   ) %>% 
-#   assert.alt(is_uniq.alt, LOCATION_ID)
-
-
 cqc_attributes_db <- cqc_db %>% 
   mutate(
     REGISTRATION_DATE = TO_DATE(REGISTRATION_DATE, "YYYY-MM-DD"),
@@ -223,34 +131,6 @@ cqc_attributes_db <- cqc_db %>%
     NURSING_HOME_FLAG,
     RESIDENTIAL_HOME_FLAG
   )
-
-# cqc_attributes_df2 <- cqc_attributes_db %>% collect()
-# 
-# # Same result, but latter one is done in DB 100%
-# waldo::compare(cqc_attributes_df, cqc_attributes_df2)
-
-# # The tables above needed to be processed locally due to inadequate dbplyr
-# # translation of the function last() (as of v.2.3.2); these tables are now
-# # copied into the DB temporarily to be used as lazy tables downstream; temp
-# # tables are removed at end of script; local dfs are removed now
-# 
-# cqc_table_temp <- "CQC_TEMP"
-# con %>% copy_to(
-#   cqc_df,
-#   name = cqc_table_temp,
-#   temporary = FALSE,
-#   overwrite = TRUE
-# )
-# cqc_db <- con %>% tbl(from = cqc_table_temp); rm(cqc_df)
-# 
-# cqc_attr_table_temp <- "CQC_ATTR_TEMP"
-# con %>% copy_to(
-#   cqc_attributes_df,
-#   name = cqc_attr_table_temp,
-#   temporary = FALSE,
-#   overwrite = TRUE
-# )
-# cqc_attributes_db <- con %>% tbl(from = cqc_attr_table_temp); rm(cqc_attributes_df)
 
 # Add PARENT_UPRN to CQC data from ABP data, such that, when we later
 # select one record per SLA (which could come from either CQC or ABP)
@@ -302,7 +182,10 @@ ab_plus_cqc_db = ab_plus_db %>%
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
   ) %>% 
-  personMatchR::format_postcode_db(POSTCODE)
+  personMatchR::format_postcode_db(POSTCODE) %>%
+  # There can be multiple identical rows following the postcode formatting, which
+  # replaces commonly mistaken characters following some postcode logic
+  distinct()
 
 
 # Part Three: Save as table in dw ----------------------------------------------
@@ -323,10 +206,6 @@ ab_plus_cqc_db %>%
     indexes = c("UPRN", "POSTCODE"),
     temporary = FALSE
   )
-
-# Drop temp tables
-# drop_table_if_exists_db(cqc_table_temp)
-# drop_table_if_exists_db(cqc_attr_table_temp)
 
 # Grant access
 c("MIGAR", "ADNSH", "MAMCP") %>% grant_table_access (table_name)

@@ -60,11 +60,6 @@ disp_db <- con %>%
 postcode_db <- con %>%
   tbl(from = "INT646_POSTCODE_LOOKUP")
 
-# Get start and end dates
-# NOTE: The existing variables can be used here instead of recalculating
-# start_date = stringr::str_extract_all(match_tbl, "\\d{8}")[[1]][1]
-# end_date = stringr::str_extract_all(match_tbl, "\\d{8}")[[1]][2]
-
 # Derive start and end year months
 start_year_month = as.integer(substr(start_str, 1, 6))
 end_year_month = as.integer(substr(end_str, 1, 6))
