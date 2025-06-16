@@ -12,7 +12,7 @@ million <- 10^6
 # runs, but can be adjusted if necessary.
 
 PARENT_UPRN_DB_ROW_COUNT_THRESHOLD <- 10 * thousand
-PATIENT_ADDRESS_DB_ROW_COUNT_THRESHOLD <- 240 * million
+PATIENT_ADDRESS_DB_ROW_COUNT_THRESHOLD <- 240 * thousand
 PATIENT_MATCH_DB_ROW_COUNT_THRESHOLD <- 15 * million
 
 # END - Verification variables ---
@@ -30,7 +30,7 @@ address_db <- con %>%
   assert.alt(not_na.alt, POSTCODE, SINGLE_LINE_ADDRESS) %>% 
   mutate(POSTCODE_SLA = paste(POSTCODE, SINGLE_LINE_ADDRESS)) %>% 
   assert.alt(is_uniq.alt, POSTCODE_SLA) %>% 
-  select(-POSTCODE_SLA)
+  select(-POSTCODE_SLA) %>% 
   rename(AB_FLAG = CH_FLAG)
 
 
@@ -72,7 +72,7 @@ patient_address_db = patient_db %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   # Get max monthly patient count
   summarise(MAX_MONTHLY_PATIENTS = max(MONTHLY_PATIENTS, na.rm = TRUE)) %>% 
-  ungroup() %>%
+  ungroup() %>% 
   verify(nrow.alt(.) > PATIENT_ADDRESS_DB_ROW_COUNT_THRESHOLD)
 
 # Original step here was to use addressMatchR::calc_match_addresses. However, at

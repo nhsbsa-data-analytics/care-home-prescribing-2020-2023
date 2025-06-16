@@ -1,6 +1,12 @@
 
 # Part One: get ab plus package info and data downoad url ----------------------
 
+# Load packages
+source("data-raw/workflow/workflow_packages.R")
+
+# Manually define end date
+end_date = "2025-03-31"
+
 # Identify available data packages
 url <- "https://api.os.uk/downloads/v1/dataPackages?key="
 key <- Sys.getenv("OS_API_KEY")
@@ -9,7 +15,7 @@ key <- Sys.getenv("OS_API_KEY")
 url <- paste0(url, key)
 
 # Get package info
-package_info <- GET(url)
+package_info <- httr::GET(url)
 
 # Get ID of the data package you want
 package_info = fromJSON(rawToChar(package_info$content))
