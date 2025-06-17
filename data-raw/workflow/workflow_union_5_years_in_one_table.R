@@ -2,9 +2,10 @@
 
 -- 0. Grant access to dall_ref
 --grant select on adnsh.int646_base_20240401_20250331 to dall_ref;
+--grant select on adnsh.int646_postcode_lookup to dall_ref;
 
 -- 1. Drop table if exists
-drop table int646_base_20200401_20250331 purge;
+--drop table int646_base_20200401_20250331 purge;
 
 -- 2. Create new 5 year base table
 create table int646_base_20200401_20250331 nologging compress for query low as
@@ -91,7 +92,7 @@ select
     y5.*
 from
     adnsh.int646_base_20240401_20250331 y5;
-
+    
 -- 3. Indexes
 
 grant select on int646_base_20200401_20250331 to migar, adnsh, mamcp;
