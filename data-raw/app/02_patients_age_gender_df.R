@@ -86,8 +86,9 @@ patients_by_fy_geo_age_gender_df <- patients_by_fy_geo_age_gender_df |>
 patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
   tidyr::complete(
+    CH_FLAG,
     # Only geographies that already exist
-    tidyr::nesting(CH_FLAG, FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME),
+    tidyr::nesting(FY, GEOGRAPHY, SUB_GEOGRAPHY_CODE, SUB_GEOGRAPHY_NAME),
     # Only age band and gender combinations that exist (so we only have NA age
     # band for NA genders)
     tidyr::nesting(AGE_BAND, GENDER),
@@ -109,10 +110,6 @@ patients_by_fy_geo_age_gender_df <-
   patients_by_fy_geo_age_gender_df |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, " ICB$")) |>
     mutate(SUB_GEOGRAPHY_NAME = stringr::str_remove(SUB_GEOGRAPHY_NAME, "^NHS "))
-
-# Exclude Isles of Scilly
-patients_by_fy_geo_age_gender_df <- patients_by_fy_geo_age_gender_df |>
-  filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly")
 
 # Add to data/
 usethis::use_data(
