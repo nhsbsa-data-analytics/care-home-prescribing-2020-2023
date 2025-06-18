@@ -15,7 +15,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", base_table))
 
 # Initial manipulation to create CH_TYPE column, later to be grouped by
 init_db <- base_db %>%

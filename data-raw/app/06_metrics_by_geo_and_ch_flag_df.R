@@ -104,7 +104,7 @@ stopifnot(
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", base_table))
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {

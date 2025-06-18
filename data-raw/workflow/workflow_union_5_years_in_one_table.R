@@ -1,9 +1,5 @@
 -- To run from DALL_REF
 
--- 0. Grant access to dall_ref
---grant select on adnsh.int646_base_20240401_20250331 to dall_ref;
---grant select on adnsh.int646_postcode_lookup to dall_ref;
-
 -- 1. Drop table if exists
 --drop table int646_base_20200401_20250331 purge;
 

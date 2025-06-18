@@ -15,7 +15,8 @@ pacman::p_load(
   'tidyr',
   'purrr',
   'glue',
-  'highcharter',
+  'config', 
+  'forcats',
   'RSelenium',
   'data.table',
   'usethis',
@@ -29,8 +30,19 @@ pacman::p_load(
   'readr',
   'lubridate',
   
-  # testing
-  'assertr'
+  # Testing
+  'assertr',
+  
+  # Shiny
+  'sf',
+  'highcharter',
+  'geojsonsf',
+  'shinyusertracking',
+  'golem', 
+  'kableExtra', 
+  'markdown', 
+  'reactable',
+  'rsvg'
 )
 
 # Libraries from github

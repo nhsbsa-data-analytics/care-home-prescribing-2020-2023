@@ -36,7 +36,7 @@ postcode_db <- postcode_db %>%
   mutate(RANK = rank()) %>%
   filter(RANK == 1) %>%
   ungroup() %>% 
-  select(POSTCODE, LSOA_CODE = CENSUS_LOWER, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) 
+  select(POSTCODE, LSOA_CODE = LSOA21_CODE, YEAR_MONTH, PCD_NORTHING = OSNRTH1M, PCD_EASTING = OSEAST1M) 
 
 postcode_latlong <- postcode_latlong %>%
   simple_format_postcode_db(POSTCODE) %>%
