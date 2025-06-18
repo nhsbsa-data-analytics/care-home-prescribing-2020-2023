@@ -77,7 +77,7 @@ select
 from
     dall_ref.int646_base_20200401_20240331  base
 inner join
-    int646_postcode_lookup  pcd
+    adnsh.int646_postcode_lookup  pcd
     on base.bsa_postcode  =  pcd.postcode
 
 union all
@@ -91,6 +91,7 @@ from
     
 -- 3. Indexes
 
+/*
 grant select on int646_base_20200401_20250331 to migar, adnsh, mamcp;
 
 create index int646_i01 on int646_base_20200401_20250331 (fy);
@@ -134,3 +135,4 @@ create index int646_i30 on int646_base_20200401_20250331 (fy, year_month, pcd_ic
 create index int646_i31 on int646_base_20200401_20250331 (fy, year_month, pcd_lad_code, pcd_lad_name, nhs_no);
 
 create index int646_i32 on int646_base_20200401_20250331 (fy, age_band, gender, ch_flag, year_month, nhs_no);
+*/
