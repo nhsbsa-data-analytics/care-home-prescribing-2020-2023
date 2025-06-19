@@ -158,7 +158,7 @@ get_metrics <- function(init_db,
         PCT_PM_GTE_TEN = 0L,
         PCT_PM_ACB     = 0L,
         PCT_PM_DAMN    = 0L,
-        PCT_PM_FALLS   = 0L,
+        PCT_PM_FALLS   = 0L
       )
     ) %>%
     select(-starts_with("RISK")) %>% 
