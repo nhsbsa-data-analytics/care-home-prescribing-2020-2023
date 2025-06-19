@@ -148,9 +148,17 @@ get_metrics <- function(init_db,
       tidyr::nesting(!!!syms(nest_cols)),
       !!!syms(setdiff(second_grouping, nest_cols)),
       fill = list(
-        TOTAL_PM        = 0L,
-        TOTAL_PM_ACB    = 0L,
-        TOTAL_PM_DAMN   = 0L
+        TOTAL_PM       = 0L,
+        TOTAL_PM_ACB   = 0L,
+        TOTAL_PM_DAMN  = 0L,
+        ITEMS_PPM      = 0L,
+        COST_PPM       = 0L,
+        UNIQ_MEDS_PPM  = 0L,
+        PCT_PM_GTE_SIX = 0L,
+        PCT_PM_GTE_TEN = 0L,
+        PCT_PM_ACB     = 0L,
+        PCT_PM_DAMN    = 0L,
+        PCT_PM_FALLS   = 0L,
       )
     ) %>%
     select(-starts_with("RISK")) %>% 
