@@ -337,7 +337,7 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$sub_geography)
       
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        # Negate male values so the butterfly chart works
+        # Negate female values so the butterfly chart works
         dplyr::mutate(
           TOTAL_PATIENTS = TOTAL_PATIENTS * ifelse(GENDER == "Male", 1, -1),
           PCT_PATIENTS = PCT_PATIENTS * ifelse(GENDER == "Male", 1, -1)
