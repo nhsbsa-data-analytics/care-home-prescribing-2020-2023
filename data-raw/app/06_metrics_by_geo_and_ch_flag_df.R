@@ -13,19 +13,14 @@ devtools::load_all()
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
+base_table <- "INT646_BASE_20200401_20250331"
+
 # Data validation --------------------------------------------------------------
 
 ## Setup -----------------------------------------------------------------------
 
-# Distinct postcode-related fields
-PCD <- con %>%
-  tbl(from = "INT646_POSTCODE_LOOKUP") %>%
-  select(ends_with("CODE"), ends_with("NAME")) %>%
-  distinct() %>%
-  collect()
-
-# function to transform fields by geography fields
-transform_PCD <- function(data, geography) {
+# Transform data for specified geography
+transform_geo_data <- function(data, geography) {
   data %>%
     select(starts_with(glue("PCD_{geography}"))) %>%
     distinct() %>%
@@ -35,23 +30,52 @@ transform_PCD <- function(data, geography) {
     filter(!is.na(SUB_GEOGRAPHY_NAME))
 }
 
-# Generate function output
+### PCD - the data in Data Warehouse -------------------------------------------
+
+# Distinct geography fields
+PCD <- con %>%
+  tbl(from = "INT646_POSTCODE_LOOKUP") %>%
+  select(ends_with("_CODE"), ends_with("_NAME")) %>%
+  distinct() %>%
+  collect()
+
+# Get data for each geography in same format
 PCD_list <- list(
-  REGION = PCD %>% transform_PCD("REGION"),
-  ICB    = PCD %>% transform_PCD("ICB"),
-  LAD    = PCD %>% transform_PCD("LAD")
+  REGION = PCD %>% transform_geo_data("REGION"),
+  ICB    = PCD %>% transform_geo_data("ICB"),
+  LAD    = PCD %>% transform_geo_data("LAD")
 )
 
-# Define gis list
+### CHD - the data in base table -----------------------------------------------
+
+# Distinct geography fields
+CHD <- con %>%
+  tbl(from = in_schema("DALL_REF", base_table)) %>% 
+  select(starts_with("PCD")) %>% 
+  distinct() %>% 
+  collect()
+
+# Get data for each geography in same format
+CHD_list <- list(
+  REGION = CHD %>% transform_geo_data("REGION"),
+  ICB    = CHD %>% transform_geo_data("ICB"),
+  LAD    = CHD %>% transform_geo_data("LAD")
+)
+
+### GIS - the data from ArcGIS -------------------------------------------------
+
+# Get data for each geography in same format (already done in geo_data.R)
 GIS_list <- geo_data_validation
 
-# Check sub-geography codes and names match exactly between PCD and GIS; script
-# will stop if not
+# Check sub-geography codes and names match exactly between all 3 sources;
+# script will stop if not
 
-## Check sub-geography codes ---------------------------------------------------
+## Validate --------------------------------------------------------------------
 
-# Generate check
-check_sub_geo_codes <- list(
+### Check sub-geography codes --------------------------------------------------
+
+#### PCD vs GIS ----------------------------------------------------------------
+check_pcd_sub_geo_codes <- list(
   in_GIS_only = map2(
     GIS_list,
     PCD_list,
@@ -66,17 +90,42 @@ check_sub_geo_codes <- list(
 
 # Stop if check fails
 stopifnot(
-  "Some difference in geo codes: check `check_sub_geo_codes`"= {
-    character(0) == check_sub_geo_codes %>%
+  "Some difference in geo codes: check `check_pcd_sub_geo_codes`"= {
+    2 == check_pcd_sub_geo_codes %>%
       map(unique) %>%
-      map(unique)
+      map(length) %>% 
+      reduce(`+`)
   }
 )
 
-## Check sub-geography names ---------------------------------------------------
+#### CHD vs GIS ----------------------------------------------------------------
+check_chd_sub_geo_codes <- list(
+  in_GIS_only = map2(
+    GIS_list,
+    CHD_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
+  ),
+  in_CHD_only = map2(
+    CHD_list,
+    GIS_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_CODE, y$SUB_GEOGRAPHY_CODE)
+  )
+)
 
-# Generate check
-check_sub_geo_names <- list(
+# Stop if check fails
+stopifnot(
+  "Some difference in geo codes: check `check_chd_sub_geo_codes`"= {
+    2 == check_chd_sub_geo_codes %>%
+      map(unique) %>%
+      map(length) %>% 
+      reduce(`+`)
+  }
+)
+
+### Check sub-geography names --------------------------------------------------
+
+#### PCD vs GIS ----------------------------------------------------------------
+check_pcd_sub_geo_names <- list(
   in_GIS_only = map2(
     GIS_list,
     PCD_list,
@@ -91,10 +140,35 @@ check_sub_geo_names <- list(
 
 # Stop if check fails
 stopifnot(
-  "Some difference in geo names: check `check_sub_geo_names`"= {
-    character(0) == check_sub_geo_names %>%
+  "Some difference in geo names: check `check_pcd_sub_geo_names`"= {
+    2 == check_pcd_sub_geo_names %>%
       map(unique) %>%
-      map(unique)
+      map(length) %>% 
+      reduce(`+`)
+  }
+)
+
+#### CHD vs GIS ----------------------------------------------------------------
+check_chd_sub_geo_names <- list(
+  in_GIS_only = map2(
+    GIS_list,
+    CHD_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
+  ),
+  in_CHD_only = map2(
+    CHD_list,
+    GIS_list,
+    \(x, y) setdiff(x$SUB_GEOGRAPHY_NAME, y$SUB_GEOGRAPHY_NAME)
+  )
+)
+
+# Stop if check fails
+stopifnot(
+  "Some difference in geo codes: check `check_chd_sub_geo_names`"= {
+    2 == check_chd_sub_geo_names %>%
+      map(unique) %>%
+      map(length) %>% 
+      reduce(`+`)
   }
 )
 
@@ -104,7 +178,7 @@ stopifnot(
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", base_table))
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {
@@ -128,8 +202,7 @@ aggregate_by_geo <- function(geography_name) {
           "NHS | ICB",
           ""
         )
-      ) %>% 
-      filter(!!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]) != "Isles of Scilly"),
+      ),
     first_grouping = c(
       "FY",
       "YEAR_MONTH",
@@ -158,8 +231,7 @@ metrics_by_geo_and_ch_flag_df <- names(geographies)[-1] %>%
 metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
-  format_data_raw("CH_FLAG") %>% 
-  suppressWarnings() # We do not have Overall in this data
+  format_data_raw("CH_FLAG")
 
 ## Save ------------------------------------------------------------------------
 usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
