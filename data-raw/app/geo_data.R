@@ -80,18 +80,27 @@ geo_data_validation <- list(
     "Integrated_Care_Boards_April_2023_EN_BSC",
     "ICB23CD,ICB23NM"
   ) %>%
-    # Some small differences in ICB data between ours and ArcGIS; the data used
+    # Some small differences in naming between our data and ArcGIS; the data used
     # in the app does not need corrected as only the code is used to join to our
     # data
     mutate(
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, "Integrated Care Board", "ICB"),
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " the ", " The "),
-      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, " of ", " Of ")
+      SUB_GEOGRAPHY_NAME = str_replace(
+        SUB_GEOGRAPHY_NAME,
+        "Integrated Care Board",
+        "ICB"
+      )
     ),
   `Local Authority` = create_geo_data_validation(
     "Local_Authority_Districts_December_2023_Boundaries_UK_BSC",
     "LAD23CD,LAD23NM"
-  )
+  ) %>%
+    # Some small differences in naming between our data and ArcGIS; the data used
+    # in the app does not need corrected as only the code is used to join to our
+    # data
+    mutate(
+      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, ", County of", ""),
+      SUB_GEOGRAPHY_NAME = str_replace(SUB_GEOGRAPHY_NAME, ", City of", "")
+    )
 )
 
 # Save ------------------------------------------------------------------
