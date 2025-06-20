@@ -117,7 +117,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Formatted data ------------------------------------------------------
     
     fmt_data <- carehomes2::metrics_by_geo_and_ch_flag_df %>% 
-      filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
+      dplyr::filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
       dplyr::mutate(
         dplyr::across(
           c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
