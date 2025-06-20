@@ -37,7 +37,8 @@ distinct_counts <- fact_db %>%
 EXPECTED_ROWS <- EXPECTED_YEARS * (
   EXPECTED_PCD_REGION_CODES +
     EXPECTED_PCD_ICB_CODES +
-    EXPECTED_PCD_LAD_CODES
+    EXPECTED_PCD_LAD_CODES - 
+    1                 # City of London has no CH activity
 ) * (
     50 + 50 + 50 + 21 # Top 50 per BNF part, but only 21 Chapters
   ) *
