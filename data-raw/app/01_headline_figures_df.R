@@ -9,8 +9,8 @@ library(assertr.alt)
 base_table <- "INT646_BASE_20200401_20250331"
 start_year <- substring(base_table, 13, 16)
 end_year <- substring(base_table, 22, 25)
-expected_years <- as.integer(end_year) - as.integer(start_year)
-expected_months <- 12 * expected_years
+EXPECTED_YEARS <- as.integer(end_year) - as.integer(start_year)
+EXPECTED_MONTHS <- 12 * EXPECTED_YEARS
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -18,8 +18,8 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Base table
 data_db <- con %>%
   tbl(from = in_schema("DALL_REF", base_table)) %>%
-  verify(nrow.alt(distinct(., FY)) == expected_years) %>% 
-  verify(nrow.alt(distinct(., YEAR_MONTH)) == expected_months)
+  verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
+  verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
   
 # Key findings used within analysis summary text
 key_findings_fy <- data_db %>% 
@@ -87,7 +87,7 @@ annual_df = data_db %>%
     ) %>% 
   arrange(TIME) %>% 
   select(TIME, TYPE, PATS, ITEMS, NIC) %>%
-  verify(nrow.alt(distinct(., TIME)) == expected_years) %>% 
+  verify(nrow.alt(.) == EXPECTED_YEARS) %>% 
   assert.alt(not_na.alt, PATS, ITEMS, NIC)
 
 # Monthly data df
@@ -116,7 +116,7 @@ monthly_df = data_db %>%
   ) %>% 
   arrange(ORDER) %>% 
   select(TIME, TYPE, PATS, ITEMS, NIC) %>% 
-  verify(nrow.alt(distinct(., TIME)) == expected_months) %>% 
+  verify(nrow.alt(.) == EXPECTED_MONTHS) %>% 
   assert.alt(not_na.alt, PATS, ITEMS, NIC)
 
 # Bind dfs together
