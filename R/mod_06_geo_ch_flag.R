@@ -318,7 +318,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         filter = "none",
         selection = "single"
       ) %>%
-        DT::formatStyle(columns = 1:9, `font-size` = "12px")
+        DT::formatStyle(columns = 1:ncol(tdata), `font-size` = "12px")
     }
     
     # Create download data (all data)
