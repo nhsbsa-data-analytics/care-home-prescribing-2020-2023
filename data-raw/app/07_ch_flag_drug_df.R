@@ -3,12 +3,29 @@
 library(dplyr)
 library(dbplyr)
 
+
+base_table <- "INT646_BASE_20200401_20250331"
+start_year <- substring(base_table, 13, 16)
+end_year <- substring(base_table, 22, 25)
+EXPECTED_YEARS <- as.integer(end_year) - as.integer(start_year)
+EXPECTED_MONTHS <- 12 * EXPECTED_YEARS
+
 # Connect to dalp
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", base_table))
+
+
+# Row validation calculation ----------------------------------------------
+
+EXPECTED_ROWS <- EXPECTED_YEARS *
+  2 *  # Categories are CH or NON_CH
+  4 *  # Categories are Chapter, Section, Paragraph or Chemical Substance
+  20 * # Top 20 of each
+  6    # Number of metrics
+
 
 # BNF columns
 bnf_cols = c(
@@ -198,13 +215,9 @@ mod_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
       METRIC == "TOTAL_ITEMS" ~ "Total annual number of prescription items",
       METRIC == "TOTAL_NIC" ~ "Total annual drug cost"
     )
-  )
-
-# Check Output
-colSums(is.na(mod_ch_flag_drug_df))
-
-# Check categories
-mod_ch_flag_drug_df %>% count(FY, CH_FLAG, BNF_PARENT)
+  ) %>%
+  verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
+  assert.alt(not_na.alt, VALUE)
 
 # Use this
 usethis::use_data(mod_ch_flag_drug_df, overwrite = TRUE)
