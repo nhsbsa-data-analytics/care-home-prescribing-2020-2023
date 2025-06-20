@@ -10,10 +10,15 @@ library(glue)
 library(purrr)
 devtools::load_all()
 
-# Set up connection to DALP
-con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 base_table <- "INT646_BASE_20200401_20250331"
+start_year <- substring(base_table, 13, 16)
+end_year <- substring(base_table, 22, 25)
+EXPECTED_YEARS <- as.integer(end_year) - as.integer(start_year)
+EXPECTED_MONTHS <- 12 * EXPECTED_YEARS
+
+# Set up connection to DALP
+con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Data validation --------------------------------------------------------------
 
@@ -178,7 +183,34 @@ stopifnot(
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", base_table))
+  tbl(from = in_schema("DALL_REF", base_table)) %>%
+  verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
+  verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
+
+
+# Row validation calculation ----------------------------------------------
+
+distinct_counts <- base_db %>% 
+  summarise(
+    across(
+      c(CH_FLAG, FY, (starts_with("PCD") & ends_with("CODE"))),
+      n_distinct
+    )
+  ) %>%
+  collect() %>% 
+  rename_with(\(x) glue::glue("EXPECTED_{x}S")) %>% 
+  as.list() %>% 
+  purrr::iwalk(
+    \(x, idx) assign(idx, x, envir = .GlobalEnv)
+  )
+
+EXPECTED_ROWS <- EXPECTED_YEARS *
+  EXPECTED_CH_FLAGS * (
+    EXPECTED_PCD_REGION_CODES +
+    EXPECTED_PCD_ICB_CODES +
+    EXPECTED_PCD_LAD_CODES
+  )
+
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {
@@ -231,7 +263,23 @@ metrics_by_geo_and_ch_flag_df <- names(geographies)[-1] %>%
 metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
-  format_data_raw("CH_FLAG")
+  format_data_raw("CH_FLAG") %>%
+  verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
+  assert.alt(
+    not_na.alt,
+    ITEMS_PPM,
+    COST_PPM,
+    UNIQ_MEDS_PPM,
+    UNIQ_MEDS_FALLS_PPM,
+    TOTAL_PM,
+    TOTAL_PM_ACB,
+    TOTAL_PM_DAMN,
+    PCT_PM_GTE_SIX,
+    PCT_PM_GTE_TEN,
+    PCT_PM_ACB,
+    PCT_PM_DAMN,
+    PCT_PM_FALLS
+  )
 
 ## Save ------------------------------------------------------------------------
 usethis::use_data(metrics_by_geo_and_ch_flag_df, overwrite = TRUE)
