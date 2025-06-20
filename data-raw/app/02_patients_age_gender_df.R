@@ -19,7 +19,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Item-level base table
 base_db <- con |>
   tbl(from = in_schema("DALL_REF", base_table)) %>%
-  verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
+  verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>%
   verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
 
 
@@ -48,7 +48,7 @@ EXPECTED_ROWS <- EXPECTED_YEARS *
   ) * (
     EXPECTED_AGE_BANDS *
       EXPECTED_GENDERS +
-      1                                 # + 1 for AGE_BAND = NA, GENDER = Unknown combn.
+      1                                 # + 1 for AGE_BAND = NA, GENDER = Unknown
   )
   
  
