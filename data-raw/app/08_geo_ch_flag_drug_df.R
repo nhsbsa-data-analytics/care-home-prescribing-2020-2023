@@ -3,12 +3,45 @@
 library(dplyr)
 library(dbplyr)
 
+
+base_table <- "INT646_BASE_20200401_20250331"
+start_year <- substring(base_table, 13, 16)
+end_year <- substring(base_table, 22, 25)
+EXPECTED_YEARS <- as.integer(end_year) - as.integer(start_year)
+EXPECTED_MONTHS <- 12 * EXPECTED_YEARS
+
 # Connect to dalp
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Create a lazy table from the item level base table
 fact_db <- con %>%
-  tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20240331"))
+  tbl(from = in_schema("DALL_REF", base_table))
+
+
+# Row validation calculation ----------------------------------------------
+
+distinct_counts <- fact_db %>% 
+  summarise(
+    across(
+      starts_with("PCD") & ends_with("CODE"),
+      n_distinct
+    )
+  ) %>%
+  collect() %>% 
+  rename_with(\(x) glue::glue("EXPECTED_{x}S")) %>% 
+  as.list() %>% 
+  purrr::iwalk(
+    \(x, idx) assign(idx, x, envir = .GlobalEnv)
+  )
+
+EXPECTED_ROWS <- EXPECTED_YEARS * (
+  EXPECTED_PCD_REGION_CODES +
+    EXPECTED_PCD_ICB_CODES +
+    EXPECTED_PCD_LAD_CODES
+) * (
+    50 + 50 + 50 + 21 # Top 50 per BNF part, but only 21 Chapters
+  ) *
+  6                   # 6 metrics
 
 # BNF columns
 bnf_cols = c(
@@ -311,15 +344,12 @@ mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
       METRIC == "TOTAL_NIC" ~ "Total annual drug cost"
     ),
     PATS = ifelse(is.na(PATS), 0, PATS)
-  ) %>% 
+  ) %>%
+  verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
+  assert.alt(not_na.alt, VALUE, PATS)# %>%
+  # TODO: move to mod
   # Remove Isles of Scilly
-  filter(GEOGRAPHY_CHILD != "Isles of Scilly")
-
-# Check Output
-colSums(is.na(mod_geo_ch_flag_drug_df))
-
-# Check categories
-mod_geo_ch_flag_drug_df %>% count(GEOGRAPHY_PARENT, BNF_PARENT)
+  # filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
 
 # Use this
 usethis::use_data(mod_geo_ch_flag_drug_df, overwrite = TRUE)
