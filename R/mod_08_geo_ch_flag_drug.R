@@ -248,6 +248,8 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             "The Isles of Scilly were removed due to the number of care homes in
              the Local Authority.",
             tags$br(),
+            "City of London has no care home activity so is not present in this data",
+            tags$br(),
             "Only the top 50 elements nationally by total item count across all 
              years per BNF level are presented.",
             tags$br(),

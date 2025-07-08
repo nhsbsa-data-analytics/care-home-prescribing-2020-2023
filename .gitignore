@@ -10,3 +10,4 @@ rsconnect
 .google-sheets-credentials
 .secret
 **/review/*
+data-raw/temp

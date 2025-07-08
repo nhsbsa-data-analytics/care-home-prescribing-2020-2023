@@ -77,7 +77,6 @@ bnfs <- list(
 #' @return Modified dataframe
 #' @noRd
 format_data_raw <- function(df, vars) {
-  
   # Initially sort the factors
   df <- df %>%
     dplyr::arrange(
@@ -95,14 +94,18 @@ format_data_raw <- function(df, vars) {
       )
     )
   
-  # Move overall to the first category
+  # Make some columns factors, with overall as first level (when present)
   df <- df %>%
     dplyr::mutate(
       dplyr::across(
         .cols = dplyr::any_of(
           c("FY", "YEAR_MONTH", "SUB_BREAKDOWN_NAME", "SUB_GEOGRAPHY_NAME")
         ),
-        .fns = ~ forcats::fct_relevel(.x, "Overall")
+        .fns = ~ if("Overall" %in% .x) {
+          forcats::fct_relevel(as.factor(.x), "Overall")
+        } else {
+          as.factor(.x)
+        }
       )
     )
   

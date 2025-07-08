@@ -75,10 +75,14 @@ mod_02_patients_age_gender_server <- function(id){
         )
       
       # Calculate the percentage of patients
-      female_patients_df <- female_patients_df %>%
+      female_patients_df %>%
         dplyr::mutate(
-          PCT_FEMALE_PATIENTS = as.character(janitor::round_half_up(TOTAL_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1))
+          PCT_FEMALE_PATIENTS = janitor::round_half_up(
+            TOTAL_FEMALE_PATIENTS / TOTAL_PATIENTS * 100,
+            1
+          )
         ) %>%
+        tidyr::replace_na(list(PCT_FEMALE_PATIENTS = 0)) %>% 
         dplyr::pull(PCT_FEMALE_PATIENTS)
       
     })
@@ -105,10 +109,14 @@ mod_02_patients_age_gender_server <- function(id){
         )
       
       # Calculate the percentage of patients
-      elderly_female_patients_df <- elderly_female_patients_df %>%
+      elderly_female_patients_df %>%
         dplyr::mutate(
-          PCT_ELDERLY_FEMALE_PATIENTS = janitor::round_half_up(TOTAL_ELDERLY_FEMALE_PATIENTS / TOTAL_PATIENTS * 100, 1)
+          PCT_ELDERLY_FEMALE_PATIENTS = janitor::round_half_up(
+            TOTAL_ELDERLY_FEMALE_PATIENTS / TOTAL_PATIENTS * 100,
+            1
+          )
         ) %>%
+        tidyr::replace_na(list(PCT_ELDERLY_FEMALE_PATIENTS = 0)) %>%
         dplyr::pull(PCT_ELDERLY_FEMALE_PATIENTS)
       
     })
@@ -116,7 +124,7 @@ mod_02_patients_age_gender_server <- function(id){
     
     # % of excluded patients for the chart label from source df that didn't exclude them yet
     # In this version, exclusion is reported for all patients, ch & non-ch
-    excluded_patients <- carehomes2::patients_by_fy_geo_age_gender_df |> 
+    excluded_patients <- patients_by_fy_geo_age_gender_df |> 
       dplyr::group_by(FY, GEOGRAPHY, SUB_GEOGRAPHY_NAME) |>
       dplyr::summarise(
         EXCLUDED_UNK = sum(ifelse(GENDER=="Unknown", TOTAL_PATIENTS, 0)),
@@ -182,19 +190,34 @@ mod_02_patients_age_gender_server <- function(id){
         glue::glue("
           This chart does not show {excluded_unk()}% and {excluded_ind()}% of patients \\
           where the gender was not known and not specified, respectively.
+          <br>
         ")
       } else if (!any_excl_unk & any_excl_ind) {
         glue::glue("
           This chart does not show {excluded_unk()}% of patients where the gender was \\
           not known.
+          <br>
         ")
       } else if (any_excl_unk & !any_excl_ind) {
         glue::glue("
           This chart does not show {excluded_ind()}% of patients where the gender was \\
           not specified.
+          <br>
         ")
       } else {
-        NULL
+        ""
+      }
+      
+      # It is possible for there to be 0 counts, so a % of patients does not 
+      # make sense, so handle this conditionally
+      maybe_percentages <- if(total() > 0) {
+        glue::glue("
+          Of these, <b>{percentage_female_patients()}%</b> were females and \\
+          <b>{percentage_elderly_female_patients()}%</b> were females aged 85 or over.
+          <br>
+        ")
+      } else {
+        ""
       }
       
       tags$text(
@@ -204,11 +227,8 @@ mod_02_patients_age_gender_server <- function(id){
           {maybe_in}{input$sub_geography}, there were an estimated <b>{total()}</b> \\
           care home patients in {input$fy}.
           <br>
-          Of these, <b>{percentage_female_patients()}%</b> were females and \\
-          <b>{percentage_elderly_female_patients()}%</b> were females aged 85 or over.
-          <br>
+          {maybe_percentages}
           {maybe_exc_or_ind}
-          <br>
           Patient counts between one and four have been rounded to five, otherwise \\
           to the nearest ten.
           <br>
@@ -225,7 +245,9 @@ mod_02_patients_age_gender_server <- function(id){
     # Filter to relevant data for this chart
     patients_by_fy_geo_age_gender_df <-
       carehomes2::patients_by_fy_geo_age_gender_df %>%
-      dplyr::filter(GENDER %in% c("Male","Female"))
+      dplyr::filter(GENDER %in% c("Male","Female")) %>%
+      # Remove Isles of Scilly due to low CH count
+      dplyr::filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly")
      
     # Filter the data based on the FY and the geography
     patients_by_geo_age_gender_at_specific_fy_and_geo_df <- reactive({
@@ -302,7 +324,7 @@ mod_02_patients_age_gender_server <- function(id){
       id = "download_data",
       filename = "Demographics of care home prescribing.xlsx",
       export_data = create_download_data(
-        carehomes2::patients_by_fy_geo_age_gender_df
+        patients_by_fy_geo_age_gender_df
       ),
       number_xl_fmt_str = "#,##0",
       percent_xl_fmt_str = "#0.0%"
@@ -313,9 +335,9 @@ mod_02_patients_age_gender_server <- function(id){
       req(input$fy)
       req(input$geography)
       req(input$sub_geography)
-
+      
       patients_by_geo_age_gender_at_specific_fy_and_subgeo_df() %>%
-        # Negate male values so the butterfly chart works
+        # Negate female values so the butterfly chart works
         dplyr::mutate(
           TOTAL_PATIENTS = TOTAL_PATIENTS * ifelse(GENDER == "Male", 1, -1),
           PCT_PATIENTS = PCT_PATIENTS * ifelse(GENDER == "Male", 1, -1)

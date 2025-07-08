@@ -20,6 +20,7 @@ pacman::p_load(
   'RSelenium',
   'data.table',
   'usethis',
+  'stingr',
   
   # CQC API data 
   'httr',

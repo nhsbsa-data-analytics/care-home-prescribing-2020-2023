@@ -1,7 +1,15 @@
-# The script creates a postcode lookup table using the latest available mappings
+# Verification variables --------------------------------------------------
 
-library(dplyr)
-library(dbplyr)
+thousand <- 10^3
+
+# Thresholds based off 2020-21 run.
+# We use values around 10% lower than the count for this year, or when numbers.
+# relatively small just take a step down to a round number - e.g. 3,000 or 1 million.
+# Expectation is that these will vary, so don't want thresholds to be too close.
+# Overall trend is likely to be upward, so these values should be good for future
+# runs, but can be adjusted if necessary.
+
+PCD_LAD_NAME_NULL_COUNT_THRESHOLD <- 20 * thousand
 
 # Postcodes are mapped to REG/ICB/LAD mappings via LSOAs
 # The mappings from https://geoportal.statistics.gov.uk feed DALL_REF.ONS_GEOGRAPHY_MAPPING
@@ -108,7 +116,10 @@ postcode_db <- postcode_db %>%
     PCD_EASTING,
     IMD_DECILE
   ) %>% 
-  assert.alt(is_uniq.alt, POSTCODE)
+  assert.alt(is_uniq.alt, POSTCODE) %>% 
+  verify(
+    nrow.alt(dplyr::filter(., is.na(PCD_LAD_NAME))) < PCD_LAD_NAME_NULL_COUNT_THRESHOLD
+  )
 
 # Write the table back to the DB with indexes
 table_name = "INT646_POSTCODE_LOOKUP"

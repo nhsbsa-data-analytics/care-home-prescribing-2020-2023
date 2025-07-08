@@ -100,8 +100,8 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.2f}%",
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.value:.2f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.value:.2f}%",
-      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.value:.2f}",
-      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.value:.2f}%"
+      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM:</b> {point.value:.2f}",
+      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines:</b> {point.value:.2f}%"
     )
     
     # Map all column names to download data names
@@ -117,13 +117,14 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Formatted data ------------------------------------------------------
     
     fmt_data <- carehomes2::metrics_by_geo_and_ch_flag_df %>% 
-    dplyr::mutate(
-      COST_PPM = janitor::round_half_up(COST_PPM, 0),
-      dplyr::across(
-        c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
-        \(x) janitor::round_half_up(x, 2)
+      dplyr::filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
+      dplyr::mutate(
+        dplyr::across(
+          c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
+          \(x) janitor::round_half_up(x, 2)
+        ),
+        COST_PPM = janitor::round_half_up(COST_PPM, 0)
       )
-    )
     
     # Reactive data -------------------------------------------------------
     
@@ -145,18 +146,26 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     map_data <- reactive(carehomes2::geo_data[[input$geography]])
     
+    
+    
     # Output functions ----------------------------------------------------
     
     # Create map
     create_map <- function(data,
                            map_data,
                            ch_status = c("Care home", "Non-care home")) {
+      # City of London has no care home activity, so will have 0 for all metrics.
+      # This should be treated as not existing when setting limits of the colour
+      # scale.
+      fmt_data_no_city_of_london <- fmt_data %>% 
+        dplyr::filter(SUB_GEOGRAPHY_NAME != "City of London")
+      
       # Note that the final displayed limits will not exactly match the min and
       # max values - highcharts will pick appropriate numbers close to the limits
       color_axis_limits <- list(
-        min = carehomes2::metrics_by_geo_and_ch_flag_df[[input$metric]] %>%
+        min = fmt_data_no_city_of_london[[input$metric]] %>%
           min(na.rm = TRUE),
-        max = carehomes2::metrics_by_geo_and_ch_flag_df[[input$metric]] %>% 
+        max = fmt_data_no_city_of_london[[input$metric]] %>% 
           max(na.rm = TRUE)
       )
       
@@ -200,7 +209,7 @@ mod_06_geo_ch_flag_server <- function(id) {
             c(0.6, NHSRtheme::get_nhs_colours("WarmYellow") |> unname()),
             c(1, NHSRtheme::get_nhs_colours("Red") |> unname())
           )
-        ) %>% 
+        ) %>%
         highcharter::hc_title(text = ch_status)
     }
     
@@ -309,7 +318,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         filter = "none",
         selection = "single"
       ) %>%
-        DT::formatStyle(columns = 1:9, `font-size` = "12px")
+        DT::formatStyle(columns = 1:ncol(tdata), `font-size` = "12px")
     }
     
     # Create download data (all data)
@@ -317,7 +326,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       data %>%
         dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::mutate(
-          CH_FLAG = ifelse(CH_FLAG == 1, "Care home", "Non-care home")
+          CH_FLAG = ifelse(CH_FLAG, "Care home", "Non-care home")
         )  %>% 
         dplyr::arrange(
           .data$FY,
