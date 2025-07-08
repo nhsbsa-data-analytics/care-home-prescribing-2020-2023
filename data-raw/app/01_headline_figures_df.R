@@ -88,7 +88,8 @@ annual_df = data_db %>%
   arrange(TIME) %>% 
   select(TIME, TYPE, PATS, ITEMS, NIC) %>%
   verify(nrow.alt(.) == EXPECTED_YEARS) %>% 
-  assert.alt(not_na.alt, PATS, ITEMS, NIC)
+  assert.alt(not_na.alt, PATS, ITEMS, NIC) %>% 
+  verify(nrow.alt(.) == EXPECTED_YEARS)
 
 # Monthly data df
 monthly_df = data_db %>% 
@@ -116,8 +117,8 @@ monthly_df = data_db %>%
   ) %>% 
   arrange(ORDER) %>% 
   select(TIME, TYPE, PATS, ITEMS, NIC) %>% 
-  verify(nrow.alt(.) == EXPECTED_MONTHS + EXPECTED_YEARS) %>% 
-  assert.alt(not_na.alt, PATS, ITEMS, NIC)
+  assert.alt(not_na.alt, PATS, ITEMS, NIC) %>% 
+  verify(nrow.alt(.) == EXPECTED_MONTHS)
 
 # Bind dfs together
 mod_headline_figures_df = rbind(annual_df, monthly_df)

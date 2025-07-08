@@ -9,6 +9,7 @@ library(stringr)
 library(glue)
 library(purrr)
 devtools::load_all()
+source("data-raw/app/data_raw_helpers.R")
 
 
 base_table <- "INT646_BASE_20200401_20250331"
@@ -30,7 +31,7 @@ transform_geo_data <- function(data, geography) {
     select(starts_with(glue("PCD_{geography}"))) %>%
     distinct() %>%
     rename_with(
-      \(x) str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY")
+      \(x) stringr::str_replace(x, glue("PCD_{geography}"), "SUB_GEOGRAPHY")
     ) %>%
     filter(!is.na(SUB_GEOGRAPHY_NAME))
 }
@@ -183,13 +184,17 @@ stopifnot(
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", base_table)) %>%
+  tbl(from = in_schema("DALL_REF", base_table))
+
+# Split verify to simplify dbplyr run
+base_db %>% 
   verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
   verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
 
 
 # Row validation calculation ----------------------------------------------
 
+# Distinct counts for expected row calculation
 distinct_counts <- base_db %>% 
   summarise(
     across(
@@ -204,13 +209,13 @@ distinct_counts <- base_db %>%
     \(x, idx) assign(idx, x, envir = .GlobalEnv)
   )
 
+# Expected row value
 EXPECTED_ROWS <- EXPECTED_YEARS *
   EXPECTED_CH_FLAGS * (
     EXPECTED_PCD_REGION_CODES +
     EXPECTED_PCD_ICB_CODES +
     EXPECTED_PCD_LAD_CODES
   )
-
 
 # Aggregate by a geography
 aggregate_by_geo <- function(geography_name) {

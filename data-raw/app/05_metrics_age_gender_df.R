@@ -19,13 +19,16 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 # Item-level base table
 base_db <- con |>
   tbl(from = in_schema("DALL_REF", base_table)) %>%
-  verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
-  verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS) %>% 
   filter(GENDER %in% c("Male", "Female"))
 
+# Perform validations
+base_db %>% 
+  verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
+  verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
+  
+# Row validation calculation ---------------------------------------------------
 
-# Row validation calculation ----------------------------------------------
-
+# Distinct categories per grouping variable
 distinct_counts <- base_db %>% 
   summarise(
     across(
@@ -40,12 +43,13 @@ distinct_counts <- base_db %>%
     \(x, idx) assign(idx, x, envir = .GlobalEnv)
   )
 
+# Generate expeted row count value
 EXPECTED_ROWS <- EXPECTED_YEARS *
   EXPECTED_CH_FLAGS * 
   EXPECTED_AGE_BANDS *
   EXPECTED_GENDERS
 
-
+Sys.time()
 # Get metrics
 metrics_by_age_gender_and_ch_flag_df <- get_metrics(
   base_db,
@@ -63,8 +67,7 @@ metrics_by_age_gender_and_ch_flag_df <- get_metrics(
     "GENDER",
     "CH_FLAG"
   ),
-  nest_cols = c("FY", "GENDER", "AGE_BAND"),
-  num_parallel = 32
+  nest_cols = c("FY", "GENDER", "AGE_BAND")
 )
 
 # Format for highcharter

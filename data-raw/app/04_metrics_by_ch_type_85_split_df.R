@@ -5,6 +5,7 @@ library(dplyr)
 library(dbplyr)
 library(tidyr)
 devtools::load_all()
+source("data-raw/app/data_raw_helpers.R")
 
 
 base_table <- "INT646_BASE_20200401_20250331"
@@ -22,85 +23,161 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
 # Item-level base table
 base_db <- con %>%
-  tbl(from = in_schema("DALL_REF", base_table)) %>%
+  tbl(from = in_schema("DALL_REF", base_table))
+
+# Split assertr check
+base_db %>% 
   verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>% 
   verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
 
+# Row validation calculation ---------------------------------------------------
 
-# Row validation calculation ----------------------------------------------
-
+# Estimate number of rows in final output
 EXPECTED_ROWS <- EXPECTED_YEARS *
   4 * # Categories are CH, NON_CH, RH or NH
   2   # Have 2 age band groupings, 65+ and 85+
 
-
-# Initial manipulation to create CH_TYPE column, later to be grouped by
-init_db <- base_db %>%
-  mutate(NON_CH_FLAG = 1L - CH_FLAG) %>% 
-  # Remove unwanted 'FLAG' columns
-  select(-c(AB_FLAG, EPS_FLAG, UPRN_FLAG)) %>% 
-  # Pivot the remaining 'FLAG' columns
-  pivot_longer(
-    ends_with("FLAG"),
-    names_to = "CH_TYPE"
-  ) %>%
-  # Only keep rows where value is 1, if it is not then it is not the care home
-  # type in that row
-  filter(value == 1L) %>%
-  # We only need the pivoted col names going forward
-  select(-value) %>%
-  mutate(
-    CH_TYPE = case_match(
-      CH_TYPE,
-      "CH_FLAG"               ~ "Care home",
-      "NURSING_HOME_FLAG"     ~ "Nursing home",
-      "RESIDENTIAL_HOME_FLAG" ~ "Residential home",
-      "NON_CH_FLAG"           ~ "Non-care home"
+# Function just for this mod to speed up get metrics (rather than 1 long query)
+get_metrics_mod4 = function(df){
+  
+  get_metrics(
+    df,
+    first_grouping = c(
+      "FY",
+      "YEAR_MONTH",
+      "NHS_NO",
+      "CH_TYPE",
+      "AGE_BAND"
     ),
-    AGE_GTE_85 = case_when(
-      AGE >= 85 ~ 1L,
-      TRUE ~ 0L
+    second_grouping = c(
+      "FY",
+      "CH_TYPE",
+      "AGE_BAND"
     )
-  ) 
+  ) %>% 
+  select(FY, CH_TYPE, AGE_BAND, everything())
+}
 
-# Union both age band variants
-init_db <- init_db %>%            # Start with all patients and flag for age band
-  union(
-    init_db %>% 
-      filter(AGE_GTE_85 == 1) %>% # Get just those flagged as 85+
-      mutate(AGE_GTE_85 = 0)      # And unflag, effectively including them in 65+ band
-  )
+# 8 individual df outputs ------------------------------------------------------
 
-## Process ----------------------------------------------------------------
-
-# Get metrics
-metrics_by_ch_type_85_split_df <- get_metrics(
-  init_db,
-  first_grouping = c(
-    "FY",
-    "YEAR_MONTH",
-    "NHS_NO",
-    "CH_TYPE",
-    "AGE_GTE_85"
-  ),
-  second_grouping = c(
-    "FY",
-    "CH_TYPE",
-    "AGE_GTE_85"
-  )
+# Split total query into chunks
+ch_flag_85_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 85,
+      CH_FLAG == 1
+    ) %>% 
+    mutate(
+      CH_TYPE = "Care home",
+      AGE_BAND = "Ages 85+"
+    )
 )
 
-# Generate age band categories
-metrics_by_ch_type_85_split_df <- metrics_by_ch_type_85_split_df %>% 
-  mutate(
-    AGE_BAND = dplyr::case_match(
-      AGE_GTE_85,
-      0 ~ "Ages 65+",
-      1 ~ "Ages 85+"
-    ),
-    AGE_GTE_85 = NULL
-  ) %>% 
-  dplyr::relocate(AGE_BAND, .after = CH_TYPE) %>%
+# Split total query into chunks
+non_ch_flag_85_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 85,
+      CH_FLAG == 0
+    ) %>% 
+    mutate(
+      CH_TYPE = "Non-care home",
+      AGE_BAND = "Ages 85+"
+    )
+)
+
+# Split total query into chunks
+ch_flag_65_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 65,
+      CH_FLAG == 1
+    ) %>% 
+    mutate(
+      CH_TYPE = "Care home",
+      AGE_BAND = "Ages 65+"
+    )
+)
+
+# Split total query into chunks
+non_ch_flag_65_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 65,
+      CH_FLAG == 0
+    ) %>% 
+    mutate(
+      CH_TYPE = "Non-care home",
+      AGE_BAND = "Ages 65+"
+    )
+)
+
+# Split total query into chunks
+res_85_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 85,
+      RESIDENTIAL_HOME_FLAG == 1
+    ) %>% 
+    mutate(
+      CH_TYPE = "Residential home",
+      AGE_BAND = "Ages 85+"
+    )
+)
+
+# Split total query into chunks
+res_65_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 65,
+      RESIDENTIAL_HOME_FLAG == 1
+    ) %>% 
+    mutate(
+      CH_TYPE = "Residential home",
+      AGE_BAND = "Ages 65+"
+    )
+)
+
+# Split total query into chunks
+nurs_85_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 85,
+      NURSING_HOME_FLAG == 1
+    ) %>% 
+    mutate(
+      CH_TYPE = "Nursing home",
+      AGE_BAND = "Ages 85+"
+    )
+)
+
+# Split total query into chunks
+nurs_65_plus_df = get_metrics_mod4(
+  base_db %>% 
+    filter(
+      AGE >= 65,
+      NURSING_HOME_FLAG == 1
+    ) %>% 
+    mutate(
+      CH_TYPE = "Nursing home",
+      AGE_BAND = "Ages 65+"
+    )
+)
+
+# Bind outputs into single df and save -----------------------------------------
+
+# Bind all 8 dfs
+metrics_by_ch_type_85_split_df = do.call(rbind, list(
+  ch_flag_85_plus_df,
+  ch_flag_65_plus_df,
+  non_ch_flag_85_plus_df,
+  non_ch_flag_65_plus_df,
+  res_85_plus_df,
+  res_65_plus_df,
+  nurs_85_plus_df,
+  nurs_65_plus_df
+  )) %>% 
+  # Validate
   verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
   assert.alt(
     not_na.alt,
@@ -119,11 +196,11 @@ metrics_by_ch_type_85_split_df <- metrics_by_ch_type_85_split_df %>%
     PCT_PM_DAMN,
     PCT_PM_FALLS
   )
-  
+
 ## Save ------------------------------------------------------------------------
 usethis::use_data(metrics_by_ch_type_85_split_df, overwrite = TRUE)
 
-# Clean-up ----------------------------------------------------------------------
+# Clean-up ---------------------------------------------------------------------
 
 # Disconnect
 DBI::dbDisconnect(con)

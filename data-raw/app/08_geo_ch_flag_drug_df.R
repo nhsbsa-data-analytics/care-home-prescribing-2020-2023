@@ -3,7 +3,7 @@
 library(dplyr)
 library(dbplyr)
 
-
+# Metadata
 base_table <- "INT646_BASE_20200401_20250331"
 start_year <- substring(base_table, 13, 16)
 end_year <- substring(base_table, 22, 25)
@@ -17,9 +17,9 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 fact_db <- con %>%
   tbl(from = in_schema("DALL_REF", base_table))
 
+# Row validation calculation ---------------------------------------------------
 
-# Row validation calculation ----------------------------------------------
-
+# Distinct count of geography categories
 distinct_counts <- fact_db %>% 
   summarise(
     across(
@@ -34,15 +34,14 @@ distinct_counts <- fact_db %>%
     \(x, idx) assign(idx, x, envir = .GlobalEnv)
   )
 
-EXPECTED_ROWS <- EXPECTED_YEARS * (
-  EXPECTED_PCD_REGION_CODES +
-    EXPECTED_PCD_ICB_CODES +
-    EXPECTED_PCD_LAD_CODES - 
-    1                 # City of London has no CH activity
-) * (
-    50 + 50 + 50 + 21 # Top 50 per BNF part, but only 21 Chapters
-  ) *
-  6                   # 6 metrics
+# Expected rows for final table
+EXPECTED_ROWS <- EXPECTED_YEARS *
+  # All geography combinations
+  (EXPECTED_PCD_REGION_CODES + EXPECTED_PCD_ICB_CODES + EXPECTED_PCD_LAD_CODES) * 
+  # Top 50 per BNF part, but only 21 Chapters
+  (50 + 50 + 50 + 21 ) *
+  # 6 metrics
+  6                   
 
 # BNF columns
 bnf_cols = c(
@@ -308,23 +307,15 @@ get_geo_bnf_ppm = function(index){
     )
 }
 
-# Get ppm results: ~40 mins
+# Get ppm results: ~30 mins
 ppm_results = lapply(1:nrow(all_levels), get_geo_bnf_ppm) %>% bind_rows()
 
-# Part Four: bind results and left-join pat count and save ---------------------
+# Part Four: bind results and left-join pat count ------------------------------
 
 # Bind both both outputs
-mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>% 
+output = rbind(prop_results, ppm_results) %>% 
   left_join(pat_results) %>% 
   mutate(
-    GEOGRAPHY_CHILD = case_when(
-      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bNHS\\b ", "", GEOGRAPHY_CHILD),
-      TRUE ~ GEOGRAPHY_CHILD
-    ),
-    GEOGRAPHY_CHILD = case_when(
-      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bICB\\b", "", GEOGRAPHY_CHILD),
-      TRUE ~ GEOGRAPHY_CHILD
-    ),
     GEOGRAPHY_PARENT = case_when(
       GEOGRAPHY_PARENT == "PCD_REGION_NAME" ~ "Region",
       GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ "ICS",
@@ -345,12 +336,60 @@ mod_geo_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
       METRIC == "TOTAL_NIC" ~ "Total annual drug cost"
     ),
     PATS = ifelse(is.na(PATS), 0, PATS)
-  ) %>%
+  )
+
+# Part Five: ensure all permutations present -----------------------------------
+
+# Final year month value
+end_year_month = substring(base_table, 22, 27)
+
+# Get geo data
+get_geo_data_mod8 = function(pcd_col, parent_col){
+  
+  con %>%
+    tbl(from = in_schema("DALL_REF", base_table)) %>% 
+    filter(YEAR_MONTH == end_year_month) %>% 
+    select(starts_with(pcd_col)) %>% 
+    distinct() %>% 
+    collect() %>% 
+    filter(!is.na(.[[pcd_col]])) %>% 
+    rename("GEOGRAPHY_CHILD" = pcd_col) %>% 
+    mutate(GEOGRAPHY_PARENT = parent_col)
+}
+
+# Get data for each geography in same format
+distinct_geo <- do.call(rbind, list(
+  get_geo_data_mod8("PCD_REGION_NAME", "Region"),
+  get_geo_data_mod8("PCD_ICB_NAME", "ICS"),
+  get_geo_data_mod8("PCD_LAD_NAME", "Local Authority")
+  ))
+
+# Distinct combinations of other fields
+distinct_info = output %>% 
+  select(FY, BNF_PARENT, BNF_CHILD, METRIC) %>% 
+  distinct()
+
+# Cross join and then left join
+mod_geo_ch_flag_drug_df = cross_join(distinct_info, distinct_geo) %>% 
+  left_join(output) %>% 
+  mutate(
+    VALUE = ifelse(is.na(VALUE), 0, VALUE),
+    PATS = ifelse(is.na(PATS), 0, PATS),
+    GEOGRAPHY_CHILD = case_when(
+      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bNHS\\b ", "", GEOGRAPHY_CHILD),
+      TRUE ~ GEOGRAPHY_CHILD
+    ),
+    GEOGRAPHY_CHILD = case_when(
+      GEOGRAPHY_PARENT == "PCD_ICB_NAME" ~ gsub("\\bICB\\b", "", GEOGRAPHY_CHILD),
+      TRUE ~ GEOGRAPHY_CHILD
+    )
+  ) %>% 
+  select(names(output)) %>% 
   verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
-  assert.alt(not_na.alt, VALUE, PATS)# %>%
-  # TODO: move to mod
-  # Remove Isles of Scilly
-  # filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
+  assert.alt(not_na.alt, VALUE, PATS)
+# TODO: move to mod
+# Remove Isles of Scilly
+# filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
 
 # Use this
 usethis::use_data(mod_geo_ch_flag_drug_df, overwrite = TRUE)
@@ -359,8 +398,10 @@ usethis::use_data(mod_geo_ch_flag_drug_df, overwrite = TRUE)
 # Part Five: pre-compute download data -----------------------------------------
 # Computing this on the fly takes ~60s, so compute and save for instant download
 
+# Additional functions
 source("R/utils_helpers.R")
 
+# Pivot data from tall to wide for mod data download
 bnf_level_prescribing_estimates_in_care_homes_df <- mod_geo_ch_flag_drug_df %>%
   tidyr::pivot_wider(
     names_from = "METRIC",

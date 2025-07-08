@@ -217,7 +217,15 @@ mod_ch_flag_drug_df = rbind(prop_results, ppm_results) %>%
     )
   ) %>%
   verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
-  assert.alt(not_na.alt, VALUE)
+  assert.alt(
+    not_na.alt,
+    FY,
+    CH_FLAG,
+    BNF_PARENT,
+    BNF_CHILD,
+    METRIC,
+    VALUE
+    )
 
 # Use this
 usethis::use_data(mod_ch_flag_drug_df, overwrite = TRUE)
