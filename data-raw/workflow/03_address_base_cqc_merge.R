@@ -44,6 +44,7 @@ cqc_dedup_db <- cqc_db %>%
     is.na(DEREGISTRATION_DATE) | 
       DEREGISTRATION_DATE >= TO_DATE(start_date, "YYYY-MM-DD")
   ) %>% 
+  addressMatchR::tidy_postcode(POSTCODE) %>% 
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
   window_order(!!!syms(order_cols)) %>% 
   # After arranging by date columns, we fill NA values downwards by carrying the
@@ -168,9 +169,12 @@ ab_plus_cqc_db = ab_plus_db %>%
   # either/all of: up to 3 variants in AB table and 1 variant in CQC table;
   # label not included due to potential for overlap) ...and keep one UPRN per
   # unique SLA (in case any SLAs have 2+ UPRNs)
+  addressMatchR::tidy_postcode(POSTCODE) %>% 
+  mutate(NOT_NA = ifelse(!is.na(LOCATION_ID) & !is.na(UPRN), 1, 0)) %>%
   group_by(POSTCODE, SINGLE_LINE_ADDRESS) %>%
-  slice_max(order_by = UPRN, with_ties = FALSE) %>% 
+  slice_max(order_by = tibble("NOT_NA", "UPRN"), with_ties = FALSE) %>% 
   ungroup() %>% 
+  select(-NOT_NA) %>% 
   assert.alt(
     is_uniq.alt,
     UPRN,
@@ -182,7 +186,6 @@ ab_plus_cqc_db = ab_plus_db %>%
     AB_DATE = ab_epoch,
     CQC_DATE = cqc_date
   ) %>% 
-  personMatchR::format_postcode_db(POSTCODE) %>%
   # There can be multiple identical rows following the postcode formatting, which
   # replaces commonly mistaken characters following some postcode logic
   distinct()

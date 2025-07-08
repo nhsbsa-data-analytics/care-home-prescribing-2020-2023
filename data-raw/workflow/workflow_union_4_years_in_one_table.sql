@@ -8,8 +8,6 @@ union all
 select '2023/24' fy, y4.* from adnsh.int646_base_20230401_20240331 y4 
 ;
 
-grant select on int646_base_20200401_20240331 to migar, adnsh, mamcp;
-
 create index int646_i01 on int646_base_20200401_20240331 (fy);
 create index int646_i02 on int646_base_20200401_20240331 (fy, year_month);
 
