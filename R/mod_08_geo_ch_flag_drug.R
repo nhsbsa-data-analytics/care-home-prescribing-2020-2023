@@ -465,6 +465,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_CHILD == input$input_region_bnf_child,
           METRIC == input$input_region_metric
         ) %>%
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
@@ -498,6 +499,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_CHILD == input$input_ics_bnf_child,
           METRIC == input$input_ics_metric
         ) %>%
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
@@ -531,6 +533,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_CHILD == input$input_lad_bnf_child,
           METRIC == input$input_lad_metric
         ) %>%
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
