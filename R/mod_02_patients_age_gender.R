@@ -30,8 +30,7 @@ mod_02_patients_age_gender_ui <- function(id){
                         full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("patients_by_fy_geo_age_gender_chart"), height = "350px"),
-      shiny::htmlOutput(outputId = ns("caption")),
-      mod_nhs_download_ui(id = ns("download_data"))
+      shiny::htmlOutput(outputId = ns("caption"))
     )
   )
 }
@@ -319,17 +318,6 @@ mod_02_patients_age_gender_server <- function(id){
         )
     }
     
-    # Download button
-    mod_nhs_download_server(
-      id = "download_data",
-      filename = "Demographics of care home prescribing.xlsx",
-      export_data = create_download_data(
-        patients_by_fy_geo_age_gender_df
-      ),
-      number_xl_fmt_str = "#,##0",
-      percent_xl_fmt_str = "#0.0%"
-    )
-
     # Filter out unknown genders for the plot and format
     patients_by_fy_geo_age_gender_plot_df <- reactive({
       req(input$fy)
@@ -499,6 +487,28 @@ mod_02_patients_age_gender_server <- function(id){
         )
       })
  
+    # Download button
+    mod_nhs_download_server(
+      id = "download_data",
+      filename = "Demographics of care home prescribing.xlsx",
+      export_data = create_download_data(
+        patients_by_fy_geo_age_gender_df
+      ),
+      number_xl_fmt_str = "#,##0",
+      percent_xl_fmt_str = "#0.0%"
+    )
+    
+    observeEvent(
+      patients_by_fy_geo_age_gender_df,
+      once = TRUE, {
+        req(patients_by_fy_geo_age_gender_df)
+        
+        insertUI(
+          selector = ".nhsuk-card__description:eq(1)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
+      })
   })
 }
     

@@ -63,10 +63,7 @@ mod_07_ch_flag_drug_ui <- function(id) {
         then rounded to 2 decimal places.",
         tags$br(),
         "All other values are rounded to 2 decimal places."
-      ),
-      
-      # Data download
-      mod_nhs_download_ui(id = ns("download_data"))
+      )
     )
   )
 }
@@ -265,6 +262,18 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"
     )
+    
+    observeEvent(
+      download_data,
+      once = TRUE, {
+        req(download_data)
+        
+        insertUI(
+          selector = ".nhsuk-card__description:eq(5)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
+      })
   })
 }
 

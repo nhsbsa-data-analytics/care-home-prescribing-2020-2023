@@ -269,11 +269,6 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           )
         )
       ),
-
-      # Data download option
-      mod_nhs_download_ui(
-        id = ns("download_data")
-      )
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
   )
@@ -855,7 +850,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 dplyr::starts_with("Total"), bespoke_round
               )
             )
-
+          print(nrow(data))
           # Need to start a new chain to prevent dplyr trying to arrange the
           # original longer vectors
           data %>%
@@ -887,5 +882,17 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"
     )
+    
+    observeEvent(
+      carehomes2::mod_geo_ch_flag_drug_df,
+      once = TRUE, {
+      req(carehomes2::mod_geo_ch_flag_drug_df)
+      
+      insertUI(
+        selector = ".nhsuk-card__description:eq(6)",
+        where = "beforeEnd",
+        ui = mod_nhs_download_ui(ns("download_data"))
+      )
+    })
   })
 }
