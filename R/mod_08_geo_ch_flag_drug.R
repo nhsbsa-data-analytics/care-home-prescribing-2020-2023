@@ -387,9 +387,12 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Select Inputs ------------------------------------------------------------
 
+    mod_geo_ch_flag_drug_df <- carehomes2::mod_geo_ch_flag_drug_df %>% 
+      dplyr::filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
+    
     # BNF lookup to speed up filtering
     region_lookup <- reactive({
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Region") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
@@ -398,7 +401,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # BNF lookup to speed up filtering
     ics_lookup = reactive({
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
@@ -407,7 +410,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # BNF lookup to speed up filtering
     lad_lookup = reactive({
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
@@ -457,7 +460,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region: df after 4 initial filters applied
     region_df = reactive({
       # Filter, pivot and rename
-      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "Region",
@@ -491,7 +494,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     ics_df = reactive({
 
       # Filter, pivot an rename
-      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "ICS",
@@ -525,7 +528,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     lad_df = reactive({
 
       # Filter, pivot an rename
-      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "Local Authority",
@@ -850,7 +853,6 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 dplyr::starts_with("Total"), bespoke_round
               )
             )
-          print(nrow(data))
           # Need to start a new chain to prevent dplyr trying to arrange the
           # original longer vectors
           data %>%
@@ -878,7 +880,10 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     mod_nhs_download_server(
       id = "download_data",
       filename = "BNF-level prescribing estimates in care homes.xlsx",
-      export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
+      export_data = create_download_data(
+        carehomes2::mod_geo_ch_flag_drug_df %>% 
+          dplyr::filter(GEOGRAPHY_CHILD != "Isles of Scilly")
+      ),
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"
     )
