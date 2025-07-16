@@ -416,6 +416,7 @@ bnf_level_prescribing_estimates_in_care_homes_df <- mod_geo_ch_flag_drug_df %>%
 # original longer vectors
 bnf_level_prescribing_estimates_in_care_homes_df <- 
   bnf_level_prescribing_estimates_in_care_homes_df %>% 
+  dplyr::filter(GEOGRAPHY_CHILD != "Isles of Scilly") %>% 
   dplyr::arrange(
     .data$FY,
     .data$GEOGRAPHY_PARENT,

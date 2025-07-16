@@ -387,9 +387,12 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Select Inputs ------------------------------------------------------------
 
+    mod_geo_ch_flag_drug_df <- carehomes2::mod_geo_ch_flag_drug_df %>% 
+      dplyr::filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
+    
     # BNF lookup to speed up filtering
     region_lookup <- reactive({
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Region") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
@@ -398,7 +401,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # BNF lookup to speed up filtering
     ics_lookup = reactive({
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
@@ -407,7 +410,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # BNF lookup to speed up filtering
     lad_lookup = reactive({
-      carehomes2::mod_geo_ch_flag_drug_df %>%
+      mod_geo_ch_flag_drug_df %>%
         dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>%
         dplyr::select(BNF_PARENT, BNF_CHILD) %>%
         dplyr::distinct() %>%
@@ -456,8 +459,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Region: df after 4 initial filters applied
     region_df = reactive({
-      # Filter, pivot an rename
-      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
+      # Filter, pivot and rename
+      df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "Region",
@@ -465,15 +468,14 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_CHILD == input$input_region_bnf_child,
           METRIC == input$input_region_metric
         ) %>%
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
           GEOGRAPHY_CHILD,
-          `20/21` = `2020/21`,
-          `21/22` = `2021/22`,
-          `22/23` = `2022/23`,
-          `23/24` = `2023/24`
+          dplyr::starts_with("20")
         ) %>%
+        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
         dplyr::arrange(GEOGRAPHY_CHILD)
 
       if (startsWith(input$input_region_metric, "Total")) {
@@ -492,7 +494,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     ics_df = reactive({
 
       # Filter, pivot an rename
-      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "ICS",
@@ -500,15 +502,14 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_CHILD == input$input_ics_bnf_child,
           METRIC == input$input_ics_metric
         ) %>%
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
           GEOGRAPHY_CHILD,
-          `20/21` = `2020/21`,
-          `21/22` = `2021/22`,
-          `22/23` = `2022/23`,
-          `23/24` = `2023/24`
+          dplyr::starts_with("20")
         ) %>%
+        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
         dplyr::arrange(GEOGRAPHY_CHILD)
 
       if (startsWith(input$input_ics_metric, "Total")) {
@@ -527,7 +528,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     lad_df = reactive({
 
       # Filter, pivot an rename
-      df <- carehomes2::mod_geo_ch_flag_drug_df %>%
+      df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
           GEOGRAPHY_PARENT == "Local Authority",
@@ -535,15 +536,14 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_CHILD == input$input_lad_bnf_child,
           METRIC == input$input_lad_metric
         ) %>%
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
           GEOGRAPHY_PARENT,
           GEOGRAPHY_CHILD,
-          `20/21` = `2020/21`,
-          `21/22` = `2021/22`,
-          `22/23` = `2022/23`,
-          `23/24` = `2023/24`
+          dplyr::starts_with("20")
         ) %>%
+        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
         dplyr::arrange(GEOGRAPHY_CHILD)
 
       if (startsWith(input$input_lad_metric, "Total")) {
@@ -562,6 +562,15 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
     # Function for each table
     geo_table = function(df, df_select, metric, geo_name){
+      # reactable is limited when setting col widths based on content, e.g.
+      # numeric columns to be certain width is not possible
+      # https://github.com/glin/reactable/issues/399
+      # Instead, can build columns beforehand
+      fys <- names(dplyr::select(df, -(1:2)))
+      columns <- purrr::map(fys, \(x) reactable::colDef(width = 70)) %>%
+        stats::setNames(fys)
+      columns <- c(list(.selection = reactable::colDef(width = 15)), columns)
+      
       df %>%
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
@@ -574,13 +583,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           striped = TRUE,
           highlight = TRUE,
           borderless = FALSE,
-          columns = list(
-            .selection = reactable::colDef(width = 15),
-            `20/21` = reactable::colDef(width = 70),
-            `21/22` = reactable::colDef(width = 70),
-            `22/23` = reactable::colDef(width = 70),
-            `23/24` = reactable::colDef(width = 70)
-          ),
+          columns = columns,
           defaultColDef = reactable::colDef(
             headerClass = "my-header",
             cell = function(val, row, col_name) {
@@ -850,7 +853,6 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 dplyr::starts_with("Total"), bespoke_round
               )
             )
-          print(nrow(data))
           # Need to start a new chain to prevent dplyr trying to arrange the
           # original longer vectors
           data %>%
@@ -878,7 +880,10 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     mod_nhs_download_server(
       id = "download_data",
       filename = "BNF-level prescribing estimates in care homes.xlsx",
-      export_data = create_download_data(carehomes2::mod_geo_ch_flag_drug_df),
+      export_data = create_download_data(
+        carehomes2::mod_geo_ch_flag_drug_df %>% 
+          dplyr::filter(GEOGRAPHY_CHILD != "Isles of Scilly")
+      ),
       currency_xl_fmt_str = "£#,##0.00",
       number_xl_fmt_str = "#,##0.00"
     )
