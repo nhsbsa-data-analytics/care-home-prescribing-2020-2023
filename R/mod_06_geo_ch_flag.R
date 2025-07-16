@@ -65,8 +65,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
         tags$br(),
         "Mean drug cost PPM is rounded to the nearest GBP. All other values 
         are rounded to 2 decimal places."
-      ),
-      mod_nhs_download_ui(ns("download_data"))
+      )
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
   )
@@ -74,7 +73,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
 
 mod_06_geo_ch_flag_server <- function(id) {
   moduleServer(id, function(input, output, session) {
-    ns <- NS(id)
+    ns <- session$ns
     
     # Metric name mappings ------------------------------------------------
 
@@ -383,5 +382,17 @@ mod_06_geo_ch_flag_server <- function(id) {
       # Update previous selected row to be the current selected row
       previous_row_selected(input$table_rows_selected)
     })
+    
+    observeEvent(
+      fmt_data,
+      once = TRUE, {
+        req(fmt_data)
+        
+        insertUI(
+          selector = ".nhsuk-card__description:eq(4)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
+      })
   })
 }

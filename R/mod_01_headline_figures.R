@@ -57,11 +57,6 @@ mod_01_headline_figures_ui <- function(id) {
         style = "font-size: 9pt",
         "Patient counts are rounded to the nearest 100, while total prescription
         items and total cost (£) are rounded to the nearest 1,000."
-      ),
-      
-      # Data download option
-      mod_nhs_download_ui(
-        id = ns("download_data")
       )
     ),
     tags$div(style = "margin-top: 25vh")
@@ -183,6 +178,18 @@ mod_01_headline_figures_server <- function(id, export_data) {
       export_data = create_download_data(carehomes2::mod_headline_figures_df),
       number_xl_fmt_str = "#,##0"
     )
+    
+    observeEvent(
+      carehomes2::mod_headline_figures_df,
+      once = TRUE, {
+        req(carehomes2::mod_headline_figures_df)
+        
+        insertUI(
+          selector = ".nhsuk-card__description:eq(0)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
+      })
   })
 }
 

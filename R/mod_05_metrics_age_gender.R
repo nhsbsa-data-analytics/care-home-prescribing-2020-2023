@@ -27,8 +27,7 @@ mod_05_metrics_age_gender_ui <- function(id){
                         full_width = T)
         ),
       highcharter::highchartOutput(outputId = ns("metrics_by_gender_and_age_band_and_ch_flag_chart"), height = "350px"),
-      shiny::htmlOutput(outputId = ns("excluded_patients")),
-      mod_nhs_download_ui(id = ns("download_data"))
+      shiny::htmlOutput(outputId = ns("excluded_patients"))
     )
   )
 }
@@ -143,13 +142,6 @@ mod_05_metrics_age_gender_server <- function(id){
           `% of patient-months with 3+ falls risk medicines` = .data$PCT_PM_FALLS
         )
     }
-    
-    # Download button
-    mod_nhs_download_server(
-      id = "download_data",
-      filename = "Selected prescribing metrics by demographic.xlsx",
-      export_data = create_download_data(carehomes2::metrics_by_age_gender_and_ch_flag_df)
-    )
     
     # Define colours outside the chart
     ch_col = NHSRtheme::get_nhs_colours()["Orange"]
@@ -306,6 +298,24 @@ mod_05_metrics_age_gender_server <- function(id){
     
         })
 
+    # Download button
+    mod_nhs_download_server(
+      id = "download_data",
+      filename = "Selected prescribing metrics by demographic.xlsx",
+      export_data = create_download_data(carehomes2::metrics_by_age_gender_and_ch_flag_df)
+    )
+    
+    observeEvent(
+      carehomes2::metrics_by_age_gender_and_ch_flag_df,
+      once = TRUE, {
+        req(carehomes2::metrics_by_age_gender_and_ch_flag_df)
+        
+        insertUI(
+          selector = ".nhsuk-card__description:eq(3)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
+      })
   })
 }
 

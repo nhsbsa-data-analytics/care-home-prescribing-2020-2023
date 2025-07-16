@@ -75,14 +75,14 @@ mod_04_metrics_ch_type_ui <- function(id) {
         are rounded to 2 decimal places.",
         tags$br(),
         "Ages 65+ includes all patients aged 65 or over, even those aged over 85."
-      ),
-      mod_nhs_download_ui(id = ns("download_data"))
+      )
     )
   )
 }
 
 mod_04_metrics_ch_type_server <- function(id) {
   moduleServer(id, function(input, output, session) {
+    ns <- session$ns
 
     # Metric and UI mappings-----------------------------------------------
 
@@ -226,5 +226,17 @@ mod_04_metrics_ch_type_server <- function(id) {
       filename = "Selected prescribing metrics by care home type.xlsx",
       export_data = create_download_data(fmt_data)
     )
+    
+    observeEvent(
+      fmt_data,
+      once = TRUE, {
+        req(fmt_data)
+        
+        insertUI(
+          selector = ".nhsuk-card__description:eq(2)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
+      })
   })
 }
