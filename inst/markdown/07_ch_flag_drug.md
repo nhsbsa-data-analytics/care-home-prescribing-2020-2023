@@ -8,4 +8,4 @@ The chart below shows the 20 most common medicines at each BNF level for care ho
 
 Overall, care home patients aged 65 and over were more likely to receive drugs in the Central Nervous System Chapter than non-care home patients, whereas non-care home patients were more likely to receive drugs in the Cardiovascular chapter.
 
-In 2023/24, at a chemical substance level, Colecalciferol (Vitamin D) was the most prescribed drug to care home patients followed by Paracetamol. For non-care home patients, this was Atorvastatin (typically used to lower cholesterol). By drug cost, this was paracetamol for care home patients and apixaban (for blood clots) for non-care home patients.
+In 2024/25, at a chemical substance level, Colecalciferol (Vitamin D) was the most prescribed drug to care home patients followed by Paracetamol. For non-care home patients, this was Atorvastatin (typically used to lower cholesterol). By drug cost, this was paracetamol for care home patients and again Atorvastatin for non-care home patients.

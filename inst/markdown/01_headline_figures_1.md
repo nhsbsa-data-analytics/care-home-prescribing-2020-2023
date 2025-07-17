@@ -2,7 +2,7 @@
 
 ### Introduction
 
-In this article we provide unique insight into NHS primary care prescribing patterns for care home patients aged 65 years and over in England from 2020/21 to 2023/24.
+In this article we provide unique insight into NHS primary care prescribing patterns for care home patients aged 65 years and over in England from 2020/21 to 2024/25.
 
 Insights are provided at a national and local level, showing trends over time and variation for key prescribing metrics. The insights can help to inform policies, planning and interventions in relation to the use and management of medicines in care homes. They may be particularly useful to local authorities, ICSs, Chief Pharmacists and pharmacy teams and policy makers.
 
@@ -12,7 +12,7 @@ Patient address classification is based on experimental data linkage work. As su
 
 The estimated number of care home patients aged 65 years and over who received prescribing increased each financial year. The number of prescription items and associated drug cost also increased.
 
-In 2023/24, we estimated a monthly average __of 323,000 care home patients aged 65 years__ and over receiving prescriptions. They received an estimated 40 million prescription items at a drug cost of £396 million.
+In 2024/25, we estimated a monthly average __of 331,000 care home patients aged 65 years__ and over receiving prescriptions. They received an estimated 42 million prescription items at a drug cost of £410 million.
 
 As might be expected, __care home patients aged 65 years and over received a higher rate of prescribing__ than non-care home patients, including prescribing of drugs associated with a falls risk. Care home patients also received a different range of medicines to non-care home patients and were more likely to receive Vitamin D and drugs for pain relief. They received less prescribing of medicines associated with kidney injury compared with non-care home patients.
 
