@@ -50,7 +50,7 @@ ch_annual_cost_m = readRDS("data-raw/temp/key_findings_fy_ch_flag_df.rds") %>%
 ch_distinct_pats = base %>% 
   filter(
     CH_FLAG == 1,
-    FY == "2024/25"
+    FY == latest_fy
     ) %>% 
   group_by(NHS_NO) %>% 
   summarise() %>% 
@@ -126,7 +126,7 @@ ch_annual_prop_cost = base %>%
 latest_estimate_fy_total_ch_pats = base %>% 
   filter(
     CH_FLAG == 1,
-    FY == "2024/25"
+    FY == latest_fy
   ) %>% 
   group_by(NHS_NO) %>% 
   summarise() %>% 
@@ -168,7 +168,7 @@ chem_sub_most_items = mod_ch_flag_drug_df %>%
   filter(
     METRIC == "% of total annual number of prescription items",
     BNF_PARENT == "Chemical substance",
-    FY == "2024/25"
+    FY == latest_fy
   ) %>% 
   slice_max(by = CH_FLAG, n = 2, order_by = VALUE) %>% 
   arrange(CH_FLAG, desc(VALUE))
@@ -178,7 +178,7 @@ chem_sub_most_cost = mod_ch_flag_drug_df %>%
   filter(
     METRIC == "% of total annual drug cost",
     BNF_PARENT == "Chemical substance",
-    FY == "2024/25"
+    FY == latest_fy
   ) %>% 
   slice_max(by = CH_FLAG, n = 2, order_by = VALUE) %>% 
   arrange(CH_FLAG, desc(VALUE))
