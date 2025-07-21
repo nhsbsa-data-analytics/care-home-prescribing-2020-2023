@@ -183,8 +183,21 @@ chem_sub_most_cost = mod_ch_flag_drug_df %>%
   slice_max(by = CH_FLAG, n = 2, order_by = VALUE) %>% 
   arrange(CH_FLAG, desc(VALUE))
 
+# Save to config file -----------------------------------------------------
+
+# Saving figures for dynamic inclusion, just a couple as example
+# Each separate figure should be a single named value, so the df outputs would 
+# need processed accordingly...
+yaml::write_yaml(
+  list(
+    latest_estimate_fy_total_ch_pats = latest_estimate_fy_total_ch_pats,
+    latest_fy = latest_fy
+  ),
+  "data/latest_figures.yaml"
+)
+
 # Clean environment so only relevant data remains
-DBI::dbDisconnect(con); rm(con, base, mod_ch_flag_drug_df, mod_headline_figures_df)
+# DBI::dbDisconnect(con); rm(con, base, mod_ch_flag_drug_df, mod_headline_figures_df)
 
 # Final clean after figures extracted
-rm(list = ls()); gc()
+# rm(list = ls()); gc()

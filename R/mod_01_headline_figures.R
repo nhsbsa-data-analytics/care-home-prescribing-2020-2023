@@ -10,7 +10,7 @@
 mod_01_headline_figures_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown("inst/markdown/01_headline_figures_1.md"),
+    include_dynamic_md("inst/markdown/01_headline_figures_1.md"),
     tags$div(style = "margin-top: 25vh"),
     includeMarkdown("inst/markdown/01_headline_figures_2.md"),
     nhs_card(

@@ -2,7 +2,7 @@
 
 ### Introduction
 
-In this article we provide unique insight into NHS primary care prescribing patterns for care home patients aged 65 years and over in England from 2020/21 to 2024/25.
+In this article we provide unique insight into NHS primary care prescribing patterns for care home patients aged 65 years and over in England from 2020/21 to £>latest_figures$latest_fy<£.
 
 Insights are provided at a national and local level, showing trends over time and variation for key prescribing metrics. The insights can help to inform policies, planning and interventions in relation to the use and management of medicines in care homes. They may be particularly useful to local authorities, ICSs, Chief Pharmacists and pharmacy teams and policy makers.
 
