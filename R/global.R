@@ -9,6 +9,8 @@ latest_figures <- yaml::read_yaml("data/latest_figures.yaml")
 # 
 # This would go in utils function file or similar
 include_dynamic_md <- function(md_path) {
+  # print(md_path)
+  # if(md_path == "inst/markdown/01_headline_figures_2.md") browser()
   HTML(
     glue::glue(
       shiny::includeMarkdown(md_path),

@@ -162,7 +162,8 @@ ch_peak_pats_time = ch_peak_pats %>%
   
 # 11.3. Individual value 2
 ch_peak_pats_count = ch_peak_pats %>%
-  collect() %>% 
+  collect() %>%
+  mutate(PATS = round(PATS, -3)) %>% 
   transmute(PATS = format(PATS, big.mark = ",", scientific = FALSE)) %>% 
   pull()
 
@@ -318,9 +319,7 @@ chem_sub_non_ch_cost_rank_one = chem_sub_most_cost %>%
 
 # Save to config file -----------------------------------------------------
 
-# Saving figures for dynamic inclusion, just a couple as example
-# Each separate figure should be a single named value, so the df outputs would 
-# need processed accordingly...
+# Saving figures for dynamic inclusion
 yaml::write_yaml(
   list(
     latest_fy = latest_fy,

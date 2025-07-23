@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_13_feedback_ui <- function(id){
-  includeMarkdown("inst/markdown/13_feedback.md")
+  include_dynamic_md("inst/markdown/13_feedback.md")
 }
     
 #' 12_feedback Server Functions

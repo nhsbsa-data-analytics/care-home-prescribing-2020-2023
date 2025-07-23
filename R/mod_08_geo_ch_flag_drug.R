@@ -26,7 +26,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
 
   tagList(
     tags$style(HTML(reactable_table_css)),
-    includeMarkdown("inst/markdown/08_geo_ch_flag_drug.md"),
+    include_dynamic_md("inst/markdown/08_geo_ch_flag_drug.md"),
 
     # Overall nhs card
     nhs_card(

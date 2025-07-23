@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_14_annex_ui <- function(id){
-  includeMarkdown("inst/markdown/14_annex.md")
+  include_dynamic_md("inst/markdown/14_annex.md")
 }
     
 #' 14_annex Server Functions

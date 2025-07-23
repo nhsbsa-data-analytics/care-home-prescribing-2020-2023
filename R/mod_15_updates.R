@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_15_updates_ui <- function(id){
-  includeMarkdown("inst/markdown/15_updates.md")
+  include_dynamic_md("inst/markdown/15_updates.md")
 }
     
 #' 14_updates Server Functions

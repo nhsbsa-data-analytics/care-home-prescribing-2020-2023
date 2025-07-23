@@ -2,7 +2,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
   ns <- NS(id)
   
   tagList(
-    includeMarkdown("inst/markdown/06_geo_ch_flag.md"),
+    include_dynamic_md("inst/markdown/06_geo_ch_flag.md"),
     nhs_card(
       heading = "Estimated prescribing metrics for care home vs non-care home
                  patients aged 65 years and over in England",
