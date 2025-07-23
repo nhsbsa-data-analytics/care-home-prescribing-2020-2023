@@ -26,6 +26,7 @@ latest_fy = readRDS("data-raw/temp/key_findings_fy.rds") %>%
 ch_monthly_pats = readRDS("data-raw/temp/key_findings_fy.rds") %>% 
   filter(FY == latest_fy) %>% 
   transmute(PATS = round(PATS, -3)) %>% 
+  mutate(PATS = format(PATS, big.mark = ",", scientific = FALSE)) %>% 
   pull()
 
 # 3. Latest estimate of annual care home prescribing items in latest financial year
@@ -57,6 +58,7 @@ ch_distinct_pats = base %>%
   ungroup() %>% 
   tally() %>% 
   collect() %>% 
+  mutate(n = format(n, big.mark = ",", scientific = FALSE)) %>% 
   pull()
 
 # 6. Percentage of care home items prescribed to women across whole time frame
@@ -132,26 +134,64 @@ latest_estimate_fy_total_ch_pats = base %>%
   summarise() %>% 
   ungroup() %>% 
   tally() %>% 
-  mutate(n = round(n, -3)) %>% 
+  collect() %>% 
+  mutate(
+    n = round(n, -3),
+    n = format(n, big.mark = ",", scientific = FALSE)
+    ) %>% 
   pull()
 
-# 11. Max monthly pats
+# 11.1. Max monthly pats (df)
 ch_peak_pats = mod_headline_figures_df %>% 
   filter(
     TYPE == "Monthly sum",
     PATS == max(PATS)
     ) %>% 
+  mutate(
+    YEAR = sapply(strsplit(TIME, " - "), `[`, 1),
+    MONTH = sapply(strsplit(TIME, " - "), `[`, 2),
+    MONTH = month.name[match(MONTH, month.abb)],
+    TIME = paste0(MONTH, " ", YEAR)
+  ) %>% 
   select(TIME, PATS)
 
-# 12. Max monthly items
+# 11.2. Individual value 1
+ch_peak_pats_time = ch_peak_pats %>%
+  select(TIME) %>% 
+  pull()
+  
+# 11.3. Individual value 2
+ch_peak_pats_count = ch_peak_pats %>%
+  collect() %>% 
+  transmute(PATS = format(PATS, big.mark = ",", scientific = FALSE)) %>% 
+  pull()
+
+# 12.1. Max monthly items (df)
 ch_peak_items = mod_headline_figures_df %>% 
   filter(
     TYPE == "Monthly sum",
     ITEMS == max(ITEMS)
   ) %>% 
+  mutate(
+    YEAR = sapply(strsplit(TIME, " - "), `[`, 1),
+    MONTH = sapply(strsplit(TIME, " - "), `[`, 2),
+    MONTH = month.name[match(MONTH, month.abb)],
+    TIME = paste0(MONTH, " ", YEAR)
+  ) %>% 
   select(TIME, ITEMS)
 
-# 13. Care home type proportions
+# 12.2. Individual value 2
+ch_peak_items_time = ch_peak_items %>% 
+  select(TIME) %>% 
+  pull()
+
+# 12.3. Individual value 2
+ch_peak_items_count = ch_peak_items %>% 
+  select(ITEMS) %>% 
+  transmute(ITEMS = format(ITEMS, big.mark = ",", scientific = FALSE)) %>% 
+  pull()
+
+# 13.1. Care home type proportions (df)
 ch_type_item_prop = base %>% 
   filter(CH_FLAG == 1) %>% 
   group_by(NURSING_HOME_FLAG, RESIDENTIAL_HOME_FLAG) %>% 
@@ -160,10 +200,54 @@ ch_type_item_prop = base %>%
   collect() %>% 
   mutate(
     TOTAL_ITEMS = sum(ITEMS),
-    PROP = 100 * ITEMS / TOTAL_ITEMS
+    PROP = round(100 * ITEMS / TOTAL_ITEMS, 1)
   )
 
-# 14. Greatest % of items by ch_flag in latest year
+# 13.2. Individual value 1
+ch_type_prop_nursing = ch_type_item_prop %>% 
+  filter(
+    NURSING_HOME_FLAG == 1,
+    RESIDENTIAL_HOME_FLAG == 0
+  ) %>% 
+  select(PROP) %>% 
+  pull() %>% 
+  round(1) %>% 
+  format(nsmall = 1)
+
+# 13.3. Indiviudual value 2
+ch_type_prop_residential = ch_type_item_prop %>% 
+  filter(
+    NURSING_HOME_FLAG == 0,
+    RESIDENTIAL_HOME_FLAG == 1
+  ) %>% 
+  select(PROP) %>% 
+  pull() %>% 
+  round(1) %>% 
+  format(nsmall = 1)
+
+# 13.4. Individual value 3
+ch_type_prop_both = ch_type_item_prop %>% 
+  filter(
+    NURSING_HOME_FLAG == 1,
+    RESIDENTIAL_HOME_FLAG == 1
+  ) %>% 
+  select(PROP) %>% 
+  pull() %>% 
+  round(1) %>% 
+  format(nsmall = 1)
+
+# 13.5. Individual value 4
+ch_type_prop_neither = ch_type_item_prop %>% 
+  filter(
+    is.na(NURSING_HOME_FLAG),
+    is.na(RESIDENTIAL_HOME_FLAG)
+  ) %>% 
+  select(PROP) %>% 
+  pull() %>% 
+  round(1) %>% 
+  format(nsmall = 1)
+
+# 14.1. Greatest % of items by ch_flag in latest year (df)
 chem_sub_most_items = mod_ch_flag_drug_df %>% 
   filter(
     METRIC == "% of total annual number of prescription items",
@@ -171,9 +255,38 @@ chem_sub_most_items = mod_ch_flag_drug_df %>%
     FY == latest_fy
   ) %>% 
   slice_max(by = CH_FLAG, n = 2, order_by = VALUE) %>% 
-  arrange(CH_FLAG, desc(VALUE))
+  group_by(FY, CH_FLAG) %>% 
+  mutate(RANK = rank(desc(VALUE))) %>% 
+  ungroup()
 
-# 15. Greatest % of cost by ch_flag in latest year
+# 14.2. Individual value 1
+chem_sub_ch_items_rank_one = chem_sub_most_items %>% 
+  filter(
+    CH_FLAG == 1,
+    RANK == 1
+  ) %>% 
+  select(BNF_CHILD) %>% 
+  pull()
+
+# 14.3. Individual value 2
+chem_sub_ch_items_rank_two = chem_sub_most_items %>% 
+  filter(
+    CH_FLAG == 1,
+    RANK == 2
+  ) %>% 
+  select(BNF_CHILD) %>% 
+  pull()
+
+# 14.4. Individual value 3
+chem_sub_non_ch_items_rank_one = chem_sub_most_items %>% 
+  filter(
+    CH_FLAG == 0,
+    RANK == 1
+  ) %>% 
+  select(BNF_CHILD) %>% 
+  pull()
+
+# 15.1. Greatest % of cost by ch_flag in latest year (df)
 chem_sub_most_cost = mod_ch_flag_drug_df %>% 
   filter(
     METRIC == "% of total annual drug cost",
@@ -181,7 +294,27 @@ chem_sub_most_cost = mod_ch_flag_drug_df %>%
     FY == latest_fy
   ) %>% 
   slice_max(by = CH_FLAG, n = 2, order_by = VALUE) %>% 
-  arrange(CH_FLAG, desc(VALUE))
+  group_by(FY, CH_FLAG) %>% 
+  mutate(RANK = rank(desc(VALUE))) %>% 
+  ungroup()
+
+# 15.2.
+chem_sub_ch_cost_rank_one = chem_sub_most_cost %>% 
+  filter(
+    CH_FLAG == 1,
+    RANK == 1
+  ) %>% 
+  select(BNF_CHILD) %>% 
+  pull()
+
+# 15.3.
+chem_sub_non_ch_cost_rank_one = chem_sub_most_cost %>% 
+  filter(
+    CH_FLAG == 0,
+    RANK == 1
+  ) %>% 
+  select(BNF_CHILD) %>% 
+  pull()
 
 # Save to config file -----------------------------------------------------
 
@@ -190,14 +323,32 @@ chem_sub_most_cost = mod_ch_flag_drug_df %>%
 # need processed accordingly...
 yaml::write_yaml(
   list(
+    latest_fy = latest_fy,
+    ch_monthly_pats = ch_monthly_pats,
+    ch_annual_items_m = ch_annual_items_m,
+    ch_annual_cost_m = ch_annual_cost_m,
+    ch_distinct_pats = ch_distinct_pats,
+    ch_female_items_prop = ch_female_items_prop,
+    ch_female_85_plus_pats_prop = ch_female_85_plus_pats_prop,
+    ch_annual_prop_items = ch_annual_prop_items,
+    ch_annual_prop_cost = ch_annual_prop_cost,
     latest_estimate_fy_total_ch_pats = latest_estimate_fy_total_ch_pats,
-    latest_fy = latest_fy
+    ch_peak_pats_time = ch_peak_pats_time,
+    ch_peak_pats_count = ch_peak_pats_count,
+    ch_peak_items_time = ch_peak_items_time,
+    ch_peak_items_count = ch_peak_items_count,
+    ch_type_prop_nursing = ch_type_prop_nursing,
+    ch_type_prop_residential = ch_type_prop_residential,
+    ch_type_prop_both = ch_type_prop_both,
+    ch_type_prop_neither = ch_type_prop_neither,
+    chem_sub_ch_items_rank_one = chem_sub_ch_items_rank_one,
+    chem_sub_ch_items_rank_two = chem_sub_ch_items_rank_two,
+    chem_sub_non_ch_items_rank_one = chem_sub_non_ch_items_rank_one,
+    chem_sub_ch_cost_rank_one = chem_sub_ch_cost_rank_one,
+    chem_sub_non_ch_cost_rank_one = chem_sub_non_ch_cost_rank_one
   ),
   "data/latest_figures.yaml"
 )
 
-# Clean environment so only relevant data remains
-# DBI::dbDisconnect(con); rm(con, base, mod_ch_flag_drug_df, mod_headline_figures_df)
-
-# Final clean after figures extracted
-# rm(list = ls()); gc()
+# Clean environment
+DBI::dbDisconnect(con); rm(list = ls()); gc()

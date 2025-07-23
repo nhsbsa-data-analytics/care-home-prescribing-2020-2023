@@ -12,7 +12,7 @@ Patient address classification is based on experimental data linkage work. As su
 
 The estimated number of care home patients aged 65 years and over who received prescribing increased each financial year. The number of prescription items and associated drug cost also increased.
 
-In 2024/25, we estimated a monthly average __of 331,000 care home patients aged 65 years__ and over receiving prescriptions. They received an estimated 42 million prescription items at a drug cost of £410 million.
+In £>latest_figures$latest_fy<£, we estimated a monthly average __of £>latest_figures$ch_monthly_pats<£ care home patients aged 65 years__ and over receiving prescriptions. They received an estimated £>latest_figures$ch_annual_items_m<£ million prescription items at a drug cost of ££>latest_figures$ch_annual_cost_m<£ million.
 
 As might be expected, __care home patients aged 65 years and over received a higher rate of prescribing__ than non-care home patients, including prescribing of drugs associated with a falls risk. Care home patients also received a different range of medicines to non-care home patients and were more likely to receive Vitamin D and drugs for pain relief. They received less prescribing of medicines associated with kidney injury compared with non-care home patients.
 
