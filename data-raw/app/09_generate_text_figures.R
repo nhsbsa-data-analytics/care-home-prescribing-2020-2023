@@ -188,7 +188,7 @@ ch_peak_items_time = ch_peak_items %>%
 # 12.3. Individual value 2
 ch_peak_items_count = ch_peak_items %>% 
   select(ITEMS) %>% 
-  transmute(ITEMS = format(ITEMS, big.mark = ",", scientific = FALSE)) %>% 
+  transmute(ITEMS = signif(ITEMS, 2) / 1000000) %>% 
   pull()
 
 # 13.1. Care home type proportions (df)
