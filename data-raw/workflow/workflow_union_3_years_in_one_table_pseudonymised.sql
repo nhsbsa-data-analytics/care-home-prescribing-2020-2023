@@ -36,8 +36,6 @@ left join (
 ) opdd
 on base.bsa_postcode = opdd.postcode;
 
-grant select on int646_base_20200401_20230331_pseudo to migar, adnsh, mamcp;
-
 -- Must ensure each index is uniquely named with schema, so append _pseudo
 create index int646_i01_pseudo on int646_base_20200401_20230331_pseudo (fy);
 create index int646_i02_pseudo on int646_base_20200401_20230331_pseudo (fy, year_month);
