@@ -3,7 +3,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
   tagList(
     gsub(
       "&gt;", ">", 
-      gsub("&lt;", "<", includeMarkdown("inst/markdown/04_metrics_ch_type.md"))
+      gsub("&lt;", "<", include_dynamic_md("inst/markdown/04_metrics_ch_type.md"))
     ),
     nhs_card(
       heading = "Estimated prescribing metrics by prescribing setting for 

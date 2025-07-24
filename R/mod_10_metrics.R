@@ -8,7 +8,7 @@
 #'
 mod_10_metrics_ui <- function(id){
   tagList(
-    includeMarkdown("inst/markdown/10_metrics_1.md"),
+    include_dynamic_md("inst/markdown/10_metrics_1.md"),
     HTML(
       tibble::tribble(
         ~Patient, ~Month,      ~`Prescription items`,  ~`Unique medicines`,
@@ -29,7 +29,7 @@ mod_10_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    includeMarkdown("inst/markdown/10_metrics_2.md"),
+    include_dynamic_md("inst/markdown/10_metrics_2.md"),
     HTML(
       tibble::tribble(
         ~`BNF Level`,          ~Category,   ~Name,
@@ -44,7 +44,7 @@ mod_10_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    includeMarkdown("inst/markdown/10_metrics_3.md"),
+    include_dynamic_md("inst/markdown/10_metrics_3.md"),
     HTML(
       tibble::tribble(
         ~`Metric name`,                                      ~`Metric Type`,    ~Numerator,                                                                      ~Denominator,                                                    ~Description,
@@ -64,7 +64,7 @@ mod_10_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    includeMarkdown("inst/markdown/10_metrics_4.md")
+    include_dynamic_md("inst/markdown/10_metrics_4.md")
   )
 }
     

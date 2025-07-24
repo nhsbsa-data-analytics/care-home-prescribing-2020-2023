@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_09_final_thoughts_ui <- function(id){
-  includeMarkdown("inst/markdown/09_final_thoughts.md")
+  include_dynamic_md("inst/markdown/09_final_thoughts.md")
 }
     
 #' 09_metrics Server Functions
