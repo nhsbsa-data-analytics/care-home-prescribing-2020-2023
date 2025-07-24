@@ -3,6 +3,27 @@
 library(dplyr)
 library(dbplyr)
 
+# Helper function to ensure rounding equals to 100 percent (only used here)
+round_to_100 <- function(x) {
+  
+  # Calculate difference to 100
+  x_round = round(x, 1)
+  diff <- 100 - sum(x_round)
+
+  # Adjust to ensure sum is exactly 100
+  if (diff != 0) {
+    ord <- order(x - x_round, decreasing = diff > 0)
+    for (i in ord) {
+      if (diff == 0) break
+      x_round[i] <- x_round[i] + sign(diff) * 0.1
+      diff <- 100 - sum(x_round)
+    }
+  }
+  
+  # Return
+  x_round
+}
+
 # Connect to dalp
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
 
@@ -195,14 +216,20 @@ ch_peak_items_count = ch_peak_items %>%
 # 13.1. Care home type proportions (df)
 ch_type_item_prop = base %>% 
   filter(CH_FLAG == 1) %>% 
-  group_by(NURSING_HOME_FLAG, RESIDENTIAL_HOME_FLAG) %>% 
-  summarise(ITEMS = sum(ITEM_COUNT)) %>% 
+  group_by(YEAR_MONTH, NURSING_HOME_FLAG, RESIDENTIAL_HOME_FLAG) %>% 
+  summarise(PATS = n_distinct(NHS_NO)) %>% 
   ungroup() %>% 
   collect() %>% 
+  group_by(YEAR_MONTH) %>% 
   mutate(
-    TOTAL_ITEMS = sum(ITEMS),
-    PROP = round(100 * ITEMS / TOTAL_ITEMS, 1)
-  )
+    TOTAL_PATS = sum(PATS),
+    PROP = 100 * PATS / TOTAL_PATS, 1
+  ) %>% 
+  ungroup() %>% 
+  group_by(NURSING_HOME_FLAG, RESIDENTIAL_HOME_FLAG) %>% 
+  summarise(PROP = mean(PROP)) %>% 
+  ungroup() %>% 
+  mutate(PROP = round_to_100(PROP))
 
 # 13.2. Individual value 1
 ch_type_prop_nursing = ch_type_item_prop %>% 
