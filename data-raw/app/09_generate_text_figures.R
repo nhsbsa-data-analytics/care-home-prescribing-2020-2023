@@ -214,7 +214,7 @@ ch_peak_items_count = ch_peak_items %>%
   pull()
 
 # 13.1. Care home type proportions (df)
-ch_type_item_prop = base %>% 
+ch_type_patient_prop = base %>% 
   filter(CH_FLAG == 1) %>% 
   group_by(YEAR_MONTH, NURSING_HOME_FLAG, RESIDENTIAL_HOME_FLAG) %>% 
   summarise(PATS = n_distinct(NHS_NO)) %>% 
@@ -232,7 +232,7 @@ ch_type_item_prop = base %>%
   mutate(PROP = round_to_100(PROP))
 
 # 13.2. Individual value 1
-ch_type_prop_nursing = ch_type_item_prop %>% 
+ch_type_prop_nursing = ch_type_patient_prop %>% 
   filter(
     NURSING_HOME_FLAG == 1,
     RESIDENTIAL_HOME_FLAG == 0
@@ -243,7 +243,7 @@ ch_type_prop_nursing = ch_type_item_prop %>%
   format(nsmall = 1)
 
 # 13.3. Indiviudual value 2
-ch_type_prop_residential = ch_type_item_prop %>% 
+ch_type_prop_residential = ch_type_patient_prop %>% 
   filter(
     NURSING_HOME_FLAG == 0,
     RESIDENTIAL_HOME_FLAG == 1
@@ -254,7 +254,7 @@ ch_type_prop_residential = ch_type_item_prop %>%
   format(nsmall = 1)
 
 # 13.4. Individual value 3
-ch_type_prop_both = ch_type_item_prop %>% 
+ch_type_prop_both = ch_type_patient_prop %>% 
   filter(
     NURSING_HOME_FLAG == 1,
     RESIDENTIAL_HOME_FLAG == 1
@@ -265,7 +265,7 @@ ch_type_prop_both = ch_type_item_prop %>%
   format(nsmall = 1)
 
 # 13.5. Individual value 4
-ch_type_prop_neither = ch_type_item_prop %>% 
+ch_type_prop_neither = ch_type_patient_prop %>% 
   filter(
     is.na(NURSING_HOME_FLAG),
     is.na(RESIDENTIAL_HOME_FLAG)
