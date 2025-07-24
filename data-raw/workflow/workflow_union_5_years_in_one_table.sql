@@ -92,8 +92,6 @@ from
 -- 3. Indexes
 
 /*
-grant select on int646_base_20200401_20250331 to migar, adnsh, mamcp;
-
 create index int646_i01 on int646_base_20200401_20250331 (fy);
 create index int646_i02 on int646_base_20200401_20250331 (fy, year_month);
 
