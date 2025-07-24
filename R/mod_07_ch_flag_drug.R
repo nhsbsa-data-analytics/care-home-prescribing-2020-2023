@@ -11,7 +11,7 @@
 mod_07_ch_flag_drug_ui <- function(id) {
   ns <- NS(id)
   tagList(
-    includeMarkdown("inst/markdown/07_ch_flag_drug.md"),
+    include_dynamic_md("inst/markdown/07_ch_flag_drug.md"),
     
     nhs_card(
       heading = "National BNF-level prescribing estimates for care home patients

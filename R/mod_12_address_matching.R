@@ -8,7 +8,7 @@
 #'
 #' @importFrom shiny NS tagList 
 mod_12_address_matching_ui <- function(id){
-  includeMarkdown("inst/markdown/12_address_matching.md")
+  include_dynamic_md("inst/markdown/12_address_matching.md")
 }
     
 #' 12_address_matching Server Function

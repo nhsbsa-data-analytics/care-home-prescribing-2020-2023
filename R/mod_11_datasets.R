@@ -7,7 +7,7 @@
 #' @noRd 
 #'
 mod_11_datasets_ui <- function(id){
-  includeMarkdown("inst/markdown/11_datasets.md")
+  include_dynamic_md("inst/markdown/11_datasets.md")
 }
     
 #' 11_datasets Server Functions
