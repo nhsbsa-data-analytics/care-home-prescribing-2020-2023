@@ -58,13 +58,17 @@ a {
   z-index: 9999;
 }
 
-table:not(.dataTable) thead tr{
+table:not(.dataTable) thead tr {
   color: white;
   background-color: #005EB8CC;
 }
 
-table:not(.dataTable) tbody:nth-child(odd){
+table:not(.dataTable) tbody:nth-child(odd) {
   background-color: #005EB81F;
+}
+
+table.dataTable th {
+  font-size: 12px;
 }
 
 /* Remove everything except y-axis and labels and text for first chart */
