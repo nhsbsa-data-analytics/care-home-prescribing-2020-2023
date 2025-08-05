@@ -59,7 +59,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
         class = "highcharts-caption",
         style = "font-size: 9pt;",
         "The table shows figures for both Care Home (CH) and Non-Care Home (NCH)
-         patients",
+         patients.",
         tags$br(),
         "Clicking a row in the table will outline the selected area on the maps.",
         tags$br(),
