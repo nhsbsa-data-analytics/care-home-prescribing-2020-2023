@@ -58,7 +58,10 @@ mod_06_geo_ch_flag_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
-        "Clicking a row will outline the selected area on the maps.",
+        "The table shows figures for both Care Home (CH) and Non-Care Home (NCH)
+         patients",
+        tags$br(),
+        "Clicking a row in the table will outline the selected area on the maps.",
         tags$br(),
         "The Isles of Scilly were removed due to the number of care homes in the
          Local Authority.",
@@ -220,8 +223,13 @@ mod_06_geo_ch_flag_server <- function(id) {
     # JS with the order in an `arrange`d table, but in this case the data is 
     # already well-ordered, so best solution is to just remove arrange.
     create_datatable <- function(data) {
+      
       tdata <- data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>%
+        # Arrange so that CH comes before NCH
+        dplyr::group_by(.data$FY, .data$GEOGRAPHY) %>% 
+        dplyr::arrange(dplyr::desc(.data$CH_FLAG), .by_group = TRUE) %>% 
+        dplyr::ungroup() %>% 
         dplyr::mutate(
           .data$FY,
           CH_FLAG = dplyr::case_match(
@@ -237,31 +245,43 @@ mod_06_geo_ch_flag_server <- function(id) {
           names_from = dplyr::all_of(c("FY", "CH_FLAG")),
           values_from = .data[[input$metric]],
           names_sep = " "
-        ) %>%
-        # Move CH cols left of sub-geography column, so it is in centre col
-        dplyr::relocate(
-          dplyr::matches(" CH"),
-          .before = !!rlang::sym(input$geography)
-        ) %>%
-        # Apply styling for header names, also remove the extraneous CH/NCH
-        # NOTE: cannot have identical col names, so we use an extra space for
-        # one set
-        dplyr::rename_with(
-          \(cols) purrr::map_vec(
-            cols,
-            \(col) {
-              span(
-                class = "nhsuk-body-s",
-                style = "font-size: 12px;",
-                gsub("^20", "", gsub(" NCH", " ", gsub(" CH", "", col)))
-              ) %>%
-                as.character()
-            }
-          )
         )
       
+      first_header_row <- HTML("
+        <tr>
+          <th rowspan='2' width='10%'>Area</th>
+          <th class='dt-center' colspan='2'>20/21</th>
+          <th class='dt-center' colspan='2'>21/22</th>
+          <th class='dt-center' colspan='2'>22/23</th>
+          <th class='dt-center' colspan='2'>23/24</th>
+          <th class='dt-center' colspan='2'>24/25</th>
+        </tr>
+      ")
+      second_header_row <- HTML("
+        <tr>
+          <th>CH</th>
+          <th>NCH</th>
+          <th>CH</th>
+          <th>NCH</th>
+          <th>CH</th>
+          <th>NCH</th>
+          <th>CH</th>
+          <th>NCH</th>
+          <th>CH</th>
+          <th>NCH</th>
+        </tr>
+      ")
+      header <- HTML(
+        glue::glue("
+          <thead>
+            {first_header_row}
+            {second_header_row}
+          </thead>
+        ")
+      )
+      
       table_container <- tags$table(
-        DT::tableHeader(tdata, escape = FALSE),
+        header,
         DT::tableFooter(
           purrr::map(
             tdata,
@@ -277,12 +297,6 @@ mod_06_geo_ch_flag_server <- function(id) {
           )
         )
       )
-      
-      # Over-ride CSS in NHS front-end toolkit
-      table_container <- htmltools::tagQuery(table_container)$
-        find("tfoot>tr>th")$
-        addAttrs("style" = "font-size: 12px;")$
-        allTags()
       
       # Callback to handle empty cells and display as NA
       rowCallback <- c(
