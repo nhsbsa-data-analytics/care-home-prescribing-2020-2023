@@ -195,6 +195,11 @@ over_65_db <- fact_join_db %>%
     HAS_ALL = !is.na(CALC_AGE) & !is.na(NHS_NO) & !is.na(POSTCODE),
     .by = FY
   )
+
+final_db <- bind_rows(
+  all_ages_db,
+  over_65_db
+)
   
 
 # Part three: stack paper and eps info and save --------------------------------
@@ -202,13 +207,13 @@ over_65_db <- fact_join_db %>%
 # Print that table has been created
 print("Output being computed to be written back to the db ...")
 
-table_name = patient_tbl
+table_name = "EDA_AGE_NHSNO_POSTCODE_COMBINATIONS"
 
 # Drop table if it exists already
 drop_table_if_exists_db(table_name)
 
 # Just format postcode
-fact_join_db %>% 
+final_db %>% 
   compute_with_parallelism(table_name, 32)
 
 # Grant access
