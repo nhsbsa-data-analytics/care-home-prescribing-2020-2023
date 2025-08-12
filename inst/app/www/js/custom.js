@@ -85,6 +85,22 @@ $(document).ready(function () {
       });
     }
   );
+  
+  
+  // Sync footer with main table for mod_06
+  const mainTableElementSelector = '#geo_ch_flag-main_table table';
+  var resizeTimer;
+
+  $(window).on('resize', function() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function() {
+      if ($.fn.DataTable && $.fn.DataTable.isDataTable(mainTableElementSelector)) {
+        $(mainTableElementSelector).dataTable().api().columns.adjust();
+      }
+      syncColumnWidths();
+      syncScrolls();
+    }, 150);
+  });
 });
 
 
@@ -142,3 +158,52 @@ var internalLink = function(tabName, id) {
     };
   }
 };
+
+
+// Sync column widths between main and footer tables for mod_06
+function syncColumnWidths() {
+  setTimeout(function() {
+    const mainTableSelector = '#geo_ch_flag-main_table';
+    const footerTableSelector = '#geo_ch_flag-footer_table';
+    
+    const mainScrollBody = $(mainTableSelector + ' .dataTables_scrollBody');
+    const footerScrollBody = $(footerTableSelector + ' .dataTables_scrollBody');
+    const mainHeaderTable = $(mainTableSelector + ' .dataTables_scrollHeadInner table');
+    const footerTableElement = $(footerTableSelector + ' table');
+    const mainHeaders = $(mainTableSelector + ' .dataTables_scrollHead th');
+    const footerCells = $(footerTableSelector + ' tr:has(td):first td');
+
+    if (mainScrollBody.length === 0 || mainHeaders.length === 0) {
+      return;
+    }
+
+    const correctContainerWidth = mainScrollBody.get(0).clientWidth;
+    footerScrollBody.css('width', correctContainerWidth + 'px');
+    
+    const correctContentWidth = mainHeaderTable.outerWidth();
+    footerTableElement.css('width', correctContentWidth + 'px');
+
+    if (mainHeaders.length === footerCells.length) {
+      mainHeaders.each(function(index) {
+        const headerWidth = $(this).outerWidth();
+        footerCells.eq(index).css({
+          'box-sizing': 'border-box',
+          'width': headerWidth + 'px'
+        });
+      });
+    }
+  }, 50);
+}
+
+
+// Sync scrolling between main and footer tables for mod_06
+function syncScrolls() {
+  const mainScrollBody = '#geo_ch_flag-main_table .dataTables_scrollBody';
+  const footerScrollBody = '#geo_ch_flag-footer_table .dataTables_scrollBody';
+  
+  if ($(mainScrollBody).length > 0) {
+    $(mainScrollBody).off('scroll.dtSync').on('scroll.dtSync', function() {
+      $(footerScrollBody).scrollLeft($(this).scrollLeft());
+    });
+  }
+}
