@@ -45,7 +45,7 @@ The NHSBSA periodically investigate the accuracy of NHS numbers captured from pa
 
 ### Lookup address
 
-Patient geography information was determined using the [National Statistics Postcode Lookup](https://geoportal.statistics.gov.uk/datasets/9ac0331178b0435e839f62f41cc61c16/about) (NSPL) from the [ONS Open Geography portal](https://geoportal.statistics.gov.uk/). An NHS region, Integrated Care System (ICS) or Local Authority could not be attributed to a patient address record if they had an unknown postcode, or if their postcode was not contained within the NSPL. We use 2022 boundaries for NHS regions and ICSs. For Local Authorities we use 2021 boundaries.
+Patient geography information was determined using the latest available [National Statistics Postcode Lookup](https://www.ons.gov.uk/methodology/geography/geographicalproducts/postcodeproducts) (NSPL) from the [ONS Open Geography portal](https://geoportal.statistics.gov.uk/). An NHS region, Integrated Care System (ICS) or Local Authority could not be attributed to a patient address record if they had an unknown postcode, or if their postcode was not contained within the NSPL. We use 2023 boundaries for all administrative geographies.
 
 [Ordnance Survey AddressBase](https://www.ordnancesurvey.co.uk/business-government/products/addressbase) (AB) was the foundation of the lookup address data, which was matched against patient address information. AB is available in three formats, Core, Plus and Premium. This analysis used AB Plus.
 

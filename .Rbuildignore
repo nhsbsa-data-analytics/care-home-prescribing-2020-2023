@@ -4,6 +4,7 @@
 ^dev$
 ^.github$
 ^Additional R$
+^LICENSE$
 ^EDA$
 ^app\.R$
 ^rsconnect$
