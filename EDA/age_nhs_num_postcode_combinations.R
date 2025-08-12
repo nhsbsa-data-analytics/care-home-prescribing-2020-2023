@@ -1,3 +1,6 @@
+source("data-raw/workflow/workflow_packages.R")
+source("data-raw/workflow/workflow_helpers.R")
+source("data-raw/workflow/workflow_production.R")
 
 # Verification variables --------------------------------------------------
 
@@ -19,7 +22,7 @@
 # END - Verification variables ---
 
 start_str <- "202004"
-end_str <- "202503"
+end_str <- "202004"
 start_date <- as.character(as.Date(start_str, format = '%Y%m%d'))
 end_date <- as.character(as.Date(end_str, format = '%Y%m%d'))
 
@@ -196,10 +199,12 @@ over_65_db <- fact_join_db %>%
     .by = FY
   )
 
-final_db <- bind_rows(
+final_db <- union(
   all_ages_db,
   over_65_db
 )
+
+final_db %>% show_query()
   
 
 # Part three: stack paper and eps info and save --------------------------------
