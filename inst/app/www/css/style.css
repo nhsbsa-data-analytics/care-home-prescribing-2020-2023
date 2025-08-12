@@ -71,6 +71,32 @@ table.dataTable th {
   font-size: 12px;
 }
 
+/* In some states, DT adds margin to footer table - we don't want this as it
+   causes misalignment*/
+#geo_ch_flag-footer_table table {
+  margin-left: 0px;
+}
+
+/* Make footer flush with main table */
+#geo_ch_flag-footer_table .dataTables_wrapper {
+  border-top: none;
+}
+
+/* Vertical scroll bar would show without this but only because
+   the horizontal scrollbar is present but overflowing */
+#geo_ch_flag-footer_table .dataTables_scroll {
+  overflow-y: hidden !important;
+}
+
+/* Forces scrollbar when content overflows, but also hides it
+   Needed to get horizontal scrolling to sync */
+#geo_ch_flag-footer_table .dataTables_scrollBody {
+  overflow-x: auto !important;
+  padding-bottom: 20px;
+  margin-bottom: -20px;
+  box-sizing: content-box;
+}
+
 /* Remove everything except y-axis and labels and text for first chart */
 /* display:none will also free up the space the removed element took up */
 #geo_ch_flag_drug-region_splines > div > div:first-child
