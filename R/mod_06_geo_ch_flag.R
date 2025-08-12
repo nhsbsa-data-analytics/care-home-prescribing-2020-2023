@@ -66,7 +66,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
-        "Clicking a row in the table will outline the selected area on the maps.",
+        "Clicking a 'Care home' or 'Non-care home' row in the table will outline
+         the relevant area on the maps.",
         tags$br(),
         "The Isles of Scilly were removed due to the number of care homes in the
          Local Authority.",
@@ -314,6 +315,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         tdata,
         rownames = FALSE,
         extensions = "RowGroup",
+        selection = "single",
         options = list(
           dom = "ft",
           scrollCollapse = TRUE,
@@ -331,9 +333,7 @@ mod_06_geo_ch_flag_server <- function(id) {
             "  if (typeof syncScrolls === 'function') { syncScrolls(); }",
             "}"
           )
-        ),
-        filter = "none",
-        selection = "single"
+        )
       ) %>%
         DT::formatStyle(columns = 1:ncol(tdata), `font-size` = "12px")
       
@@ -341,6 +341,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         mean_data,
         rownames = FALSE,
         extensions = "RowGroup",
+        selection = "none",
         options = list(
           dom = 't',
           scrollX = TRUE,
@@ -427,13 +428,13 @@ mod_06_geo_ch_flag_server <- function(id) {
           message = list(
             # Need index - 1 since JavaScript is 0-indexed vs R 1-indexed
             previous_row = previous_row_selected() - 1,
-            row = input$table_rows_selected - 1
+            row = janitor::round_half_up(input$main_table_rows_selected / 2) - 1
           )
         )
       } 
       
       # Update previous selected row to be the current selected row
-      previous_row_selected(input$table_rows_selected)
+      previous_row_selected(janitor::round_half_up(input$main_table_rows_selected / 2))
     })
     
     observeEvent(

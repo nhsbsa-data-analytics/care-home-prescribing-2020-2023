@@ -97,6 +97,12 @@ table.dataTable th {
   box-sizing: content-box;
 }
 
+tr.dtrg-group.selected > th,
+table.dataTable.display > tbody > tr.dtrg-group.selected:hover > th {
+  color: #333 !important;
+  box-shadow: none !important;
+}
+
 /* Remove everything except y-axis and labels and text for first chart */
 /* display:none will also free up the space the removed element took up */
 #geo_ch_flag_drug-region_splines > div > div:first-child
