@@ -13,7 +13,6 @@ counts_fact as (
     where 1=1
         and calc_age >= 65
         and year_month >= 202004 and year_month <= 202503
-        and patient_identified = 'Y'
         and pay_da_end = 'N'
         and pay_nd_end = 'N'
         and pay_rb_end = 'N'
