@@ -103,6 +103,14 @@ table.dataTable.display > tbody > tr.dtrg-group.selected:hover > th {
   box-shadow: none !important;
 }
 
+tr.dtrg-group > th {
+  font-size: 11px;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  height: auto !important;
+  line-height: normal;
+}
+
 /* Remove everything except y-axis and labels and text for first chart */
 /* display:none will also free up the space the removed element took up */
 #geo_ch_flag_drug-region_splines > div > div:first-child

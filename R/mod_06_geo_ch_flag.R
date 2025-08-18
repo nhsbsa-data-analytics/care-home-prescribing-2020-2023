@@ -320,7 +320,7 @@ mod_06_geo_ch_flag_server <- function(id) {
           dom = "ft",
           scrollCollapse = TRUE,
           paging = FALSE,
-          scrollY = "350px",
+          scrollY = "700px",
           scrollX = TRUE,
           tabindex = "0",
           rowGroup = list(dataSrc = 0),
