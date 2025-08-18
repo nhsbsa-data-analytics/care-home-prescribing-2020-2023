@@ -161,7 +161,6 @@ mod_01_headline_figures_server <- function(id, export_data) {
     # Create download data
     create_download_data <- function(data) {
       data %>%
-        dplyr::arrange(.data$TIME) %>%
         dplyr::rename(
           `Time period` = TIME,
           `Metric type` = TYPE,
