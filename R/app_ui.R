@@ -26,6 +26,34 @@ app_ui <- function(request) {
           "Estimated prescribing patterns for care home patients aged 65 years 
            and over in England"
         ),
+        tags$div(style = "
+                  border:3px solid #768692;
+                  #color:#768692;
+                  border-radius: 10px;
+                  #margin: 0px;
+                  #margin-bottom: 20px;
+                  padding: 20px;
+                  padding-bottom: 0;
+                  background-color: #D9E2E3;
+                  ",
+                 p(
+                   span("Feedback Survey: ",
+                        style = "font-weight: 600; font-size: 12pt;"
+                   ),
+                   span(
+                     "The NHS Business Services Authority are committed to improving
+                      the reports that we publish. You have the opportunity to give us
+                      your opinion of this report, its content and what you would like
+                      to see in the future by completing a",
+                     enurl(
+                       text = "feedback survey (opens in new tab).",
+                       url = "https://online1.snapsurveys.com/bsareport?rpt=5"
+                     ),
+                     style = "font-size: 11pt"
+                   )
+                 )
+        ),
+        hr(),
         nhs_navlistPanel(
           id = "mainTabs",
           well = FALSE,
