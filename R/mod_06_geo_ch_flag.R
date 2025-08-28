@@ -54,11 +54,20 @@ mod_06_geo_ch_flag_ui <- function(id) {
         highcharter::highchartOutput(ns("map_ch"), height = "500px"),
         highcharter::highchartOutput(ns("map_non_ch"), height = "500px")
       ),
-      div(DT::DTOutput(ns("table"))),
+      shinyWidgets::radioGroupButtons(
+        inputId = ns("table_sort_by"),
+        label = "Sort areas by the value for:",
+        choices = c("Care home", "Non-care home"),
+        selected = "Care home",
+        justified = TRUE
+      ),
+      DT::DTOutput(ns("main_table")),
+      DT::DTOutput(ns("footer_table")),
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
-        "Clicking a row will outline the selected area on the maps.",
+        "Clicking a 'Care home' or 'Non-care home' row in the table will outline
+         the relevant area on the maps.",
         tags$br(),
         "The Isles of Scilly were removed due to the number of care homes in the
          Local Authority.",
@@ -76,7 +85,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     ns <- session$ns
     
     # Metric name mappings ------------------------------------------------
-
+    
     # Map metric column names to UI metric names
     ui_metric_names <- c(
       COST_PPM            = "Mean drug cost PPM",
@@ -127,8 +136,8 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     # Reactive data -------------------------------------------------------
     
-    fdata <- reactive(
-      fmt_data %>%
+    fdata <- reactive({
+      initial_data <- fmt_data %>%
         dplyr::filter(
           .data$GEOGRAPHY == input$geography,
           .data$FY == input$fy
@@ -141,7 +150,7 @@ mod_06_geo_ch_flag_server <- function(id) {
           .data$CH_FLAG,
           .keep = "none"
         )
-    )
+    })
     
     map_data <- reactive(carehomes2::geo_data[[input$geography]])
     
@@ -212,6 +221,7 @@ mod_06_geo_ch_flag_server <- function(id) {
         highcharter::hc_title(text = ch_status)
     }
     
+    
     # Create datatable
     # NOTE: There is no arrange on SUB_GEOGRAPHY_NAME. Original code did have 
     # this, but it turned out that the underlying data is not sorted. This meant
@@ -219,71 +229,59 @@ mod_06_geo_ch_flag_server <- function(id) {
     # what was shown in the table. It should be possible to align the order in 
     # JS with the order in an `arrange`d table, but in this case the data is 
     # already well-ordered, so best solution is to just remove arrange.
-    create_datatable <- function(data) {
-      tdata <- data %>%
+    create_datatable <- function(data, sort_on) {
+      tdata_pre_sort <- data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>%
+        dplyr::group_by(.data$FY, .data$GEOGRAPHY) %>%
+        dplyr::arrange(dplyr::desc(.data$CH_FLAG), .by_group = TRUE) %>%
+        dplyr::ungroup() %>%
         dplyr::mutate(
-          .data$FY,
-          CH_FLAG = dplyr::case_match(
-            .data$CH_FLAG,
-            TRUE  ~ "CH",
-            FALSE ~ "NCH"
-          ),
           !!rlang::sym(input$geography) := as.character(.data$SUB_GEOGRAPHY_NAME),
-          .data[[input$metric]],
+          `Area / Carehome status` = dplyr::case_match(
+            .data$CH_FLAG,
+            TRUE  ~ "Care home",
+            FALSE ~ "Non-care home"
+          ),
+          MetricValue = .data[[input$metric]],
+          FY,
           .keep = "none"
         ) %>%
         tidyr::pivot_wider(
-          names_from = dplyr::all_of(c("FY", "CH_FLAG")),
-          values_from = .data[[input$metric]],
-          names_sep = " "
+          names_from = FY,
+          values_from = MetricValue
         ) %>%
-        # Move CH cols left of sub-geography column, so it is in centre col
-        dplyr::relocate(
-          dplyr::matches(" CH"),
-          .before = !!rlang::sym(input$geography)
-        ) %>%
-        # Apply styling for header names, also remove the extraneous CH/NCH
-        # NOTE: cannot have identical col names, so we use an extra space for
-        # one set
-        dplyr::rename_with(
-          \(cols) purrr::map_vec(
-            cols,
-            \(col) {
-              span(
-                class = "nhsuk-body-s",
-                style = "font-size: 12px;",
-                gsub("^20", "", gsub(" NCH", " ", gsub(" CH", "", col)))
-              ) %>%
-                as.character()
+        dplyr::arrange(!!rlang::sym(input$geography))
+      
+      fy_cols <- names(tdata_pre_sort)[-c(1, 2)]
+      
+      mean_data <- tdata_pre_sort %>% 
+        dplyr::summarise(
+          !!rlang::sym(input$geography) := "National average",
+          dplyr::across(
+            dplyr::all_of(fy_cols),
+            \(x) {
+              out <- mean(x, na.rm = TRUE)
+              if (grepl("cost", input$metric, ignore.case = TRUE)) {
+                round(mean(out, na.rm = TRUE), 0)
+              } else {
+                round(mean(out, na.rm = TRUE), 2)
+              }
             }
-          )
+          ),
+          .by = `Area / Carehome status`
+        ) %>% 
+        dplyr::select(!!rlang::sym(input$geography), dplyr::everything())
+      
+      tdata <- tdata_pre_sort %>%
+        dplyr::mutate(
+          dplyr::across(
+            .cols = dplyr::all_of(fy_cols),
+            .fns = ~ .[match(sort_on, `Area / Carehome status`)],
+            .names = "{.col}_sort"
+          ),
+          .by = !!rlang::sym(input$geography)
         )
-      
-      table_container <- tags$table(
-        DT::tableHeader(tdata, escape = FALSE),
-        DT::tableFooter(
-          purrr::map(
-            tdata,
-            function(x) ifelse(
-              is.numeric(x),
-              ifelse(
-                grepl("cost", input$metric, ignore.case = TRUE),
-                format(round(mean(x, na.rm = TRUE), 0), nsmall = 0),
-                format(round(mean(x, na.rm = TRUE), 2), nsmall = 2)
-              ),
-              "National average"
-            )
-          )
-        )
-      )
-      
-      # Over-ride CSS in NHS front-end toolkit
-      table_container <- htmltools::tagQuery(table_container)$
-        find("tfoot>tr>th")$
-        addAttrs("style" = "font-size: 12px;")$
-        allTags()
-      
+
       # Callback to handle empty cells and display as NA
       rowCallback <- c(
         "function(row, data){",
@@ -295,30 +293,82 @@ mod_06_geo_ch_flag_server <- function(id) {
         "  }",
         "}"
       )
-      
-      DT::datatable(
+
+      visible_cols_indices <- which(names(tdata) %in% fy_cols) - 1 # 0-based index for JS
+      sort_cols_indices <- which(names(tdata) %in% paste0(fy_cols, "_sort")) - 1
+
+      order_defs <- lapply(seq_along(visible_cols_indices), function(i) {
+        list(orderData = sort_cols_indices[i], targets = visible_cols_indices[i])
+      })
+
+      all_col_defs <- c(
+        list(
+          list(className = "dt-center", targets = "_all"),
+          list(visible = FALSE, targets = 0),
+          list(visible = FALSE, targets = sort_cols_indices),
+          list(orderData = 0, targets = 1)
+        ),
+        order_defs
+      )
+
+      main_dt <- DT::datatable(
         tdata,
-        escape = FALSE,
-        container = table_container,
         rownames = FALSE,
+        extensions = "RowGroup",
+        selection = "single",
         options = list(
           dom = "ft",
           scrollCollapse = TRUE,
           paging = FALSE,
-          scrollY = "350px",
-          overflow = "scroll",
+          scrollY = "700px",
+          scrollX = TRUE,
           tabindex = "0",
-          columnDefs = list(
-            list(className = "dt-center", targets = "_all")
-          ),
-          rowCallback = DT::JS(rowCallback)
-        ),
-        height = "500px",
-        filter = "none",
-        selection = "single"
+          rowGroup = list(dataSrc = 0),
+          columnDefs = all_col_defs,
+          rowCallback = DT::JS(rowCallback),
+          drawCallback = DT::JS(
+            "function(settings) {",
+            "  // Check if functions exist before calling, for safety.",
+            "  if (typeof syncColumnWidths === 'function') { syncColumnWidths(); }",
+            "  if (typeof syncScrolls === 'function') { syncScrolls(); }",
+            "}"
+          )
+        )
       ) %>%
         DT::formatStyle(columns = 1:ncol(tdata), `font-size` = "12px")
+      
+      footer_dt <- DT::datatable(
+        mean_data,
+        rownames = FALSE,
+        extensions = "RowGroup",
+        selection = "none",
+        options = list(
+          dom = 't',
+          scrollX = TRUE,
+          paging = FALSE,
+          ordering = FALSE,
+          rowGroup = list(dataSrc = 0),
+          columnDefs = list(
+            list(visible = FALSE, targets = 0),
+            list(className = "dt-center", targets = "_all")
+          ),
+          headerCallback = DT::JS(
+            "function(thead, data, start, end, display) {",
+            "  $(thead).empty();",
+            "}"
+          )
+        )
+      ) %>%
+        DT::formatStyle(columns = 1:ncol(mean_data), `font-size` = "12px")
+      
+      list(main_table = main_dt, footer_table = footer_dt)
     }
+    
+    tables_list <- reactive({
+      req(input$geography, input$metric, input$table_sort_by)
+      
+      create_datatable(data = fmt_data, sort_on = input$table_sort_by)
+    })
     
     # Create download data (all data)
     create_download_data <- function(data) {
@@ -346,10 +396,14 @@ mod_06_geo_ch_flag_server <- function(id) {
       create_map(fdata(), map_data(), "Non-care home")
     )
     
-    # Datatables
-    output$table <- DT::renderDT(
-      create_datatable(fmt_data)
-    )
+    output$main_table <- DT::renderDT({
+      tables_list()$main_table
+    })
+    
+    # Render the footer table from the list
+    output$footer_table <- DT::renderDT({
+      tables_list()$footer_table
+    })
     
     # Download buttons
     mod_nhs_download_server(
@@ -358,9 +412,9 @@ mod_06_geo_ch_flag_server <- function(id) {
       export_data = create_download_data(fmt_data)
     )
     
-
+    
     # Reactive events -----------------------------------------------------
-
+    
     # Need to track previously selected row to toggle border w/o searching whole
     # dataset
     previous_row_selected <- reactiveVal(NULL)
@@ -374,13 +428,13 @@ mod_06_geo_ch_flag_server <- function(id) {
           message = list(
             # Need index - 1 since JavaScript is 0-indexed vs R 1-indexed
             previous_row = previous_row_selected() - 1,
-            row = input$table_rows_selected - 1
+            row = janitor::round_half_up(input$main_table_rows_selected / 2) - 1
           )
         )
       } 
       
       # Update previous selected row to be the current selected row
-      previous_row_selected(input$table_rows_selected)
+      previous_row_selected(janitor::round_half_up(input$main_table_rows_selected / 2))
     })
     
     observeEvent(
