@@ -25,7 +25,6 @@ mod_01_headline_figures_ui <- function(id) {
           "Patient count" = "PATS",
           "Total prescription items" = "ITEMS",
           "Total drug cost (£)" = "NIC",
-          "Patient % in care homes" = "PATS_PERC",
           "Item % for care homes" = "ITEMS_PERC",
           "Cost % for care homes" = "NIC_PERC"
         ),
@@ -100,7 +99,6 @@ mod_01_headline_figures_server <- function(id, export_data) {
                 "PATS" = "<b>Mean monthly patient count</b>",
                 "ITEMS" = "<b>Mean monthly items</b>",
                 "NIC" = "<b>Mean monthly cost (£)</b>",
-                "PATS_PERC" = "<b>Patient % in care homes</b>",
                 "ITEMS_PERC" = "<b>Item % for care homes</b>",
                 "NIC_PERC" = "<b>Cost % for care homes</b>"
               )
@@ -116,7 +114,6 @@ mod_01_headline_figures_server <- function(id, export_data) {
               "PATS" = "<b>Mean monthly patients: </b> {point.METRIC:,.0f}",
               "ITEMS" = "<b>Mean monthly items: </b> {point.METRIC:,.0f}",
               "NIC" = "<b>Mean monthly cost: </b> £{point.METRIC:,.0f}",
-              "PATS_PERC" = "<b>Patient % in care homes: {point.METRIC:,.1f}</b>",
               "ITEMS_PERC" = "<b>Item % for care homes: {point.METRIC:,.1f}</b>",
               "NIC_PERC" = "<b>Cost % for care homes: {point.METRIC:,.1f}</b>"
             )
@@ -148,7 +145,6 @@ mod_01_headline_figures_server <- function(id, export_data) {
                 "PATS" = "<b>Patient count</b>",
                 "ITEMS" = "<b>Items</b>",
                 "NIC" = "<b>Cost (£)</b>",
-                "PATS_PERC" = "<b>Patient % in care homes</b>",
                 "ITEMS_PERC" = "<b>Item % for care homes</b>",
                 "NIC_PERC" = "<b>Cost % for care homes</b>"
                 )
@@ -164,7 +160,6 @@ mod_01_headline_figures_server <- function(id, export_data) {
               "PATS" = "<b>Patient count: </b> {point.METRIC:,.0f}",
               "ITEMS" = "<b>Items: </b> {point.METRIC:,.0f}",
               "NIC" = "<b>Cost: </b> £{point.METRIC:,.0f}",
-              "PATS_PERC" = "<b>Patient % in care homes: {point.METRIC:,.1f}</b>",
               "ITEMS_PERC" = "<b>Item % for care homes: {point.METRIC:,.1f}</b>",
               "NIC_PERC" = "<b>Cost % for care homes: {point.METRIC:,.1f}</b>"
               )
@@ -182,7 +177,6 @@ mod_01_headline_figures_server <- function(id, export_data) {
           `Patient count` = PATS,
           `Total prescription items` = ITEMS,
           `Total drug cost` = NIC,
-          `Patient % in care homes` = PATS_PERC,
           `Item % for care homes` = ITEMS_PERC,
           `Cost % for care homes` = NIC_PERC
         )

@@ -23,48 +23,6 @@ data_db %>%
   verify(nrow.alt(distinct(., FY)) == EXPECTED_YEARS) %>%
   verify(nrow.alt(distinct(., YEAR_MONTH)) == EXPECTED_MONTHS)
 
-# Key findings used within analysis summary text
-key_findings_fy <- data_db %>%
-  filter(CH_FLAG == 1) %>%
-  group_by(FY, YEAR_MONTH) %>%
-  summarise(
-    PATS = n_distinct(NHS_NO),
-    ITEMS = sum(ITEM_COUNT, na.rm = TRUE),
-    NIC = sum(ITEM_PAY_DR_NIC, na.rm = TRUE) / 100
-  ) %>%
-  ungroup() %>%
-  nhsbsaR::collect_with_parallelism(., 16) %>%
-  select(-YEAR_MONTH) %>%
-  group_by(FY) %>%
-  summarise_all(.funs = \(x) mean(x, na.rm = TRUE)) %>%
-  ungroup() %>%
-  arrange(FY)
-
-if(!dir.exists("data-raw/temp")) dir.create("data-raw/temp")
-saveRDS(key_findings_fy, "data-raw/temp/key_findings_fy.rds")
-
-# Key findings used within analysis summary text
-key_findings_fy_ch_flag <- data_db %>%
-  group_by(FY, CH_FLAG) %>%
-  summarise(
-    PATS = n_distinct(NHS_NO),
-    ITEMS = sum(ITEM_COUNT, na.rm = TRUE),
-    NIC = sum(ITEM_PAY_DR_NIC, na.rm = TRUE) / 100
-  ) %>%
-  ungroup() %>%
-  nhsbsaR::collect_with_parallelism(., 16) %>%
-  group_by(FY) %>%
-  mutate(
-    TOTAL_NIC = sum(NIC, na.rm = TRUE),
-    TOTAL_ITEMS = sum(ITEMS, na.rm = TRUE),
-    PROP_ITEMS = ITEMS / TOTAL_ITEMS * 100,
-    PROP_NIC = NIC /TOTAL_NIC * 100
-  ) %>%
-  arrange(FY)
-
-if(!dir.exists("data-raw/temp")) dir.create("data-raw/temp")
-saveRDS(key_findings_fy_ch_flag, "data-raw/temp/key_findings_fy_ch_flag_df.rds")
-
 # Annual data df
 annual_df = data_db %>% 
   group_by(TIME = FY, YEAR_MONTH, CH_FLAG) %>% 
@@ -88,7 +46,6 @@ annual_df = data_db %>%
     )
   ) %>% 
   mutate(
-    PATS_PROP = PATS_TOTAL / sum(PATS_TOTAL),
     ITEMS_PROP = ITEMS_TOTAL / sum(ITEMS_TOTAL),
     NIC_PROP = NIC_TOTAL / sum(NIC_TOTAL)
   ) %>% 
@@ -120,7 +77,6 @@ monthly_df = data_db %>%
   arrange(TIME, CH_FLAG) %>% 
   group_by(TIME) %>%
   mutate(
-    PATS_PROP = PATS / sum(PATS),
     ITEMS_PROP = ITEMS / sum(ITEMS),
     NIC_PROP = NIC / sum(NIC)
   ) %>% 
