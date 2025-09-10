@@ -5,13 +5,13 @@ In this section, we compare general prescribing volumes as well as established p
 - multiple medicines to a patient (polypharmacy)
 - medicines associated with acute kidney injury (DAMN)
 - medicines associated with anti-cholinergic burden (ACB)
-- medicines associated with an increased falls-risk
+- medicines associated with an increased falls risk
 
 See [Metrics](http://127.0.0.1/Metrics?prescribing-metrics) for more details.
 
 __Care home patients aged 65 years and over had higher levels of prescribing than non-care home patients across most metrics. Care home patients in nursing homes had higher levels of prescribing than those in residential homes.__
 
-The drug cost per patient-month (PPM) for care home patients aged 65 years and over was around double that of non-care home patients. The number of prescription items PPM was around one and half times that of non-care home patients.
+The drug cost per patient-month (PPM) for care home patients aged 65 years and over was around double that of non-care home patients. The number of prescription items PPM was around one and half times that of non-care home patients. 
 
 Care home patients received a greater number of unique medicines PPM. The proportions of patients on 6+ and 10+ unique medicines were higher among care home patients compared to non-care home patients.
 
