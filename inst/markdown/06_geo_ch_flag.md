@@ -6,4 +6,4 @@ All prescribing metrics other than prescribing of two or more DAMN medicines are
 
 The average drug cost and number of prescription items per patient-month was highest in the London NHS region for both care home and non-care home patients. The London NHS region was also highest among care home patients for polypharmacy unique medicines metrics and highest for DAMN medicines in non-care home patients.
 
-There were large variations in care home prescribing by Local Authority and ICS. Further ICS and Local Authority trends, at both a care home and non-care home-level, can be discovered through exploration of the chart.
+There were large variations in care home prescribing by Local Authority and ICS. Further ICS and Local Authority trends, at both a care home and non-care home-level, can be discovered through exploration of the chart. This will benefit from local insight and interpretation.
