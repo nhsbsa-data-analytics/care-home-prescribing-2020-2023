@@ -49,7 +49,6 @@ Imports:
     scales,
     shiny,
     shinyusertracking,
-    shinyWidgets,
     stats,
     stringr,
     tibble,
