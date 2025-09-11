@@ -89,12 +89,17 @@ app_ui <- function(request) {
           tabPanel(
             title = "Annex",
             mod_14_annex_ui("annex")
+          ),
+          tabPanel(
+            title = "Data Ethics Statement",
+            value = "data_ethics",
+            mod_16_data_ethics_statement_ui("data_ethics")
           )
         )
       )
     ),
     br(),
-    nhs_footer()
+    mod_nhs_footer_ui("footer")
   )
 }
 

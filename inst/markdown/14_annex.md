@@ -10,3 +10,4 @@ Further sources of data on the adult care home population:
 - [Monthly statistics for adult social care (England)](https://www.gov.uk/government/collections/monthly-statistics-for-adult-social-care-england)
 - [Estimating the size of the self-funding population in the community, England: 2022 to 2023](https://www.ons.gov.uk/peoplepopulationandcommunity/healthandsocialcare/socialcare/bulletins/estimatingthesizeoftheselffunderpopulationinthecommunityengland/2022to2023)
 - [Care directory with filters](https://www.cqc.org.uk/about-us/transparency/using-cqc-data)
+- [Older people living in care homes in 2021 and changes since 2011](https://www.ons.gov.uk/peoplepopulationandcommunity/birthsdeathsandmarriages/ageing/articles/olderpeoplelivingincarehomesin2021andchangessince2011/2023-10-09)

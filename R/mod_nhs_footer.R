@@ -3,7 +3,8 @@
 #' @noRd
 #'
 #' @importFrom shiny tagList
-nhs_footer <- function() {
+mod_nhs_footer_ui <- function(id) {
+  ns <- NS(id)
   tagList(
     tags$footer(
       role = "contentinfo",
@@ -15,6 +16,15 @@ nhs_footer <- function() {
           style = "display: flex; align-items: center;",
           tags$ul(
             class = "nhsuk-footer__list",
+            tags$li(
+              class = "nhsuk-footer__list-item",
+              actionLink(
+                inputId = ns("ethics_link"),
+                label = "Data ethics statement",
+                class = "nhsuk-footer__list-item-link",
+                style = "text-decoration: underline;"
+              )
+            ),
             tags$li(
               class = "nhsuk-footer__list-item",
               a(
@@ -73,4 +83,10 @@ nhs_footer <- function() {
       )
     )
   )
+}
+
+mod_nhs_footer_server <- function(id){
+  moduleServer( id, function(input, output, session){
+    return(reactive(input$ethics_link))
+  })
 }
