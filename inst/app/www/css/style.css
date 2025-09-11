@@ -58,13 +58,79 @@ a {
   z-index: 9999;
 }
 
-table:not(.dataTable) thead tr{
+table:not(.dataTable) thead tr {
   color: white;
   background-color: #005EB8CC;
 }
 
-table:not(.dataTable) tbody:nth-child(odd){
+table:not(.dataTable) tbody:nth-child(odd) {
   background-color: #005EB81F;
+}
+
+table.dataTable th {
+  font-size: 12px;
+}
+
+/* Have tabs cover full width of page */
+#geo_ch_flag-table_selection {
+  display: flex;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+/* Have tab use equal available width */
+#geo_ch_flag-table_selection li {
+  flex: 1;
+}
+
+/* Centre tab titles */
+#geo_ch_flag-table_selection li a {
+  text-align: center;
+}
+
+/* In some states, DT adds margin to footer table - we don't want this as it
+   causes misalignment*/
+#geo_ch_flag-footer_table table {
+  margin-left: 0px;
+}
+
+/* National average footer in bold */
+#geo_ch_flag-footer_table td {
+  font-weight: 700;
+}
+
+/* Make footer flush with main table */
+#geo_ch_flag-footer_table .dataTables_wrapper {
+  border-top: none;
+}
+
+/* Vertical scroll bar would show without this but only because
+   the horizontal scrollbar is present but overflowing */
+#geo_ch_flag-footer_table .dataTables_scroll {
+  overflow-y: hidden !important;
+}
+
+/* Forces scrollbar when content overflows, but also hides it
+   Needed to get horizontal scrolling to sync */
+#geo_ch_flag-footer_table .dataTables_scrollBody {
+  overflow-x: auto !important;
+  padding-bottom: 20px;
+  margin-bottom: -20px;
+  box-sizing: content-box;
+}
+
+tr.dtrg-group.selected > th,
+table.dataTable.display > tbody > tr.dtrg-group.selected:hover > th {
+  color: #333 !important;
+  box-shadow: none !important;
+}
+
+tr.dtrg-group > th {
+  font-size: 11px;
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  height: auto !important;
+  line-height: normal;
 }
 
 /* Remove everything except y-axis and labels and text for first chart */
