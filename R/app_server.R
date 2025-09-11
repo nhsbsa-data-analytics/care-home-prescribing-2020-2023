@@ -14,4 +14,10 @@ app_server <- function(input, output, session) {
   mod_06_geo_ch_flag_server("geo_ch_flag")
   mod_07_ch_flag_drug_server("ch_flag_drug")
   mod_08_geo_ch_flag_drug_server("geo_ch_flag_drug")
+
+  ethics_link_click <- mod_nhs_footer_server("footer")
+
+  observeEvent(ethics_link_click(), {
+    session$sendCustomMessage(type = 'switchTab', message = 'data_ethics')
+  }, ignoreNULL = TRUE, ignoreInit = TRUE)
 }

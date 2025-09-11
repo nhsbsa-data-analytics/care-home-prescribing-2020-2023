@@ -142,3 +142,9 @@ var internalLink = function(tabName, id) {
     };
   }
 };
+
+
+// Handle click on footer links which behave as pages
+Shiny.addCustomMessageHandler('switchTab', function(message) {
+  $('a[data-value=\"' + message + '\"]').click();
+});

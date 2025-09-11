@@ -85,3 +85,7 @@ table:not(.dataTable) tbody:nth-child(odd){
 #geo_ch_flag_drug-lad_splines > div > div:first-child > div > div > svg > text {
   visibility: hidden;
 }
+
+a[data-value="data_ethics"] {
+  display: none;
+}
