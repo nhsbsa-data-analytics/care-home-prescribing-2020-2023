@@ -69,8 +69,9 @@ mod_06_geo_ch_flag_ui <- function(id) {
         "The Isles of Scilly were removed due to the number of care homes in the
          Local Authority.",
         tags$br(),
-        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 1 decimal place."
+        "Mean drug cost PPM is rounded to the nearest GBP.",
+        tags$br(),
+        "All other values are rounded to 1 decimal place."
       )
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart

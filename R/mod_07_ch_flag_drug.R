@@ -62,7 +62,8 @@ mod_07_ch_flag_drug_ui <- function(id) {
         "Values over 1,000 have been shortened with an appropriate suffix and
         then rounded to 1 decimal place.",
         tags$br(),
-        "All other values are rounded to 1 decimal place."
+        "All other values are rounded to 1 decimal place, with values less than 
+        0.05 rounded to zero."
       )
     )
   )
