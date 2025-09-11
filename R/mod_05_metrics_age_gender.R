@@ -109,8 +109,9 @@ mod_05_metrics_age_gender_server <- function(id){
           
         } else NULL,
         tags$br(),
-        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 1 decimal place."
+        "Mean drug cost PPM is rounded to the nearest GBP.",
+        tags$br(),
+        "All other values are rounded to 1 decimal place."
       )
     })
     

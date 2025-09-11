@@ -71,8 +71,9 @@ mod_04_metrics_ch_type_ui <- function(id) {
         "Nursing home and residential home patients are subsets of the care 
         home patient population.",
         tags$br(),
-        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 1 decimal place.",
+        "Mean drug cost PPM is rounded to the nearest GBP.",
+        tags$br(),
+        "All other values are rounded to 1 decimal place.",
         tags$br(),
         "Ages 65+ includes all patients aged 65 or over, even those aged over 85."
       )
