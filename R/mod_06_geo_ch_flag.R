@@ -54,20 +54,17 @@ mod_06_geo_ch_flag_ui <- function(id) {
         highcharter::highchartOutput(ns("map_ch"), height = "500px"),
         highcharter::highchartOutput(ns("map_non_ch"), height = "500px")
       ),
-      shinyWidgets::radioGroupButtons(
-        inputId = ns("table_sort_by"),
-        label = "Sort areas by the value for:",
-        choices = c("Care home", "Non-care home"),
-        selected = "Care home",
-        justified = TRUE
+      tabsetPanel(
+        id = ns("table_selection"),
+        tabPanel("Care home data"),
+        tabPanel("Non-care home data")
       ),
       DT::DTOutput(ns("main_table")),
       DT::DTOutput(ns("footer_table")),
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt;",
-        "Clicking a 'Care home' or 'Non-care home' row in the table will outline
-         the relevant area on the maps.",
+        "Clicking a row in the table will outline the selected area on the maps.",
         tags$br(),
         "The Isles of Scilly were removed due to the number of care homes in the
          Local Authority.",
@@ -223,21 +220,12 @@ mod_06_geo_ch_flag_server <- function(id) {
     
     
     # Create datatable
-    # NOTE: There is no arrange on SUB_GEOGRAPHY_NAME. Original code did have 
-    # this, but it turned out that the underlying data is not sorted. This meant
-    # that JS code for map border highlighting was using a different order to 
-    # what was shown in the table. It should be possible to align the order in 
-    # JS with the order in an `arrange`d table, but in this case the data is 
-    # already well-ordered, so best solution is to just remove arrange.
-    create_datatable <- function(data, sort_on) {
-      tdata_pre_sort <- data %>%
+    create_datatable <- function(data, table_selection) {
+      tdata <- data %>%
         dplyr::filter(.data$GEOGRAPHY == input$geography) %>%
-        dplyr::group_by(.data$FY, .data$GEOGRAPHY) %>%
-        dplyr::arrange(dplyr::desc(.data$CH_FLAG), .by_group = TRUE) %>%
-        dplyr::ungroup() %>%
         dplyr::mutate(
           !!rlang::sym(input$geography) := as.character(.data$SUB_GEOGRAPHY_NAME),
-          `Area / Carehome status` = dplyr::case_match(
+          CH_FLAG = dplyr::case_match(
             .data$CH_FLAG,
             TRUE  ~ "Care home",
             FALSE ~ "Non-care home"
@@ -245,16 +233,17 @@ mod_06_geo_ch_flag_server <- function(id) {
           MetricValue = .data[[input$metric]],
           FY,
           .keep = "none"
-        ) %>%
+        ) %>% 
+        dplyr::filter(startsWith(table_selection, .data$CH_FLAG)) %>%
+        dplyr::select(-CH_FLAG) %>%
         tidyr::pivot_wider(
           names_from = FY,
           values_from = MetricValue
-        ) %>%
-        dplyr::arrange(!!rlang::sym(input$geography))
+        )
       
-      fy_cols <- names(tdata_pre_sort)[-c(1, 2)]
+      fy_cols <- names(tdata)[-1]
       
-      mean_data <- tdata_pre_sort %>% 
+      mean_data <- tdata %>% 
         dplyr::summarise(
           !!rlang::sym(input$geography) := "National average",
           dplyr::across(
@@ -267,21 +256,10 @@ mod_06_geo_ch_flag_server <- function(id) {
                 round(mean(out, na.rm = TRUE), 2)
               }
             }
-          ),
-          .by = `Area / Carehome status`
+          )
         ) %>% 
         dplyr::select(!!rlang::sym(input$geography), dplyr::everything())
       
-      tdata <- tdata_pre_sort %>%
-        dplyr::mutate(
-          dplyr::across(
-            .cols = dplyr::all_of(fy_cols),
-            .fns = ~ .[match(sort_on, `Area / Carehome status`)],
-            .names = "{.col}_sort"
-          ),
-          .by = !!rlang::sym(input$geography)
-        )
-
       # Callback to handle empty cells and display as NA
       rowCallback <- c(
         "function(row, data){",
@@ -293,42 +271,21 @@ mod_06_geo_ch_flag_server <- function(id) {
         "  }",
         "}"
       )
-
-      visible_cols_indices <- which(names(tdata) %in% fy_cols) - 1 # 0-based index for JS
-      sort_cols_indices <- which(names(tdata) %in% paste0(fy_cols, "_sort")) - 1
-
-      order_defs <- lapply(seq_along(visible_cols_indices), function(i) {
-        list(orderData = sort_cols_indices[i], targets = visible_cols_indices[i])
-      })
-
-      all_col_defs <- c(
-        list(
-          list(className = "dt-center", targets = "_all"),
-          list(visible = FALSE, targets = 0),
-          list(visible = FALSE, targets = sort_cols_indices),
-          list(orderData = 0, targets = 1)
-        ),
-        order_defs
-      )
-
+      
       main_dt <- DT::datatable(
         tdata,
         rownames = FALSE,
-        extensions = "RowGroup",
         selection = "single",
         options = list(
           dom = "ft",
           scrollCollapse = TRUE,
           paging = FALSE,
-          scrollY = "700px",
+          scrollY = "400px",
           scrollX = TRUE,
           tabindex = "0",
-          rowGroup = list(dataSrc = 0),
-          columnDefs = all_col_defs,
           rowCallback = DT::JS(rowCallback),
           drawCallback = DT::JS(
             "function(settings) {",
-            "  // Check if functions exist before calling, for safety.",
             "  if (typeof syncColumnWidths === 'function') { syncColumnWidths(); }",
             "  if (typeof syncScrolls === 'function') { syncScrolls(); }",
             "}"
@@ -340,18 +297,12 @@ mod_06_geo_ch_flag_server <- function(id) {
       footer_dt <- DT::datatable(
         mean_data,
         rownames = FALSE,
-        extensions = "RowGroup",
         selection = "none",
         options = list(
           dom = 't',
           scrollX = TRUE,
           paging = FALSE,
           ordering = FALSE,
-          rowGroup = list(dataSrc = 0),
-          columnDefs = list(
-            list(visible = FALSE, targets = 0),
-            list(className = "dt-center", targets = "_all")
-          ),
           headerCallback = DT::JS(
             "function(thead, data, start, end, display) {",
             "  $(thead).empty();",
@@ -365,9 +316,9 @@ mod_06_geo_ch_flag_server <- function(id) {
     }
     
     tables_list <- reactive({
-      req(input$geography, input$metric, input$table_sort_by)
+      req(input$geography, input$metric, input$table_selection)
       
-      create_datatable(data = fmt_data, sort_on = input$table_sort_by)
+      create_datatable(data = fmt_data, input$table_selection)
     })
     
     # Create download data (all data)
@@ -428,13 +379,13 @@ mod_06_geo_ch_flag_server <- function(id) {
           message = list(
             # Need index - 1 since JavaScript is 0-indexed vs R 1-indexed
             previous_row = previous_row_selected() - 1,
-            row = janitor::round_half_up(input$main_table_rows_selected / 2) - 1
+            row = input$main_table_rows_selected - 1
           )
         )
       } 
       
       # Update previous selected row to be the current selected row
-      previous_row_selected(janitor::round_half_up(input$main_table_rows_selected / 2))
+      previous_row_selected(input$main_table_rows_selected)
     })
     
     observeEvent(

@@ -71,10 +71,32 @@ table.dataTable th {
   font-size: 12px;
 }
 
+/* Have tabs cover full width of page */
+#geo_ch_flag-table_selection {
+  display: flex;
+  width: 100%;
+  margin-bottom: 5px;
+}
+
+/* Have tab use equal available width */
+#geo_ch_flag-table_selection li {
+  flex: 1;
+}
+
+/* Centre tab titles */
+#geo_ch_flag-table_selection li a {
+  text-align: center;
+}
+
 /* In some states, DT adds margin to footer table - we don't want this as it
    causes misalignment*/
 #geo_ch_flag-footer_table table {
   margin-left: 0px;
+}
+
+/* National average footer in bold */
+#geo_ch_flag-footer_table td {
+  font-weight: 700;
 }
 
 /* Make footer flush with main table */
