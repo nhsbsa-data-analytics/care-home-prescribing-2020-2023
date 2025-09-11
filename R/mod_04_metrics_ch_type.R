@@ -72,7 +72,7 @@ mod_04_metrics_ch_type_ui <- function(id) {
         home patient population.",
         tags$br(),
         "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 2 decimal places.",
+        are rounded to 1 decimal place.",
         tags$br(),
         "Ages 65+ includes all patients aged 65 or over, even those aged over 85."
       )
@@ -102,14 +102,14 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
       COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
-      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.2f}",
-      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.2f}",
-      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.2f}%",
-      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.2f}%",
-      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.2f}%",
-      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.2f}%",
-      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.2f}",
-      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.2f}%"
+      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.1f}",
+      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.1f}",
+      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.1f}%",
+      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
+      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
+      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
+      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
+      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
     )
     
     # Map all column names to download data names
@@ -127,7 +127,7 @@ mod_04_metrics_ch_type_server <- function(id) {
         COST_PPM = janitor::round_half_up(.data$COST_PPM, 0),
         dplyr::across(
           c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
-          \(x) janitor::round_half_up(x, 2)
+          \(x) janitor::round_half_up(x, 1)
         )
       )
     

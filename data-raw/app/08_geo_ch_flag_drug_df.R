@@ -430,9 +430,9 @@ bnf_level_prescribing_estimates_in_care_homes_df <-
     `Sub-geography name` = "GEOGRAPHY_CHILD",
     `BNF level` = "BNF_PARENT",
     `BNF sub-level` = "BNF_CHILD",
-    `Patient count` = "PATS"
+    `Total patient count` = "PATS"
   ) %>% 
-  dplyr::mutate(`Patient count` = bespoke_round(`Patient count`))
+  dplyr::mutate(`Total patient count` = bespoke_round(`Total patient count`))
 
 # Use this
 usethis::use_data(bnf_level_prescribing_estimates_in_care_homes_df, overwrite = TRUE)
