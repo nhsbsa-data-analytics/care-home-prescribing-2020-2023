@@ -81,7 +81,6 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
         dplyr::mutate(
           VALUE = dplyr::case_when(
             startsWith(METRIC, "Total") ~ bespoke_round(VALUE),
-            METRIC == "Mean drug cost PPM" ~ janitor::round_half_up(VALUE, 2),
             TRUE ~ janitor::round_half_up(VALUE, 1)
           )
         ) %>%
@@ -175,7 +174,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
           useHTML = TRUE,
           formatter = htmlwidgets::JS("
             function() {
-              var fmt_num = function(x, m) {
+              var fmt_num = function(x) {
                 if(x >= 10**9){
                     return Highcharts.numberFormat(x / 10**9, 1) + 'B';
                 }
@@ -186,9 +185,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
                     return Highcharts.numberFormat(x / 10**3, 1) + 'K';
                 }
                 else {
-                    var round_digits = 1;
-                    if(m === 'Mean drug cost PPM') round_digits = 2
-                    return Highcharts.numberFormat(x, round_digits);
+                    return Highcharts.numberFormat(x, 1);
                 }
               }
             
@@ -215,7 +212,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
                   return s + '<br/>' + 
                     point.series.name + ': ' +
                     prefix(point.point.METRIC) + 
-                    fmt_num(point.y, point.point.METRIC) + 
+                    fmt_num(point.y) + 
                     suffix(point.point.METRIC);
                 },
                 '<b>' + this.x + '</b>'
@@ -242,7 +239,6 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
       dplyr::mutate(
         VALUE = dplyr::case_when(
           startsWith(METRIC, "Total") ~ bespoke_round(VALUE),
-          METRIC == "Mean drug cost PPM" ~ janitor::round_half_up(VALUE, 2),
           TRUE ~ janitor::round_half_up(VALUE, 1)
         )
       ) %>%
@@ -264,7 +260,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
       id = "download_data",
       filename = "National BNF-level prescribing estimates.xlsx",
       export_data = download_data,
-      currency_xl_fmt_str = "£#,##0.00"
+      currency_xl_fmt_str = "£#,##0.0"
     )
     
     observeEvent(

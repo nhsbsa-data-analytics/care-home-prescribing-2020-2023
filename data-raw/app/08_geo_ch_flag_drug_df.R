@@ -432,7 +432,13 @@ bnf_level_prescribing_estimates_in_care_homes_df <-
     `BNF sub-level` = "BNF_CHILD",
     `Total patient count` = "PATS"
   ) %>% 
-  dplyr::mutate(`Total patient count` = bespoke_round(`Total patient count`))
+  dplyr::mutate(`Total patient count` = bespoke_round(`Total patient count`)) %>% 
+  dplyr::mutate(
+    dplyr::across(
+      dplyr::starts_with("Mean") | dplyr::starts_with("%"),
+      \(x) janitor::round_half_up(x, 1)
+    )
+  )
 
 # Use this
 usethis::use_data(bnf_level_prescribing_estimates_in_care_homes_df, overwrite = TRUE)

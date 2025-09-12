@@ -593,11 +593,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
               if (col_name %in% c(names(geographies), ".selection")) return (val)
               
               accuracy = 0.1
-              if(metric == "Mean drug cost PPM") accuracy = 0.01
               if(startsWith(metric, "Total") & (val < 10^3)) accuracy = 1
-
-              round_digits <- 1
-              if (metric == "Mean drug cost PPM") round_digits <- 2
               
               return (
                 scales::label_comma(
@@ -605,7 +601,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                   # See this issue for reason why append of 1 is necessary:
                   # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071 #gitleaks:allow
                   scale_cut = append(scales::cut_long_scale(), 1, 1)
-                )(janitor::round_half_up(val, round_digits))
+                )(janitor::round_half_up(val, 1))
               )
             },
             footer = function(values, name) {
@@ -619,11 +615,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 
                 # Control behaviour for sub 1K Total values vs others
                 accuracy = 0.1
-                if(metric == "Mean drug cost PPM") accuracy = 0.01
                 if(startsWith(metric, "Total") & (val < 10^3)) accuracy = 1
-                
-                round_digits <- 1
-                if (metric == "Mean drug cost PPM") round_digits <- 2
                 
                 htmltools::div(tags$b(
                   scales::label_comma(
@@ -631,7 +623,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                     # See this issue for reason why append of 1 is necessary:
                     # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071 #gitleaks:allow
                     scale_cut = append(scales::cut_long_scale(), 1, 1)
-                  )(janitor::round_half_up(val, round_digits))
+                  )(janitor::round_half_up(val, 1))
                 ))
               # If character column set 'row' name
               } else if (is.character(values)) {
@@ -846,7 +838,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Create download data
     create_download_data <- function(data) {
       tryCatch(
-        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_df),
+        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_dfffffff),
         error = \(e) {
           data <- data %>%
             tidyr::pivot_wider(
@@ -896,7 +888,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         carehomes2::mod_geo_ch_flag_drug_df %>% 
           dplyr::filter(GEOGRAPHY_CHILD != "Isles of Scilly")
       ),
-      currency_xl_fmt_str = "£#,##0.00"
+      currency_xl_fmt_str = "£#,##0.0"
     )
     
     observeEvent(
