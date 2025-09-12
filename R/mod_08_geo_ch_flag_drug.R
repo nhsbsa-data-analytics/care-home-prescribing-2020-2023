@@ -245,7 +245,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to display chart for one of the 307 Local Authorities.",
+            "Click on a row to display chart for one of the 296 Local Authorities.",
             tags$br(),
             "The Isles of Scilly were removed due to the number of care homes in
              the Local Authority.",

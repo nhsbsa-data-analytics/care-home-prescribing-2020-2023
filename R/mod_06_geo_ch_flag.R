@@ -254,7 +254,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               if (grepl("cost", input$metric, ignore.case = TRUE)) {
                 round(mean(out, na.rm = TRUE), 0)
               } else {
-                round(mean(out, na.rm = TRUE), 2)
+                round(mean(out, na.rm = TRUE), 1)
               }
             }
           )
