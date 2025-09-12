@@ -69,8 +69,9 @@ mod_06_geo_ch_flag_ui <- function(id) {
         "The Isles of Scilly were removed due to the number of care homes in the
          Local Authority.",
         tags$br(),
-        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 2 decimal places."
+        "Mean drug cost PPM is rounded to the nearest GBP.",
+        tags$br(),
+        "All other values are rounded to 1 decimal place."
       )
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
@@ -99,14 +100,14 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Map metric column names to tooltip metric names
     metric_tooltips <- c(
       COST_PPM            = "<b>Mean drug cost PPM</b> \u00A3{point.value}",
-      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.value:.2f}",
-      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.value:.2f}",
-      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.value:.2f}%",
-      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.2f}%",
-      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.value:.2f}%",
-      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.value:.2f}%",
-      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM:</b> {point.value:.2f}",
-      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines:</b> {point.value:.2f}%"
+      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.value:.1f}",
+      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.value:.1f}",
+      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.value:.1f}%",
+      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.1f}%",
+      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.value:.1f}%",
+      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.value:.1f}%",
+      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM:</b> {point.value:.1f}",
+      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines:</b> {point.value:.1f}%"
     )
     
     # Map all column names to download data names
@@ -124,11 +125,11 @@ mod_06_geo_ch_flag_server <- function(id) {
     fmt_data <- carehomes2::metrics_by_geo_and_ch_flag_df %>% 
       dplyr::filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
       dplyr::mutate(
+        COST_PPM = janitor::round_half_up(.data$COST_PPM, 0),
         dplyr::across(
           c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
-          \(x) janitor::round_half_up(x, 2)
-        ),
-        COST_PPM = janitor::round_half_up(COST_PPM, 0)
+          \(x) janitor::round_half_up(x, 1)
+        )
       )
     
     # Reactive data -------------------------------------------------------
@@ -253,7 +254,7 @@ mod_06_geo_ch_flag_server <- function(id) {
               if (grepl("cost", input$metric, ignore.case = TRUE)) {
                 round(mean(out, na.rm = TRUE), 0)
               } else {
-                round(mean(out, na.rm = TRUE), 2)
+                round(mean(out, na.rm = TRUE), 1)
               }
             }
           )

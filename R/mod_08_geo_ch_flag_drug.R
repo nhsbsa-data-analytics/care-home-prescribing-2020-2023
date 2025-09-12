@@ -106,9 +106,10 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
              rounded to five, otherwise to the nearest ten.",
             tags$br(),
             "Values over 1,000 have been shortened with an appropriate suffix and
-             then rounded to 2 decimal places.",
+             then rounded to 1 decimal place.",
             tags$br(),
-            "All other values are rounded to 2 decimal places."
+            "All other values are rounded to 1 decimal place, with values less
+            than 0.05 rounded to zero."
           )
         ),
 
@@ -182,9 +183,10 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
              rounded to five, otherwise to the nearest ten.",
             tags$br(),
             "Values over 1,000 have been shortened with an appropriate suffix and
-             then rounded to 2 decimal places.",
+             then rounded to 1 decimal place.",
             tags$br(),
-            "All other values are rounded to 2 decimal places."
+            "All other values are rounded to 1 decimal place, with values less
+            than 0.05 rounded to zero."
           )
         ),
 
@@ -243,7 +245,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to display chart for one of the 307 Local Authorities.",
+            "Click on a row to display chart for one of the 296 Local Authorities.",
             tags$br(),
             "The Isles of Scilly were removed due to the number of care homes in
              the Local Authority.",
@@ -263,9 +265,10 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
              rounded to five, otherwise to the nearest ten.",
             tags$br(),
             "Values over 1,000 have been shortened with an appropriate suffix and
-             then rounded to 2 decimal places.",
+             then rounded to 1 decimal place.",
             tags$br(),
-            "All other values are rounded to 2 decimal places."
+            "All other values are rounded to 1 decimal place, with values less
+            than 0.05 rounded to zero."
           )
         )
       ),
@@ -283,7 +286,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # One: spline chart
     spline_chart_plot <- function(df, df_select, fy, metric, plot_pos = "") {
       # Shared y axis max value across all 3 plots
-      y_axis_max_val <- max(df$`20/21`, df$`21/22`, df$`22/23`, df$`23/24`)
+      y_axis_max_val <- max(df$`20/21`, df$`21/22`, df$`22/23`, df$`23/24`, df$`24/25`)
 
       accuracy <- \(val) {
         ifelse(startsWith(metric, "Total") & (val < 10^3), 1, 0.01)
@@ -588,20 +591,17 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
             headerClass = "my-header",
             cell = function(val, row, col_name) {
               if (col_name %in% c(names(geographies), ".selection")) return (val)
-
-              accuracy = ifelse(
-                startsWith(metric, "Total") & (val < 10^3),
-                1,
-                0.01
-              )
-
+              
+              accuracy = 0.1
+              if(startsWith(metric, "Total") & (val < 10^3)) accuracy = 1
+              
               return (
                 scales::label_comma(
                   accuracy = accuracy,
                   # See this issue for reason why append of 1 is necessary:
                   # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071 #gitleaks:allow
                   scale_cut = append(scales::cut_long_scale(), 1, 1)
-                )(janitor::round_half_up(val, 2))
+                )(janitor::round_half_up(val, 1))
               )
             },
             footer = function(values, name) {
@@ -614,11 +614,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 val = mean(values, na.rm = TRUE)
                 
                 # Control behaviour for sub 1K Total values vs others
-                accuracy = ifelse(
-                  startsWith(metric, "Total") & (val < 10^3),
-                  1,
-                  0.01
-                )
+                accuracy = 0.1
+                if(startsWith(metric, "Total") & (val < 10^3)) accuracy = 1
                 
                 htmltools::div(tags$b(
                   scales::label_comma(
@@ -626,7 +623,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                     # See this issue for reason why append of 1 is necessary:
                     # https://github.com/r-lib/scales/issues/413#issuecomment-1876179071 #gitleaks:allow
                     scale_cut = append(scales::cut_long_scale(), 1, 1)
-                  )(janitor::round_half_up(val, 2))
+                  )(janitor::round_half_up(val, 1))
                 ))
               # If character column set 'row' name
               } else if (is.character(values)) {
@@ -841,7 +838,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Create download data
     create_download_data <- function(data) {
       tryCatch(
-        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_df),
+        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_dfffffff),
         error = \(e) {
           data <- data %>%
             tidyr::pivot_wider(
@@ -869,9 +866,15 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
               `Sub-geography name` = .data$GEOGRAPHY_CHILD,
               `BNF level` = .data$BNF_PARENT,
               `BNF sub-level` = .data$BNF_CHILD,
-              `Patient count` = .data$PATS
+              `Total patient count` = .data$PATS
             ) %>%
-            dplyr::mutate(`Patient count` = bespoke_round(`Patient count`))
+            dplyr::mutate(`Total patient count` = bespoke_round(`Total patient count`)) %>% 
+            dplyr::mutate(
+              dplyr::across(
+                c(dplyr::starts_with("Mean"), dplyr::starts_with("%")),
+                \(x) janitor::round_half_up(x, 1)
+              )
+            )
         }
       )
     }
@@ -884,8 +887,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         carehomes2::mod_geo_ch_flag_drug_df %>% 
           dplyr::filter(GEOGRAPHY_CHILD != "Isles of Scilly")
       ),
-      currency_xl_fmt_str = "£#,##0.00",
-      number_xl_fmt_str = "#,##0.00"
+      currency_xl_fmt_str = "£#,##0.0"
     )
     
     observeEvent(

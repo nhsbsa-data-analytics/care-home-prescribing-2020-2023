@@ -60,9 +60,10 @@ mod_07_ch_flag_drug_ui <- function(id) {
         home item count are presented.",
         tags$br(),
         "Values over 1,000 have been shortened with an appropriate suffix and
-        then rounded to 2 decimal places.",
+        then rounded to 1 decimal place.",
         tags$br(),
-        "All other values are rounded to 2 decimal places."
+        "All other values are rounded to 1 decimal place, with values less than 
+        0.05 rounded to zero."
       )
     )
   )
@@ -80,7 +81,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
         dplyr::mutate(
           VALUE = dplyr::case_when(
             startsWith(METRIC, "Total") ~ bespoke_round(VALUE),
-            TRUE ~ janitor::round_half_up(VALUE, 2)
+            TRUE ~ janitor::round_half_up(VALUE, 1)
           )
         ) %>%
         dplyr::filter(
@@ -175,16 +176,16 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
             function() {
               var fmt_num = function(x) {
                 if(x >= 10**9){
-                    return Highcharts.numberFormat(x / 10**9, 2) + 'B';
+                    return Highcharts.numberFormat(x / 10**9, 1) + 'B';
                 }
                 else if(x >= 10**6) {
-                    return Highcharts.numberFormat(x / 10**6, 2) + 'M';
+                    return Highcharts.numberFormat(x / 10**6, 1) + 'M';
                 }
                 else if(x >= 10**3) {
-                    return Highcharts.numberFormat(x / 10**3, 2) + 'K';
+                    return Highcharts.numberFormat(x / 10**3, 1) + 'K';
                 }
                 else {
-                    return Highcharts.numberFormat(x, 2);
+                    return Highcharts.numberFormat(x, 1);
                 }
               }
             
@@ -238,7 +239,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
       dplyr::mutate(
         VALUE = dplyr::case_when(
           startsWith(METRIC, "Total") ~ bespoke_round(VALUE),
-          TRUE ~ janitor::round_half_up(VALUE, 2)
+          TRUE ~ janitor::round_half_up(VALUE, 1)
         )
       ) %>%
       tidyr::pivot_wider(
@@ -259,8 +260,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
       id = "download_data",
       filename = "National BNF-level prescribing estimates.xlsx",
       export_data = download_data,
-      currency_xl_fmt_str = "£#,##0.00",
-      number_xl_fmt_str = "#,##0.00"
+      currency_xl_fmt_str = "£#,##0.0"
     )
     
     observeEvent(

@@ -109,8 +109,9 @@ mod_05_metrics_age_gender_server <- function(id){
           
         } else NULL,
         tags$br(),
-        "Mean drug cost PPM is rounded to the nearest GBP. All other values 
-        are rounded to 2 decimal places."
+        "Mean drug cost PPM is rounded to the nearest GBP.",
+        tags$br(),
+        "All other values are rounded to 1 decimal place."
       )
     })
     
@@ -268,14 +269,14 @@ mod_05_metrics_age_gender_server <- function(id){
           useHTML = T,
           valueDecimals = switch(input$gender_and_age_band_and_ch_flag_metric,
                                  "COST_PPM" = 0,
-                                 "ITEMS_PPM" = 2,
-                                 "UNIQ_MEDS_PPM" = 2,
-                                 "PCT_PM_GTE_SIX" = 2,
-                                 "PCT_PM_GTE_TEN" = 2,
-                                 "PCT_PM_ACB" = 2,
-                                 "PCT_PM_DAMN" = 2,
-                                 "UNIQ_MEDS_FALLS_PPM" = 2,
-                                 "PCT_PM_FALLS" = 2
+                                 "ITEMS_PPM" = 1,
+                                 "UNIQ_MEDS_PPM" = 1,
+                                 "PCT_PM_GTE_SIX" = 1,
+                                 "PCT_PM_GTE_TEN" = 1,
+                                 "PCT_PM_ACB" = 1,
+                                 "PCT_PM_DAMN" = 1,
+                                 "UNIQ_MEDS_FALLS_PPM" = 1,
+                                 "PCT_PM_FALLS" = 1
                                  ),
           headerFormat = "<b> {point.value:.1f} </b>",
           valueSuffix = switch(input$gender_and_age_band_and_ch_flag_metric,
@@ -302,7 +303,16 @@ mod_05_metrics_age_gender_server <- function(id){
     mod_nhs_download_server(
       id = "download_data",
       filename = "Selected prescribing metrics by demographic.xlsx",
-      export_data = create_download_data(carehomes2::metrics_by_age_gender_and_ch_flag_df)
+      export_data = create_download_data(
+        carehomes2::metrics_by_age_gender_and_ch_flag_df %>% 
+          dplyr::mutate(
+            COST_PPM = janitor::round_half_up(.data$COST_PPM, 0),
+            dplyr::across(
+              c(dplyr::ends_with("_PPM"), dplyr::starts_with("PCT_")),
+              \(x) janitor::round_half_up(x, 1)
+            )
+          )
+      )
     )
     
     observeEvent(

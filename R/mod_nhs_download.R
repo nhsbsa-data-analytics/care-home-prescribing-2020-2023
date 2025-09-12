@@ -48,8 +48,10 @@ mod_nhs_download_ui <- function(id) {
 #' @noRd
 mod_nhs_download_server <- function(id, filename, export_data,
                                     currency_xl_fmt_str = "£#,##0",
-                                    percent_xl_fmt_str = "#0.00%",
-                                    number_xl_fmt_str = "#,##0.00"
+                                    percent_xl_fmt_str = "#0.0%",
+                                    number_xl_fmt_str = "#,##0.0",
+                                    round_total_xl_fmt_str = "#,##0",
+                                    round_total_cost_xl_fmt_str = "£#,##0"
                                     ) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -89,7 +91,9 @@ mod_nhs_download_server <- function(id, filename, export_data,
             purrr::map(is.numeric) %>% 
             unlist() %>% 
             which() %>% 
-            setdiff(union(currency_cols, percent_cols)) 
+            setdiff(union(currency_cols, percent_cols))
+          total_cols <- grep("Total", names(df))
+          total_cost_cols <- intersect(currency_cols, total_cols)
           
           wb <- openxlsx::createWorkbook()
           openxlsx::addWorksheet(wb, "Prescribing data")
@@ -122,6 +126,26 @@ mod_nhs_download_server <- function(id, filename, export_data,
             style = s,
             rows = 1:nrow(df) + 1,
             cols = number_cols,
+            gridExpand = TRUE
+          )
+          # Add Total styling
+          s <- openxlsx::createStyle(numFmt = round_total_xl_fmt_str)
+          openxlsx::addStyle(
+            wb,
+            1,
+            style = s,
+            rows = 1:nrow(df) + 1,
+            cols = total_cols,
+            gridExpand = TRUE
+          )
+          # Add Total cost styling
+          s <- openxlsx::createStyle(numFmt = round_total_cost_xl_fmt_str)
+          openxlsx::addStyle(
+            wb,
+            1,
+            style = s,
+            rows = 1:nrow(df) + 1,
+            cols = total_cost_cols,
             gridExpand = TRUE
           )
           
