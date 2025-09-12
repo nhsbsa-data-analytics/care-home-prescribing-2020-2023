@@ -871,10 +871,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
             dplyr::mutate(`Total patient count` = bespoke_round(`Total patient count`)) %>% 
             dplyr::mutate(
               dplyr::across(
-                c(`Mean prescription items PPM`, dplyr::starts_with("%")),
+                c(dplyr::starts_with("Mean"), dplyr::starts_with("%")),
                 \(x) janitor::round_half_up(x, 1)
-              ),
-              `Mean drug cost PPM` = janitor::round_half_up(`Mean drug cost PPM`, 2)
+              )
             )
         }
       )
