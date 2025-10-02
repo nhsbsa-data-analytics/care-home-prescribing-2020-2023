@@ -18,10 +18,10 @@ ch_pats = base %>%
   distinct()
 
 # CHECK: Records across entire time period associated with ch_pats: 441m (diff to CH_FLAG == 1 record count)
-base %>% 
-  select(PF_ID, NHS_NO) %>% 
-  inner_join(ch_pats) %>% 
-  tally()
+#base %>% 
+#  select(PF_ID, NHS_NO) %>% 
+#  inner_join(ch_pats) %>% 
+#  tally()
 
 # Base data for chart
 df = base %>% 
@@ -69,8 +69,6 @@ df_plot = df %>%
   collect() %>% 
   mutate(PROP = 100 * TEN_PLUS_SUM / TOTAL_PM) %>% 
   arrange(SEQ)
-
-
 
 # Line charts ------------------------------------------------------------------
 
