@@ -92,6 +92,13 @@ get_metrics <- function(init_db,
           FALLS_CAT == 1 ~ BNF_CHEMICAL_SUBSTANCE,
           TRUE ~ NA
         )
+      ),
+      UNIQUE_ACAP = n_distinct(
+        case_when(
+          (PARAGRAPH_DESCR == 'Oral anticoagulants' | PARAGRAPH_DESCR == 'Antiplatelet drugs') & 
+            CHEMICAL_SUBSTANCE_BNF_DESCR != 'INR blood testing reagents' ~ BNF_CHEMICAL_SUBSTANCE,
+          TRUE ~ NA
+        )
       )
     ) %>%
     ungroup() %>% 
@@ -115,7 +122,11 @@ get_metrics <- function(init_db,
       # Falls unique medicines
       UNIQ_MEDS_FALLS_PPM = mean(UNIQUE_MEDICINES_FALLS, na.rm = TRUE),
       # Falls numerator
-      RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE)
+      RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE),
+      # Anicoagulant & antiplatelet info
+      ANY_ACAP            = sum(ifelse(UNIQUE_ACAP >= 1, 1, 0), na.rm = TRUE),
+      ACAP_TWO            = sum(ifelse(UNIQUE_ACAP >= 2, 1, 0), na.rm = TRUE),
+      ACAP_THREE          = sum(ifelse(UNIQUE_ACAP >= 3, 1, 0), na.rm = TRUE)
     ) %>%
     ungroup() %>% 
     mutate(
@@ -140,6 +151,14 @@ get_metrics <- function(init_db,
       PCT_PM_FALLS = 100 * case_when(
         TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_FALLS / TOTAL_PM
+      ),
+      PCT_ACAP_TWO = 100 * case_when(
+        ANY_ACAP == 0 ~ NA,
+        TRUE ~ ACAP_TWO / ANY_ACAP
+      ),
+      PCT_ACAP_THREE = 100 * case_when(
+        ANY_ACAP == 0 ~ NA,
+        TRUE ~ ACAP_THREE / ANY_ACAP
       )
     ) %>%
     nhsbsaR::collect_with_parallelism(num_parallel) %>%
@@ -158,7 +177,9 @@ get_metrics <- function(init_db,
         PCT_PM_GTE_TEN = 0L,
         PCT_PM_ACB     = 0L,
         PCT_PM_DAMN    = 0L,
-        PCT_PM_FALLS   = 0L
+        PCT_PM_FALLS   = 0L,
+        PCT_ACAP_TWO   = 0L,
+        PCT_ACAP_THREE = 0L
       )
     ) %>%
     select(-starts_with("RISK")) %>% 
@@ -166,6 +187,7 @@ get_metrics <- function(init_db,
     relocate(starts_with("TOTAL"), .after = last_col()) %>%
     relocate(starts_with("PCT"), .after = last_col())
 }
+
 
 
 #' Get metrics for given groupings
@@ -256,6 +278,13 @@ get_metrics_direct <- function(
           FALLS_CAT == 1 ~ BNF_CHEMICAL_SUBSTANCE,
           TRUE ~ NA
         )
+      ),
+      UNIQUE_ACAP = n_distinct(
+        case_when(
+          (PARAGRAPH_DESCR == 'Oral anticoagulants' | PARAGRAPH_DESCR == 'Antiplatelet drugs') & 
+            CHEMICAL_SUBSTANCE_BNF_DESCR != 'INR blood testing reagents' ~ BNF_CHEMICAL_SUBSTANCE,
+          TRUE ~ NA
+        )
       )
     ) %>%
     ungroup() %>% 
@@ -279,7 +308,11 @@ get_metrics_direct <- function(
       # Falls unique medicines
       UNIQ_MEDS_FALLS_PPM = mean(UNIQUE_MEDICINES_FALLS, na.rm = TRUE),
       # Falls numerator
-      RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE)
+      RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE),
+      # Anicoagulant & antiplatelet info
+      ANY_ACAP            = sum(ifelse(UNIQUE_ACAP >= 1, 1, 0), na.rm = TRUE),
+      ACAP_TWO            = sum(ifelse(UNIQUE_ACAP >= 2, 1, 0), na.rm = TRUE),
+      ACAP_THREE          = sum(ifelse(UNIQUE_ACAP >= 3, 1, 0), na.rm = TRUE)
     ) %>%
     ungroup() %>% 
     mutate(
@@ -304,6 +337,14 @@ get_metrics_direct <- function(
       PCT_PM_FALLS = 100 * case_when(
         TOTAL_PM == 0 ~ NA,
         TRUE ~ RISK_PM_FALLS / TOTAL_PM
+      ),
+      PCT_ACAP_TWO = 100 * case_when(
+        ANY_ACAP == 0 ~ NA,
+        TRUE ~ ACAP_TWO / ANY_ACAP
+      ),
+      PCT_ACAP_THREE = 100 * case_when(
+        ANY_ACAP == 0 ~ NA,
+        TRUE ~ ACAP_THREE / ANY_ACAP
       )
     ) %>%
     nhsbsaR::collect_with_parallelism(num_parallel)
