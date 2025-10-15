@@ -23,8 +23,8 @@ mod_04_metrics_ch_type_ui <- function(id) {
               "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
               "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
               "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
-              "% of patient-months with 2+ ACAP medicines" = "PCT_PM_ACAP2",
-              "% of patient-months with 3+ ACAP medicines" = "PCT_PM_ACAP3",
+              "% of patient-months with 2+ ACAP medicines" = "PCT_ACAP_TWO",
+              "% of patient-months with 3+ ACAP medicines" = "PCT_ACAP_THREE",
               "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
             ),
@@ -98,8 +98,8 @@ mod_04_metrics_ch_type_server <- function(id) {
       PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
       PCT_PM_ACB          = "% of patient-months with 2+ ACB medicines",
       PCT_PM_DAMN         = "% of patient-months with 2+ DAMN medicines",
-      PCT_PM_ACAP2        = "% of patient-months with 2+ ACAP medicines",
-      PCT_PM_ACAP3        = "% of patient-months with 3+ ACAP medicines",
+      PCT_ACAP_TWO        = "% of patient-months with 2+ ACAP medicines",
+      PCT_ACAP_THREE      = "% of patient-months with 3+ ACAP medicines",
       UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
       PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
     )
@@ -113,8 +113,8 @@ mod_04_metrics_ch_type_server <- function(id) {
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
-      PCT_PM_ACAP2        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
-      PCT_PM_ACAP3        = "<b>% of patient-months with 3+ ACAP medicines:</b> {point.y:.1f}%",
+      PCT_ACAP_TWO        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
+      PCT_ACAP_THREE      = "<b>% of patient-months with 3+ ACAP medicines:</b> {point.y:.1f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
       PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
     )
