@@ -34,6 +34,8 @@ mod_06_geo_ch_flag_ui <- function(id) {
               "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
               "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
               "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
+              "% of patient-months with 2+ ACAP medicines" = "PCT_PM_ACAP2",
+              "% of patient-months with 3+ ACAP medicines" = "PCT_PM_ACAP3",
               "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
             ),
@@ -93,6 +95,8 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
       PCT_PM_ACB          = "% of patient-months with 2+ ACB medicines",
       PCT_PM_DAMN         = "% of patient-months with 2+ DAMN medicines",
+      PCT_PM_ACAP2        = "% of patient-months with 2+ ACAP medicines",
+      PCT_PM_ACAP3        = "% of patient-months with 3+ ACAP medicines",
       UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
       PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
     )
@@ -106,6 +110,8 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.1f}%",
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.value:.1f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.value:.1f}%",
+      PCT_PM_ACAP2        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
+      PCT_PM_ACAP3        = "<b>% of patient-months with 3+ ACAP medicines:</b> {point.y:.1f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM:</b> {point.value:.1f}",
       PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines:</b> {point.value:.1f}%"
     )
