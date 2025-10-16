@@ -244,8 +244,9 @@ left join   unique_column_list  ucl on  ucl.FLAG_NEW_TABLE = 1
 --Once the table has been recreated and used to replace the previous version there are two follow-up actions that need to be handled
 
 --INDEX CREATION
--- run the index creation script from the Git repo (lines 13 onwards)
--- https://github.com/nhsbsa-data-analytics/care-home-prescribing-2020-2023/blob/main/data-raw/workflow/workflow_union_4_years_in_one_table.sql
+-- run the 'create index' commands in the table creation script from the Git repo
+-- the latest version of the script is:
+-- https://github.com/nhsbsa-data-analytics/care-home-prescribing-2020-2023/blob/main/data-raw/workflow/workflow_union_5_years_in_one_table.sql
 
 --TABLE ACCESS
 -- if the table is used to create a new table with the same name, the table access process will reassign access the next time it is run the following morning
