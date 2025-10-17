@@ -110,8 +110,8 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.1f}%",
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.value:.1f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.value:.1f}%",
-      PCT_ACAP_TWO        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
-      PCT_ACAP_THREE      = "<b>% of patient-months with 3+ ACAP medicines:</b> {point.y:.1f}%",
+      PCT_ACAP_TWO        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.value:.1f}%",
+      PCT_ACAP_THREE      = "<b>% of patient-months with 3+ ACAP medicines:</b> {point.value:.1f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM:</b> {point.value:.1f}",
       PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines:</b> {point.value:.1f}%"
     )
