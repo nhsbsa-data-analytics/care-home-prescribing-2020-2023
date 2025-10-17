@@ -84,7 +84,7 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           br(),
 
           shiny::htmlOutput(outputId = ns("region_title")),
-          uiOutput(ns("region_splines")),
+          highcharter::highchartOutput(outputId = ns("region_splines"), height = "350px"),
           br(),
 
           # Chart caption
@@ -492,6 +492,45 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
 
       df
     })
+    
+    # Region: df after 4 initial filters applied
+    region_line_df = reactive({
+      
+      # Filter, pivot and rename
+      df <- mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "Region",
+          BNF_PARENT == isolate(input$input_region_bnf_parent),
+          BNF_CHILD == input$input_region_bnf_child,
+          METRIC == input$input_region_metric
+        ) %>%
+        # Ensure new FY columns are in order
+        dplyr::inner_join(selected_region())
+        dplyr::arrange(FY, GEOGRAPHY_CHILD) %>% 
+        
+      print(df)
+      df
+    })
+    
+    # Region: df after 4 initial filters applied
+    region_line_mean_df = reactive({
+      
+      # Filter, pivot and rename
+      df <- mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "Region",
+          BNF_PARENT == isolate(input$input_region_bnf_parent),
+          BNF_CHILD == input$input_region_bnf_child,
+          METRIC == input$input_region_metric
+        ) %>%  
+        dplyr::group_by(FY) %>% 
+        dplyr::summarise(VALUE = mean(VALUE)) %>% 
+        dplyr::ungroup()
+      print(df)
+      df
+    })
 
     # ICS: df after 4 initial filters applied
     ics_df = reactive({
@@ -578,8 +617,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::rename_at("GEOGRAPHY_CHILD", ~geo_name) %>%
         dplyr::select(-GEOGRAPHY_PARENT) %>%
         reactable::reactable(
-          selection = "single",
-          defaultSelected = df_select,
+          selection = "multiple",
+          defaultSelected = 1,
+          #defaultSelected = df_select,
           onClick = "select",
           pagination = FALSE,
           searchable = TRUE,
@@ -643,6 +683,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       # Select 1st row on initialisation
       t <- reactable::getReactableState("region_table", "selected")
       ifelse(is.null(t), 1, t)
+      
+      print(t)
     })
 
     # Region: select row
@@ -686,9 +728,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region: get selected row category name
     selected_region <- reactive({
       region_df() %>%
-        dplyr::filter(dplyr::row_number() == index_region()) %>%
-        dplyr::select(GEOGRAPHY_CHILD) %>%
-        dplyr::pull()
+        dplyr::slice(index_region()) %>%
+        dplyr::select(GEOGRAPHY_CHILD)
     })
 
     # ICS: get selected row category name
@@ -758,33 +799,26 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # 4 charts -----------------------------------------------------------------
 
     # Region charts
-    output$region_splines <- renderUI({
-      # Get distinct financial years from column names
-      fin_years <- region_df() %>%
-        dplyr::select(-dplyr::starts_with("GEOGRAPHY")) %>%
-        names()
+    output$region_splines <- highcharter::renderHighchart({
+      
 
-      # Add a duplicate of first year at start (will be used as a dummy chart to
-      # get y-axis)
-      fin_years <- c(min(fin_years), fin_years)
-
-      # Position matters only for first and last chart
-      plot_pos <- c("first", rep("", length(fin_years) - 2), "last")
-
-      # Map each year and position to spline chart ...
-      purrr::map2(fin_years, plot_pos, \(fy, pos) {
-        spline_chart_plot(
-          region_df(),
-          selected_region(),
-          fy,
-          input$input_region_metric,
-          pos
-        )
-      }) %>%
-        # ... and create a single row grid
-        highcharter::hw_grid(ncol = length(fin_years), rowheight = 250) %>%
-        # Required to allow shiny to display the grid
-        htmltools::browsable()
+      hc <- highcharter::highchart() %>% 
+        highcharter::hc_chart(type = "line") %>% 
+        #highcharter::hc_add_series(
+        #  data = region_line_mean_df(),
+        #  type = "line",
+        #  name = "National Mean",
+        #  highcharter::hcaes(x = FY, y = VALUE)
+        #) %>% 
+        highcharter::hc_add_series(
+          data = region_line_df(),
+          type = "line",
+          highcharter::hcaes(x = FY, y = VALUE, group = GEOGRAPHY_CHILD)
+        ) %>% 
+        nhsbsaR::theme_nhsbsa_highchart() %>%
+        highcharter::hc_credits(enabled = TRUE)
+        
+      hc
     })
 
     # Ics charts
