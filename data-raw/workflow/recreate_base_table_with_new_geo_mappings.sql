@@ -27,9 +27,13 @@ DEPENDENCIES:
 NOTES:
     The postcode lookup table is not in DALL_REF, so the actual schema needs to be added before running.
         - CTRL-F "USER_SCHEMA"
+
     The last year in the table names will need to be set correctly throughout
         - CTRL-F "END_YEAR"
+
     Dropping and creating of table (see REPLACE DATASET section) commented out to prevent accidental running.
+    
+    Permissions on the table will need to be added back once finished.
 */
 ------------------------------------------------------------------------------------------------------------------------------------------------------
 ------------------------------------------------------------------------------------------------------------------------------------------------------
