@@ -167,7 +167,7 @@ mod_04_metrics_ch_type_server <- function(id) {
       data <- data %>% dplyr::filter(.data$CH_TYPE == ch_type)
       
       # Get max of metric to use a common y-axis range
-      y_max <- carehomes2::metrics_by_ch_type_85_split_df[[input$metric]] %>%
+      y_max <- fmt_data[[input$metric]] %>%
         max(na.rm = TRUE)
       
       x <- rlang::sym("FY")
