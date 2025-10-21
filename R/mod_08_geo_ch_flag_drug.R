@@ -419,7 +419,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::distinct() %>%
         dplyr::arrange(BNF_CHILD)
     })
-
+    
+    # Region: observe Region parent choice
     observeEvent(input$input_region_bnf_parent, {
 
       choices = region_lookup() %>%
@@ -459,10 +460,10 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     p2 = "% of total annual drug cost"
     c1 = "Mean drug cost PPM"
     c2 = "Total annual drug cost"
+    i1 = "Total annual number of prescription items"
     
     # Tooltip value formatting functions
-    label_comma_integer = function (x) scales::label_comma(accuracy = 0.1, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
-    label_comma_decimal = function (x) scales::label_comma(accuracy = 0.1, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
+    label_value_format = function (x, acc) scales::label_comma(accuracy = acc, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
     
     # Region: df after 4 initial filters applied
     region_filter = reactive({
@@ -520,8 +521,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::select(FY, GEOGRAPHY_CHILD, VALUE, MIN, MAX) %>% 
         dplyr::mutate(
           VALUE_FORMAT = dplyr::case_when(
-            input$input_region_metric %in% c(c1, c2) ~ label_comma_integer(VALUE),
-            TRUE ~ label_comma_decimal(VALUE)
+            input$input_region_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
           )
         )
         
@@ -539,8 +540,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::ungroup() %>% 
         dplyr::mutate(
           VALUE_FORMAT = dplyr::case_when(
-            input$input_region_metric %in% c(c1, c2) ~ label_comma_integer(VALUE),
-            TRUE ~ label_comma_decimal(VALUE)
+            input$input_region_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
           )
         )
       print(df)
@@ -700,8 +701,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       # Select 1st row on initialisation
       t <- reactable::getReactableState("region_table", "selected")
       ifelse(is.null(t), 1, t)
-      
-      print(t)
+      t
     })
 
     # Region: select row
@@ -825,9 +825,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
                 "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
                 "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
-                "Total annual drug cost" = "<b>Total annual drug cost: £{point.VALUE_FORMAT:,.0f}</b>",
-                "Mean prescription items PPM" = "<b>Mean prescription items PPM: {point.VALUE_FORMAT:,.1f}</b>",
-                "Total annual number of prescription items" = "<b>Total annual number of prescription items: {point.VALUE_FORMAT:,.0f}</b>"
+                "Total annual drug cost" = "<b>Total annual drug cost: </b> £{point.VALUE_FORMAT:,.0f}",
+                "Mean prescription items PPM" = "<b>Mean prescription items PPM: </b> {point.VALUE_FORMAT:,.1f}",
+                "Total annual number of prescription items" = "<b>Total annual number of prescription items: </b> {point.VALUE_FORMAT:,.0f}"
               )
             )
           )
@@ -849,9 +849,9 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                 "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
                 "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
                 "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
-                "Total annual drug cost" = "<b>Total annual drug cost: £{point.VALUE_FORMAT:,.1f}</b>",
-                "Mean prescription items PPM" = "<b>Mean prescription items PPM: {point.VALUE_FORMAT:,.1f}</b>",
-                "Total annual number of prescription items" = "<b>Total annual number of prescription items: {point.VALUE_FORMAT:,.0f}</b>"
+                "Total annual drug cost" = "<b>Total annual drug cost: </b> £{point.VALUE_FORMAT:,.1f}",
+                "Mean prescription items PPM" = "<b>Mean prescription items PPM: </b> {point.VALUE_FORMAT:,.1f}",
+                "Total annual number of prescription items" = "<b>Total annual number of prescription items: </b> {point.VALUE_FORMAT:,.0f}"
               )
             )
           )
@@ -884,23 +884,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         #     )
         #   )
         # ) 
-        # highcharter::hc_tooltip(
-        #   headerFormat = "",
-        #   pointFormat = paste0(
-        #     "<b>Year: </b> {point.FY}<br>",
-        #     "<b>Region: </b> {point.GEOGRAPHY_CHILD}<br>",
-        #     "<b>BNF ", input$input_region_bnf_parent, ": </b> ", input$input_region_bnf_child, "<br>",
-        #     switch(
-        #       input$input_region_metric,
-        #       "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
-        #       "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
-        #       "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
-        #       "Total annual drug cost" = "<b>Total annual drug cost: £{point.VALUE_FORMAT:,.1f}</b>",
-        #       "Mean prescription items PPM" = "<b>Mean prescription items PPM: {point.VALUE_FORMAT:,.1f}</b>",
-        #       "Total annual number of prescription items" = "<b>Total annual number of prescription items: {point.VALUE_FORMAT:,.0f}</b>"
-        #     )
-        #   )
-        # )
+
         
     })
 
