@@ -24,7 +24,6 @@ mod_04_metrics_ch_type_ui <- function(id) {
               "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
               "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
               "% of patient-months with 2+ ACAP medicines" = "PCT_ACAP_TWO",
-              "% of patient-months with 3+ ACAP medicines" = "PCT_ACAP_THREE",
               "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
             ),
@@ -99,9 +98,14 @@ mod_04_metrics_ch_type_server <- function(id) {
       PCT_PM_ACB          = "% of patient-months with 2+ ACB medicines",
       PCT_PM_DAMN         = "% of patient-months with 2+ DAMN medicines",
       PCT_ACAP_TWO        = "% of patient-months with 2+ ACAP medicines",
-      PCT_ACAP_THREE      = "% of patient-months with 3+ ACAP medicines",
       UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
-      PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
+      PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines",
+      
+      # Exposed in data download only
+      TOTAL_PM = "Total patient-months",
+      TOTAL_PM_ACB = "Total patient-months with any ACB",
+      TOTAL_PM_DAMN = "Total patient-months with any DAMN",
+      TOTAL_PM_ACAP = "Total patient-months with any ACAP"
     )
     
     # Map metric column names to tooltip metric names
@@ -114,7 +118,6 @@ mod_04_metrics_ch_type_server <- function(id) {
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
       PCT_ACAP_TWO        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
-      PCT_ACAP_THREE      = "<b>% of patient-months with 3+ ACAP medicines:</b> {point.y:.1f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
       PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
     )
@@ -130,6 +133,7 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Formatted data ------------------------------------------------------
     
     fmt_data <- carehomes2::metrics_by_ch_type_85_split_df %>% 
+      dplyr::select(-PCT_ACAP_THREE) %>% 
       dplyr::mutate(
         COST_PPM = janitor::round_half_up(.data$COST_PPM, 0),
         dplyr::across(
@@ -206,7 +210,6 @@ mod_04_metrics_ch_type_server <- function(id) {
     # Create download data
     create_download_data <- function(data) {
       data %>%
-        dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::arrange(.data$FY, .data$CH_TYPE, .data$AGE_BAND) %>%
         dplyr::rename(dl_col_names)
     }

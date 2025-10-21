@@ -28,9 +28,9 @@ This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy da
 
 #### Multiple prescribing of anticoagulant and antiplatelet (ACAP) medicines
 
-Prescribers should be aware of the increased risks posed by taking multiple anticoagulant or antiplatelet medicines and extra care should be taken of these patients for the duration of therapy.
+Prescribers should be aware of the increased risks posed by taking multiple anti-coagulant or anti-platelet medicines and extra care should be taken of these patients for the duration of therapy.
 
-This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy dashboard ACAP metric (PDF format)](https://www.nhsbsa.nhs.uk/sites/default/files/2018-02/PolyPharmacy%20Specification%20v1%200%20July%202017_0.pdf). We provide two versions - two or more and three or more, where each is the percentage of patients prescribed 2+ or 3+, respectively, unique ACAP medicines during a single month, out of the months where patients was prescribed at least one such drug.
+This analysis uses a patient-month version of the NHSBSA [ePACT2 Polypharmacy dashboard ACAP metric (PDF format)](https://www.nhsbsa.nhs.uk/sites/default/files/2018-02/PolyPharmacy%20Specification%20v1%200%20July%202017_0.pdf). Unlike ePACT2 (3 or more medicines), we calculate this based on prescribing or 2 or more ACAP medicines. This is due to the very small rates, which are generally less than 0.1%. The metric gives the percentage of patients prescribed 2+ unique ACAP medicines during a single month, out of the months where patients were prescribed at least one such drug.
 
 ### Fall metrics
 

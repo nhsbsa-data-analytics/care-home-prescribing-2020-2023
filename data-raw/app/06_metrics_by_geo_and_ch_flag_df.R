@@ -268,12 +268,6 @@ metrics_by_geo_and_ch_flag_df <- names(geographies)[-1] %>%
 metrics_by_geo_and_ch_flag_df <- metrics_by_geo_and_ch_flag_df %>%
   mutate(CH_FLAG = as.logical(CH_FLAG)) %>% 
   filter(!is.na(SUB_GEOGRAPHY_NAME)) %>% 
-  replace_na(list(UNIQ_MEDS_FALLS_PPM = 0, ANY_ACAP = 0, ACAP_TWO = 0, ACAP_THREE = 0)) %>%
-  rename(TOTAL_PM_ACAP = ANY_ACAP) %>% 
-  mutate(
-    ACAP_TWO = NULL,
-    ACAP_THREE = NULL
-  ) %>% 
   format_data_raw("CH_FLAG") %>%
   verify(nrow.alt(.) == EXPECTED_ROWS) %>% 
   assert.alt(

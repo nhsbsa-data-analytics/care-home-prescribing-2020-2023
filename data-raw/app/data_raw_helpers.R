@@ -94,9 +94,11 @@ get_metrics <- function(init_db,
         )
       ),
       UNIQUE_ACAP = n_distinct(
-        case_when(
-          (PARAGRAPH_DESCR == 'Oral anticoagulants' | PARAGRAPH_DESCR == 'Antiplatelet drugs') & 
-            CHEMICAL_SUBSTANCE_BNF_DESCR != 'INR blood testing reagents' ~ BNF_CHEMICAL_SUBSTANCE,
+        case_when((
+          (PARAGRAPH_DESCR == 'Oral anticoagulants' |
+           PARAGRAPH_DESCR == 'Antiplatelet drugs') & 
+            CHEMICAL_SUBSTANCE_BNF_DESCR != 'INR blood testing reagents')
+          ~ BNF_CHEMICAL_SUBSTANCE,
           TRUE ~ NA
         )
       )
@@ -108,6 +110,7 @@ get_metrics <- function(init_db,
       TOTAL_PM            = n(),
       TOTAL_PM_ACB        = sum(ANY_ACB, na.rm = TRUE),
       TOTAL_PM_DAMN       = sum(ANY_DAMN, na.rm = TRUE),
+      TOTAL_PM_ACAP       = sum(ifelse(UNIQUE_ACAP >= 1, 1, 0), na.rm = TRUE),
       # Items, cost and unique meds count
       ITEMS_PPM           = mean(TOTAL_ITEMS, na.rm = TRUE),
       COST_PPM            = mean(TOTAL_COST, na.rm = TRUE),
@@ -123,8 +126,7 @@ get_metrics <- function(init_db,
       UNIQ_MEDS_FALLS_PPM = mean(UNIQUE_MEDICINES_FALLS, na.rm = TRUE),
       # Falls numerator
       RISK_PM_FALLS       = sum(FALLS, na.rm = TRUE),
-      # Anticoagulant & antiplatelet info
-      TOTAL_PM_ACAP       = sum(ifelse(UNIQUE_ACAP >= 1, 1, 0), na.rm = TRUE),
+      # ACAP numerators
       RISK_PM_ACAP_TWO    = sum(ifelse(UNIQUE_ACAP >= 2, 1, 0), na.rm = TRUE),
       RISK_PM_ACAP_THREE  = sum(ifelse(UNIQUE_ACAP >= 3, 1, 0), na.rm = TRUE)
     ) %>%
@@ -153,11 +155,11 @@ get_metrics <- function(init_db,
         TRUE ~ RISK_PM_FALLS / TOTAL_PM
       ),
       PCT_ACAP_TWO = 100 * case_when(
-        ANY_ACAP == 0 ~ NA,
+        TOTAL_PM_ACAP == 0 ~ NA,
         TRUE ~ RISK_PM_ACAP_TWO / TOTAL_PM_ACAP
       ),
       PCT_ACAP_THREE = 100 * case_when(
-        ANY_ACAP == 0 ~ NA,
+        TOTAL_PM_ACAP == 0 ~ NA,
         TRUE ~ RISK_PM_ACAP_THREE / TOTAL_PM_ACAP
       )
     ) %>%
@@ -170,6 +172,7 @@ get_metrics <- function(init_db,
         TOTAL_PM            = 0L,
         TOTAL_PM_ACB        = 0L,
         TOTAL_PM_DAMN       = 0L,
+        TOTAL_PM_ACAP       = 0L,
         ITEMS_PPM           = 0L,
         COST_PPM            = 0L,
         UNIQ_MEDS_PPM       = 0L,
@@ -179,7 +182,6 @@ get_metrics <- function(init_db,
         PCT_PM_DAMN         = 0L,
         UNIQ_MEDS_FALLS_PPM = 0L,
         PCT_PM_FALLS        = 0L,
-        TOTAL_PM_ACAP       = 0L,
         PCT_ACAP_TWO        = 0L,
         PCT_ACAP_THREE      = 0L
       ) 

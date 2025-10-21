@@ -83,11 +83,14 @@ metrics_by_age_gender_and_ch_flag_df <- metrics_by_age_gender_and_ch_flag_df |>
     TOTAL_PM,
     TOTAL_PM_ACB,
     TOTAL_PM_DAMN,
+    TOTAL_PM_ACAP,
     PCT_PM_GTE_SIX,
     PCT_PM_GTE_TEN,
     PCT_PM_ACB,
     PCT_PM_DAMN,
-    PCT_PM_FALLS
+    PCT_PM_FALLS,
+    PCT_ACAP_TWO,
+    PCT_ACAP_THREE
   )
 
 # Add to data/
