@@ -459,10 +459,15 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     p2 = "% of total annual drug cost"
     c1 = "Mean drug cost PPM"
     c2 = "Total annual drug cost"
-
+    
+    # Tooltip value formatting functions
+    label_comma_integer = function (x) scales::label_comma(accuracy = 0.1, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
+    label_comma_decimal = function (x) scales::label_comma(accuracy = 0.1, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
+    
     # Region: df after 4 initial filters applied
-    region_df = reactive({
-      # Filter, pivot and rename
+    region_filter = reactive({
+      
+      # Initial filter, pivot and rename
       df <- mod_geo_ch_flag_drug_df %>%
         dplyr::select(-PATS) %>%
         dplyr::filter(
@@ -470,7 +475,15 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           BNF_PARENT == isolate(input$input_region_bnf_parent),
           BNF_CHILD == input$input_region_bnf_child,
           METRIC == input$input_region_metric
-        ) %>%
+        )
+      df
+    })
+    
+    # Region table for table
+    region_df = reactive({
+      
+      # Pivot and rename
+      df = region_filter() %>% 
         dplyr::arrange(FY) %>% # Ensure new FY columns are in order
         tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
         dplyr::select(
@@ -496,18 +509,21 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region: df after 4 initial filters applied
     region_line_df = reactive({
       
-      # Filter, pivot and rename
-      df <- mod_geo_ch_flag_drug_df %>%
-        dplyr::select(-PATS) %>%
-        dplyr::filter(
-          GEOGRAPHY_PARENT == "Region",
-          BNF_PARENT == isolate(input$input_region_bnf_parent),
-          BNF_CHILD == input$input_region_bnf_child,
-          METRIC == input$input_region_metric
-        ) %>%
-        # Ensure new FY columns are in order
-        dplyr::inner_join(selected_region())
+      # Selected filtered data with colour added
+      df = region_filter() %>% 
+        dplyr::mutate(
+          MAX = max(VALUE),
+          MIN = min(VALUE)
+          ) %>% 
+        dplyr::inner_join(selected_region()) %>% 
         dplyr::arrange(FY, GEOGRAPHY_CHILD) %>% 
+        dplyr::select(FY, GEOGRAPHY_CHILD, VALUE, MIN, MAX) %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_region_metric %in% c(c1, c2) ~ label_comma_integer(VALUE),
+            TRUE ~ label_comma_decimal(VALUE)
+          )
+        )
         
       print(df)
       df
@@ -517,20 +533,21 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     region_line_mean_df = reactive({
       
       # Filter, pivot and rename
-      df <- mod_geo_ch_flag_drug_df %>%
-        dplyr::select(-PATS) %>%
-        dplyr::filter(
-          GEOGRAPHY_PARENT == "Region",
-          BNF_PARENT == isolate(input$input_region_bnf_parent),
-          BNF_CHILD == input$input_region_bnf_child,
-          METRIC == input$input_region_metric
-        ) %>%  
+      df <- region_filter() %>% 
         dplyr::group_by(FY) %>% 
         dplyr::summarise(VALUE = mean(VALUE)) %>% 
-        dplyr::ungroup()
+        dplyr::ungroup() %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_region_metric %in% c(c1, c2) ~ label_comma_integer(VALUE),
+            TRUE ~ label_comma_decimal(VALUE)
+          )
+        )
       print(df)
       df
     })
+    
+
 
     # ICS: df after 4 initial filters applied
     ics_df = reactive({
@@ -748,21 +765,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::pull()
     })
 
-    # Create chart titles from selection
-    output$region_title = renderUI({
 
-      # Ensure select input required
-      req(index_region())
-
-      # Region name text
-      tags$div(
-        style = "text-align: center;",
-        tags$text(
-          style = "font-weight: bold; font-size: 12pt;",
-          glue::glue("Annual ranking for {selected_region()}")
-        )
-      )
-    })
 
     # Create chart titles from selection
     output$ics_title = renderUI({
@@ -801,24 +804,104 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Region charts
     output$region_splines <- highcharter::renderHighchart({
       
-
-      hc <- highcharter::highchart() %>% 
-        highcharter::hc_chart(type = "line") %>% 
-        #highcharter::hc_add_series(
-        #  data = region_line_mean_df(),
-        #  type = "line",
-        #  name = "National Mean",
-        #  highcharter::hcaes(x = FY, y = VALUE)
-        #) %>% 
+      highcharter::highchart() %>%
+        highcharter::hc_chart(type = "line") %>%
+        highcharter::hc_xAxis(categories = sort(unique(df$FY))) %>%
+        highcharter::hc_add_series(
+          data = region_line_mean_df(),
+          type = "line",
+          highcharter::hcaes(x = FY, y = VALUE),
+          name = "National Mean",
+          color = nhsbsaR::palette_nhsbsa()[2],
+          marker = list(enabled = FALSE),
+          tooltip = list(
+            headerFormat = "",
+            pointFormat = paste0(
+              "<b>Year: </b> {point.FY}<br>",
+              "<b>Region: </b> National mean<br>",
+              "<b>BNF ", input$input_region_bnf_parent, ": </b> ", input$input_region_bnf_child, "<br>",
+              switch(
+                input$input_region_metric,
+                "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
+                "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
+                "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
+                "Total annual drug cost" = "<b>Total annual drug cost: £{point.VALUE_FORMAT:,.0f}</b>",
+                "Mean prescription items PPM" = "<b>Mean prescription items PPM: {point.VALUE_FORMAT:,.1f}</b>",
+                "Total annual number of prescription items" = "<b>Total annual number of prescription items: {point.VALUE_FORMAT:,.0f}</b>"
+              )
+            )
+          )
+        ) %>%
         highcharter::hc_add_series(
           data = region_line_df(),
           type = "line",
-          highcharter::hcaes(x = FY, y = VALUE, group = GEOGRAPHY_CHILD)
-        ) %>% 
-        nhsbsaR::theme_nhsbsa_highchart() %>%
-        highcharter::hc_credits(enabled = TRUE)
+          highcharter::hcaes(x = FY, y = VALUE, group = GEOGRAPHY_CHILD),
+          color = nhsbsaR::palette_nhsbsa()[1],
+          marker = list(enabled = FALSE),
+          tooltip = list(
+            headerFormat = "",
+            pointFormat = paste0(
+              "<b>Year: </b> {point.FY}<br>",
+              "<b>Region: </b> {point.GEOGRAPHY_CHILD}<br>",
+              "<b>BNF ", input$input_region_bnf_parent, ": </b> ", input$input_region_bnf_child, "<br>",
+              switch(
+                input$input_region_metric,
+                "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
+                "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
+                "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
+                "Total annual drug cost" = "<b>Total annual drug cost: £{point.VALUE_FORMAT:,.1f}</b>",
+                "Mean prescription items PPM" = "<b>Mean prescription items PPM: {point.VALUE_FORMAT:,.1f}</b>",
+                "Total annual number of prescription items" = "<b>Total annual number of prescription items: {point.VALUE_FORMAT:,.0f}</b>"
+              )
+            )
+          )
+        ) %>%
+        nhsbsaR::theme_nhsbsa_highchart(stack = NULL) %>%
+        highcharter::hc_yAxis(
+          #min = 0,
+          min = region_line_df()$MIN[1] * 0.9,
+          max = region_line_df()$MAX[1] * 1.1,
+          title = list(
+            text = input$input_region_metric
+            )
+          ) %>% 
+        # highcharter::hc_title(
+        #   text = "<b>Annual metric values per selected Region</b>",
+        #   style = list(
+        #     fontSize = "16px",
+        #     fontWeight = "bold",
+        #     family = "Frutiger W01"
+        #     )
+        #   ) %>% 
+        highcharter::hc_legend(
+          layout = "proximate", 
+          align = "right"
+          ) 
+        # highcharter::hc_plotOptions(
+        #   series = list(
+        #     states = list(
+        #       inactive = list(enabled = FALSE)
+        #     )
+        #   )
+        # ) 
+        # highcharter::hc_tooltip(
+        #   headerFormat = "",
+        #   pointFormat = paste0(
+        #     "<b>Year: </b> {point.FY}<br>",
+        #     "<b>Region: </b> {point.GEOGRAPHY_CHILD}<br>",
+        #     "<b>BNF ", input$input_region_bnf_parent, ": </b> ", input$input_region_bnf_child, "<br>",
+        #     switch(
+        #       input$input_region_metric,
+        #       "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
+        #       "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
+        #       "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
+        #       "Total annual drug cost" = "<b>Total annual drug cost: £{point.VALUE_FORMAT:,.1f}</b>",
+        #       "Mean prescription items PPM" = "<b>Mean prescription items PPM: {point.VALUE_FORMAT:,.1f}</b>",
+        #       "Total annual number of prescription items" = "<b>Total annual number of prescription items: {point.VALUE_FORMAT:,.0f}</b>"
+        #     )
+        #   )
+        # )
         
-      hc
     })
 
     # Ics charts
