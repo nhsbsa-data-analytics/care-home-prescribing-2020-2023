@@ -22,6 +22,10 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
   .my-row:hover {
     background-color: #E6E6E3;
   }
+  
+  .reactable .rt-th input[type='checkbox'] {
+  display: none;
+  }
   "
 
   tagList(
@@ -79,11 +83,12 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             )
 
           ),
-
+          
+          # Table
           reactable::reactableOutput(outputId = ns("region_table")),
           br(),
-
-          shiny::htmlOutput(outputId = ns("region_title")),
+          
+          # Chart
           highcharter::highchartOutput(outputId = ns("region_splines"), height = "350px"),
           br(),
 
@@ -91,7 +96,9 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to display chart for one of the 7 NHS regions.",
+            "Multi-select rows to display NHS region trend charts, but avoid selecting more than 3 rows for readability.",
+            tags$br(),
+            "Hovering the cursor over a region name in the legend will highlight a single trend chart, if required.",
             tags$br(),
             "Only the top 50 elements nationally by total item count across all 
              years per BNF level are presented.",
@@ -153,22 +160,22 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             )
 
           ),
-
-          reactable::reactableOutput(
-            outputId = ns("ics_table"),
-            height = "450px"
-          ),
+          
+          # Table
+          reactable::reactableOutput(outputId = ns("ics_table"), height = "450px"),
           br(),
-
-          shiny::htmlOutput(outputId = ns("ics_title")),
-          uiOutput(ns("ics_splines")),
+          
+          # Chart
+          highcharter::highchartOutput(outputId = ns("ics_splines"), height = "350px"),
           br(),
 
           # Chart caption
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to display chart for one of the 42 ICSs.",
+            "Multi-select rows to display ICS trend charts, but avoid selecting more than 3 rows for readability.",
+            tags$br(),
+            "Hovering the cursor over an ICS name in the legend will highlight a single trend chart, if required.",
             tags$br(),
             "Only the top 50 elements nationally by total item count across all 
              years per BNF level are presented.",
@@ -230,22 +237,22 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
             )
 
           ),
-
-          reactable::reactableOutput(
-            outputId = ns("lad_table"),
-            height = "450px"
-          ),
+          
+          # Table
+          reactable::reactableOutput(outputId = ns("lad_table"),height = "450px"),
           br(),
-
-          shiny::htmlOutput(outputId = ns("lad_title")),
-          uiOutput(ns("lad_splines")),
+          
+          # Chart
+          highcharter::highchartOutput(outputId = ns("lad_splines"), height = "350px"),
           br(),
 
           # Chart caption
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Click on a row to display chart for one of the 296 Local Authorities.",
+            "Multi-select rows to display Local Authority trend charts, but avoid selecting more than 3 rows for readability.",
+            tags$br(),
+            "Hovering the cursor over a Local Authority name in the legend will highlight a single trend chart, if required.",
             tags$br(),
             "The Isles of Scilly were removed due to the number of care homes in
              the Local Authority.",
@@ -281,345 +288,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
-    # Helper functions ---------------------------------------------------------
-
-    # One: spline chart
-    spline_chart_plot <- function(df, df_select, fy, metric, plot_pos = "") {
-      # Shared y axis max value across all 3 plots
-      y_axis_max_val <- max(df$`20/21`, df$`21/22`, df$`22/23`, df$`23/24`, df$`24/25`)
-
-      accuracy <- \(val) {
-        ifelse(startsWith(metric, "Total") & (val < 10^3), 1, 0.01)
-      }
-
-      # Process original df
-      df <- df %>%
-        dplyr::rename_at(fy, ~"VALUE") %>%
-        dplyr::arrange(VALUE) %>%
-        dplyr::mutate(
-          index = dplyr::row_number(),
-          rank = rev(dplyr::row_number()),
-          total = max(rank),
-          col = "#f7a35c",
-          title = dplyr::case_when(
-            GEOGRAPHY_CHILD == df_select ~ glue::glue("{fy}<br>{rank} of {total}")
-          )
-        )
-
-      title <- df %>%
-        dplyr::select(title) %>%
-        tidyr::drop_na() %>%
-        dplyr::pull()
-
-      hc <- highcharter::highchart() %>%
-        highcharter::hc_title(
-          text = ifelse(
-            plot_pos == "first",
-            "Shared<br>y-axis",
-            title
-          ),
-          style = list(
-            fontSize = "12px",
-            fontFamily = "arial",
-            useHTML = TRUE
-          )
-        ) %>%
-        highcharter::hc_add_series(df,
-          "spline",
-          highcharter::hcaes(rank, VALUE),
-          showInLegend = FALSE
-        ) %>%
-        highcharter::hc_add_series(
-          df %>% dplyr::filter(GEOGRAPHY_CHILD == df_select),
-          "scatter",
-          highcharter::hcaes(rank, VALUE, color = col),
-          showInLegend = FALSE
-        ) %>%
-        highcharter::hc_yAxis(
-          visible = plot_pos == "first",
-          # Only first chart has y-axis
-          min = 0,
-          max = y_axis_max_val,
-          showFirstLabel = TRUE,
-          showLastLabel = TRUE,
-          endOnTick = TRUE,
-          tickWidth = 0,
-          title = list(text = metric)
-        ) %>%
-        highcharter::hc_xAxis(
-          min = 1,
-          showLastLabel = TRUE,
-          endOnTick = TRUE,
-          tickWidth = 0,
-          # Show label only for 1 and max rank
-          tickPositioner = htmlwidgets::JS("
-            function () {
-              var positions = [1, this.dataMax];
-
-              return positions;
-            }
-          "),
-          title = list(text = "Rank"),
-          reversed = TRUE
-        ) %>%
-        highcharter::hc_plotOptions(
-          spline = list(
-            marker = list(enabled = FALSE),
-            states = list(inactive = list(opacity = 1))
-          ),
-          scatter = list(
-            marker = list(radius = 5, symbol = "circle"),
-            states = list(inactive = list(opacity = 1))
-          ),
-          series = list(
-            animation = FALSE,
-            states = list(
-              hover = list(enabled = FALSE),
-              select = list(enabled = FALSE)
-            )
-          )
-        ) %>%
-        highcharter::hc_tooltip(enabled = FALSE) %>%
-        nhsbsaR::theme_nhsbsa_highchart() %>%
-        highcharter::hc_plotOptions(spline = list(dataLabels = list(color = "black"))) %>%
-        # Include credits on last chart only
-        highcharter::hc_credits(enabled = plot_pos == "last")
-
-      hc
-    }
-
-    # Select Inputs ------------------------------------------------------------
-
-    mod_geo_ch_flag_drug_df <- carehomes2::mod_geo_ch_flag_drug_df %>% 
-      dplyr::filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
+    # Chart helper functions ---------------------------------------------------
     
-    # BNF lookup to speed up filtering
-    region_lookup <- reactive({
-      mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "Region") %>%
-        dplyr::select(BNF_PARENT, BNF_CHILD) %>%
-        dplyr::distinct() %>%
-        dplyr::arrange(BNF_CHILD)
-    })
-
-    # BNF lookup to speed up filtering
-    ics_lookup = reactive({
-      mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
-        dplyr::select(BNF_PARENT, BNF_CHILD) %>%
-        dplyr::distinct() %>%
-        dplyr::arrange(BNF_CHILD)
-    })
-
-    # BNF lookup to speed up filtering
-    lad_lookup = reactive({
-      mod_geo_ch_flag_drug_df %>%
-        dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>%
-        dplyr::select(BNF_PARENT, BNF_CHILD) %>%
-        dplyr::distinct() %>%
-        dplyr::arrange(BNF_CHILD)
-    })
-    
-    # Region: observe Region parent choice
-    observeEvent(input$input_region_bnf_parent, {
-
-      choices = region_lookup() %>%
-        dplyr::filter(BNF_PARENT == input$input_region_bnf_parent) %>%
-        dplyr::select(BNF_CHILD) %>%
-        dplyr::pull()
-
-      updateSelectInput(inputId = "input_region_bnf_child", choices = choices)
-    })
-
-    # Region: observe ICS parent choice
-    observeEvent(input$input_ics_bnf_parent, {
-
-      choices = ics_lookup() %>%
-        dplyr::filter(BNF_PARENT == input$input_ics_bnf_parent) %>%
-        dplyr::select(BNF_CHILD) %>%
-        dplyr::pull()
-
-      updateSelectInput(inputId = "input_ics_bnf_child", choices = choices)
-    })
-
-    # Region: observe lad parent choice
-    observeEvent(input$input_lad_bnf_parent, {
-
-      choices = lad_lookup() %>%
-        dplyr::filter(BNF_PARENT == input$input_lad_bnf_parent) %>%
-        dplyr::select(BNF_CHILD) %>%
-        dplyr::pull()
-
-      updateSelectInput(inputId = "input_lad_bnf_child", choices = choices)
-    })
-
-    # Initial df from select inputs --------------------------------------------
-
-    # Metrics
-    p1 = "% of total annual number of prescription items"
-    p2 = "% of total annual drug cost"
-    c1 = "Mean drug cost PPM"
-    c2 = "Total annual drug cost"
-    i1 = "Total annual number of prescription items"
-    
-    # Tooltip value formatting functions
-    label_value_format = function (x, acc) scales::label_comma(accuracy = acc, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
-    
-    # Region: df after 4 initial filters applied
-    region_filter = reactive({
-      
-      # Initial filter, pivot and rename
-      df <- mod_geo_ch_flag_drug_df %>%
-        dplyr::select(-PATS) %>%
-        dplyr::filter(
-          GEOGRAPHY_PARENT == "Region",
-          BNF_PARENT == isolate(input$input_region_bnf_parent),
-          BNF_CHILD == input$input_region_bnf_child,
-          METRIC == input$input_region_metric
-        )
-      df
-    })
-    
-    # Region table for table
-    region_df = reactive({
-      
-      # Pivot and rename
-      df = region_filter() %>% 
-        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
-        dplyr::select(
-          GEOGRAPHY_PARENT,
-          GEOGRAPHY_CHILD,
-          dplyr::starts_with("20")
-        ) %>%
-        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
-        dplyr::arrange(GEOGRAPHY_CHILD)
-
-      if (startsWith(input$input_region_metric, "Total")) {
-        df <- df %>%
-          dplyr::mutate(
-            dplyr::across(
-              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
-            )
-          )
-      }
-
-      df
-    })
-    
-    # Region: df after 4 initial filters applied
-    region_line_df = reactive({
-      
-      # Selected filtered data with colour added
-      df = region_filter() %>% 
-        dplyr::mutate(
-          MAX = max(VALUE),
-          MIN = min(VALUE)
-          ) %>% 
-        dplyr::inner_join(selected_region()) %>% 
-        dplyr::arrange(FY, GEOGRAPHY_CHILD) %>% 
-        dplyr::select(FY, GEOGRAPHY_CHILD, VALUE, MIN, MAX) %>% 
-        dplyr::mutate(
-          VALUE_FORMAT = dplyr::case_when(
-            input$input_region_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
-            TRUE ~ label_value_format(VALUE, 0.1)
-          )
-        )
-        
-      print(df)
-      df
-    })
-    
-    # Region: df after 4 initial filters applied
-    region_line_mean_df = reactive({
-      
-      # Filter, pivot and rename
-      df <- region_filter() %>% 
-        dplyr::group_by(FY) %>% 
-        dplyr::summarise(VALUE = mean(VALUE)) %>% 
-        dplyr::ungroup() %>% 
-        dplyr::mutate(
-          VALUE_FORMAT = dplyr::case_when(
-            input$input_region_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
-            TRUE ~ label_value_format(VALUE, 0.1)
-          )
-        )
-      print(df)
-      df
-    })
-    
-
-
-    # ICS: df after 4 initial filters applied
-    ics_df = reactive({
-
-      # Filter, pivot an rename
-      df <- mod_geo_ch_flag_drug_df %>%
-        dplyr::select(-PATS) %>%
-        dplyr::filter(
-          GEOGRAPHY_PARENT == "ICS",
-          BNF_PARENT == isolate(input$input_ics_bnf_parent),
-          BNF_CHILD == input$input_ics_bnf_child,
-          METRIC == input$input_ics_metric
-        ) %>%
-        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
-        dplyr::select(
-          GEOGRAPHY_PARENT,
-          GEOGRAPHY_CHILD,
-          dplyr::starts_with("20")
-        ) %>%
-        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
-        dplyr::arrange(GEOGRAPHY_CHILD)
-
-      if (startsWith(input$input_ics_metric, "Total")) {
-        df <- df %>%
-          dplyr::mutate(
-            dplyr::across(
-              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
-            )
-          )
-      }
-
-      df
-    })
-
-    # Lad: df after 4 initial filters applied
-    lad_df = reactive({
-
-      # Filter, pivot an rename
-      df <- mod_geo_ch_flag_drug_df %>%
-        dplyr::select(-PATS) %>%
-        dplyr::filter(
-          GEOGRAPHY_PARENT == "Local Authority",
-          BNF_PARENT == isolate(input$input_lad_bnf_parent),
-          BNF_CHILD == input$input_lad_bnf_child,
-          METRIC == input$input_lad_metric
-        ) %>%
-        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
-        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
-        dplyr::select(
-          GEOGRAPHY_PARENT,
-          GEOGRAPHY_CHILD,
-          dplyr::starts_with("20")
-        ) %>%
-        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
-        dplyr::arrange(GEOGRAPHY_CHILD)
-
-      if (startsWith(input$input_lad_metric, "Total")) {
-        df <- df %>%
-          dplyr::mutate(
-            dplyr::across(
-              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
-            )
-          )
-      }
-
-      df
-    })
-
-    # LHS: Initial table ------------------------------------------------------
-
     # Function for each table
     geo_table = function(df, df_select, metric, geo_name){
       # reactable is limited when setting col widths based on content, e.g.
@@ -636,8 +306,8 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         dplyr::select(-GEOGRAPHY_PARENT) %>%
         reactable::reactable(
           selection = "multiple",
-          defaultSelected = 1,
-          #defaultSelected = df_select,
+          #defaultSelected = 1,
+          defaultSelected = df_select,
           onClick = "select",
           pagination = FALSE,
           searchable = TRUE,
@@ -683,7 +353,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
                     scale_cut = append(scales::cut_long_scale(), 1, 1)
                   )(janitor::round_half_up(val, 1))
                 ))
-              # If character column set 'row' name
+                # If character column set 'row' name
               } else if (is.character(values)) {
                 htmltools::div(tags$b("National average"))
               }
@@ -695,26 +365,412 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           rowClass = "my-row"
         )
     }
+    
+    # Add either national mean or geo series
+    add_geo_series = function(hc, geo_df, col, geo_name, geo_bnf_parent, geo_bnf_child, geo_metric){
+      
+      hc %>% 
+        highcharter::hc_add_series(
+          data = geo_df,
+          type = "line",
+          highcharter::hcaes(x = FY, y = VALUE, group = GEOGRAPHY_CHILD),
+          color = col,
+          marker = list(enabled = FALSE),
+          tooltip = list(
+            headerFormat = "",
+            pointFormat = paste0(
+              "<b>Year: </b> {point.FY}<br>",
+              "<b>", geo_name, ": </b> {point.GEOGRAPHY_CHILD}<br>",
+              "<b>BNF ", geo_bnf_parent, ": </b> ", geo_bnf_child, "<br>",
+              switch(
+                geo_metric,
+                "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
+                "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
+                "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
+                "Total annual drug cost" = "<b>Total annual drug cost: </b> £{point.VALUE_FORMAT:,.1f}",
+                "Mean prescription items PPM" = "<b>Mean prescription items PPM: </b> {point.VALUE_FORMAT:,.1f}",
+                "Total annual number of prescription items" = "<b>Total annual number of prescription items: </b> {point.VALUE_FORMAT:,.0f}"
+              )
+            )
+          )
+        ) 
+    }
+    
+    # Tooltip value formatting functions
+    label_value_format = function (x, acc) scales::label_comma(accuracy = acc, scale_cut = append(scales::cut_long_scale(), 1, 1))(janitor::round_half_up(x, 1))
+    
+    # Split long string category names (i.e. ics and lad names)
+    split_middle <- function(x, max_len = 40) {
+      
+      sapply(x, function(str) {
+        # If below char threshold return as-is
+        if (nchar(str) <= max_len) return(str)
+        
+        # Find spaces
+        spaces <- gregexpr(" ", str)[[1]]
+        
+        # Find string mid-char
+        mid <- nchar(str) / 2
+        
+        # Find space closest to middle
+        split_pos <- spaces[which.min(abs(spaces - mid))]
+        
+        # Insert line break to string
+        paste0(
+          substr(str, 1, split_pos - 1),
+          "<br>",
+          substr(str, split_pos + 1, nchar(str))
+        )
+      })
+    }
+
+    # Df lookups to aid subsequent processing ----------------------------------
+
+    mod_geo_ch_flag_drug_df <- carehomes2::mod_geo_ch_flag_drug_df %>% 
+      dplyr::filter(!GEOGRAPHY_CHILD %in% c("City of London", "Isles of Scilly"))
+    
+    # BNF lookup to speed up filtering
+    region_lookup <- reactive({
+      mod_geo_ch_flag_drug_df %>%
+        dplyr::filter(GEOGRAPHY_PARENT == "Region") %>%
+        dplyr::select(BNF_PARENT, BNF_CHILD) %>%
+        dplyr::distinct() %>%
+        dplyr::arrange(BNF_CHILD)
+    })
+
+    # BNF lookup to speed up filtering
+    ics_lookup = reactive({
+      mod_geo_ch_flag_drug_df %>%
+        dplyr::filter(GEOGRAPHY_PARENT == "ICS") %>%
+        dplyr::select(BNF_PARENT, BNF_CHILD) %>%
+        dplyr::distinct() %>%
+        dplyr::arrange(BNF_CHILD)
+    })
+
+    # BNF lookup to speed up filtering
+    lad_lookup = reactive({
+      mod_geo_ch_flag_drug_df %>%
+        dplyr::filter(GEOGRAPHY_PARENT == "Local Authority") %>%
+        dplyr::select(BNF_PARENT, BNF_CHILD) %>%
+        dplyr::distinct() %>%
+        dplyr::arrange(BNF_CHILD)
+    })
+    
+    # Observe select input choice ----------------------------------------------
+    
+    # Region: observe Region parent choice
+    observeEvent(input$input_region_bnf_parent, {
+
+      choices = region_lookup() %>%
+        dplyr::filter(BNF_PARENT == input$input_region_bnf_parent) %>%
+        dplyr::select(BNF_CHILD) %>%
+        dplyr::pull()
+
+      updateSelectInput(inputId = "input_region_bnf_child", choices = choices)
+    })
+
+    # Region: observe ICS parent choice
+    observeEvent(input$input_ics_bnf_parent, {
+
+      choices = ics_lookup() %>%
+        dplyr::filter(BNF_PARENT == input$input_ics_bnf_parent) %>%
+        dplyr::select(BNF_CHILD) %>%
+        dplyr::pull()
+
+      updateSelectInput(inputId = "input_ics_bnf_child", choices = choices)
+    })
+
+    # Region: observe lad parent choice
+    observeEvent(input$input_lad_bnf_parent, {
+
+      choices = lad_lookup() %>%
+        dplyr::filter(BNF_PARENT == input$input_lad_bnf_parent) %>%
+        dplyr::select(BNF_CHILD) %>%
+        dplyr::pull()
+
+      updateSelectInput(inputId = "input_lad_bnf_child", choices = choices)
+    })
+
+    # Pre-defined values to aid reactive data processing -----------------------
+
+    # Metrics
+    p1 = "% of total annual number of prescription items"
+    p2 = "% of total annual drug cost"
+    c1 = "Mean drug cost PPM"
+    c2 = "Total annual drug cost"
+    i1 = "Total annual number of prescription items"
+    
+    # Region data reactive -----------------------------------------------------
+    
+    # Region: df after 4 initial filters applied
+    region_filter = reactive({
+      
+      # Initial filter, pivot and rename
+      mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "Region",
+          BNF_PARENT == isolate(input$input_region_bnf_parent),
+          BNF_CHILD == input$input_region_bnf_child,
+          METRIC == input$input_region_metric
+        ) %>% 
+        dplyr::mutate(
+          MAX = max(VALUE),
+          MIN = min(VALUE)
+        )
+    })
+    
+    # Region table for table
+    region_df = reactive({
+      
+      # Pivot and rename
+      df = region_filter() %>% 
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+        dplyr::select(
+          GEOGRAPHY_PARENT,
+          GEOGRAPHY_CHILD,
+          dplyr::starts_with("20")
+        ) %>%
+        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
+        dplyr::arrange(GEOGRAPHY_CHILD)
+
+      if (startsWith(input$input_region_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+      df
+    })
+    
+    # Region: df after 4 initial filters applied
+    region_line_df = reactive({
+      
+      # Selected filtered data with colour added
+      region_filter() %>% 
+        dplyr::inner_join(
+          selected_region(), 
+          by = dplyr::join_by(GEOGRAPHY_CHILD)
+          ) %>% 
+        dplyr::arrange(FY, GEOGRAPHY_CHILD) %>% 
+        dplyr::select(FY, GEOGRAPHY_CHILD, VALUE, MIN, MAX) %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_region_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
+          ),
+          GEOGRAPHY_CHILD = split_middle(gsub("\\band\\b", "&", GEOGRAPHY_CHILD), 20)
+        )
+    })
+    
+    # Region: df after 4 initial filters applied
+    region_line_mean_df = reactive({
+      
+      # Filter, pivot and rename
+      region_filter() %>% 
+        dplyr::group_by(FY) %>% 
+        dplyr::summarise(VALUE = mean(VALUE)) %>% 
+        dplyr::ungroup() %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_region_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
+          ),
+          GEOGRAPHY_CHILD = "National Mean"
+        )
+    })
+    
+    # Ics data reactive --------------------------------------------------------
+    
+    # Region: df after 4 initial filters applied
+    ics_filter = reactive({
+      
+      # Initial filter, pivot and rename
+      mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "ICS",
+          BNF_PARENT == isolate(input$input_ics_bnf_parent),
+          BNF_CHILD == input$input_ics_bnf_child,
+          METRIC == input$input_ics_metric
+        ) %>% 
+        dplyr::mutate(
+          MAX = max(VALUE),
+          MIN = min(VALUE)
+        )
+    })
+    
+    # Region table for table
+    ics_df = reactive({
+      
+      # Pivot and rename
+      df = ics_filter() %>% 
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+        dplyr::select(
+          GEOGRAPHY_PARENT,
+          GEOGRAPHY_CHILD,
+          dplyr::starts_with("20")
+        ) %>%
+        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
+        dplyr::arrange(GEOGRAPHY_CHILD)
+      
+      if (startsWith(input$input_ics_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+      df
+    })
+    
+    # Region: df after 4 initial filters applied
+    ics_line_df = reactive({
+      
+      # Selected filtered data with colour added
+      ics_filter() %>% 
+        dplyr::inner_join(
+          selected_ics(), 
+          by = dplyr::join_by(GEOGRAPHY_CHILD)
+        ) %>% 
+        dplyr::arrange(FY, GEOGRAPHY_CHILD) %>% 
+        dplyr::select(FY, GEOGRAPHY_CHILD, VALUE, MIN, MAX) %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_ics_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
+          ),
+          # Strip text for legend simplification
+          GEOGRAPHY_CHILD = sub("^NHS", "", sub("ICB$", "", GEOGRAPHY_CHILD)),
+          GEOGRAPHY_CHILD = split_middle(gsub("\\band\\b", "&", GEOGRAPHY_CHILD))
+        )
+    })
+    
+    # Region: df after 4 initial filters applied
+    ics_line_mean_df = reactive({
+      
+      # Filter, pivot and rename
+      ics_filter() %>% 
+        dplyr::group_by(FY) %>% 
+        dplyr::summarise(VALUE = mean(VALUE)) %>% 
+        dplyr::ungroup() %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_ics_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
+          ),
+          # Hardcode geography child as required for plot function
+          GEOGRAPHY_CHILD = "National Mean"
+        )
+    })
+    
+    # Lad data reactive --------------------------------------------------------
+    
+    # Region: df after 4 initial filters applied
+    lad_filter = reactive({
+      
+      # Initial filter, pivot and rename
+      mod_geo_ch_flag_drug_df %>%
+        dplyr::select(-PATS) %>%
+        dplyr::filter(
+          GEOGRAPHY_PARENT == "Local Authority",
+          BNF_PARENT == isolate(input$input_lad_bnf_parent),
+          BNF_CHILD == input$input_lad_bnf_child,
+          METRIC == input$input_lad_metric
+        ) %>% 
+        dplyr::mutate(
+          MAX = max(VALUE),
+          MIN = min(VALUE)
+        )
+    })
+    
+    # Region table for table
+    lad_df = reactive({
+      
+      # Pivot and rename
+      df = lad_filter() %>% 
+        dplyr::arrange(FY) %>% # Ensure new FY columns are in order
+        tidyr::pivot_wider(names_from = 'FY', values_from = 'VALUE') %>%
+        dplyr::select(
+          GEOGRAPHY_PARENT,
+          GEOGRAPHY_CHILD,
+          dplyr::starts_with("20")
+        ) %>%
+        dplyr::rename_with(\(x) gsub("^20", "", x)) %>% 
+        dplyr::arrange(GEOGRAPHY_CHILD)
+      
+      if (startsWith(input$input_lad_metric, "Total")) {
+        df <- df %>%
+          dplyr::mutate(
+            dplyr::across(
+              -dplyr::starts_with("GEOGRAPHY"), bespoke_round
+            )
+          )
+      }
+      df
+    })
+    
+    # Region: df after 4 initial filters applied
+    lad_line_df = reactive({
+      
+      # Selected filtered data with colour added
+      lad_filter() %>% 
+        dplyr::inner_join(
+          selected_lad(), 
+          by = dplyr::join_by(GEOGRAPHY_CHILD)
+        ) %>% 
+        dplyr::arrange(FY, GEOGRAPHY_CHILD) %>% 
+        dplyr::select(FY, GEOGRAPHY_CHILD, VALUE, MIN, MAX) %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_lad_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
+          ),
+          GEOGRAPHY_CHILD = split_middle(gsub("\\band\\b", "&", GEOGRAPHY_CHILD), 30)
+        )
+    })
+    
+    # Region: df after 4 initial filters applied
+    lad_line_mean_df = reactive({
+      
+      # Filter, pivot and rename
+      lad_filter() %>% 
+        dplyr::group_by(FY) %>% 
+        dplyr::summarise(VALUE = mean(VALUE)) %>% 
+        dplyr::ungroup() %>% 
+        dplyr::mutate(
+          VALUE_FORMAT = dplyr::case_when(
+            input$input_lad_metric %in% c(i1, c2) & (VALUE < 10^3) ~ label_value_format(VALUE, 1),
+            TRUE ~ label_value_format(VALUE, 0.1)
+          ),
+          # Hardcode geography child as required for plot function
+          GEOGRAPHY_CHILD = "National Mean"
+        )
+    })
+
+    # Row select ---------------------------------------------------------------
 
     # Region: select row
     index_region = reactive({
-      # Select 1st row on initialisation
-      t <- reactable::getReactableState("region_table", "selected")
-      ifelse(is.null(t), 1, t)
-      t
+      reactable::getReactableState("region_table", "selected")
     })
 
-    # Region: select row
+    # Icb: select row
     index_ics = reactive({
-      t <- reactable::getReactableState("ics_table", "selected")
-      ifelse(is.null(t), 1, t)
+      reactable::getReactableState("ics_table", "selected")
     })
 
-    # Region: select row
+    # Lad: select row
     index_lad = reactive({
-      t <- reactable::getReactableState("lad_table", "selected")
-      ifelse(is.null(t), 1, t)
+      reactable::getReactableState("lad_table", "selected")
     })
+    
+    # Initial table ------------------------------------------------------------
 
     # Region: Initial table
     output$region_table = reactable::renderReactable({
@@ -752,186 +808,122 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # ICS: get selected row category name
     selected_ics <- reactive({
       ics_df() %>%
-        dplyr::filter(dplyr::row_number() == index_ics()) %>%
-        dplyr::select(GEOGRAPHY_CHILD) %>%
-        dplyr::pull()
+        dplyr::slice(index_ics()) %>%
+        dplyr::select(GEOGRAPHY_CHILD)
     })
 
     # Lad: get selected row category name
     selected_lad <- reactive({
       lad_df() %>%
-        dplyr::filter(dplyr::row_number() == index_lad()) %>%
-        dplyr::select(GEOGRAPHY_CHILD) %>%
-        dplyr::pull()
+        dplyr::slice(index_lad()) %>%
+        dplyr::select(GEOGRAPHY_CHILD)
     })
 
-
-
-    # Create chart titles from selection
-    output$ics_title = renderUI({
-
-      # Ensure select input required
-      req(index_ics())
-
-      # Region name text
-      tags$div(
-        style = "text-align: center;",
-        tags$text(
-          style = "font-weight: bold; font-size: 12pt;",
-          glue::glue("Annual ranking for {selected_ics()}")
-        )
-      )
-    })
-
-    # Create chart titles from selection
-    output$lad_title = renderUI({
-
-      # Ensure select input required
-      req(index_lad())
-
-      # Region name text
-      tags$div(
-        style = "text-align: center;",
-        tags$text(
-          style = "font-weight: bold; font-size: 12pt;",
-          glue::glue("Annual ranking for {selected_lad()}")
-        )
-      )
-    })
-
-    # 4 charts -----------------------------------------------------------------
+    # Line charts --------------------------------------------------------------
 
     # Region charts
     output$region_splines <- highcharter::renderHighchart({
       
       highcharter::highchart() %>%
-        highcharter::hc_chart(type = "line") %>%
-        highcharter::hc_xAxis(categories = sort(unique(df$FY))) %>%
-        highcharter::hc_add_series(
-          data = region_line_mean_df(),
-          type = "line",
-          highcharter::hcaes(x = FY, y = VALUE),
-          name = "National Mean",
-          color = nhsbsaR::palette_nhsbsa()[2],
-          marker = list(enabled = FALSE),
-          tooltip = list(
-            headerFormat = "",
-            pointFormat = paste0(
-              "<b>Year: </b> {point.FY}<br>",
-              "<b>Region: </b> National mean<br>",
-              "<b>BNF ", input$input_region_bnf_parent, ": </b> ", input$input_region_bnf_child, "<br>",
-              switch(
-                input$input_region_metric,
-                "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
-                "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
-                "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
-                "Total annual drug cost" = "<b>Total annual drug cost: </b> £{point.VALUE_FORMAT:,.0f}",
-                "Mean prescription items PPM" = "<b>Mean prescription items PPM: </b> {point.VALUE_FORMAT:,.1f}",
-                "Total annual number of prescription items" = "<b>Total annual number of prescription items: </b> {point.VALUE_FORMAT:,.0f}"
-              )
-            )
-          )
+        highcharter::hc_xAxis(categories = sort(unique(region_line_mean_df()$FY))) %>%
+        add_geo_series(
+          geo_df = region_line_mean_df(),
+          col = nhsbsaR::palette_nhsbsa()[2],
+          geo_name = "Region",
+          geo_bnf_parent = input$input_region_bnf_parent,
+          geo_bnf_child = input$input_region_bnf_child,
+          geo_metric = input$input_region_metric
         ) %>%
-        highcharter::hc_add_series(
-          data = region_line_df(),
-          type = "line",
-          highcharter::hcaes(x = FY, y = VALUE, group = GEOGRAPHY_CHILD),
-          color = nhsbsaR::palette_nhsbsa()[1],
-          marker = list(enabled = FALSE),
-          tooltip = list(
-            headerFormat = "",
-            pointFormat = paste0(
-              "<b>Year: </b> {point.FY}<br>",
-              "<b>Region: </b> {point.GEOGRAPHY_CHILD}<br>",
-              "<b>BNF ", input$input_region_bnf_parent, ": </b> ", input$input_region_bnf_child, "<br>",
-              switch(
-                input$input_region_metric,
-                "% of total annual drug cost" = "<b>% of total annual drug cost: </b> {point.VALUE_FORMAT:,.1f}%",
-                "% of total annual number of prescription items" = "<b>% of total annual number of prescription items: </b> {point.VALUE_FORMAT:,.1f}%",
-                "Mean drug cost PPM" = "<b>Mean drug cost PPM: </b> £{point.VALUE_FORMAT:,.1f}",
-                "Total annual drug cost" = "<b>Total annual drug cost: </b> £{point.VALUE_FORMAT:,.1f}",
-                "Mean prescription items PPM" = "<b>Mean prescription items PPM: </b> {point.VALUE_FORMAT:,.1f}",
-                "Total annual number of prescription items" = "<b>Total annual number of prescription items: </b> {point.VALUE_FORMAT:,.0f}"
-              )
-            )
-          )
+        add_geo_series(
+          geo_df = region_line_df(),
+          col = nhsbsaR::palette_nhsbsa()[1],
+          geo_name = "Region",
+          geo_bnf_parent = input$input_region_bnf_parent,
+          geo_bnf_child = input$input_region_bnf_child,
+          geo_metric = input$input_region_metric
         ) %>%
         nhsbsaR::theme_nhsbsa_highchart(stack = NULL) %>%
         highcharter::hc_yAxis(
-          #min = 0,
-          min = region_line_df()$MIN[1] * 0.9,
-          max = region_line_df()$MAX[1] * 1.1,
-          title = list(
-            text = input$input_region_metric
-            )
+          min = region_filter()$MIN[1] * 0.95,
+          max = region_filter()$MAX[1] * 1.05,
+          title = list(text = input$input_region_metric)
           ) %>% 
-        # highcharter::hc_title(
-        #   text = "<b>Annual metric values per selected Region</b>",
-        #   style = list(
-        #     fontSize = "16px",
-        #     fontWeight = "bold",
-        #     family = "Frutiger W01"
-        #     )
-        #   ) %>% 
         highcharter::hc_legend(
           layout = "proximate", 
           align = "right"
           ) 
-        # highcharter::hc_plotOptions(
-        #   series = list(
-        #     states = list(
-        #       inactive = list(enabled = FALSE)
-        #     )
-        #   )
-        # ) 
-
-        
     })
 
     # Ics charts
-    output$ics_splines <- renderUI({
-      fin_years <- ics_df() %>%
-        dplyr::select(-dplyr::starts_with("GEOGRAPHY")) %>%
-        names()
-
-      fin_years <- c(min(fin_years), fin_years)
-
-      plot_pos <- c("first", rep("", length(fin_years) - 2), "last")
-
-      purrr::map2(fin_years, plot_pos, \(fy, pos) {
-        spline_chart_plot(
-          ics_df(),
-          selected_ics(),
-          fy,
-          input$input_ics_metric,
-          pos
-        )
-      }) %>%
-        highcharter::hw_grid(ncol = length(fin_years), rowheight = 250) %>%
-        htmltools::browsable()
+    output$ics_splines <- highcharter::renderHighchart({
+      
+      highcharter::highchart() %>%
+        highcharter::hc_xAxis(categories = sort(unique(ics_line_mean_df()$FY))) %>%
+        add_geo_series(
+          geo_df = ics_line_mean_df(),
+          col = nhsbsaR::palette_nhsbsa()[2],
+          geo_name = "ICB",
+          geo_bnf_parent = input$input_ics_bnf_parent,
+          geo_bnf_child = input$input_ics_bnf_child,
+          geo_metric = input$input_ics_metric
+        ) %>%
+        add_geo_series(
+          geo_df = ics_line_df(),
+          col = nhsbsaR::palette_nhsbsa()[1],
+          geo_name = "ICB",
+          geo_bnf_parent = input$input_ics_bnf_parent,
+          geo_bnf_child = input$input_ics_bnf_child,
+          geo_metric = input$input_ics_metric
+        ) %>%
+        nhsbsaR::theme_nhsbsa_highchart(stack = NULL) %>%
+        highcharter::hc_yAxis(
+          min = ics_filter()$MIN[1] * 0.95,
+          max = ics_filter()$MAX[1] * 1.05,
+          title = list(text = input$input_ics_metric)
+        ) %>% 
+        highcharter::hc_legend(
+          layout = "proximate", 
+          align = "right",
+          itemStyle = list(
+            width = 220
+          )
+        ) 
     })
 
     # Lad charts
-    output$lad_splines <- renderUI({
-      fin_years <- lad_df() %>%
-        dplyr::select(-dplyr::starts_with("GEOGRAPHY")) %>%
-        names()
-
-      fin_years <- c(min(fin_years), fin_years)
-
-      plot_pos <- c("first", rep("", length(fin_years) - 2), "last")
-
-      purrr::map2(fin_years, plot_pos, \(fy, pos) {
-        spline_chart_plot(
-          lad_df(),
-          selected_lad(),
-          fy,
-          input$input_lad_metric,
-          pos
-        )
-      }) %>%
-        highcharter::hw_grid(ncol = length(fin_years), rowheight = 250) %>%
-        htmltools::browsable()
+    output$lad_splines <- highcharter::renderHighchart({
+      
+      highcharter::highchart() %>%
+        highcharter::hc_xAxis(categories = sort(unique(lad_line_mean_df()$FY))) %>%
+        add_geo_series(
+          geo_df = lad_line_mean_df(),
+          col = nhsbsaR::palette_nhsbsa()[2],
+          geo_name = "Local Authority",
+          geo_bnf_parent = input$input_lad_bnf_parent,
+          geo_bnf_child = input$input_lad_bnf_child,
+          geo_metric = input$input_lad_metric
+        ) %>%
+        add_geo_series(
+          geo_df = lad_line_df(),
+          col = nhsbsaR::palette_nhsbsa()[1],
+          geo_name = "Local Authority",
+          geo_bnf_parent = input$input_lad_bnf_parent,
+          geo_bnf_child = input$input_lad_bnf_child,
+          geo_metric = input$input_lad_metric
+        ) %>%
+        nhsbsaR::theme_nhsbsa_highchart(stack = NULL) %>%
+        highcharter::hc_yAxis(
+          min = lad_filter()$MIN[1] * 0.95,
+          max = lad_filter()$MAX[1] * 1.05,
+          title = list(text = input$input_lad_metric)
+        ) %>% 
+        highcharter::hc_legend(
+          layout = "proximate", 
+          align = "right",
+          itemStyle = list(
+            width = 220
+          )
+        ) 
     })
 
     # Downloads ----------------------------------------------------------------
