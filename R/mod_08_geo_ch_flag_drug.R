@@ -96,27 +96,17 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Multi-select rows to display NHS region trend charts, but avoid selecting more than 3 rows for readability.",
+            "Only the top 50 elements nationally by total item count across all years per BNF level are presented.",
             tags$br(),
-            "Hovering the cursor over a region name in the legend will highlight a single trend chart, if required.",
+            "For example, only the 50 paragraphs with the largest national item count are described.",
             tags$br(),
-            "Only the top 50 elements nationally by total item count across all 
-             years per BNF level are presented.",
+            "The number of patients contributing to each metric are provided in the data download, offering additional context.",
             tags$br(),
-            "For example, only the 50 paragraphs with the largest national item
-             count are described.",
+            "Patient counts and annual totals between one and four have been rounded to five, otherwise to the nearest ten.",
             tags$br(),
-            "The number of patients contributing to each metric are provided in 
-             the data download, offering additional context.",
+            "Values over 1,000 have been shortened with an appropriate suffix and then rounded to 1 decimal place.",
             tags$br(),
-            "Patient counts and annual totals between one and four have been
-             rounded to five, otherwise to the nearest ten.",
-            tags$br(),
-            "Values over 1,000 have been shortened with an appropriate suffix and
-             then rounded to 1 decimal place.",
-            tags$br(),
-            "All other values are rounded to 1 decimal place, with values less
-            than 0.05 rounded to zero."
+            "All other values are rounded to 1 decimal place, with values less than 0.05 rounded to zero."
           )
         ),
 
@@ -173,27 +163,17 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Multi-select rows to display ICS trend charts, but avoid selecting more than 3 rows for readability.",
+            "Only the top 50 elements nationally by total item count across all years per BNF level are presented.",
             tags$br(),
-            "Hovering the cursor over an ICS name in the legend will highlight a single trend chart, if required.",
+            "For example, only the 50 paragraphs with the largest national item count are described.",
             tags$br(),
-            "Only the top 50 elements nationally by total item count across all 
-             years per BNF level are presented.",
+            "The number of patients contributing to each metric are provided in the data download, offering additional context.",
             tags$br(),
-            "For example, only the 50 paragraphs with the largest national item
-             count are described.",
+            "Patient counts and annual totals between one and four have been rounded to five, otherwise to the nearest ten.",
             tags$br(),
-            "The number of patients contributing to each metric are provided in 
-             the data download, offering additional context.",
+            "Values over 1,000 have been shortened with an appropriate suffix and then rounded to 1 decimal place.",
             tags$br(),
-            "Patient counts and annual totals between one and four have been
-             rounded to five, otherwise to the nearest ten.",
-            tags$br(),
-            "Values over 1,000 have been shortened with an appropriate suffix and
-             then rounded to 1 decimal place.",
-            tags$br(),
-            "All other values are rounded to 1 decimal place, with values less
-            than 0.05 rounded to zero."
+            "All other values are rounded to 1 decimal place, with values less than 0.05 rounded to zero."
           )
         ),
 
@@ -250,35 +230,20 @@ mod_08_geo_ch_flag_drug_ui <- function(id) {
           tags$text(
             class = "highcharts-caption",
             style = "font-size: 9pt",
-            "Multi-select rows to display Local Authority trend charts, but avoid selecting more than 3 rows for readability.",
+            "Only the top 50 elements nationally by total item count across all years per BNF level are presented.",
             tags$br(),
-            "Hovering the cursor over a Local Authority name in the legend will highlight a single trend chart, if required.",
+            "For example, only the 50 paragraphs with the largest national item count are described.",
             tags$br(),
-            "The Isles of Scilly were removed due to the number of care homes in
-             the Local Authority.",
+            "The number of patients contributing to each metric are provided in the data download, offering additional context.",
             tags$br(),
-            "City of London has no care home activity so is not present in this data",
+            "Patient counts and annual totals between one and four have been rounded to five, otherwise to the nearest ten.",
             tags$br(),
-            "Only the top 50 elements nationally by total item count across all 
-             years per BNF level are presented.",
+            "Values over 1,000 have been shortened with an appropriate suffix and then rounded to 1 decimal place.",
             tags$br(),
-            "For example, only the 50 paragraphs with the largest national item
-             count are described.",
-            tags$br(),
-            "The number of patients contributing to each metric are provided in 
-             the data download, offering additional context.",
-            tags$br(),
-            "Patient counts and annual totals between one and four have been
-             rounded to five, otherwise to the nearest ten.",
-            tags$br(),
-            "Values over 1,000 have been shortened with an appropriate suffix and
-             then rounded to 1 decimal place.",
-            tags$br(),
-            "All other values are rounded to 1 decimal place, with values less
-            than 0.05 rounded to zero."
+            "All other values are rounded to 1 decimal place, with values less than 0.05 rounded to zero."
           )
         )
-      ),
+      )
     ),
     tags$div(style = "margin-top: 25vh") # Some buffer space after the chart
   )
@@ -851,7 +816,17 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
         highcharter::hc_legend(
           layout = "proximate", 
           align = "right"
-          ) 
+          ) %>% 
+        highcharter::hc_title(
+          text = "Multi-select rows to display NHS Region trend charts. Avoid selecting more than 3 rows for readability. 
+          Hover the cursor over a legend item to highlight a single line.",
+          align = "left",
+          style = list(
+            fontSize = "12px",
+            fontWeight = "normal",
+            family = "Arial"
+            )
+          )
     })
 
     # Ics charts
@@ -887,7 +862,17 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           itemStyle = list(
             width = 220
           )
-        ) 
+        ) %>% 
+        highcharter::hc_title(
+          text = "Multi-select rows to display ICS trend charts. Avoid selecting more than 3 rows for readability. 
+          Hover the cursor over a legend item to highlight a single line.",
+          align = "left",
+          style = list(
+            fontSize = "12px",
+            fontWeight = "normal",
+            family = "Arial"
+          )
+        )
     })
 
     # Lad charts
@@ -923,7 +908,17 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
           itemStyle = list(
             width = 220
           )
-        ) 
+        ) %>% 
+        highcharter::hc_title(
+          text = "Multi-select rows to display Local Authority trend charts. Avoid selecting more than 3 rows for readability. 
+          Hover the cursor over a legend item to highlight a single line.",
+          align = "left",
+          style = list(
+            fontSize = "12px",
+            fontWeight = "normal",
+            family = "Arial"
+          )
+        )
     })
 
     # Downloads ----------------------------------------------------------------

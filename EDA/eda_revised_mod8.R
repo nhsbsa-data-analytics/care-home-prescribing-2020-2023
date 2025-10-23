@@ -163,4 +163,27 @@ highcharter::highchart() %>%
     layout = "proximate", 
     align = "right"
   ) 
-                                                                                                                                
+
+
+split_middle <- function(x, max_len = 35) {
+  
+  sapply(x, function(str) {
+    # If short, return as-is
+    if (nchar(str) <= max_len) return(str)
+    
+    # Find spaces
+    spaces <- gregexpr(" ", str)[[1]]
+    if (all(spaces == -1)) return(str)  # no spaces, return original
+    
+    # Find space closest to middle
+    mid <- nchar(str) / 2
+    split_pos <- spaces[which.min(abs(spaces - mid))]
+    
+    # Insert line break
+    paste0(substr(str, 1, split_pos - 1),
+           "<br>",
+           substr(str, split_pos + 1, nchar(str)))
+  }, USE.NAMES = FALSE)
+}
+
+split_middle("NHS Stoke, horchester and Middleingstongworth and Eppingdaleton ICB")                                                                                                                                
