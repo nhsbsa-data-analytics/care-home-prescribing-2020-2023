@@ -2,6 +2,8 @@
 # library
 library(dplyr)
 library(dbplyr)
+library(assertr)
+library(assertr.alt)
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -11,6 +13,9 @@ base <- con %>%
   tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20250331"))
 
 # RUN ONCE: SPEED UP CODE * 4 RUN ----------------------------------------------
+
+# Functions
+source("data-raw/workflow/workflow_helpers.R")
 
 # Distinct ch patients: 1.2m (for 1+ month across entire time period)
 ch_pats = base %>%
@@ -27,7 +32,7 @@ table_name = "INT646_DISTINCT_CH_PATS"
 # Remove temp table (DROP TABLE FUN NOT WORKING ...)
 if(DBI::dbExistsTable(con, table_name)){DBI::dbRemoveTable(con, table_name)}
 
-# Just format postcode
+# Temp table save (deleted at end of script)
 ch_pats %>%
   compute_with_parallelism(table_name, 32)
 
@@ -161,7 +166,7 @@ geo_long_short_stay_metrics = function(GEO=NULL){
         )),
       GEO_TYPE = if (is.null(GEO)) "Overall" else GEO,
       GEO      = if (is.null(GEO)) "Overall" else .[[GEO]],
-      # METRIC CALC INFO
+      # METRIC CALC INFO (keep for potential future reference)
       ITEMS,
       COST,
       SIX_PLUS_SUM,
@@ -177,6 +182,7 @@ geo_long_short_stay_metrics = function(GEO=NULL){
       # METRIC OUTPUT
       ITEMS_PPM = round(ITEMS / TOTAL_PM, 2),
       COST_PPM = round(COST / TOTAL_PM, 2),
+      UNIQ_MEDS_PPM,
       PCT_PM_GTE_SIX = round(100 * SIX_PLUS_SUM / TOTAL_PM, 2),
       PCT_PM_GTE_TEN = round(100 * TEN_PLUS_SUM / TOTAL_PM, 2),
       PCT_PM_DAMN = round(100 * DAMN_TWO_SUM / DAMN_ONE_SUM, 2),
@@ -203,8 +209,45 @@ ics = geo_long_short_stay_metrics('PCD_ICB_NAME')
 lad = geo_long_short_stay_metrics('PCD_LAD_NAME')
 Sys.time()
 
-# Total data
-mod_short_longstay_df = rbind(national, region, ics, lad)
+# Final process and quick validation -------------------------------------------
+
+# Region (7) + ICB (42) + LAD (295) + national (1) count
+geo_count = 345
+metric_count = 10
+seq_count = 5
+expected_rows = geo_count * metric_count * seq_count
+
+# Bind and process
+mod_short_longstay_df = rbind(national, region, ics, lad) %>% 
+  transmute(
+    SEQ_GROUP,
+    GEO_TYPE = case_when(
+      GEO_TYPE == "PCD_REGION_NAME" ~ "Region",
+      GEO_TYPE == "PCD_ICB_NAME" ~ "ICS",
+      GEO_TYPE == "PCD_LAD_NAME" ~ "Local Authority",
+      TRUE ~ GEO_TYPE
+    ),
+    GEO,
+    ITEMS_PPM,
+    COST_PPM,
+    UNIQ_MEDS_PPM,
+    PCT_PM_GTE_SIX,
+    PCT_PM_GTE_TEN,
+    PCT_PM_DAMN,
+    PCT_PM_ACB,
+    PCT_PM_ACAP,
+    PCT_PM_FALLS,
+    UNIQ_MEDS_FALLS_PPM
+  ) %>% 
+  tidyr::pivot_longer(
+    cols = where(is.numeric),
+    names_to = "METRIC",
+    values_to = "VALUE"
+  ) %>% 
+  verify(nrow.alt(.) == expected_rows) %>%
+  assert.alt(not_na.alt, SEQ_GROUP, GEO_TYPE, GEO, METRIC, VALUE)
+
+# Quick validation -------------------------------------------------------------
 
 # Add to data-raw/
 usethis::use_data(mod_short_longstay_df, overwrite = TRUE)
@@ -215,15 +258,15 @@ if(DBI::dbExistsTable(con, table_name)){DBI::dbRemoveTable(con, table_name)}
 # Disconnect and clean
 DBI::dbDisconnect(con); rm(list = ls()); gc()
 
-# Archive ----------------------------------------------------------------------
+# Archive - manual data validation check (metric value range sense check) ------
 
 # # Helper to check range diff across timeframe per df geography
 # get_geo_range = function(df){
-#   df %>% 
-#     filter(SEQ_GROUP %in% c("1-3 Months", "13+ Months")) %>% 
-#     arrange(GEO, SEQ_GROUP) %>% 
+#   df %>%
+#     filter(SEQ_GROUP %in% c("1-3 Months", "13+ Months")) %>%
+#     arrange(GEO, SEQ_GROUP) %>%
 #     group_by(GEO) %>%
-#     summarise(across(where(is.numeric), ~ diff(.x))) %>% 
+#     summarise(across(where(is.numeric), ~ diff(.x))) %>%
 #     ungroup()
 # }
 # 
