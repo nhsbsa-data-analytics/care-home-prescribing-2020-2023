@@ -25,7 +25,7 @@ mod_17_short_longstay_ui <- function(id){
                           "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
                           "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
                           "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
-                          "% of patient-months with 2+ ACAP medicines" = "PCT_ACAP_DAMN",
+                          "% of patient-months with 2+ ACAP medicines" = "PCT_PM_ACAP",
                           "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
                           "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
                         ),
@@ -33,8 +33,8 @@ mod_17_short_longstay_ui <- function(id){
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = sort(unique(mod_short_longstay_df$GEO_TYPE)),
-                        selected = dplyr::first(sort(unique(mod_short_longstay_df$GEO_TYPE))),
+                        choices = unique(mod_short_longstay_df$GEO_TYPE),
+                        selected = dplyr::first(unique(mod_short_longstay_df$GEO_TYPE)),
                         full_width = T),
         nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",
@@ -42,7 +42,24 @@ mod_17_short_longstay_ui <- function(id){
                         full_width = T)
       ),
       highcharter::highchartOutput(outputId = ns("short_longstay_chart"), height = "350px"),
-      shiny::htmlOutput(outputId = ns("caption"))
+      br(),
+      
+      # Chart caption
+      tags$text(
+        class = "highcharts-caption",
+        style = "font-size: 9pt",
+        "The first *complete* month that patient receives prescribing at a care home is deemed as month-1.",
+        tags$br(),
+        "Month-2 and month-3 and so on are then the successive months where a patient recieves care home prescribing.",
+        tags$br(),
+        "When a patient receives non-care prescribing, this counter resets to zero.",
+        tags$br(),
+        "The next *complete* month (if there is one) where patient receives prescribing is deemed as month-1 once again.",
+        tags$br(),
+        "As can be seen, the prescribing of the same patient can be allocated to the same month values multiple times.",
+        tags$br(),
+        "The prescribing of the same patient is also allocated to every monthly value, until they stop receiving care home prescribing."
+      )
     )
   )
 }
@@ -53,6 +70,45 @@ mod_17_short_longstay_ui <- function(id){
 mod_17_short_longstay_server <- function(id){
   moduleServer( id, function(input, output, session){
     ns <- session$ns
+    
+    # Metric and UI mappings----------------------------------------------------
+    
+    # Map metric column names to UI metric names
+    ui_metric_names <- c(
+      COST_PPM            = "Mean drug cost PPM",
+      ITEMS_PPM           = "Mean prescription items PPM",
+      UNIQ_MEDS_PPM       = "Mean unique medicines PPM",
+      PCT_PM_GTE_SIX      = "% of patient-months with 6+ unique medicines",
+      PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
+      PCT_PM_ACB          = "% of patient-months with 2+ ACB medicines",
+      PCT_PM_DAMN         = "% of patient-months with 2+ DAMN medicines",
+      PCT_PM_ACAP         = "% of patient-months with 2+ ACAP medicines",
+      UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
+      PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
+    )
+    
+    # Map metric column names to tooltip metric names
+    metric_tooltips <- c(
+      COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
+      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.1f}",
+      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.1f}",
+      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.1f}%",
+      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
+      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
+      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
+      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
+      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
+    )
+    
+    # Map all column names to download data names
+    dl_col_names <- c(
+      rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
+      "Care home length of stay"    = "SEQ_GROUP",
+      "Geography"                   = "GEO_TYPE",
+      "Sub-geography"               = "GEO"
+    )
+    
+    # Reactive processing ------------------------------------------------------
     
     # Filter the data based on the FY and the geography
     initial_filter_df <- reactive({
@@ -76,7 +132,8 @@ mod_17_short_longstay_server <- function(id){
           choices =
             initial_filter_df()$GEO %>%
             stats::na.omit() %>%
-            unique()
+            unique() %>% 
+            sort()
         )
       }
     )
@@ -93,6 +150,8 @@ mod_17_short_longstay_server <- function(id){
         )
     })
     
+    # Chart --------------------------------------------------------------------
+    
     # Pyramid plot for age band and gender
     output$short_longstay_chart <-
       highcharter::renderHighchart({
@@ -101,8 +160,58 @@ mod_17_short_longstay_server <- function(id){
         req(input$sub_geography)
         
         # Create the chart
-        highcharter::hchart(second_filter_df(), "column", highcharter::hcaes(SEQ_GROUP, VALUE))
+        highcharter::hchart(
+          second_filter_df(), 
+          "column", 
+          highcharter::hcaes(SEQ_GROUP, VALUE),
+          name = ui_metric_names[[input$metric]],
+          tooltip = list(
+            useHTML = TRUE,
+            pointFormat = paste0(
+              metric_tooltips[input$metric] %>% unname()
+            )
+          )) %>% 
+          highcharter::hc_yAxis(
+            title = list(text = ui_metric_names[[input$metric]]),
+            min = 0
+            ) %>% 
+          highcharter::hc_xAxis(
+            title = list(text = "Length of care home stay")
+            ) %>% 
+          nhsbsaR::theme_nhsbsa_highchart()
 
+      })
+    
+    # Download -----------------------------------------------------------------
+    
+    # Create download data
+    create_download_data <- function(data) {
+      data %>%
+        tidyr::pivot_wider(
+          names_from = METRIC,             
+          values_from = where(is.numeric)  
+        ) %>% 
+        dplyr::rename(dl_col_names)
+    }
+    
+    # Pivot wide to create download data
+    mod_nhs_download_server(
+      id = "download_data",
+      filename = "Selected prescribing metrics by care home length of stay.xlsx",
+      export_data = create_download_data(mod_short_longstay_df)
+      )
+    
+    # Observe download
+    observeEvent(
+      mod_short_longstay_df,
+      once = TRUE, {
+        req(mod_short_longstay_df)
+
+        insertUI(
+          selector = ".nhsuk-card__description:eq(5)",
+          where = "beforeEnd",
+          ui = mod_nhs_download_ui(ns("download_data"))
+        )
       })
     
   })
