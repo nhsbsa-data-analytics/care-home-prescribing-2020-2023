@@ -66,6 +66,7 @@ app_ui <- function(request) {
             mod_04_metrics_ch_type_ui("metrics_ch_type"),
             mod_05_metrics_age_gender_ui("metrics_age_gender"),
             mod_06_geo_ch_flag_ui("geo_ch_flag"),
+            mod_17_short_longstay_ui("short_longstay"),
             mod_07_ch_flag_drug_ui("ch_flag_drug"),
             mod_08_geo_ch_flag_drug_ui("geo_ch_flag_drug"),
             mod_09_final_thoughts_ui("final_thoughts")
