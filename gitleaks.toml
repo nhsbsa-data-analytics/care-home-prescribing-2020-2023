@@ -1,0 +1,39 @@
+# This gitleaks config extends the NHSBSA config by adding rules specific to us.
+# The NHSBSA config can be found at:
+# https://github.com/nhsbsa/nhsbsa-digital-playbook/blob/main/gitleaks-nhsbsa.toml
+
+title = "Additional gitleaks config"
+[extend]
+path = "gitleaks-nhsbsa.toml"
+
+# =================================================================
+# Rule for detecting National Health Service (NHS) numbers
+# This version uses word boundaries to avoid matching numbers that are
+# part of a longer numeric string.
+# =================================================================
+[[rules]]
+id = "nhs-number"
+description = "Potential NHS Number found. This is a 10-digit identifier for patients in the UK."
+
+# This regex uses word boundaries (\b) to ensure the number is not part of a
+# larger string of digits. It allows for multiple spaces or hyphens as separators.
+regex = '''\b\d{3}[ -]*\d{3}[ -]*\d{4}\b'''
+
+tags = ["secret", "pii", "nhs"]
+
+# =================================================================
+# Detects database connection strings as used by DALL. The rule is flexible,
+# handling case-insensitivity, various spacing, and both '=' and ':' as separators,
+# making it effective for property files, YAML, and other formats.
+# =================================================================
+[[rules]]
+id = "database-connection-strings"
+description = "Potential database connection string found."
+
+# This regex is designed to be highly robust:
+# (?i)           - Case-insensitive match.
+# \s*[=:]\s*     - Allows for a colon or equals sign, with any amount of whitespace.
+# ["'][^"']+["'] - Captures values in single or double quotes.
+regex = '''(?i)(password|pwd|user(name)?|uid)\s*[=:]\s*["'][^"']+["']'''
+
+tags = ["secret", "credential", "database"]
