@@ -110,12 +110,12 @@ mod_01_headline_figures_server <- function(id, export_data) {
     fmt_data <- carehomes2::mod_headline_figures_df %>%
       dplyr::filter(.data$SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
       # @Adnan - Probably temporary, but formatting here until we discuss
-      mutate(
+      dplyr::mutate(
         # Patients nearest 100, Items 1,000, Cost 10,000
         PATS = janitor::round_half_up(PATS, -2),
         ITEMS = janitor::round_half_up(ITEMS, -3),
         NIC = janitor::round_half_up(NIC, -4),
-        across(ends_with("PERC"), \(x) round(100 * x, 1))
+        dplyr::across(dplyr::ends_with("PERC"), \(x) round(100 * x, 1))
       )
 
     # Reactive data -------------------------------------------------------

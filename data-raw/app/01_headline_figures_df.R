@@ -387,7 +387,8 @@ monthly_df <- names(geographies) %>%
   assert.alt(not_na.alt, PATS, ITEMS, NIC, ITEMS_PERC, NIC_PERC)
 
 # Bind dfs together
-mod_headline_figures_df <- rbind(annual_df, monthly_df)
+mod_headline_figures_df <- rbind(annual_df, monthly_df) %>% 
+  relocate(SUB_GEOGRAPHY_CODE, .before = SUB_GEOGRAPHY_NAME)
 
 # Add levels to geography and sort
 mod_headline_figures_df <- mod_headline_figures_df %>% 
