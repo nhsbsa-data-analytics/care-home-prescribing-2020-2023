@@ -375,7 +375,7 @@ annual_df <- names(geographies) %>%
   map(aggregate_by_geo) %>%
   list_rbind() %>%
   verify(nrow.alt(.) == ANNUAL_EXPECTED_ROWS) %>%
-  assert.alt(not_na.alt, PATS, ITEMS, NIC, ITEMS_PERC, NIC_PERC)
+  assert.alt(not_na.alt, PATS, ITEMS, NIC, ITEMS_PROP, NIC_PROP)
 
 
 ### Monthly data
@@ -384,7 +384,7 @@ monthly_df <- names(geographies) %>%
   map(aggregate_by_geo, time_interval = "Monthly") %>%
   list_rbind() %>%
   verify(nrow.alt(.) == MONTHLY_EXPECTED_ROWS) %>%
-  assert.alt(not_na.alt, PATS, ITEMS, NIC, ITEMS_PERC, NIC_PERC)
+  assert.alt(not_na.alt, PATS, ITEMS, NIC, ITEMS_PROP, NIC_PROP)
 
 # Bind dfs together
 mod_headline_figures_df <- rbind(annual_df, monthly_df) %>% 
