@@ -926,7 +926,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
     # Create download data
     create_download_data <- function(data) {
       tryCatch(
-        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_dfffffff),
+        return (carehomes2::bnf_level_prescribing_estimates_in_care_homes_df),
         error = \(e) {
           data <- data %>%
             tidyr::pivot_wider(
