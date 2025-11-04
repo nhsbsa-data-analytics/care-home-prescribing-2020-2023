@@ -394,18 +394,6 @@ mod_headline_figures_df <- rbind(annual_df, monthly_df) %>%
 mod_headline_figures_df <- mod_headline_figures_df %>% 
   format_data_raw(c())
 
-## Format ----------------------------------------------------------------------
-# @Adnan - need to decide right level of rounding
-# mod_headline_figures_df_CHECK <- mod_headline_figures_df %>%
-#   rename_with(\(x) gsub("PROP", "PERC", x), ends_with("PROP")) 
-#   mutate(
-#     # Patients nearest 100, Items 1,000, Cost 10,000
-#     PATS = janitor::round_half_up(PATS, -2),
-#     ITEMS = janitor::round_half_up(ITEMS, -3),
-#     NIC = janitor::round_half_up(NIC, -4),
-#     across(ends_with("PERC"), \(x) round(100 * x, 1))
-#   )
-
 ## Save ------------------------------------------------------------------------
 usethis::use_data(mod_headline_figures_df, overwrite = TRUE)
 

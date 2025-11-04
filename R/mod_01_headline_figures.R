@@ -63,8 +63,7 @@ mod_01_headline_figures_ui <- function(id) {
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "Patient counts are rounded to the nearest 100, while total prescription
-        items and total cost (£) are rounded to the nearest 1,000."
+        textOutput(ns("caption"))
       )
     ),
     tags$div(style = "margin-top: 25vh")
@@ -109,12 +108,22 @@ mod_01_headline_figures_server <- function(id, export_data) {
 
     fmt_data <- carehomes2::mod_headline_figures_df %>%
       dplyr::filter(.data$SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
-      # @Adnan - Probably temporary, but formatting here until we discuss
+      dplyr::rename_with(\(x) gsub("PROP", "PERC", x), dplyr::ends_with("PROP")) %>% 
       dplyr::mutate(
-        # Patients nearest 100, Items 1,000, Cost 10,000
-        PATS = janitor::round_half_up(PATS, -2),
-        ITEMS = janitor::round_half_up(ITEMS, -3),
-        NIC = janitor::round_half_up(NIC, -4),
+        # All except LAD: Patients nearest 100, Items 1,000, Cost 10,000
+        # LAD: Patients nearest 10, Items 10, Cost 10
+        PATS = dplyr::case_when(
+          GEOGRAPHY == "Local Authority" ~ janitor::round_half_up(PATS, -1),
+          TRUE ~ janitor::round_half_up(PATS, -2)
+        ),
+        ITEMS = dplyr::case_when(
+          GEOGRAPHY == "Local Authority" ~ janitor::round_half_up(ITEMS, -1),
+          TRUE ~ janitor::round_half_up(ITEMS, -3)
+        ),
+        NIC = dplyr::case_when(
+          GEOGRAPHY == "Local Authority" ~ janitor::round_half_up(NIC, -1),
+          TRUE ~ janitor::round_half_up(NIC, -4)
+        ),
         dplyr::across(dplyr::ends_with("PERC"), \(x) round(100 * x, 1))
       )
 
@@ -226,6 +235,17 @@ mod_01_headline_figures_server <- function(id, export_data) {
     })
     output$headline_monthly_chart <- highcharter::renderHighchart({
       create_headline_monthly_chart(fdata())
+    })
+    
+    output$caption <- renderText({
+      switch(
+        input$geography,
+        "Local Authority" = "Patient counts, total prescription items and total
+         cost (£) are rounded to the nearest 10.",
+        "Patient counts are rounded to the nearest 100, total prescription items
+         are rounded to the nearest 1,000 and total cost (£) is rounded to the
+         nearest 10,000."
+      )
     })
 
     # Download button
