@@ -18,6 +18,6 @@ Care home patients received a greater number of unique medicines PPM. The propor
 
 Prescribing of two or more DAMN medicines was the only metric where non-care home patients had higher values than care home patients.
 
-The rate of ACAP polypharmacy shows a trend of decreasing since 2020/21. It is more common in non-care home prescribing and less common for the aged 85+ population in both care home and non-care home settings.
+The rate of ACAP polypharmacy shows a decreasing trend since 2020/21. It is more common in non-care home prescribing and less common for the aged 85+ population in both care home and non-care home settings.
 
 Age can be restricted to 85 and over in the chart. This subgroup shows similar but less pronounced differences between care home and non-care home patients than the comparisons for all older people.
