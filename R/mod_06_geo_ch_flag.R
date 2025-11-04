@@ -34,6 +34,7 @@ mod_06_geo_ch_flag_ui <- function(id) {
               "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
               "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
               "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
+              "% of patient-months with 2+ ACAP medicines" = "PCT_ACAP_TWO",
               "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
               "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
             ),
@@ -93,8 +94,15 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PM_GTE_TEN      = "% of patient-months with 10+ unique medicines",
       PCT_PM_ACB          = "% of patient-months with 2+ ACB medicines",
       PCT_PM_DAMN         = "% of patient-months with 2+ DAMN medicines",
+      PCT_ACAP_TWO        = "% of patient-months with 2+ ACAP medicines",
       UNIQ_MEDS_FALLS_PPM = "Mean unique falls risk medicines PPM",
-      PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
+      PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines",
+      
+      # Exposed in data download only
+      TOTAL_PM = "Total patient-months",
+      TOTAL_PM_ACB = "Total patient-months with any ACB",
+      TOTAL_PM_DAMN = "Total patient-months with any DAMN",
+      TOTAL_PM_ACAP = "Total patient-months with any ACAP"
     )
     
     # Map metric column names to tooltip metric names
@@ -106,6 +114,7 @@ mod_06_geo_ch_flag_server <- function(id) {
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.value:.1f}%",
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.value:.1f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.value:.1f}%",
+      PCT_ACAP_TWO        = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.value:.1f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM:</b> {point.value:.1f}",
       PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines:</b> {point.value:.1f}%"
     )
@@ -123,6 +132,7 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Formatted data ------------------------------------------------------
     
     fmt_data <- carehomes2::metrics_by_geo_and_ch_flag_df %>% 
+      dplyr::select(-PCT_ACAP_THREE) %>% 
       dplyr::filter(SUB_GEOGRAPHY_NAME != "Isles of Scilly") %>% 
       dplyr::mutate(
         COST_PPM = janitor::round_half_up(.data$COST_PPM, 0),
@@ -273,6 +283,12 @@ mod_06_geo_ch_flag_server <- function(id) {
         "}"
       )
       
+      round_to_dp <- switch(
+        input$metric,
+        COST_PPM = 0,
+        1
+      )
+      
       main_dt <- DT::datatable(
         tdata,
         rownames = FALSE,
@@ -293,6 +309,7 @@ mod_06_geo_ch_flag_server <- function(id) {
           )
         )
       ) %>%
+        DT::formatRound(columns = 2:ncol(tdata), digits = round_to_dp) %>%
         DT::formatStyle(columns = 1:ncol(tdata), `font-size` = "12px")
       
       footer_dt <- DT::datatable(
@@ -325,7 +342,6 @@ mod_06_geo_ch_flag_server <- function(id) {
     # Create download data (all data)
     create_download_data <- function(data) {
       data %>%
-        dplyr::select(!dplyr::starts_with("TOTAL")) %>% 
         dplyr::mutate(
           CH_FLAG = ifelse(CH_FLAG, "Care home", "Non-care home")
         )  %>% 
