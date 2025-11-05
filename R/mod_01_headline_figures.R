@@ -90,8 +90,8 @@ mod_01_headline_figures_server <- function(id, export_data) {
       PATS = "<b>Mean monthly patients: </b> {point.METRIC:,.0f}",
       ITEMS = "<b>Mean monthly items: </b> {point.METRIC:,.0f}",
       NIC = "<b>Mean monthly cost: </b> £{point.METRIC:,.0f}",
-      ITEMS_PERC = "<b>Item % for care homes: {point.METRIC:,.1f}</b>",
-      NIC_PERC = "<b>Cost % for care homes: {point.METRIC:,.1f}</b>"
+      ITEMS_PERC = "<b>Item % for care homes: </b> {point.METRIC:,.1f}",
+      NIC_PERC = "<b>Cost % for care homes: </b> {point.METRIC:,.1f}"
     )
 
     # Map all column names to download data names
@@ -180,7 +180,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
           useHTML = TRUE,
           headerFormat = "",
           pointFormat = paste0(
-            tags$b("{point.TIME}", ": "), "{point.SUB_GEOGRAPHY_NAME}",
+            tags$b(paste0("{point.TIME}", ": ")), "{point.SUB_GEOGRAPHY_NAME}",
             tags$br(),
             metric_tooltips[input$metric] %>% unname()
           )
@@ -227,7 +227,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
           useHTML = TRUE,
           headerFormat = "",
           pointFormat = paste0(
-            tags$b("Month:"), "{point.TIME}",
+            tags$b("Month: "), "{point.TIME}",
             tags$br(),
             metric_tooltips[input$metric] %>% unname()
           )
