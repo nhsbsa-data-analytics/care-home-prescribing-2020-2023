@@ -3,6 +3,7 @@
 # Library and functions
 library(dplyr)
 library(stringr)
+library(tidyr)
 library(glue)
 library(purrr)
 library(dbplyr)
@@ -16,6 +17,9 @@ start_year <- substring(base_table, 13, 16)
 end_year <- substring(base_table, 22, 25)
 EXPECTED_YEARS <- as.integer(end_year) - as.integer(start_year)
 EXPECTED_MONTHS <- 12 * EXPECTED_YEARS
+
+# ONLY REQUIRED IF RUNNING SCRIPT OUTSIDE OF 00_run_all.R
+#source("data-raw/app/geo_data.R")
 
 # Set up connection to DALP
 con <- nhsbsaR::con_nhsbsa(database = "DALP")
@@ -242,15 +246,7 @@ aggregate_by_geo <- function(geography_name = c(
     )
   
   base_db %>%
-    mutate(
-      GEOGRAPHY = geography_name,
-      # Remove any NHS or ICB acronyms
-      !!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]) := REGEXP_REPLACE(
-        !!sym(geography_cols[["SUB_GEOGRAPHY_NAME"]]),
-        "NHS | ICB",
-        ""
-      )
-    ) %>%
+    mutate(GEOGRAPHY = geography_name) %>%
     {
       if (time_interval == "Annual") {
         rename(., TIME = FY) %>%
@@ -359,9 +355,14 @@ aggregate_by_geo <- function(geography_name = c(
       ITEMS,
       NIC,
       ends_with("PROP")
-    )
+    ) %>% 
+    mutate(SUB_GEOGRAPHY_NAME = str_replace_all(
+      SUB_GEOGRAPHY_NAME, 
+      "NHS | ICB",
+        ""
+      )
+    ) 
 }
-
 
 ## Process ---------------------------------------------------------------------
 
@@ -376,7 +377,6 @@ annual_df <- names(geographies) %>%
   list_rbind() %>%
   verify(nrow.alt(.) == ANNUAL_EXPECTED_ROWS) %>%
   assert.alt(not_na.alt, PATS, ITEMS, NIC, ITEMS_PROP, NIC_PROP)
-
 
 ### Monthly data
 
