@@ -146,11 +146,17 @@ mod_01_headline_figures_server <- function(id, export_data) {
           .keep = "none"
         )
     })
-
+    
     # Output functions ----------------------------------------------------
 
     # Annual chart
     create_headline_annual_chart <- function(data) {
+      # Get max of metric to use a common y-axis range
+      y_max <- fmt_data %>% 
+        dplyr::filter(.data$GEOGRAPHY == isolate(input$geography)) %>%
+        dplyr::pull(.data[[input$metric]]) %>% 
+        max(na.rm = TRUE)
+      
       data %>%
         dplyr::filter(.data$TYPE == "Annual") %>%
         highcharter::hchart(
@@ -164,6 +170,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
         highcharter::hc_xAxis(title = list(text = "")) %>%
         highcharter::hc_yAxis(
           min = 0,
+          max = y_max,
           title = list(
             text = ui_metric_names[input$metric] %>% unname(),
             style = list(fontWeight = "bold")
@@ -183,6 +190,12 @@ mod_01_headline_figures_server <- function(id, export_data) {
 
     # Monthly chart
     create_headline_monthly_chart <- function(data) {
+      # Get max of metric to use a common y-axis range
+      y_max <- fmt_data %>% 
+        dplyr::filter(.data$GEOGRAPHY == isolate(input$geography)) %>%
+        dplyr::pull(.data[[input$metric]]) %>% 
+        max(na.rm = TRUE)
+      
       data %>%
         dplyr::filter(.data$TYPE == "Monthly") %>%
         highcharter::hchart(
@@ -204,6 +217,7 @@ mod_01_headline_figures_server <- function(id, export_data) {
         ) %>%
         highcharter::hc_yAxis(
           min = 0,
+          max = y_max,
           title = list(
             text = ui_metric_names[input$metric] %>% unname(),
             style = list(fontWeight = "bold")
