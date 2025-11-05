@@ -3,3 +3,5 @@ on: [push, workflow_dispatch]
 jobs:
   call-workflow:
     uses: nhsbsa-data-analytics/.github/.github/workflows/org-gitleaks-check.yml@master
+    secrets:
+      GITLEAKS_LICENSE_PASSED: ${{ secrets.GITLEAKS_LICENSE }}
