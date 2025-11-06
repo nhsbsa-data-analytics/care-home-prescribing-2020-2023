@@ -1,41 +1,41 @@
 NHS number:
 
 (10 digits)
-1234567890
+1234567890 
 ( > 10 digits)
-12345678901234
+12345678901234 
 (3-3-4 dashes)
-123-456-7890
+123-456-7890 
 (3-3-4 spaces)
-123 456 7890
+123 456 7890 
 (3-3-4 multi spaced)
-123  456  7890
+123  456  7890 
 (3-3-4 spaced dashes)
-123 - 456 - 7890
+123 - 456 - 7890 
 
 DB creds:
 
 (space around =)
-DB_DALP_USERNAME = "ABCDE"
-DB_DALP_PASSWORD = "qwertyuiop"
+DB_DALP_USERNAME = "ABCDE" 
+DB_DALP_PASSWORD = "qwertyuiop" 
 (no space around =)
-DB_DWCP_USERNAME="ABCDE"
-DB_DWCP_PASSWORD="qwertyuiop"
+DB_DWCP_USERNAME="ABCDE" 
+DB_DWCP_PASSWORD="qwertyuiop" 
 (space after =)
-DB_DWCP_USERNAME= "ABCDE"
-DB_DWCP_PASSWORD= "qwertyuiop"
+DB_DWCP_USERNAME= "ABCDE" 
+DB_DWCP_PASSWORD= "qwertyuiop" 
 (space before =)
-DB_DWCP_USERNAME ="ABCDE"
-DB_DWCP_PASSWORD ="qwertyuiop"
+DB_DWCP_USERNAME ="ABCDE" 
+DB_DWCP_PASSWORD ="qwertyuiop" 
 (lower case)
-db_dalp_username = "ABCDE"
-db_dalp_password = "qwertyuiop"
+db_dalp_username = "ABCDE" 
+db_dalp_password = "qwertyuiop" 
 (single quotes)
-DB_DWCP_USERNAME='ABCDE'
-DB_DWCP_PASSWORD='qwertyuiop'
+DB_DWCP_USERNAME='ABCDE' 
+DB_DWCP_PASSWORD='qwertyuiop' 
 (short names)
-UID= "ABCDE"
-PWD= "qwertyuiop"
+UID= "ABCDE" 
+PWD= "qwertyuiop" 
 (user, password)
-USER ="ABCDE"
-PASSWORD ="qwertyuiop"
+USER ="ABCDE" 
+PASSWORD ="qwertyuiop" 
