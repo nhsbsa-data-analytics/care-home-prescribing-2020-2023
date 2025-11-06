@@ -190,11 +190,14 @@ metrics_by_ch_type_85_split_df = do.call(rbind, list(
     TOTAL_PM,
     TOTAL_PM_ACB,
     TOTAL_PM_DAMN,
+    TOTAL_PM_ACAP,
     PCT_PM_GTE_SIX,
     PCT_PM_GTE_TEN,
     PCT_PM_ACB,
     PCT_PM_DAMN,
-    PCT_PM_FALLS
+    PCT_PM_FALLS,
+    PCT_ACAP_TWO,
+    PCT_ACAP_THREE
   )
 
 ## Save ------------------------------------------------------------------------

@@ -6,4 +6,6 @@ Prescribing metrics were closest amongst care home and non-care home patients ag
 
 Except for prescribing of DAMN medicines, prescribing was higher among care home patients than non-care home patients across all age groups.
 
+In both care home and non-care home settings, males are more likely to be prescribed more than one ACAP medicine.
+
 Male and female care home patients in each age band had broadly similar prescribing metric values. The same was true for non-care home patients.

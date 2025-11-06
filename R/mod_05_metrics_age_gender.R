@@ -21,6 +21,7 @@ mod_05_metrics_age_gender_ui <- function(id){
                           "% of patient-months with 10+ unique medicines" = "PCT_PM_GTE_TEN",
                           "% of patient-months with 2+ ACB medicines" = "PCT_PM_ACB",
                           "% of patient-months with 2+ DAMN medicines" = "PCT_PM_DAMN",
+                          "% of patient-months with 2+ ACAP medicines" = "PCT_ACAP_TWO",
                           "Mean unique falls risk medicines PPM" = "UNIQ_MEDS_FALLS_PPM",
                           "% of patient-months with 3+ falls risk medicines" = "PCT_PM_FALLS"
                           ),
@@ -135,10 +136,15 @@ mod_05_metrics_age_gender_server <- function(id){
           `Mean drug cost PPM` = .data$COST_PPM,
           `Mean prescription items PPM` = .data$ITEMS_PPM,
           `Mean unique medicines PPM` = .data$UNIQ_MEDS_PPM,
+          `Total patient-months` = .data$TOTAL_PM,
+          `Total patient-months with any ACB` = .data$TOTAL_PM_ACB,
+          `Total patient-months with any DAMN` = .data$TOTAL_PM_DAMN,
+          `Total patient-months with any ACAP` = .data$TOTAL_PM_ACAP,
           `% of patient-months with 6+ unique medicines` = .data$PCT_PM_GTE_SIX,
           `% of patient-months with 10+ unique medicines` = .data$PCT_PM_GTE_TEN,
           `% of patient-months with 2+ ACB medicines` = .data$PCT_PM_ACB,
           `% of patient-months with 2+ DAMN medicines` = .data$PCT_PM_DAMN,
+          `% of patient-months with 2+ ACAP medicines` = .data$PCT_ACAP_TWO,
           `Mean unique falls risk medicines PPM` = .data$UNIQ_MEDS_FALLS_PPM,
           `% of patient-months with 3+ falls risk medicines` = .data$PCT_PM_FALLS
         )
@@ -252,6 +258,7 @@ mod_05_metrics_age_gender_server <- function(id){
                  "PCT_PM_GTE_TEN" = "% of patient-months with 10+ unique medicines",
                  "PCT_PM_ACB" = "% of patient-months with 2+ ACB medicines",
                  "PCT_PM_DAMN" = "% of patient-months with 2+ DAMN medicines",
+                 "PCT_ACAP_TWO" = "% of patient-months with 2+ ACAP medicines",
                  "UNIQ_MEDS_FALLS_PPM" = "Mean unique falls risk medicines PPM",
                  "PCT_PM_FALLS" = "% of patient-months with 3+ falls risk medicines"
                   )
@@ -275,6 +282,7 @@ mod_05_metrics_age_gender_server <- function(id){
                                  "PCT_PM_GTE_TEN" = 1,
                                  "PCT_PM_ACB" = 1,
                                  "PCT_PM_DAMN" = 1,
+                                 "PCT_ACAP_TWO" = 1,
                                  "UNIQ_MEDS_FALLS_PPM" = 1,
                                  "PCT_PM_FALLS" = 1
                                  ),
@@ -284,6 +292,7 @@ mod_05_metrics_age_gender_server <- function(id){
                               "PCT_PM_GTE_TEN" = "%",
                               "PCT_PM_ACB" = "%",
                               "PCT_PM_DAMN" = "%",
+                              "PCT_ACAP_TWO" = "%",
                               "PCT_PM_FALLS" = "%"),
           valuePrefix = switch(input$gender_and_age_band_and_ch_flag_metric,
                               "COST_PPM" = "£")
