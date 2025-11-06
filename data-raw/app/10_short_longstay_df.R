@@ -108,7 +108,13 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     arrange(NHS_NO, YEAR_MONTH) %>% 
     mutate(RUN_LABEL = cumsum(FLIP)) %>% 
     ungroup() %>% 
-    # CALC PART 3: Calculate row count per NHS_NO and RUN_LABEL
+    # CALC PART 3: Remove months with 'mixed' (CH and non-CH) prescribing from count
+    group_by(NHS_NO, YEAR_MONTH) %>% 
+    mutate(PRESC_TYPE_COUNT = n_distinct(CH_FLAG)) %>% 
+    ungroup() %>% 
+    filter(PRESC_TYPE_COUNT == 1) %>% 
+    ungroup() %>% 
+    # CALC PART 4: Calculate row count per NHS_NO and RUN_LABEL
     group_by(NHS_NO, RUN_LABEL) %>% 
     arrange(YEAR_MONTH) %>% 
     mutate(SEQ = row_number()) %>% 
@@ -126,11 +132,11 @@ geo_long_short_stay_metrics = function(GEO=NULL){
       SIX_PLUS = ifelse(UNIQUE_MEDICINES >= 6, 1, 0),
       TEN_PLUS = ifelse(UNIQUE_MEDICINES >= 10, 1, 0),
       SEQ_GROUP = case_when(
-        SEQ >= 2 & SEQ <= 4 ~ "1-3 Months",
-        SEQ >= 5 & SEQ <= 7 ~ "4-6 Months",
-        SEQ >= 8 & SEQ <= 10 ~ "7-9 Months",
-        SEQ >= 11 & SEQ <= 13 ~ "10-12 Months",
-        SEQ >= 14 ~ "13+ Months"
+        SEQ >= 1 & SEQ <= 3 ~ "1-3 Months",
+        SEQ >= 4 & SEQ <= 6 ~ "4-6 Months",
+        SEQ >= 7 & SEQ <= 9 ~ "7-9 Months",
+        SEQ >= 10 & SEQ <= 12 ~ "10-12 Months",
+        SEQ >= 13 ~ "13+ Months"
       )
     ) %>% 
     # Second group-grouping
@@ -218,7 +224,7 @@ seq_count = 5
 expected_rows = geo_count * metric_count * seq_count
 
 # Bind and process
-mod_short_longstay_df = rbind(national, region, ics, lad) %>% 
+mod_short_longstay_df2 = rbind(national, region, ics, lad) %>% 
   transmute(
     SEQ_GROUP,
     GEO_TYPE = case_when(
@@ -261,16 +267,18 @@ DBI::dbDisconnect(con); rm(list = ls()); gc()
 # Archive - manual data validation check (metric value range sense check) ------
 
 # # Helper to check range diff across timeframe per df geography
-# get_geo_range = function(df){
+# get_geo_range = function(df, geo){
 #   df %>%
+#     filter(GEO_TYPE == geo) %>% 
+#     tidyr::pivot_wider(names_from = METRIC, values_from = VALUE) %>% 
 #     filter(SEQ_GROUP %in% c("1-3 Months", "13+ Months")) %>%
-#     arrange(GEO, SEQ_GROUP) %>%
+#     arrange(GEO, SEQ_GROUP) %>% 
 #     group_by(GEO) %>%
 #     summarise(across(where(is.numeric), ~ diff(.x))) %>%
-#     ungroup()
+#     ungroup() 
 # }
 # 
 # # Diff between 1st and Last SEQ_GROUP
-# region_range = get_geo_range(region)
-# icb_range = get_geo_range(ics)
-# lad_range = get_geo_range(lad)
+# region_range = get_geo_range(mod_short_longstay_df, "Region")
+# icb_range = get_geo_range(mod_short_longstay_df, "ICS")
+# lad_range = get_geo_range(mod_short_longstay_df, "Local Authority")

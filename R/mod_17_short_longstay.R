@@ -11,7 +11,7 @@ mod_17_short_longstay_ui <- function(id){
   ns <- NS(id)
 
   tagList(
-    #include_dynamic_md("inst/markdown/17_short_longstay.md"),
+    include_dynamic_md("inst/markdown/17_short_longstay.md"),
     nhs_card(
       heading = "Care home prescribing metric values depending on length of continuous care home stay",
       nhs_grid_3_col(
@@ -48,13 +48,13 @@ mod_17_short_longstay_ui <- function(id){
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "The first *complete* month that patient receives prescribing at a care home is deemed as month-1.",
+        "The first complete month that patient receives prescribing at a care home is deemed as month-1.",
         tags$br(),
         "Month-2 and month-3 and so on are then the successive months where a patient recieves care home prescribing.",
         tags$br(),
         "When a patient receives non-care prescribing, this counter resets to zero.",
         tags$br(),
-        "The next *complete* month (if there is one) where patient receives prescribing is deemed as month-1 once again.",
+        "The next complete month (if there is one) where patient receives prescribing is deemed as month-1 once again.",
         tags$br(),
         "As can be seen, the prescribing of the same patient can be allocated to the same month values multiple times.",
         tags$br(),
@@ -96,6 +96,7 @@ mod_17_short_longstay_server <- function(id){
       PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
       PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
       PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
+      PCT_PM_ACAP         = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
       UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
       PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
     )
