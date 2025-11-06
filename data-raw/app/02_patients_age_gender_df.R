@@ -53,8 +53,7 @@ EXPECTED_ROWS <- EXPECTED_YEARS *
       1                                 # + 1 for AGE_BAND = NA, GENDER = Unknown
   )
   
->>>>>>> 114-handle-city-of-london-missing-values-add-validation-to-mods-248
- 
+
 # Add a dummy overall column
 base_db <- base_db |>
    mutate(OVERALL = "Overall")
