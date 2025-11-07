@@ -2,6 +2,7 @@
 # library
 library(dplyr)
 library(dbplyr)
+library(rlang)
 source("data-raw/workflow/workflow_helpers.R")
 
 # Set up connection to DALP
@@ -19,8 +20,13 @@ ch_pats = base %>%
     CH_FLAG == 1,
     !is.na(NHS_NO)
   ) %>%
-  select(NHS_NO) %>%
-  distinct()
+  group_by(NHS_NO) %>% 
+  summarise(
+    CH_FLAG = max(CH_FLAG),
+    RES_FLAG = ifelse(is.na(max(RESIDENTIAL_HOME_FLAG)), 0, max(RESIDENTIAL_HOME_FLAG)),
+    NURS_FLAG = ifelse(is.na(max(NURSING_HOME_FLAG)), 0, max(NURSING_HOME_FLAG))
+  ) %>% 
+  ungroup()
 
 # Define table name
 table_name = "INT646_DISTINCT_CH_PATS"
@@ -44,7 +50,7 @@ p2 = "Antiplatelet drugs"
 c1 = "INR blood testing reagents"
 
 # Function for all geography types
-geo_long_short_stay_metrics = function(GEO=NULL){
+geo_long_short_stay_metrics = function(GEO=NULL, ch_type){
 
   # Group by a geography if present
   if(is.null(GEO)){
@@ -54,6 +60,15 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     group_one = c('NHS_NO', 'CH_FLAG', 'YEAR_MONTH', GEO)
     group_two = c('SEQ_GROUP', GEO)
   }
+  
+  # Determine patient ch type list
+  pats = pats %>% 
+    transmute(
+      NHS_NO,
+      CH_FLAG := {{ ch_type }}
+    ) %>% 
+    filter(CH_FLAG == 1) %>% 
+    select(NHS_NO)
   
   # Only pats with a ch item
   df = base %>% 
@@ -104,7 +119,11 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     arrange(NHS_NO, YEAR_MONTH) %>% 
     mutate(RUN_LABEL = cumsum(FLIP)) %>% 
     ungroup() %>% 
-    # CALC PART 3: Calculate row count per NHS_NO and RUN_LABEL
+    # CALC PART 3: Remove months with 'mixed' (CH and non-CH) prescribing from count
+    group_by(NHS_NO, YEAR_MONTH) %>%
+    filter(n_distinct(CH_FLAG) == 1) %>%
+    ungroup() %>%
+    # CALC PART 4: Calculate row count per NHS_NO and RUN_LABEL
     group_by(NHS_NO, RUN_LABEL) %>% 
     arrange(YEAR_MONTH) %>% 
     mutate(SEQ = row_number()) %>% 
@@ -150,6 +169,8 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     ungroup() %>% 
     collect() %>% 
     transmute(
+      # CH Type
+      COL_TYPE = as_string(ensym(ch_type)),
       # GROUPING INFO
       SEQ_GROUP = factor(
         SEQ_GROUP,
@@ -196,12 +217,47 @@ geo_long_short_stay_metrics = function(GEO=NULL){
   return(df)
 }
 
-# Generate data: 25 mins
 Sys.time()
-national = geo_long_short_stay_metrics()
-region = geo_long_short_stay_metrics('PCD_REGION_NAME')
-ics = geo_long_short_stay_metrics('PCD_ICB_NAME')
-lad = geo_long_short_stay_metrics('PCD_LAD_NAME')
+national = geo_long_short_stay_metrics(NULL, NURS_FLAG)
+Sys.time()
+national2 = geo_long_short_stay_metrics(NULL, RES_FLAG)
+Sys.time()
+national3 = geo_long_short_stay_metrics(NULL, CH_FLAG)
+Sys.time()
+
+library(highcharter)
+
+rbind(
+  national,
+  national2,
+  national3
+) %>% 
+  hchart(., "column", hcaes(SEQ_GROUP, UNIQ_MEDS_FALLS_PPM, group = COL_TYPE))
+
+# Start time
+Sys.time()
+
+# National data
+national_ch = geo_long_short_stay_metrics(NULL, CH_FLAG)
+national_res = geo_long_short_stay_metrics(NULL, RES_FLAG)
+national_nurs = geo_long_short_stay_metrics(NULL, NURS_FLAG)
+
+# Region data
+region_ch = geo_long_short_stay_metrics('PCD_REGION_NAME', CH_FLAG)
+region_res = geo_long_short_stay_metrics('PCD_REGION_NAME', RES_FLAG)
+region_nurs = geo_long_short_stay_metrics('PCD_REGION_NAME', NURS_FLAG)
+
+# Ics data
+ics_ch = geo_long_short_stay_metrics('PCD_ICB_NAME', CH_FLAG)
+ics_res = geo_long_short_stay_metrics('PCD_ICB_NAME', RES_FLAG)
+ics_nurs = geo_long_short_stay_metrics('PCD_ICB_NAME', NURS_FLAG)
+
+# Lad data
+lad_ch = geo_long_short_stay_metrics('PCD_LAD_NAME', CH_FLAG)
+lad_res = geo_long_short_stay_metrics('PCD_LAD_NAME', RES_FLAG)
+lad_nurs = geo_long_short_stay_metrics('PCD_LAD_NAME', NURS_FLAG)
+
+# End time
 Sys.time()
 
 # Total data
@@ -217,6 +273,18 @@ if(DBI::dbExistsTable(con, table_name)){DBI::dbRemoveTable(con, table_name)}
 DBI::dbDisconnect(con); rm(list = ls()); gc()
 
 # Single output ----------------------------------------------------------------
+
+# Create lazy table
+pats <- con %>%
+  tbl(from = in_schema("ADNSH", "INT646_DISTINCT_CH_PATS"))
+
+pats = pats %>% 
+  transmute(
+    NHS_NO,
+    CH_FLAG = NURS_FLAG
+  ) %>% 
+  filter(CH_FLAG == 1) %>% 
+  select(NHS_NO)
 
 # Only pats with a ch item
 df = base %>% 
@@ -247,21 +315,18 @@ df %>%
   arrange(NHS_NO, YEAR_MONTH) %>% 
   mutate(RUN_LABEL = cumsum(FLIP)) %>% 
   ungroup() %>% 
-  # CALC PART 3: Calculate row count per NHS_NO and RUN_LABEL
-  group_by(NHS_NO, RUN_LABEL) %>% 
-  arrange(YEAR_MONTH) %>% 
-  mutate(SEQ = row_number()) %>% 
-  ungroup() %>% 
+  # CALC PART 3: Remove months with 'mixed' (CH and non-CH) prescribing from count
+  group_by(NHS_NO, YEAR_MONTH) %>%
+  filter(n_distinct(CH_FLAG) == 1) %>%
+  ungroup() %>%
+  # CALC PART 4: Calculate row count per NHS_NO and RUN_LABEL
+  group_by(NHS_NO, RUN_LABEL) %>%
+  arrange(YEAR_MONTH) %>%
+  mutate(SEQ = row_number()) %>%
+  ungroup() %>%
   filter(CH_FLAG == 1) %>% 
   # Group data for bar charts
   mutate(
-    ACAP_ONE = ifelse(ACAP >= 1, 1, 0),
-    ACAP_TWO = ifelse(ACAP >= 2, 1, 0),
-    DAMN_ONE = ifelse(DAMN >= 1, 1, 0),
-    DAMN_TWO = ifelse(DAMN >= 2, 1, 0),
-    ACB_ONE = ifelse(ACB >= 1, 1, 0),
-    ACB_TWO = ifelse(ACB >= 2, 1, 0),
-    FALLS_THREE = ifelse(FALLS >= 3, 1, 0),
     SIX_PLUS = ifelse(UNIQUE_MEDICINES >= 6, 1, 0),
     TEN_PLUS = ifelse(UNIQUE_MEDICINES >= 10, 1, 0),
     SEQ_GROUP = case_when(
@@ -273,22 +338,14 @@ df %>%
     )
   ) %>% 
   # Second group-grouping
-  group_by(!!!rlang::syms(group_two)) %>% 
+  group_by(SEQ_GROUP) %>% 
   summarise(
     ITEMS = sum(ITEMS),
     COST = sum(COST / 100),
     UNIQ_MEDS_PPM = round(mean(UNIQUE_MEDICINES), 2),
     SIX_PLUS_SUM = sum(SIX_PLUS),
     TEN_PLUS_SUM = sum(TEN_PLUS),
-    TOTAL_PM = n(),
-    DAMN_ONE_SUM = sum(DAMN_ONE),
-    DAMN_TWO_SUM = sum(DAMN_TWO),
-    ACB_ONE_SUM = sum(ACB_ONE),
-    ACB_TWO_SUM = sum(ACB_TWO),
-    ACAP_ONE_SUM = sum(ACAP_ONE),
-    ACAP_TWO_SUM = sum(ACAP_TWO),
-    FALLS_THREE_SUM = sum(FALLS_THREE),
-    UNIQ_MEDS_FALLS_PPM = round(mean(FALLS), 2)
+    TOTAL_PM = n()
   ) %>% 
   ungroup() %>% 
   collect() %>% 
@@ -303,34 +360,17 @@ df %>%
         "10-12 Months", 
         "13+ Months"
       )),
-    GEO_TYPE = if (is.null(GEO)) "Overall" else GEO,
-    GEO      = if (is.null(GEO)) "Overall" else .[[GEO]],
     # METRIC CALC INFO
     ITEMS,
     COST,
     SIX_PLUS_SUM,
     TEN_PLUS_SUM,
     TOTAL_PM,
-    DAMN_ONE_SUM,
-    DAMN_TWO_SUM,
-    ACB_ONE_SUM,
-    ACB_TWO_SUM,
-    ACAP_ONE_SUM,
-    ACAP_TWO_SUM,
-    FALLS_THREE_SUM,
     # METRIC OUTPUT
     ITEMS_PPM = round(ITEMS / TOTAL_PM, 2),
     COST_PPM = round(COST / TOTAL_PM, 2),
     PCT_PM_GTE_SIX = round(100 * SIX_PLUS_SUM / TOTAL_PM, 2),
-    PCT_PM_GTE_TEN = round(100 * TEN_PLUS_SUM / TOTAL_PM, 2),
-    PCT_PM_DAMN = round(100 * DAMN_TWO_SUM / DAMN_ONE_SUM, 2),
-    PCT_PM_ACB = round(100 * ACB_TWO_SUM / ACB_ONE_SUM, 2),
-    PCT_PM_ACAP = round(100 * ACAP_TWO_SUM / ACAP_ONE_SUM, 2),
-    PCT_PM_FALLS = round(100 * FALLS_THREE_SUM / TOTAL_PM, 2),
-    UNIQ_MEDS_FALLS_PPM
+    PCT_PM_GTE_TEN = round(100 * TEN_PLUS_SUM / TOTAL_PM, 2)
   ) %>% 
   arrange(SEQ_GROUP) %>% 
-  filter(
-    !is.na(SEQ_GROUP),
-    !is.na(GEO)
-  )
+  filter(!is.na(SEQ_GROUP))

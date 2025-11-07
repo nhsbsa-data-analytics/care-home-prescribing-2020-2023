@@ -33,8 +33,8 @@ mod_17_short_longstay_ui <- function(id){
                         full_width = T),
         nhs_selectInput(inputId = ns("geography"),
                         label = "Geography",
-                        choices = unique(mod_short_longstay_df$GEO_TYPE),
-                        selected = dplyr::first(unique(mod_short_longstay_df$GEO_TYPE)),
+                        choices = sort(unique(mod_short_longstay_df$GEO_TYPE)),
+                        selected = dplyr::first(sort(unique(mod_short_longstay_df$GEO_TYPE))),
                         full_width = T),
         nhs_selectInput(inputId = ns("sub_geography"),
                         label = "Sub Geography",
@@ -88,18 +88,18 @@ mod_17_short_longstay_server <- function(id){
     )
     
     # Map metric column names to tooltip metric names
-    metric_tooltips <- c(
-      COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
-      ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.1f}",
-      UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.1f}",
-      PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.1f}%",
-      PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
-      PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
-      PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
-      PCT_PM_ACAP         = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
-      UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
-      PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
-    )
+    # metric_tooltips <- c(
+    #   COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
+    #   ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.1f}",
+    #   UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.1f}",
+    #   PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.1f}%",
+    #   PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
+    #   PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
+    #   PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
+    #   PCT_PM_ACAP         = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
+    #   UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
+    #   PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
+    # )
     
     # Map all column names to download data names
     dl_col_names <- c(
@@ -171,14 +171,8 @@ mod_17_short_longstay_server <- function(id){
         highcharter::hchart(
           second_filter_df(), 
           "column", 
-          highcharter::hcaes(SEQ_GROUP, VALUE),
-          name = ui_metric_names[[input$metric]],
-          tooltip = list(
-            useHTML = TRUE,
-            pointFormat = paste0(
-              metric_tooltips[input$metric] %>% unname()
-            )
-          )) %>% 
+          highcharter::hcaes(SEQ_GROUP, VALUE, group = CH_TYPE)
+          ) %>% 
           highcharter::hc_yAxis(
             title = list(text = ui_metric_names[[input$metric]]),
             min = 0,
@@ -187,7 +181,32 @@ mod_17_short_longstay_server <- function(id){
           highcharter::hc_xAxis(
             title = list(text = "Length of care home stay")
             ) %>% 
-          nhsbsaR::theme_nhsbsa_highchart()
+          nhsbsaR::theme_nhsbsa_highchart(stack = "") %>% 
+          hc_colors(c("#003087", "#0072CE", "#00A9CE")) %>% 
+          highcharter::hc_tooltip(
+            shared = T,
+            useHTML = T,
+            valueDecimals = switch(input$metric,
+                                   "COST_PPM" = 0,
+                                   "ITEMS_PPM" = 1,
+                                   "UNIQ_MEDS_PPM" = 1,
+                                   "PCT_PM_GTE_SIX" = 1,
+                                   "PCT_PM_GTE_TEN" = 1,
+                                   "PCT_PM_ACB" = 1,
+                                   "PCT_PM_DAMN" = 1,
+                                   "PCT_ACAP_TWO" = 1,
+                                   "UNIQ_MEDS_FALLS_PPM" = 1,
+                                   "PCT_PM_FALLS" = 1),
+            valueSuffix = switch(input$metric,
+                                 "PCT_PM_GTE_SIX" = "%",
+                                 "PCT_PM_GTE_TEN" = "%",
+                                 "PCT_PM_ACB" = "%",
+                                 "PCT_PM_DAMN" = "%",
+                                 "PCT_ACAP_TWO" = "%",
+                                 "PCT_PM_FALLS" = "%"),
+            valuePrefix = switch(input$metric,
+                                 "COST_PPM" = "£")
+          )
 
       })
     
