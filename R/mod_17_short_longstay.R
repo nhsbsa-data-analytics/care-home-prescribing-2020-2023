@@ -122,6 +122,13 @@ mod_17_short_longstay_server <- function(id){
         )
     })
     
+    # Generate max value in context of metric & parent-geography
+    max_val = reactive({
+      initial_filter_df() %>% 
+        dplyr::summarise(VALUE = max(VALUE)) %>% 
+        dplyr::pull()
+    })
+    
     # Update the list of choices for sub geography from the non NA rows in the
     # geography dataframe
     observeEvent(
@@ -174,7 +181,8 @@ mod_17_short_longstay_server <- function(id){
           )) %>% 
           highcharter::hc_yAxis(
             title = list(text = ui_metric_names[[input$metric]]),
-            min = 0
+            min = 0,
+            max = max_val()
             ) %>% 
           highcharter::hc_xAxis(
             title = list(text = "Length of care home stay")
