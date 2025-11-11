@@ -3,6 +3,7 @@
 library(dplyr)
 library(dbplyr)
 library(rlang)
+library(tidyr)
 library(assertr)
 library(assertr.alt)
 
@@ -246,13 +247,6 @@ lad_nurs = geo_long_short_stay_metrics('PCD_LAD_NAME', NURS_FLAG)
 
 # End time
 Sys.time()
-
-national_ch %>% select(GEO_TYPE, GEO) %>% distinct()
-
-mod_short_longstay_df = mod_short_longstay_df %>% 
-  mutate(
-    
-  )
 
 # Final process and quick validation -------------------------------------------
 
