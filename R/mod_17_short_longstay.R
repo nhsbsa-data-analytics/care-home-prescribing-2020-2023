@@ -182,7 +182,7 @@ mod_17_short_longstay_server <- function(id){
             title = list(text = "Length of care home stay")
             ) %>% 
           nhsbsaR::theme_nhsbsa_highchart(stack = "") %>% 
-          hc_colors(c("#003087", "#0072CE", "#00A9CE")) %>% 
+          highcharter::hc_colors(c("#003087", "#0072CE", "#00A9CE")) %>% 
           highcharter::hc_tooltip(
             shared = T,
             useHTML = T,
