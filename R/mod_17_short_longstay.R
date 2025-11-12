@@ -48,17 +48,17 @@ mod_17_short_longstay_ui <- function(id){
       tags$text(
         class = "highcharts-caption",
         style = "font-size: 9pt",
-        "The first complete month that patient receives prescribing at a care home is deemed as month-1.",
+        "The first month a patient only receives care home prescribing is deemed as month-1.",
         tags$br(),
-        "Month-2 and month-3 and so on are then the successive months where a patient recieves care home prescribing.",
+        "Month-2 and month-3 and so on are then the successive months where a patient only receives care home prescribing.",
         tags$br(),
         "When a patient receives non-care prescribing, this counter resets to zero.",
         tags$br(),
-        "The next complete month (if there is one) where patient receives prescribing is deemed as month-1 once again.",
+        "The next month (if there is one) where a patient only receives care home prescribing is deemed as month-1 once again.",
         tags$br(),
-        "As can be seen, the prescribing of the same patient can be allocated to the same month values multiple times.",
+        "As can be seen, the prescribing of the same patient can contribute multiple times to the same month value calculations.",
         tags$br(),
-        "The prescribing of the same patient is also allocated to every monthly value, until they stop receiving care home prescribing."
+        "The prescribing of the same patient also contributes to every monthly value, until they stop receiving care home prescribing."
       )
     )
   )
@@ -87,23 +87,10 @@ mod_17_short_longstay_server <- function(id){
       PCT_PM_FALLS        = "% of patient-months with 3+ falls risk medicines"
     )
     
-    # Map metric column names to tooltip metric names
-    # metric_tooltips <- c(
-    #   COST_PPM            = "<b>Mean drug cost PPM:</b> \u00A3{point.y}",
-    #   ITEMS_PPM           = "<b>Mean prescription items PPM:</b> {point.y:.1f}",
-    #   UNIQ_MEDS_PPM       = "<b>Mean unique medicines PPM:</b> {point.y:.1f}",
-    #   PCT_PM_GTE_SIX      = "<b>% of patient-months with 6+ unique medicines:</b> {point.y:.1f}%",
-    #   PCT_PM_GTE_TEN      = "<b>% of patient-months with 10+ unique medicines:</b> {point.y:.1f}%",
-    #   PCT_PM_ACB          = "<b>% of patient-months with 2+ ACB medicines:</b> {point.y:.1f}%",
-    #   PCT_PM_DAMN         = "<b>% of patient-months with 2+ DAMN medicines:</b> {point.y:.1f}%",
-    #   PCT_PM_ACAP         = "<b>% of patient-months with 2+ ACAP medicines:</b> {point.y:.1f}%",
-    #   UNIQ_MEDS_FALLS_PPM = "<b>Mean unique falls risk medicines PPM</b> {point.y:.1f}",
-    #   PCT_PM_FALLS        = "<b>% of patient-months with 3+ falls risk medicines</b> {point.y:.1f}%"
-    # )
-    
     # Map all column names to download data names
     dl_col_names <- c(
       rlang::set_names(names(ui_metric_names), unname(ui_metric_names)),
+      "Care home type"              = "CH_TYPE",
       "Care home length of stay"    = "SEQ_GROUP",
       "Geography"                   = "GEO_TYPE",
       "Sub-geography"               = "GEO"
@@ -118,7 +105,8 @@ mod_17_short_longstay_server <- function(id){
       mod_short_longstay_df %>%
         dplyr::filter(
           METRIC == input$metric,
-          GEO_TYPE == input$geography
+          GEO_TYPE == input$geography,
+          GEO != "Isles of Scilly"
         )
     })
     
@@ -215,11 +203,12 @@ mod_17_short_longstay_server <- function(id){
     # Create download data
     create_download_data <- function(data) {
       data %>%
+        dplyr::filter(GEO != "Isles of Scilly") %>% 
         tidyr::pivot_wider(
           names_from = METRIC,             
           values_from = where(is.numeric)  
         ) %>% 
-        dplyr::rename(dl_col_names)
+        dplyr::rename(dl_col_names) 
     }
     
     # Pivot wide to create download data
