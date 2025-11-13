@@ -2,6 +2,8 @@
 # library
 library(dplyr)
 library(dbplyr)
+library(rlang)
+library(tidyr)
 library(assertr)
 library(assertr.alt)
 
@@ -12,7 +14,7 @@ con <- nhsbsaR::con_nhsbsa(database = "DALP")
 base <- con %>%
   tbl(from = in_schema("DALL_REF", "INT646_BASE_20200401_20250331"))
 
-# RUN ONCE: SPEED UP CODE * 4 RUN ----------------------------------------------
+# RUN ONCE: SPEED UP CODE * 12 RUN ---------------------------------------------
 
 # Functions
 source("data-raw/workflow/workflow_helpers.R")
@@ -23,8 +25,13 @@ ch_pats = base %>%
     CH_FLAG == 1,
     !is.na(NHS_NO)
   ) %>%
-  select(NHS_NO) %>%
-  distinct()
+  group_by(NHS_NO) %>% 
+  summarise(
+    CH_FLAG = max(CH_FLAG),
+    RES_FLAG = ifelse(is.na(max(RESIDENTIAL_HOME_FLAG)), 0, max(RESIDENTIAL_HOME_FLAG)),
+    NURS_FLAG = ifelse(is.na(max(NURSING_HOME_FLAG)), 0, max(NURSING_HOME_FLAG))
+  ) %>% 
+  ungroup()
 
 # Define table name
 table_name = "INT646_DISTINCT_CH_PATS"
@@ -33,8 +40,7 @@ table_name = "INT646_DISTINCT_CH_PATS"
 if(DBI::dbExistsTable(con, table_name)){DBI::dbRemoveTable(con, table_name)}
 
 # Temp table save (deleted at end of script)
-ch_pats %>%
-  compute_with_parallelism(table_name, 32)
+ch_pats %>% compute_with_parallelism(table_name, 32)
 
 # Generate output---------------------------------------------------------------
 
@@ -48,7 +54,7 @@ p2 = "Antiplatelet drugs"
 c1 = "INR blood testing reagents"
 
 # Function for all geography types
-geo_long_short_stay_metrics = function(GEO=NULL){
+geo_long_short_stay_metrics = function(GEO=NULL, ch_type){
 
   # Group by a geography if present
   if(is.null(GEO)){
@@ -58,6 +64,15 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     group_one = c('NHS_NO', 'CH_FLAG', 'YEAR_MONTH', GEO)
     group_two = c('SEQ_GROUP', GEO)
   }
+  
+  # Determine patient ch type list
+  pats = pats %>% 
+    transmute(
+      NHS_NO,
+      CH_FLAG := {{ ch_type }}
+    ) %>% 
+    filter(CH_FLAG == 1) %>% 
+    select(NHS_NO)
   
   # Only pats with a ch item
   df = base %>% 
@@ -109,11 +124,9 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     mutate(RUN_LABEL = cumsum(FLIP)) %>% 
     ungroup() %>% 
     # CALC PART 3: Remove months with 'mixed' (CH and non-CH) prescribing from count
-    group_by(NHS_NO, YEAR_MONTH) %>% 
-    mutate(PRESC_TYPE_COUNT = n_distinct(CH_FLAG)) %>% 
-    ungroup() %>% 
-    filter(PRESC_TYPE_COUNT == 1) %>% 
-    ungroup() %>% 
+    group_by(NHS_NO, YEAR_MONTH) %>%
+    filter(n_distinct(CH_FLAG) == 1) %>%
+    ungroup() %>%
     # CALC PART 4: Calculate row count per NHS_NO and RUN_LABEL
     group_by(NHS_NO, RUN_LABEL) %>% 
     arrange(YEAR_MONTH) %>% 
@@ -160,6 +173,8 @@ geo_long_short_stay_metrics = function(GEO=NULL){
     ungroup() %>% 
     collect() %>% 
     transmute(
+      # CH Type
+      CH_TYPE = as_string(ensym(ch_type)),
       # GROUPING INFO
       SEQ_GROUP = factor(
         SEQ_GROUP,
@@ -207,12 +222,30 @@ geo_long_short_stay_metrics = function(GEO=NULL){
   return(df)
 }
 
-# Generate data: 25 mins
+# Start time: ~1 hr total
 Sys.time()
-national = geo_long_short_stay_metrics()
-region = geo_long_short_stay_metrics('PCD_REGION_NAME')
-ics = geo_long_short_stay_metrics('PCD_ICB_NAME')
-lad = geo_long_short_stay_metrics('PCD_LAD_NAME')
+
+# National data
+national_ch = geo_long_short_stay_metrics(NULL, CH_FLAG)
+national_res = geo_long_short_stay_metrics(NULL, RES_FLAG)
+national_nurs = geo_long_short_stay_metrics(NULL, NURS_FLAG)
+
+# Region data
+region_ch = geo_long_short_stay_metrics('PCD_REGION_NAME', CH_FLAG)
+region_res = geo_long_short_stay_metrics('PCD_REGION_NAME', RES_FLAG)
+region_nurs = geo_long_short_stay_metrics('PCD_REGION_NAME', NURS_FLAG)
+
+# Ics data
+ics_ch = geo_long_short_stay_metrics('PCD_ICB_NAME', CH_FLAG)
+ics_res = geo_long_short_stay_metrics('PCD_ICB_NAME', RES_FLAG)
+ics_nurs = geo_long_short_stay_metrics('PCD_ICB_NAME', NURS_FLAG)
+
+# Lad data
+lad_ch = geo_long_short_stay_metrics('PCD_LAD_NAME', CH_FLAG)
+lad_res = geo_long_short_stay_metrics('PCD_LAD_NAME', RES_FLAG)
+lad_nurs = geo_long_short_stay_metrics('PCD_LAD_NAME', NURS_FLAG)
+
+# End time
 Sys.time()
 
 # Final process and quick validation -------------------------------------------
@@ -221,11 +254,30 @@ Sys.time()
 geo_count = 345
 metric_count = 10
 seq_count = 5
-expected_rows = geo_count * metric_count * seq_count
+ch_type = 3
+expected_rows = geo_count * metric_count * seq_count * ch_type
 
 # Bind and process
-mod_short_longstay_df2 = rbind(national, region, ics, lad) %>% 
+mod_short_longstay_df = rbind(
+  national_ch,
+  national_res,
+  national_nurs,
+  region_ch,
+  region_res,
+  region_nurs,
+  ics_ch,
+  ics_res,
+  ics_nurs,
+  lad_ch,
+  lad_res,
+  lad_nurs
+  ) %>% 
   transmute(
+    CH_TYPE = case_when(
+      CH_TYPE == "CH_FLAG" ~ "Care home",
+      CH_TYPE == "RES_FLAG" ~ "Residential home",
+      CH_TYPE == "NURS_FLAG" ~ "Nursing home"
+    ),
     SEQ_GROUP,
     GEO_TYPE = case_when(
       GEO_TYPE == "PCD_REGION_NAME" ~ "Region",
@@ -250,6 +302,24 @@ mod_short_longstay_df2 = rbind(national, region, ics, lad) %>%
     names_to = "METRIC",
     values_to = "VALUE"
   ) %>% 
+  tidyr::complete(
+    CH_TYPE,
+    SEQ_GROUP,
+    tidyr::nesting(GEO_TYPE, GEO),
+    METRIC
+  ) %>% 
+  mutate(
+    VALUE = ifelse(is.na(VALUE), 0, VALUE),
+    GEO_TYPE = factor(
+      GEO_TYPE,
+      levels = c(
+        "Overall",
+        "Region",
+        "ICS",
+        "Local Authority"
+        )
+      )
+    ) %>% 
   verify(nrow.alt(.) == expected_rows) %>%
   assert.alt(not_na.alt, SEQ_GROUP, GEO_TYPE, GEO, METRIC, VALUE)
 
