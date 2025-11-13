@@ -37,7 +37,7 @@ This analysis addresses a key gap in knowledge and gives valuable insights to in
 - Patient count estimates are of care home residents aged 65 years and over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the monthly actual care home population. These monthly estimates will be higher than 2021 Census estimates which are based on occupancy on Census day.
 - Values in this report are __indicative__. 
 - Since care home prescribing is identified through address matching, some non-care home prescriptions may be allocated to a care home and vice versa. Accuracy of identified care home matches is estimated to be 99.7%.
-- Around 9% of prescription items for patients aged 65+ do not have a postcode and are excluded from the analysis.
+- Around 0.4% of prescription items for patients aged 65+ do not have a postcode, or have a non-English postcode, and are excluded from the analysis.
 - Only partial fairness and bias testing is possible due to limited protected characteristics within the data. 
 - Prescribing patterns are impacted by the COVID-19 pandemic and beyond. The pandemic started in March 2020 and included a series of national lockdowns during 2020/21.
 - Geographical breakdowns will benefit from local insight and interpretation.
