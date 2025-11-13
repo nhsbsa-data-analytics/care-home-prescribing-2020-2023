@@ -4,4 +4,4 @@ The _National BNF-level prescribing estimates_ and _BNF-level prescribing estima
 
 ### Length of stay
 
-Care home patient length of stay metric values are calculated differently to other analysis sections. In this analysis, patients are grouped and metric values are calculated, depending on how many consecutive months with only care home prescribing a patient has received in a care home setting. The below table illustrates an example of this for a single patient.
+Care home patient length of stay metric values are calculated differently to other analysis sections. In this analysis, patients are grouped by length of stay and care home type, depending on how many consecutive months with only care home prescribing a patient has received in a care home setting. The below table illustrates an example of this for a single patient.
