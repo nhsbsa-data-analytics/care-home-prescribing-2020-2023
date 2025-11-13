@@ -18,4 +18,5 @@ tic(); source("data-raw/app/05_metrics_age_gender_df.R"); toc()                 
 tic(); source("data-raw/app/06_metrics_by_geo_and_ch_flag_df.R"); toc()         # 150 mins
 tic(); source("data-raw/app/07_ch_flag_drug_df.R"); toc()                       # 30 mins
 tic(); source("data-raw/app/08_geo_ch_flag_drug_df.R"); toc()                   # 30 mins
+tic(); source("data-raw/app/17_short_longstay_df.R"); toc()                     # 120 mins
 Sys.time()

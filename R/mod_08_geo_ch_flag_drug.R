@@ -984,7 +984,7 @@ mod_08_geo_ch_flag_drug_server <- function(id, export_data) {
       req(carehomes2::mod_geo_ch_flag_drug_df)
       
       insertUI(
-        selector = ".nhsuk-card__description:eq(6)",
+        selector = ".nhsuk-card__description:eq(7)",
         where = "beforeEnd",
         ui = mod_nhs_download_ui(ns("download_data"))
       )

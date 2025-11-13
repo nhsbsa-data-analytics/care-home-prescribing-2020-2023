@@ -65,7 +65,35 @@ mod_10_metrics_ui <- function(id){
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
         )
     ),
-    include_dynamic_md("inst/markdown/10_metrics_4.md")
+    include_dynamic_md("inst/markdown/10_metrics_4.md"),
+    HTML(
+      data.frame(
+        `Year Month` = c(
+          202304, 202305, 202306, 202307, 202307, 202308, 202309, 202310, 202311, 202311, 
+          202312, 202401, 202401, 202402, 202403, 202304, 202305, 202306, 202307, 202308
+        ),
+        `Residence Type` = c(
+          "Non-care home", "Non-care home", "Non-care home", "Non-care home", 
+          "Care home", "Care home", "Care home", "Care home", "Care home", 
+          "Non-care home", "Non-care home", "Non-care home","Care home", "Care home", 
+          "Care home", "Care home", "Care home", "Care home", "Care home", "Care home"
+        ),
+        `Length of Stay` = c(0, 0, 0, 0, 0, 1, 2, 3, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7),
+        `Length of Stay Band` = c(
+          "-", "-", "-", "-", "-", "1-3 Months", "1-3 Months", "1-3 Months", 
+          "-", "-", "-", "-", "-", "1-3 Months", "1-3 Months", "1-3 Months", 
+          "4-6 Months", "4-6 Months", "4-6 Months", "7-9 Months"
+        ),
+        check.names = FALSE
+      ) %>% 
+      kableExtra::kable("html", align = "r", caption = "Care home length of stay example") %>% 
+        kableExtra::row_spec(c(6:8, 14:20), bold = TRUE) %>% 
+        kableExtra::kable_styling(
+          full_width = TRUE,
+          bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
+        )
+    ),
+    include_dynamic_md("inst/markdown/10_metrics_5.md")
   )
 }
     

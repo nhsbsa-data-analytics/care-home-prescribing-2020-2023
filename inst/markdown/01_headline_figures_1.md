@@ -6,6 +6,8 @@ In this article we provide unique insight into NHS primary care prescribing patt
 
 Insights are provided at a national and local level, showing trends over time and variation for key prescribing metrics. The insights can help to inform policies, planning and interventions on medicines use in care homes. They may be particularly useful to local authorities, ICSs, Chief Pharmacists and pharmacy teams and policy makers.
 
+New additions for this year include a geographical breakdown of overall prescribing, a new anticoagulant prescribing metric and a comparison of prescribing metrics by length of stay. 
+
 Patient address classification is based on experimental data linkage work. As such values are indicative. We welcome feedback, collaboration, and refinement of the methodology to continuously improve our methods and analysis. 
 
 ### Key findings
@@ -35,9 +37,10 @@ This analysis addresses a key gap in knowledge and gives valuable insights to in
 - Patient count estimates are of care home residents aged 65 years and over __receiving prescriptions__. A care home resident that received no prescriptions would not appear in this data, meaning care home patient count estimates will be lower than the monthly actual care home population. These monthly estimates will be higher than 2021 Census estimates which are based on occupancy on Census day.
 - Values in this report are __indicative__. 
 - Since care home prescribing is identified through address matching, some non-care home prescriptions may be allocated to a care home and vice versa. Accuracy of identified care home matches is estimated to be 99.7%.
-- Around 9% of prescription items for patients aged 65+ do not have a postcode and are excluded from the analysis.
+- Around 0.4% of prescription items for patients aged 65+ do not have a postcode, or have a non-English postcode, and are excluded from the analysis.
 - Only partial fairness and bias testing is possible due to limited protected characteristics within the data. 
 - Prescribing patterns are impacted by the COVID-19 pandemic and beyond. The pandemic started in March 2020 and included a series of national lockdowns during 2020/21.
+- Geographical breakdowns will benefit from local insight and interpretation.
 - There are numerous published sources of data on Adult Social Care home resident numbers that have differing coverage and scope. The data in this publication relate to residents receiving prescriptions and therefore will differ from other estimates. See the [Annex](http://127.0.0.1/Annex) for further sources of data available on the care home population.
 
 See the [Datasets](http://127.0.0.1/Datasets) page for further information about the datasets used and any caveats.

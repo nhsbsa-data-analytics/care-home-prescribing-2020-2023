@@ -269,7 +269,7 @@ mod_07_ch_flag_drug_server <- function(id, export_data) {
         req(download_data)
         
         insertUI(
-          selector = ".nhsuk-card__description:eq(5)",
+          selector = ".nhsuk-card__description:eq(6)",
           where = "beforeEnd",
           ui = mod_nhs_download_ui(ns("download_data"))
         )
