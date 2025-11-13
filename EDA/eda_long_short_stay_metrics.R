@@ -42,7 +42,7 @@ ch_pats %>%
 
 # Create lazy table
 pats <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_DISTINCT_CH_PATS"))
+  tbl(from = in_schema("MAMCP", "INT646_DISTINCT_CH_PATS"))
 
 # Define bnf strings
 p1 = "Oral anticoagulants"
@@ -276,7 +276,7 @@ c1 = "INR blood testing reagents"
 
 # Create lazy table
 pats <- con %>%
-  tbl(from = in_schema("ADNSH", "INT646_DISTINCT_CH_PATS"))
+  tbl(from = in_schema("MAMCP", "INT646_DISTINCT_CH_PATS"))
 
 pats = pats %>% 
   transmute(
@@ -324,17 +324,17 @@ df %>%
   arrange(YEAR_MONTH) %>%
   mutate(SEQ = row_number()) %>%
   ungroup() %>%
-  filter(CH_FLAG == 1) %>% 
+  filter(CH_FLAG == 1) %>%
   # Group data for bar charts
   mutate(
     SIX_PLUS = ifelse(UNIQUE_MEDICINES >= 6, 1, 0),
     TEN_PLUS = ifelse(UNIQUE_MEDICINES >= 10, 1, 0),
     SEQ_GROUP = case_when(
-      SEQ >= 2 & SEQ <= 4 ~ "1-3 Months",
-      SEQ >= 5 & SEQ <= 7 ~ "4-6 Months",
-      SEQ >= 8 & SEQ <= 10 ~ "7-9 Months",
-      SEQ >= 11 & SEQ <= 13 ~ "10-12 Months",
-      SEQ >= 14 ~ "13+ Months"
+      SEQ >= 1 & SEQ <= 3 ~ "1-3 Months",
+      SEQ >= 4 & SEQ <= 6 ~ "4-6 Months",
+      SEQ >= 7 & SEQ <= 9 ~ "7-9 Months",
+      SEQ >= 10 & SEQ <= 12 ~ "10-12 Months",
+      SEQ >= 13 ~ "13+ Months"
     )
   ) %>% 
   # Second group-grouping
@@ -372,5 +372,4 @@ df %>%
     PCT_PM_GTE_SIX = round(100 * SIX_PLUS_SUM / TOTAL_PM, 2),
     PCT_PM_GTE_TEN = round(100 * TEN_PLUS_SUM / TOTAL_PM, 2)
   ) %>% 
-  arrange(SEQ_GROUP) %>% 
-  filter(!is.na(SEQ_GROUP))
+  arrange(SEQ_GROUP)
