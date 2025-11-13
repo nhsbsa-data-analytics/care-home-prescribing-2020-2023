@@ -54,11 +54,7 @@ mod_17_short_longstay_ui <- function(id){
         tags$br(),
         "When a patient receives non-care prescribing, this counter resets to zero.",
         tags$br(),
-        "The next month (if there is one) where a patient only receives care home prescribing is deemed as month-1 once again.",
-        tags$br(),
-        "As can be seen, the prescribing of the same patient can contribute multiple times to the same month value calculations.",
-        tags$br(),
-        "The prescribing of the same patient also contributes to every monthly value, until they stop receiving care home prescribing."
+        "The next month (if there is one) where a patient only receives care home prescribing is deemed as month-1 once again."
       )
     )
   )
