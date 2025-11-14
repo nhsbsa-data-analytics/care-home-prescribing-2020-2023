@@ -13,7 +13,7 @@ mod_17_short_longstay_ui <- function(id){
   tagList(
     include_dynamic_md("inst/markdown/17_short_longstay.md"),
     nhs_card(
-      heading = "Care home prescribing metric values depending on length of continuous care home stay",
+      heading = "Care home prescribing metric values depending on estimated length of care home stay",
       nhs_grid_3_col(
         nhs_selectInput(inputId = ns("metric"),
                         label = "Metric",
@@ -210,7 +210,7 @@ mod_17_short_longstay_server <- function(id){
     # Pivot wide to create download data
     mod_nhs_download_server(
       id = "download_data",
-      filename = "Selected prescribing metrics by care home length of stay.xlsx",
+      filename = "Selected prescribing metrics by estimated care home length of stay.xlsx",
       export_data = create_download_data(mod_short_longstay_df)
       )
     
