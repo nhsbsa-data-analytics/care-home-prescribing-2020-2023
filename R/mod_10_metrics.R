@@ -87,7 +87,7 @@ mod_10_metrics_ui <- function(id){
         check.names = FALSE
       ) %>% 
       kableExtra::kable("html", align = "r", caption = "Care home length of stay example") %>% 
-        kableExtra::row_spec(which(df$`Length of Stay` != 0), bold = TRUE) %>% 
+        kableExtra::row_spec(c(6:8, 14:20), bold = TRUE) %>% 
         kableExtra::kable_styling(
           full_width = TRUE,
           bootstrap_options = c("bordered", "striped", "hover", "condensed", "responsive")
