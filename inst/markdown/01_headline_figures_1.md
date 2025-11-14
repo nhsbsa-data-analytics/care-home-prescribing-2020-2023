@@ -6,7 +6,7 @@ In this article we provide unique insight into NHS primary care prescribing patt
 
 Insights are provided at a national and local level, showing trends over time and variation for key prescribing metrics. The insights can help to inform policies, planning and interventions on medicines use in care homes. They may be particularly useful to local authorities, ICSs, Chief Pharmacists and pharmacy teams and policy makers.
 
-New additions for this year include a geographical breakdown of overall prescribing, a new anticoagulant prescribing metric and a comparison of prescribing metrics by length of stay. 
+New additions for this year include a geographical breakdown of overall prescribing, a new anticoagulant prescribing metric and a comparison of prescribing metrics by estimated length of stay. 
 
 Patient address classification is based on experimental data linkage work. As such values are indicative. We welcome feedback, collaboration, and refinement of the methodology to continuously improve our methods and analysis. 
 
