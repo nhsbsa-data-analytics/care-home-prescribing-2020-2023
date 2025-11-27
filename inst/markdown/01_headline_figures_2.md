@@ -15,6 +15,6 @@ For this reason most [Metrics](http://127.0.0.1/Metrics?prescribing-metrics) wer
 
 By month, patient counts dropped during the COVID-19 pandemic then steadily rose again from March 2021. The number of patients who received prescriptions in a care home peaked in £>latest_figures$ch_peak_pats_time<£, at £>latest_figures$ch_peak_pats_count<£ patients. £>latest_figures$ch_peak_items_time<£ had the highest number of care home prescription items, at £>latest_figures$ch_peak_items_count<£ million items. 
 
-The  item and cost percentage for care homes within a geography are in relation to the total items and total cost of prescribing for patients aged 65 and over in that area.
+Absolute patients counts, total cost and total item count in a specific geography are driven by the size of the care home population in that area and their prescribing needs. The item and cost percentage for care homes within a geography are in relation to the total items and total cost of prescribing for patients aged 65 and over in that area.
 
 There is some seasonality in the data, but the effect is small compared to the overall trend.
