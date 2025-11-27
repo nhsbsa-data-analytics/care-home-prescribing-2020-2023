@@ -18,7 +18,7 @@ In £>latest_figures$latest_fy<£, we estimated a monthly average __of £>latest
 
 __Care home patients aged 65 years and over received a higher rate of prescribing__ than non-care home patients. This includes prescribing of drugs associated with a falls risk and anti-cholinergic burden. They received less prescribing of medicines associated with kidney injury.
 
-Care home patients also received a different range of medicines to non-care home patients. They were more likely to receive Vitamin D and drugs for pain relief. Non-care home patients were more likely to receive Atorvastatin. The total drug cost for Paracetamol for care home patients has doubled in the last five years to an estimated £22.4 million. 
+Care home patients also received a different range of medicines to non-care home patients. They were more likely to receive Vitamin D and drugs for pain relief. Non-care home patients were more likely to receive Atorvastatin. The total drug cost for Paracetamol for care home patients has doubled in the last five years to an estimated £22.4 million. Whereas costs have reduced for non-carehome patients. 
 
 Almost two-thirds of care home patients aged 65 years and over who received prescriptions were female. Just over 4 in 10 were females aged 85 years and over.
 
