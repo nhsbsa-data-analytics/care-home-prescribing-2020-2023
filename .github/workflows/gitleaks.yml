@@ -2,6 +2,6 @@ name: gitleaks
 on: [push, workflow_dispatch]
 jobs:
   call-workflow:
-    uses: nhsbsa-data-analytics/.github/.github/workflows/org-gitleaks-check.yml@master
+    uses: nhsbsa-data-analytics/.github/.github/workflows/org-gitleaks-check.yml@main
     secrets:
       GITLEAKS_LICENSE_PASSED: ${{ secrets.GITLEAKS_LICENSE }}
