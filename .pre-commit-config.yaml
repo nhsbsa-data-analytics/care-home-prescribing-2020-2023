@@ -3,7 +3,15 @@ repos:
     hooks:
     - id: gitleaks
       name: Detect hardcoded secrets
-      description: Detect hardcoded secrets using Gitleaks
-      entry: gitleaks protect --config="gitleaks.toml" --verbose --redact --staged
+      description: Detect hardcoded secrets using Gitleaks with centralised NHSBSA config
+      entry: >
+        bash -c '
+        mkdir -p .github-config &&
+        curl -f -s https://raw.githubusercontent.com/nhsbsa-data-analytics/.github/main/gitleaks.toml -o .github-config/gitleaks.toml &&
+        curl -f -s https://raw.githubusercontent.com/nhsbsa-data-analytics/.github/main/gitleaks-nhsbsa.toml -o .github-config/gitleaks-nhsbsa.toml &&
+        gitleaks protect --config=".github-config/gitleaks.toml" --verbose --redact --staged;
+        EXIT_CODE=$?;
+        rm -rf .github-config;
+        exit $EXIT_CODE'
       language: system
       pass_filenames: false
